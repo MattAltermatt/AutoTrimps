@@ -13,7 +13,8 @@ const MANIFEST = [
   // modules/utils.js — converted to src/modules/utils.ts (Phase 1); published via legacy-bridge.
   // modules/calc.js — converted to src/modules/calc.ts (Phase 2)
   'modules/import-export.js', 'modules/query.js', 'modules/portal.js',
-  'modules/upgrades.js', 'modules/heirlooms.js', 'modules/buildings.js', 'modules/jobs.js',
+  // modules/buildings.js — converted to src/modules/buildings.ts (Phase 2)
+  'modules/upgrades.js', 'modules/heirlooms.js', 'modules/jobs.js',
   // modules/equipment.js — converted to src/modules/equipment.ts (Phase 2)
   'modules/gather.js', 'modules/stance.js', 'modules/mapfunctions.js',
   // modules/dynprestige.js, modules/breedtimer.js — converted to src/modules/ (Phase 2)

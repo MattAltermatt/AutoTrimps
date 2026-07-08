@@ -1,3 +1,20 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/buildings.js.
+// Housing / storage / building-purchase logic (U1 + U2 radon R* family). Deeply
+// game-coupled (127 game.* touches), so @ts-nocheck. getPageSetting + debug imported
+// from converted utils. Module-level vars (housingList, RhousingList, smithybought) are
+// buildings-internal → stay module-scoped var. TWO seam notes:
+//   1. bestFoodBuilding: was a sloppy-mode implicit global (missing var) used only inside
+//      buyFoodEfficientHousing; localized to a var here (no external reader) to avoid a
+//      strict-mode ReferenceError. bestBuilding stays bare — it resolves to the
+//      var bestBuilding declared in AutoTrimps2.js (loads first).
+//   2. needGymystic is NOT exported (unlike every other fn): it is byte-identical to
+//      upgrades.js's copy, is never invoked as a function anywhere, and the original's
+//      post-load value is AutoTrimps2.js's boolean var needGymystic = true. Publishing
+//      this function via the bridge would overwrite that boolean at load. Left module-scoped.
+import { getPageSetting, debug } from './utils'
+
 MODULES["buildings"] = {};
 MODULES["buildings"].storageMainCutoff = 0.85;
 MODULES["buildings"].storageLowlvlCutoff1 = 0.7;
@@ -10,7 +27,7 @@ function needGymystic() {
     return game.upgrades['Gymystic'].allowed - game.upgrades['Gymystic'].done > 0;
 }
 
-function safeBuyBuilding(building) {
+export function safeBuyBuilding(building) {
     if (isBuildingInQueue(building))
         return false;
     if (game.buildings[building].locked)
@@ -62,7 +79,7 @@ function safeBuyBuilding(building) {
     return true;
 }
 
-function buyFoodEfficientHousing() {
+export function buyFoodEfficientHousing() {
     //Init
     var ignoresLimit = getPageSetting('FoodEfficiencyIgnoresMax')
     var unlockedHousing = ["Hut", "House", "Mansion", "Hotel", "Resort"].filter(b => !game.buildings[b].locked);
@@ -91,7 +108,7 @@ function buyFoodEfficientHousing() {
 
     //Grabs the most Food Efficient Housing
     if (buildOrder.length == 0) return;
-    bestFoodBuilding = buildOrder.reduce((best, current) => current.ratio < best.ratio ? current : best)
+    var bestFoodBuilding = buildOrder.reduce((best, current) => current.ratio < best.ratio ? current : best)
 
     //If Food Efficiency Ignores Limit is enabled, then it only buy Huts and Houses here
     if (!ignoresLimit || ["Hut", "House"].includes(bestFoodBuilding.name)) {
@@ -100,7 +117,7 @@ function buyFoodEfficientHousing() {
     }
 }
 
-function buyGemEfficientHousing() {
+export function buyGemEfficientHousing() {
     var gemHousing = ["Mansion", "Hotel", "Resort", "Gateway", "Collector", "Warpstation"];
     var unlockedHousing = [];
     for (var house in gemHousing) {
@@ -176,7 +193,7 @@ function buyGemEfficientHousing() {
     }
 }
 
-function buyBuildings() {
+export function buyBuildings() {
     var customVars = MODULES["buildings"];
     var oldBuy = preBuy2();
     var hidebuild = (getPageSetting('BuyBuildingsNew')===0 && getPageSetting('hidebuildings')==true);
@@ -274,7 +291,7 @@ function buyBuildings() {
     postBuy2(oldBuy);
 }
 
-function buyStorage() {
+export function buyStorage() {
     var customVars = MODULES["buildings"];
     var packMod = 1 + game.portal.Packrat.level * game.portal.Packrat.modifier;
     var Bs = {
@@ -305,7 +322,7 @@ function buyStorage() {
 
 var RhousingList = ['Hut', 'House', 'Mansion', 'Hotel', 'Resort', 'Gateway', 'Collector'];
 
-function RsafeBuyBuilding(building) {
+export function RsafeBuyBuilding(building) {
     if (isBuildingInQueue(building))
         return false;
     if (game.buildings[building].locked)
@@ -342,7 +359,7 @@ function RsafeBuyBuilding(building) {
     return true;
 }
 
-function RbuyFoodEfficientHousing() {
+export function RbuyFoodEfficientHousing() {
     var foodHousing = ["Hut", "House", "Mansion", "Hotel", "Resort"];
     var unlockedHousing = [];
     for (var house in foodHousing) {
@@ -378,7 +395,7 @@ function RbuyFoodEfficientHousing() {
     }
 }
 
-function RbuyGemEfficientHousing() {
+export function RbuyGemEfficientHousing() {
     var gemHousing = ["Mansion", "Hotel", "Resort", "Gateway", "Collector"];
     var unlockedHousing = [];
     for (var house in gemHousing) {
@@ -414,7 +431,7 @@ function RbuyGemEfficientHousing() {
 
 var smithybought = 0;
 
-function mostEfficientHousing() {
+export function mostEfficientHousing() {
 
     //Housing
     var HousingTypes = ['Hut', 'House', 'Mansion', 'Hotel', 'Resort', 'Gateway', 'Collector'];
@@ -462,7 +479,7 @@ function mostEfficientHousing() {
     return mostEfficient.name;
 }
 
-function RbuyStorage(buyFood, buyWood, buyMetal) {
+export function RbuyStorage(buyFood, buyWood, buyMetal) {
 
     // Simple map for resources to the names of their storage buildings.
     var Resources = {};
@@ -516,7 +533,7 @@ function RbuyStorage(buyFood, buyWood, buyMetal) {
 
 }
 
-function RbuyBuildings() {
+export function RbuyBuildings() {
  
     // Storage
     if (game.global.challengeActive == "Hypothermia" && getPageSetting('Rhypostorage')) {
