@@ -35,5 +35,6 @@ import * as other from './modules/other'
 import * as settingsEngine from './modules/settings-engine'
 import * as settingsMenu from './modules/settings-menu'
 import * as settingsVisibility from './modules/settings-visibility'
+import * as settingsDefs from './modules/settings-defs'
 
-Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...portal, ...importExport, ...query, ...other, ...settingsEngine, ...settingsMenu, ...settingsVisibility })
+Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...portal, ...importExport, ...query, ...other, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs })
