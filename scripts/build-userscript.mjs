@@ -14,7 +14,8 @@ const MANIFEST = [
   'modules/import-export.js', 'modules/query.js', 'modules/calc.js', 'modules/portal.js',
   'modules/upgrades.js', 'modules/heirlooms.js', 'modules/buildings.js', 'modules/jobs.js',
   'modules/equipment.js', 'modules/gather.js', 'modules/stance.js', 'modules/mapfunctions.js',
-  'modules/maps.js', 'modules/breedtimer.js', 'modules/dynprestige.js', 'modules/fight.js',
+  // modules/dynprestige.js — converted to src/modules/dynprestige.ts (Phase 2)
+  'modules/maps.js', 'modules/breedtimer.js', 'modules/fight.js',
   'modules/scryer.js', 'modules/magmite.js', 'modules/nature.js', 'modules/other.js',
   'modules/perks.js', 'modules/fight-info.js', 'modules/performance.js', 'modules/ab.js',
   'modules/MAZ.js',
