@@ -49,8 +49,13 @@ Convert in dependency order, each slice: faithful port → publish via seam → 
   `game.*` touches → near-zero pure surface, no peeled math submodule). Shared vars
   `critCC`/`critDD`/`trimpAA` → `globalThis` (read by equipment + maps); `calcBaseDamageInX`
   left duplicated in stance.js (loads later, wins — preserves original override order).
-- 🎯 **Next — systems group:** buildings, jobs, upgrades, equipment, gather, heirlooms, perks.
-- 🗃️ **Remaining groups:** systems (buildings, jobs, upgrades, equipment, gather, heirlooms,
+- ✅ **Shipped 2026-07-08:** `equipment` (1,153 lines — auto-equip / prestige / efficiency,
+  U1 + U2 radon `R*` family). Simplest seam yet: no cross-module shared vars (all module
+  vars equipment-internal), one implicit-global write (`needGymystic`) resolving to the
+  AutoTrimps2.js-declared global, zero name collisions. Consumes calc's `globalThis.trimpAA`
+  from the converted side — cross-module seam verified live.
+- 🎯 **Next — systems group cont'd:** buildings, jobs, upgrades, gather, heirlooms, perks.
+- 🗃️ **Remaining groups:** systems (buildings, jobs, upgrades, gather, heirlooms,
   perks), combat/maps (fight, stance, scryer, maps, mapfunctions, MAZ, ab), infra (portal,
   import-export, query, performance, other).
 

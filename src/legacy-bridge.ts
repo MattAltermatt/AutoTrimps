@@ -11,5 +11,6 @@ import * as breedtimer from './modules/breedtimer'
 import * as nature from './modules/nature'
 import * as magmite from './modules/magmite'
 import * as calc from './modules/calc'
+import * as equipment from './modules/equipment'
 
-Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc })
+Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment })
