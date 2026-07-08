@@ -1,3 +1,9 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/jobs.js.
+// Job hire/fire, worker ratios, quest jobs (U1 + U2 radon R* family). Deeply game-coupled (174 game.* touches), @ts-nocheck. Module vars tierMagmamancers/reservedJobs are jobs-internal. No shared vars, no implicit globals, no collisions.
+import { getPageSetting, debug, setPageSetting } from './utils'
+
 MODULES["jobs"] = {};
 
 //Helium
@@ -16,7 +22,7 @@ MODULES["jobs"].autoRatio2 = [3, 3.1, 5];
 MODULES["jobs"].autoRatio1 = [1.1, 1.15, 1.2];
 MODULES["jobs"].customRatio;
 
-function safeBuyJob(jobTitle, amount) {
+export function safeBuyJob(jobTitle, amount) {
     if (!Number.isFinite(amount) || amount === 0 || typeof amount === 'undefined' || Number.isNaN(amount)) {
         return false;
     }
@@ -46,7 +52,7 @@ function safeBuyJob(jobTitle, amount) {
     return true;
 }
 
-function safeFireJob(job, amount) {
+export function safeFireJob(job, amount) {
     var oldjob = game.jobs[job].owned;
     if (oldjob == 0 || amount == 0)
         return 0;
@@ -72,7 +78,7 @@ function safeFireJob(job, amount) {
     return x / 2;
 }
 
-function buyJobs() {
+export function buyJobs() {
     var freeWorkers = Math.ceil(game.resources.trimps.realMax() / 2) - game.resources.trimps.employed;
     var breeding = (game.resources.trimps.owned - game.resources.trimps.employed);
     var totalDistributableWorkers = freeWorkers + game.jobs.Farmer.owned + game.jobs.Miner.owned + game.jobs.Lumberjack.owned;
@@ -251,7 +257,7 @@ function buyJobs() {
 var tierMagmamancers = 0;
 
 
-function workerRatios() {
+export function workerRatios() {
     var ratioSet;
     if (MODULES["jobs"].customRatio) {
         ratioSet = MODULES["jobs"].customRatio;
@@ -296,7 +302,7 @@ MODULES["jobs"].RautoRatio2 = [3, 3.1, 5];
 MODULES["jobs"].RautoRatio1 = [1.1, 1.15, 1.2];
 MODULES["jobs"].RcustomRatio;
 
-function RsafeBuyJob(jobTitle, amount) {
+export function RsafeBuyJob(jobTitle, amount) {
     if (!Number.isFinite(amount) || amount === 0 || typeof amount === 'undefined' || Number.isNaN(amount)) {
         return false;
     }
@@ -326,7 +332,7 @@ function RsafeBuyJob(jobTitle, amount) {
     return true;
 }
 
-function RsafeFireJob(job, amount) {
+export function RsafeFireJob(job, amount) {
     var oldjob = game.jobs[job].owned;
     if (oldjob == 0 || amount == 0)
         return 0;
@@ -352,7 +358,7 @@ function RsafeFireJob(job, amount) {
     return x / 2;
 }
 
-function RworkerRatios() {
+export function RworkerRatios() {
     var ratioSet;
     if (MODULES["jobs"].RcustomRatio) {
         ratioSet = MODULES["jobs"].RcustomRatio;
@@ -378,7 +384,7 @@ function RworkerRatios() {
     setPageSetting('RMinerRatio', ratioSet[2]);
 }
 
-function RquestbuyJobs() {
+export function RquestbuyJobs() {
 
     var freeWorkers = Math.ceil(game.resources.trimps.realMax() / 2) - game.resources.trimps.employed;
     var totalDistributableWorkers = freeWorkers + game.jobs.Farmer.owned + game.jobs.Miner.owned + game.jobs.Lumberjack.owned;
@@ -471,7 +477,7 @@ function RquestbuyJobs() {
 
 var reservedJobs = 100;
 
-function RbuyJobs() {
+export function RbuyJobs() {
 
     if (game.jobs.Farmer.locked || game.resources.trimps.owned == 0) return;
 

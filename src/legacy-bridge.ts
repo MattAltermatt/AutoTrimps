@@ -13,5 +13,6 @@ import * as magmite from './modules/magmite'
 import * as calc from './modules/calc'
 import * as equipment from './modules/equipment'
 import * as buildings from './modules/buildings'
+import * as jobs from './modules/jobs'
 
-Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings })
+Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs })
