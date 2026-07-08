@@ -10,7 +10,7 @@ const LEGACY = resolve(ROOT, 'legacy')
 // Concat manifest — exact original load order (from legacy/AutoTrimps2.js).
 const MANIFEST = [
   'AutoTrimps2.js',
-  'modules/utils.js',
+  // modules/utils.js — converted to src/modules/utils.ts (Phase 1); published via legacy-bridge.
   'modules/import-export.js', 'modules/query.js', 'modules/calc.js', 'modules/portal.js',
   'modules/upgrades.js', 'modules/heirlooms.js', 'modules/buildings.js', 'modules/jobs.js',
   'modules/equipment.js', 'modules/gather.js', 'modules/stance.js', 'modules/mapfunctions.js',
@@ -84,9 +84,17 @@ async function bundleSrc() {
 
 export async function buildUserscript() {
   const pkg = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8'))
-  const legacy = (await Promise.all(MANIFEST.map(readModule))).join('')
+  // SEAM ORDERING (Phase 1): the converted-modules bundle is emitted at the slot
+  // utils.js originally occupied — immediately after AutoTrimps2.js, BEFORE the rest
+  // of the legacy modules. Still-legacy modules call converted functions by bare name
+  // at load time (e.g. portal.js's top-level `getPageSetting('CustomAutoPortal')`), so
+  // the bridge must publish them before those modules evaluate. Emitting src last (its
+  // former position) throws ReferenceError and halts the whole concatenated script.
+  const [first, ...rest] = MANIFEST // first === 'AutoTrimps2.js' (defines base globals)
+  const firstJs = await readModule(first)
+  const restJs = (await Promise.all(rest.map(readModule))).join('')
   const srcIife = await bundleSrc()
-  return `${header(pkg.version)}${legacy}\n;\n/* ===== src/main.ts (bundled) ===== */\n${srcIife}\n`
+  return `${header(pkg.version)}${firstJs}\n;\n/* ===== src/main.ts (bundled — seam: converted modules published before remaining legacy) ===== */\n${srcIife}\n;\n${restJs}\n`
 }
 
 async function writeBuild() {

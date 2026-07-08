@@ -17,10 +17,25 @@ fixed in the build.
 > means also neutering that inject — a behavior change, out of scope for the identical
 > baseline.
 
-## 🚧 Phase 1 — First real conversion
-Convert `legacy/modules/utils.js` → `src/modules/utils.ts` as a true ES module (root of
-the import graph). Lock the conversion idiom: export/import shape, typing against
-`src/game/trimps.d.ts`, the old/new parity check. Every later slice copies this.
+## ✅ Phase 1 — First real conversion & the transition seam — *verified 2026-07-08*
+Converted `legacy/modules/utils.js` → `src/modules/` behind a **global-publish seam** and
+locked the idiom every later slice copies. Design:
+[`docs/superpowers/specs/2026-07-08-phase-1-utils-seam-design.md`](docs/superpowers/specs/2026-07-08-phase-1-utils-seam-design.md).
+
+- **The seam:** converted modules `export` normally; `src/legacy-bridge.ts` does
+  `Object.assign(globalThis, {...})` (wildcard from module namespaces) so still-legacy
+  code calls them by bare name. The src bundle is emitted **right after `AutoTrimps2.js`,
+  before the rest of the legacy modules** — required because still-legacy modules call
+  converted functions at load time (`portal.js:4`). Converted code reads legacy/game
+  globals as free identifiers, typed ambient in `src/game/at-legacy.d.ts` (shrinks as
+  modules convert).
+- **Slice shape:** faithful verbatim port (`utils.ts`, `@ts-nocheck` tangle) → peel the
+  clean leaves `time.ts` + `buystate.ts` (real types + vitest). settings↔logging stay
+  tangled (circular) for a future untangle slice.
+- **Verified live** (Trimps 5.10.1): all seam functions published, clean console, both
+  boot markers, log-filter button renders, settings + buystate round-trips work. The live
+  verify + a fresh code review caught the src-last ordering bug (now fixed + guarded by a
+  build-test ordering assertion).
 
 ## 🔮 Phase 2..N — Module-by-module strangle
 Convert in dependency order — pure logic (calc, breedtimer, nature, magmite), systems

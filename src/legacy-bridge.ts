@@ -1,0 +1,10 @@
+// The transition seam. Re-publishes every converted module's exports onto the
+// global object so still-legacy code (raw-concatenated at global scope) keeps
+// resolving them by bare name at runtime. Wildcard-spread from the module
+// namespace: anything `export`ed is auto-published — you cannot forget a name.
+// This manifest shrinks to nothing as the strangle completes.
+import * as utils from './modules/utils'
+import * as time from './modules/time'
+import * as buystate from './modules/buystate'
+
+Object.assign(globalThis, { ...utils, ...time, ...buystate })

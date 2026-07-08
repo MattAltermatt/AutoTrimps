@@ -6,8 +6,6 @@ declare global {
   // The Trimps game object. Typed as `any` until a converted module needs a
   // real shape; this is the single documented seam between us and the game.
   const game: any
-  function debug(message: string, category?: string): void
-  function loadPageVariables(): void
 }
 
 export {}
