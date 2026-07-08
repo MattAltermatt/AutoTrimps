@@ -44,7 +44,12 @@ Convert in dependency order, each slice: faithful port → publish via seam → 
   seam), `nature`, `magmite`. Idioms locked: converted→converted imports, implicit-global
   audit (tsc-driven), `MODULES` ambient registry, shared-var→`globalThis` publish,
   `@ts-nocheck` for game-coupled bodies.
-- 🎯 **Next — pure logic:** `calc` (69 KB core — damage/health/gains; big, likely multi-sitting).
+- ✅ **Shipped 2026-07-08:** `calc` (1,773 lines core combat math — our/enemy attack/health/
+  block/crit/HD-ratio/stance + the U2 radon `R*` family). Faithful `@ts-nocheck` blob (526
+  `game.*` touches → near-zero pure surface, no peeled math submodule). Shared vars
+  `critCC`/`critDD`/`trimpAA` → `globalThis` (read by equipment + maps); `calcBaseDamageInX`
+  left duplicated in stance.js (loads later, wins — preserves original override order).
+- 🎯 **Next — systems group:** buildings, jobs, upgrades, equipment, gather, heirlooms, perks.
 - 🗃️ **Remaining groups:** systems (buildings, jobs, upgrades, equipment, gather, heirlooms,
   perks), combat/maps (fight, stance, scryer, maps, mapfunctions, MAZ, ab), infra (portal,
   import-export, query, performance, other).

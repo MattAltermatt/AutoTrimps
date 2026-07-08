@@ -10,5 +10,6 @@ import * as dynprestige from './modules/dynprestige'
 import * as breedtimer from './modules/breedtimer'
 import * as nature from './modules/nature'
 import * as magmite from './modules/magmite'
+import * as calc from './modules/calc'
 
-Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite })
+Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc })

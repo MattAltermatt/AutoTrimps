@@ -11,7 +11,8 @@ const LEGACY = resolve(ROOT, 'legacy')
 const MANIFEST = [
   'AutoTrimps2.js',
   // modules/utils.js — converted to src/modules/utils.ts (Phase 1); published via legacy-bridge.
-  'modules/import-export.js', 'modules/query.js', 'modules/calc.js', 'modules/portal.js',
+  // modules/calc.js — converted to src/modules/calc.ts (Phase 2)
+  'modules/import-export.js', 'modules/query.js', 'modules/portal.js',
   'modules/upgrades.js', 'modules/heirlooms.js', 'modules/buildings.js', 'modules/jobs.js',
   'modules/equipment.js', 'modules/gather.js', 'modules/stance.js', 'modules/mapfunctions.js',
   // modules/dynprestige.js, modules/breedtimer.js — converted to src/modules/ (Phase 2)

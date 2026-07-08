@@ -1,10 +1,24 @@
-var critCC = 1;
-var critDD = 1;
-var trimpAA = 1;
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/calc.js.
+// Core combat math — our/enemy attack, health, block, crit, HD ratio, stance, and the
+// parallel Universe-2 (radon) R* family. Deeply game-coupled (526 game.* touches across
+// ~40 fns), so @ts-nocheck like the other Phase-2 game bodies; near-zero genuinely-pure
+// surface, so no peeled math submodule. getPageSetting imported from converted utils —
+// the only converted dependency. Shared top-level vars critCC/critDD/trimpAA are read by
+// legacy equipment.js + maps.js, so they publish to globalThis (shared-var seam) rather
+// than module-scoped var. NOTE: calcBaseDamageInX is intentionally also defined in
+// stance.js, which loads after this bundle and wins at global scope — same as the
+// original load order (calc.js before stance.js), so behavior is preserved.
+import { getPageSetting } from './utils'
+
+globalThis.critCC = 1;
+globalThis.critDD = 1;
+globalThis.trimpAA = 1;
 
 //Helium
 
-function addPoison(realDamage, zone) {
+export function addPoison(realDamage, zone) {
     //Init
     if (!zone) zone = game.global.world;
 
@@ -20,14 +34,14 @@ function addPoison(realDamage, zone) {
     return 0;
 }
 
-function calcCorruptionScale(zone, base) {
+export function calcCorruptionScale(zone, base) {
     var startPoint = (game.global.challengeActive == "Corrupted" || game.global.challengeActive == "Eradicated") ? 1 : 150;
     var scales = Math.floor((zone - startPoint) / 6);
     var realValue = base * Math.pow(1.05, scales);
     return parseFloat(prettify(realValue));
 }
 
-function getTrimpAttack() {
+export function getTrimpAttack() {
     var dmg = 6;
     var equipmentList = ["Dagger", "Mace", "Polearm", "Battleaxe", "Greatsword", "Arbalest"];
     for (var i = 0; i < equipmentList.length; i++) {
@@ -52,7 +66,7 @@ function getTrimpAttack() {
     return dmg;
 }
 
-function calcOurHealth(stance) {
+export function calcOurHealth(stance) {
     var health = 50;
 
     if (game.resources.trimps.maxSoldiers > 0) {
@@ -127,20 +141,20 @@ function calcOurHealth(stance) {
     return health;
 }
 
-function highDamageShield() {
+export function highDamageShield() {
     if (game.global.challengeActive != "Daily" && game.global.ShieldEquipped.name == getPageSetting('highdmg')) {
-        critCC = getPlayerCritChance();
-        critDD = getPlayerCritDamageMult();
-        trimpAA = (calcHeirloomBonus("Shield", "trimpAttack", 1, true) / 100);
+        globalThis.critCC = getPlayerCritChance();
+        globalThis.critDD = getPlayerCritDamageMult();
+        globalThis.trimpAA = (calcHeirloomBonus("Shield", "trimpAttack", 1, true) / 100);
     }
     if (game.global.challengeActive == "Daily" && game.global.ShieldEquipped.name == getPageSetting('dhighdmg')) {
-        critCC = getPlayerCritChance();
-        critDD = getPlayerCritDamageMult();
-        trimpAA = (calcHeirloomBonus("Shield", "trimpAttack", 1, true) / 100);
+        globalThis.critCC = getPlayerCritChance();
+        globalThis.critDD = getPlayerCritDamageMult();
+        globalThis.trimpAA = (calcHeirloomBonus("Shield", "trimpAttack", 1, true) / 100);
     }
 }
 
-function getCritMulti(high) {
+export function getCritMulti(high) {
 
     var critChance = getPlayerCritChance();
     var CritD = getPlayerCritDamageMult();
@@ -162,7 +176,7 @@ function getCritMulti(high) {
     return ((1 - highTierChance) * lowTierMulti + highTierChance * highTierMulti) * CritD
 }
 
-function calcOurBlock(stance) {
+export function calcOurBlock(stance) {
     var block = 0;
     var gym = game.buildings.Gym;
     if (gym.owned > 0) {
@@ -194,7 +208,7 @@ function calcOurBlock(stance) {
     return block;
 }
 
-function calcOurDmg(minMaxAvg, incStance, incFlucts) {
+export function calcOurDmg(minMaxAvg, incStance, incFlucts) {
     var number = getTrimpAttack();
     var fluctuation = .2;
     var maxFluct = -1;
@@ -369,7 +383,7 @@ function calcOurDmg(minMaxAvg, incStance, incFlucts) {
     else if (minMaxAvg == "avg") return avg;
 }
 
-function calcDailyAttackMod(number) {
+export function calcDailyAttackMod(number) {
     if (game.global.challengeActive == "Daily") {
         if (typeof game.global.dailyChallenge.badStrength !== 'undefined') {
             number *= dailyModifiers.badStrength.getMult(game.global.dailyChallenge.badStrength.strength);
@@ -384,7 +398,7 @@ function calcDailyAttackMod(number) {
     return number;
 }
 
-function badGuyChallengeMult() {
+export function badGuyChallengeMult() {
     var number=1;
 
     //WARNING! Something is afoot!
@@ -407,7 +421,7 @@ function badGuyChallengeMult() {
     return number;
 }
 
-function badGuyCritMult(enemy, critPower=2, block, health) {
+export function badGuyCritMult(enemy, critPower=2, block, health) {
     //Pre-Init
     if (getPageSetting('IgnoreCrits') == 2) return 1;
     if (!enemy) enemy = getCurrentEnemy();
@@ -436,7 +450,7 @@ function badGuyCritMult(enemy, critPower=2, block, health) {
     else return Math.max(regular, challenge);
 }
 
-function calcEnemyBaseAttack(type, zone, cell, name) {
+export function calcEnemyBaseAttack(type, zone, cell, name) {
     //Pre-Init
     if (!type) type = (!game.global.mapsActive) ? "world" : (getCurrentMapObject().location == "Void" ? "void" : "map");
     if (!zone) zone = (type == "world" || !game.global.mapsActive) ? game.global.world : getCurrentMapObject().level;
@@ -480,7 +494,7 @@ function calcEnemyBaseAttack(type, zone, cell, name) {
 }
 
 
-function calcEnemyAttackCore(type, zone, cell, name, minOrMax, customAttack) {
+export function calcEnemyAttackCore(type, zone, cell, name, minOrMax, customAttack) {
     //Pre-Init
     if (!type) type = (!game.global.mapsActive) ? "world" : (getCurrentMapObject().location == "Void" ? "void" : "map");
     if (!zone) zone = (type == "world" || !game.global.mapsActive) ? game.global.world : getCurrentMapObject().level;
@@ -551,7 +565,7 @@ function calcEnemyAttackCore(type, zone, cell, name, minOrMax, customAttack) {
     return minOrMax ? 0.8 * attack : 1.2 * attack;
 }
 
-function calcSpecificEnemyAttack(critPower=2, customBlock, customHealth) {
+export function calcSpecificEnemyAttack(critPower=2, customBlock, customHealth) {
     //Init
     var enemy = getCurrentEnemy();
     if (!enemy) return 1;
@@ -573,7 +587,7 @@ function calcSpecificEnemyAttack(critPower=2, customBlock, customHealth) {
     return Math.ceil(attack);
 }
 
-function calcSpire(cell, name, what) {
+export function calcSpire(cell, name, what) {
     var exitCell = cell;
     if (game.global.challengeActive != "Daily" && isActiveSpireAT() && getPageSetting('ExitSpireCell') > 0 && getPageSetting('ExitSpireCell') <= 100)
         exitCell = (getPageSetting('ExitSpireCell') - 1);
@@ -595,7 +609,7 @@ function calcSpire(cell, name, what) {
     return base;
 }
 
-function calcBadGuyDmg(enemy, attack, daily, maxormin, disableFlucts) {
+export function calcBadGuyDmg(enemy, attack, daily, maxormin, disableFlucts) {
     var number;
     if (enemy)
         number = enemy.attack;
@@ -650,7 +664,7 @@ function calcBadGuyDmg(enemy, attack, daily, maxormin, disableFlucts) {
         return number;
 }
 
-function calcEnemyBaseHealth(zone, level, name) {
+export function calcEnemyBaseHealth(zone, level, name) {
     var health = 0;
     health += 130 * Math.sqrt(zone) * Math.pow(3.265, zone / 2);
     health -= 110;
@@ -670,7 +684,7 @@ function calcEnemyBaseHealth(zone, level, name) {
     return health;
 }
 
-function calcEnemyHealth(world, map) {
+export function calcEnemyHealth(world, map) {
     world = !world ? game.global.world : world;
     var health = calcEnemyBaseHealth(world, 50, "Snimp");
     var corrupt = mutations.Corruption.active();
@@ -733,7 +747,7 @@ function calcEnemyHealth(world, map) {
     return health;
 }
 
-function calcEnemyHealthCore(type, zone, cell, name, customHealth) {
+export function calcEnemyHealthCore(type, zone, cell, name, customHealth) {
     //Pre-Init
     if (!type) type = (!game.global.mapsActive) ? "world" : (getCurrentMapObject().location == "Void" ? "void" : "map");
     if (!zone) zone = (type == "world" || !game.global.mapsActive) ? game.global.world : getCurrentMapObject().level;
@@ -800,7 +814,7 @@ function calcEnemyHealthCore(type, zone, cell, name, customHealth) {
     return health;
 }
 
-function calcSpecificEnemyHealth(type, zone, cell, forcedName) {
+export function calcSpecificEnemyHealth(type, zone, cell, forcedName) {
     //Pre-Init
     if (!type) type = (!game.global.mapsActive) ? "world" : (getCurrentMapObject().location == "Void" ? "void" : "map");
     if (!zone) zone = (type == "world" || !game.global.mapsActive) ? game.global.world : getCurrentMapObject().level;
@@ -843,7 +857,7 @@ function calcSpecificEnemyHealth(type, zone, cell, forcedName) {
 }
 
 
-function calcHDratio(map) {
+export function calcHDratio(map) {
     var ratio = 0;
     var ourBaseDamage = calcOurDmg("avg", false, true);
 
@@ -867,7 +881,7 @@ function calcHDratio(map) {
     return ratio;
 }
 
-function calcCurrentStance() {
+export function calcCurrentStance() {
     if (game.global.uberNature == "Wind" && getEmpowerment() == "Wind" && !game.global.mapsActive &&
         (
             (
@@ -975,7 +989,7 @@ function calcCurrentStance() {
     }
 }
 
-function calcBaseDamageInX() {
+export function calcBaseDamageInX() {
     baseMinDamage = calcOurDmg("min", false, false);
     baseMaxDamage = calcOurDmg("max", false, false);
     baseDamage = calcOurDmg("avg", false, false);
@@ -985,7 +999,7 @@ function calcBaseDamageInX() {
 
 //Radon
 
-function rMutationAttack(cell) {
+export function rMutationAttack(cell) {
     var baseAttack;
     var addAttack = 0;
     if (cell.cs) {
@@ -1001,7 +1015,7 @@ function rMutationAttack(cell) {
     return baseAttack;
 }
 
-function rCalcMutationAttack() {
+export function rCalcMutationAttack() {
     var number;
     var highest = 1;
 
@@ -1025,7 +1039,7 @@ function rCalcMutationAttack() {
     return number;
 }
 
-function rMutationHealth(cell) {
+export function rMutationHealth(cell) {
     var baseHealth;
     var addHealth = 0;
     baseHealth = RcalcEnemyBaseHealth(game.global.world, cell.level, cell.name);
@@ -1038,7 +1052,7 @@ function rMutationHealth(cell) {
     return baseHealth;
 }
 
-function rCalcMutationHealth() {
+export function rCalcMutationHealth() {
     var health;
     var highest = 1;
     for (var i = 0; i < game.global.gridArray.length; i++) {
@@ -1053,7 +1067,7 @@ function rCalcMutationHealth() {
 
 //Radon
 
-function RgetCritMulti() {
+export function RgetCritMulti() {
 
     var critChance = getPlayerCritChance();
     var CritD = getPlayerCritDamageMult();
@@ -1065,7 +1079,7 @@ function RgetCritMulti() {
     return ((1 - highTierChance) * lowTierMulti + highTierChance * highTierMulti) * CritD
 }
 
-function RcalcOurDmg(minMaxAvg, equality) {
+export function RcalcOurDmg(minMaxAvg, equality) {
 
     // Base + equipment
     var number = 6;
@@ -1265,7 +1279,7 @@ function RcalcOurDmg(minMaxAvg, equality) {
     return number;
 }
 
-function RcalcOurHealth() {
+export function RcalcOurHealth() {
 
     //Health
 
@@ -1389,7 +1403,7 @@ function RcalcOurHealth() {
     return health;
 }
 
-function RcalcDailyAttackMod(number) {
+export function RcalcDailyAttackMod(number) {
     if (game.global.challengeActive == "Daily") {
         if (typeof game.global.dailyChallenge.badStrength !== 'undefined') {
             number *= dailyModifiers.badStrength.getMult(game.global.dailyChallenge.badStrength.strength);
@@ -1410,7 +1424,7 @@ function RcalcDailyAttackMod(number) {
     return number;
 }
 
-function RcalcDailyHealthMod(number) {
+export function RcalcDailyHealthMod(number) {
     if (game.global.challengeActive == "Daily") {
 	if (typeof game.global.dailyChallenge.badHealth !== 'undefined') {
             number *= dailyModifiers.badHealth.getMult(game.global.dailyChallenge.badHealth.strength);
@@ -1422,7 +1436,7 @@ function RcalcDailyHealthMod(number) {
     return number;
 }
 
-function RcalcBadGuyDmg(enemy, attack, equality) {
+export function RcalcBadGuyDmg(enemy, attack, equality) {
     var number;
     var highest = 1;
     var mute = false;
@@ -1497,7 +1511,7 @@ function RcalcBadGuyDmg(enemy, attack, equality) {
     return number;
 }
 
-function RcalcEnemyBaseHealth(world, level, name) {
+export function RcalcEnemyBaseHealth(world, level, name) {
     var amt = 0;
     var healthBase = (game.global.universe == 2) ? 10e7 : 130;
     amt += healthBase * Math.sqrt(world) * Math.pow(3.265, world / 2);
@@ -1524,7 +1538,7 @@ function RcalcEnemyBaseHealth(world, level, name) {
     return Math.floor(amt);
 }
 
-function RcalcEnemyHealth(world) {
+export function RcalcEnemyHealth(world) {
     var highest = 1;
     var mute = false;
     var health;
@@ -1597,7 +1611,7 @@ function RcalcEnemyHealth(world) {
     return health;
 }
 
-function RcalcEnemyHealthMod(world, cell, name) {
+export function RcalcEnemyHealthMod(world, cell, name) {
 	
     var highest = 1;
     var mute = false;
@@ -1667,7 +1681,7 @@ function RcalcEnemyHealthMod(world, cell, name) {
     return health;
 }
 
-function RcalcHDratio() {
+export function RcalcHDratio() {
     var ratio = 0;
     var ourBaseDamage = RcalcOurDmg("avg", false, true);
 
@@ -1675,7 +1689,7 @@ function RcalcHDratio() {
     return ratio;
 }
 
-function getTotalHealthMod() {
+export function getTotalHealthMod() {
     var healthMulti = 1;
 
     // Smithies
@@ -1740,7 +1754,7 @@ function getTotalHealthMod() {
     return healthMulti;
 }
 
-function stormdynamicHD() {
+export function stormdynamicHD() {
     var stormzone = 0;
     var stormHD = 0;
     var stormmult = 0;
@@ -1756,7 +1770,7 @@ function stormdynamicHD() {
     return stormHDmult;
 }
 
-function desodynamicHD() {
+export function desodynamicHD() {
     var desozone = 0;
     var desoHD = 0;
     var desomult = 0;
