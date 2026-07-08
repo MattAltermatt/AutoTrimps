@@ -1,7 +1,13 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/scryer.js.
+// Scryer-stance automation (scryingCorruption, readyToSwitch, useScryerStance). 25 game.* touches. Module vars wantToScry/transitionRequired are scryer-internal. No implicit globals.
+import { getPageSetting } from './utils'
+
 var wantToScry = false;
 var transitionRequired = false;
 
-function scryingCorruption() {
+export function scryingCorruption() {
     //Defines if it should be scrying vs corrupted enemies at this moment
     var minZoneOK = game.global.world >= getPageSetting('ScryerMinZone');
     var maxZoneOK = game.global.world < getPageSetting('ScryerMaxZone') || getPageSetting('ScryerMaxZone') < 1;
@@ -12,7 +18,7 @@ function scryingCorruption() {
     return (die || scryCorrupt) && essenceLeft && getPageSetting('UseScryerStance') == true;
 }
 
-function readyToSwitch(stance = "S") {
+export function readyToSwitch(stance = "S") {
     //Suicide to Scry
     var essenceLeft = getPageSetting('screwessence') == false || countRemainingEssenceDrops() >= 1;
     var die = getPageSetting('ScryerDieZ') != -1 && game.global.world >= getPageSetting('ScryerDieZ') && essenceLeft;
@@ -28,7 +34,7 @@ function readyToSwitch(stance = "S") {
     return die || survive(stance, 2);
 }
 
-function useScryerStance() {
+export function useScryerStance() {
     var scry = 4;
     var scryF = 'S';
     var x = 0;

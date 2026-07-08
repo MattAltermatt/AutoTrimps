@@ -17,5 +17,9 @@ import * as jobs from './modules/jobs'
 import * as upgrades from './modules/upgrades'
 import * as gather from './modules/gather'
 import * as heirlooms from './modules/heirlooms'
+import * as fight from './modules/fight'
+import * as scryer from './modules/scryer'
+import * as ab from './modules/ab'
+import * as MAZ from './modules/MAZ'
 
-Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms })
+Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ })

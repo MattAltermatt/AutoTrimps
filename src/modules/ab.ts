@@ -1,6 +1,12 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/ab.js.
+// AutoBattle (U2) preset/dust/farm automation + solver. contractVoid left bare (resolves to the var declared in still-legacy mapfunctions.js, read at runtime). No other implicit globals.
+import { getPageSetting, setPageSetting } from './utils'
+
 //AB
 
-function getCurrentAB(effect) {
+export function getCurrentAB(effect) {
 
     if (effect == false) {
       return autoBattle.enemyLevel;
@@ -27,7 +33,7 @@ function getCurrentAB(effect) {
     }
 };
 
-function checkPreset(presetSlot) {
+export function checkPreset(presetSlot) {
 
     for (var item in autoBattle.items) {
         if (autoBattle.items[item].equipped && autoBattle.presets["p" + presetSlot].indexOf(item) == -1) {
@@ -37,7 +43,7 @@ function checkPreset(presetSlot) {
     return true;
 }
 
-function ABcheck() {
+export function ABcheck() {
 
     var winning = autoBattle.sessionEnemiesKilled >= autoBattle.sessionTrimpsKilled;
 
@@ -71,7 +77,7 @@ function ABcheck() {
     }
 }
 
-function ABswitch() {
+export function ABswitch() {
 
     if (ABcheck() > 0) {
         if (ABcheck() == 1) autoBattle.loadPreset('p1');
@@ -80,7 +86,7 @@ function ABswitch() {
     }
 }
 
-function ABdustsimple() {
+export function ABdustsimple() {
     
     var equips = [];
     
@@ -97,7 +103,7 @@ function ABdustsimple() {
     if (autoBattle.dust >= equips[0][1]) autoBattle.upgrade(equips[0][0]);
 }
 
-function ABdustsimplenonhid() {
+export function ABdustsimplenonhid() {
     
     var equips = [];
     
@@ -114,7 +120,7 @@ function ABdustsimplenonhid() {
     if (autoBattle.dust >= equips[0][1]) autoBattle.upgrade(equips[0][0]);
 }
 
-function ABfarmsave() {
+export function ABfarmsave() {
 
     var equips = [];
     
@@ -139,7 +145,7 @@ function ABfarmsave() {
     }
 }
 
-function ABfarmswitch() {
+export function ABfarmswitch() {
 
     if (autoBattle.enemyLevel != getPageSetting('RABfarmstring')[0]) {
         autoBattle.enemyLevel = getPageSetting('RABfarmstring')[0];
@@ -171,14 +177,14 @@ function ABfarmswitch() {
     }
 }
 
-function ABlevelswitch(level) {
+export function ABlevelswitch(level) {
     if (autoBattle.enemyLevel != level) {
         autoBattle.enemyLevel = level;
         autoBattle.resetCombat(true);
     }
 }
 
-function ABsolver() {
+export function ABsolver() {
 
     if (autoBattle.autoLevel) autoBattle.toggleAutoLevel();
 

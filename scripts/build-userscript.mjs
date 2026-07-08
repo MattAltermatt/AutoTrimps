@@ -17,12 +17,11 @@ const MANIFEST = [
   // modules/equipment.js, modules/gather.js — converted to src/modules/ (Phase 2)
   'modules/stance.js', 'modules/mapfunctions.js',
   // modules/dynprestige.js, modules/breedtimer.js — converted to src/modules/ (Phase 2)
-  'modules/maps.js', 'modules/fight.js',
-  // modules/nature.js, modules/magmite.js — converted to src/modules/ (Phase 2)
-  'modules/scryer.js', 'modules/other.js',
+  'modules/maps.js',
+  // modules/nature.js, magmite.js, fight.js, scryer.js, ab.js, MAZ.js, fight-info.js — converted to src/modules/ (Phase 2)
+  'modules/other.js',
   // modules/perks.js — converted to src/modules/perks.ts (Phase 2)
-  'modules/fight-info.js', 'modules/performance.js', 'modules/ab.js',
-  'modules/MAZ.js',
+  'modules/performance.js',
   // NOTE: highcharts.js is intentionally NOT bundled — Graphs.js injects Highcharts
   // itself from the CDN at runtime (Graphs.js:177), exactly as the original did.
   // Bundling our local copy too caused a double-define (Highcharts error #16).

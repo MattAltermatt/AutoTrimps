@@ -1,9 +1,15 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/fight.js.
+// Better-auto-fight dispatchers. Registers MODULES["fight"]. trimpsEffectivelyEmployed imported from converted breedtimer; pauseFight/fightManual/challengeActive are game/legacy globals. No shared vars, no implicit globals.
+import { trimpsEffectivelyEmployed } from './breedtimer'
+
 MODULES["fight"] = {};
 MODULES["fight"].breedTimerCutoff1 = 2;
 MODULES["fight"].breedTimerCutoff2 = 0.5;
 MODULES["fight"].enableDebug = true;
 
-function betterAutoFight() {
+export function betterAutoFight() {
     var customVars = MODULES["fight"];
     if (game.global.autoBattle && !game.global.pauseFight)
         pauseFight();
@@ -18,7 +24,7 @@ function betterAutoFight() {
     }
 }
 
-function betterAutoFight3() {
+export function betterAutoFight3() {
     var customVars = MODULES["fight"];
     if (game.global.autoBattle && game.global.pauseFight && !game.global.spireActive)
         pauseFight();

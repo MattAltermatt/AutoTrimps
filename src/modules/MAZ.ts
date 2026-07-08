@@ -1,4 +1,12 @@
-function MAZLookalike(titleText, isItIn, event) {
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/MAZ.js.
+// MAZ (Map At Zone) settings-window builder + preset editor. saveSettings imported from
+// converted utils. Two sloppy-mode implicit globals localized to var (write-only, no external
+// reader): world (a local array accumulator) and lastTooltipTitle. No other seam concerns.
+import { saveSettings } from './utils'
+
+export function MAZLookalike(titleText, isItIn, event) {
 
     var zone;
     var cell;
@@ -284,7 +292,7 @@ function MAZLookalike(titleText, isItIn, event) {
     swapClass('tooltipExtra', 'tooltipExtraLg', elem);
 
     titleText = (titleText) ? titleText : titleText;
-    lastTooltipTitle = titleText;
+    var lastTooltipTitle = titleText;
 
     document.getElementById("tipTitle").innerHTML = titleText;
     document.getElementById("tipText").innerHTML = tooltipText;
@@ -296,7 +304,7 @@ function MAZLookalike(titleText, isItIn, event) {
 
 }
 
-function settingsWindowSave(titleText, reopen) {
+export function settingsWindowSave(titleText, reopen) {
 
     var thisSetting = [];
     var error = "";
@@ -312,7 +320,7 @@ function settingsWindowSave(titleText, reopen) {
         var special;
         var gather;
 
-        world = [0];
+        var world = [0];
         zone = [0];
 
         //Settings
@@ -591,7 +599,7 @@ function settingsWindowSave(titleText, reopen) {
     document.getElementById('tooltipDiv').style.overflowY = '';
 }
 
-function addRow() {
+export function addRow() {
     for (var x = 0; x < 30; x++) {
         var elem = document.getElementById('windowZone' + x);
         if (!elem) continue;
@@ -616,7 +624,7 @@ function addRow() {
     btnElem.style.display = 'none';
 }
 
-function removeRow(index) {
+export function removeRow(index) {
     var elem = document.getElementById('windowRow' + index);
     if (!elem) return;
     document.getElementById('windowZone' + index).value = -1;
@@ -625,6 +633,6 @@ function removeRow(index) {
     btnElem.style.display = 'inline-block';
 }
 
-function updateWindowPreset(index) {
+export function updateWindowPreset(index) {
     var special = document.getElementById('windowSpecial' + index);
 }

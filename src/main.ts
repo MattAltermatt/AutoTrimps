@@ -10,5 +10,9 @@ import './legacy-bridge'
 // executes before this line.) Matches the original load order: perks ran after utils, before
 // SettingsGUI. Side-effect import only.
 import './modules/perks'
+// fight-info is a self-contained IIFE registering MODULES.fightinfo (no exports). Its
+// load-time code only touches game DOM + MODULES, so ordering is not critical, but it lives
+// here with the other side-effect-only converted modules.
+import './modules/fight-info'
 
 console.log('[AutoTrimps] modern build booted')
