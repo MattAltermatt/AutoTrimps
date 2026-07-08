@@ -16,5 +16,9 @@ import './modules/perks'
 import './modules/fight-info'
 // performance is a self-contained IIFE registering MODULES.performance (no exports). Side-effect import.
 import './modules/performance'
+// settings-boot runs the settings-UI load-time self-invocations (automationMenuInit → …Tabs →
+// …Settings) that legacy/SettingsGUI.js used to run in the concat tail. Imported LAST so the
+// bridge has already published settings-engine/menu/visibility/defs. Side-effect import only.
+import './modules/settings-boot'
 
 console.log('[AutoTrimps] modern build booted')

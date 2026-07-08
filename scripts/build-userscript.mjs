@@ -13,14 +13,17 @@ const MANIFEST = [
   // modules/utils.js — converted to src/modules/utils.ts (Phase 1); published via legacy-bridge.
   // modules/calc.js — converted to src/modules/calc.ts (Phase 2)
   // ✅ ALL legacy/modules/*.js converted to src/modules/*.ts (Phase 2 complete).
+  // ✅ SettingsGUI.js decomposed to src/modules/settings-{engine,menu,visibility,defs,boot}.ts
+  //    (Phase UI, #20); nuloom relocated to heirlooms.ts. Published via src/legacy-bridge.ts;
+  //    load-time self-invocations run from src/modules/settings-boot.ts (imported last in main.ts).
   // Published via src/legacy-bridge.ts (+ side-effect imports in main.ts for perks/fight-info/
-  // performance). Only AutoTrimps2.js + the top-level UI/graphs files remain legacy below.
+  // performance/settings-boot). Only AutoTrimps2.js + Graphs.js remain legacy below.
   // NOTE: highcharts.js is intentionally NOT bundled — Graphs.js injects Highcharts
   // itself from the CDN at runtime (Graphs.js:177), exactly as the original did.
   // Bundling our local copy too caused a double-define (Highcharts error #16).
   // Vendoring Highcharts self-contained (and neutering that CDN inject) is deferred
   // to the later Graphs modernization phase.
-  'SettingsGUI.js', 'Graphs.js',
+  'Graphs.js',
 ]
 
 function header(version) {
