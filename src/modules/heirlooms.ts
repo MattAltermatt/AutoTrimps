@@ -1,13 +1,26 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/heirlooms.js.
+// Heirloom evaluation / auto-swap / nullifium spend (U1 + U2 radon R* family). 72 game.*
+// touches, @ts-nocheck. getPageSetting imported from converted utils. Seam notes:
+//   - 14 for(loom of ...) loops had an undeclared loop var (sloppy-mode implicit global);
+//     localized to for(var loom of ...) to avoid a strict-mode ReferenceError.
+//   - gammaBurstPct + shieldEquipped are bare-written (HeirloomShieldSwapped) but resolve
+//     to the globals created at AutoTrimps2.js top level (loads first) — left bare.
+//   - top-level DOM code appends heirloom buttons to static index.html elements (safe at
+//     the early src slot). animated/worth3/hrlmProtBtn* module vars are heirlooms-internal.
+import { getPageSetting } from './utils'
+
 var animated = (game.options.menu.showHeirloomAnimations.enabled) ? "animated " : "";
 var hrlmProtBtn1=document.createElement('DIV');hrlmProtBtn1.setAttribute('class','noselect heirloomBtnActive heirBtn'),hrlmProtBtn1.setAttribute('onclick','protectHeirloom(this, true)'),hrlmProtBtn1.innerHTML='Protect/Unprotect',hrlmProtBtn1.id='protectHeirloomBTN1';var hrlmProtBtn2=document.createElement('DIV');hrlmProtBtn2.setAttribute('class','noselect heirloomBtnActive heirBtn'),hrlmProtBtn2.setAttribute('onclick','protectHeirloom(this, true)'),hrlmProtBtn2.innerHTML='Protect/Unprotect',hrlmProtBtn2.id='protectHeirloomBTN2';var hrlmProtBtn3=document.createElement('DIV');hrlmProtBtn3.setAttribute('class','noselect heirloomBtnActive heirBtn'),hrlmProtBtn3.setAttribute('onclick','protectHeirloom(this, true)'),hrlmProtBtn3.innerHTML='Protect/Unprotect',hrlmProtBtn3.id='protectHeirloomBTN3',document.getElementById('equippedHeirloomsBtnGroup').appendChild(hrlmProtBtn1),document.getElementById('carriedHeirloomsBtnGroup').appendChild(hrlmProtBtn2),document.getElementById('extraHeirloomsBtnGroup').appendChild(hrlmProtBtn3);
-function protectHeirloom(a,b){var c=game.global.selectedHeirloom,d=c[1],e=game.global[d];if(-1!=c[0])var e=e[c[0]];b&&(e.protected=!e.protected),a||(d.includes("Equipped")?a=document.getElementById("protectHeirloomBTN1"):"heirloomsCarried"==d?a=document.getElementById("protectHeirloomBTN2"):"heirloomsExtra"==d&&(a=document.getElementById("protectHeirloomBTN3"))),a&&(a.innerHTML=e.protected?"UnProtect":"Protect")}
-function newSelectHeirloom(a,b,c){selectHeirloom(a,b,c),protectHeirloom()}
-function highdmgshield(){for(loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('highdmg'))return loom;}
-function lowdmgshield(){for(loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('lowdmg'))return loom;}
-function dhighdmgshield(){for(loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('dhighdmg'))return loom;}
-function dlowdmgshield(){for(loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('dlowdmg'))return loom;}
+export function protectHeirloom(a,b){var c=game.global.selectedHeirloom,d=c[1],e=game.global[d];if(-1!=c[0])var e=e[c[0]];b&&(e.protected=!e.protected),a||(d.includes("Equipped")?a=document.getElementById("protectHeirloomBTN1"):"heirloomsCarried"==d?a=document.getElementById("protectHeirloomBTN2"):"heirloomsExtra"==d&&(a=document.getElementById("protectHeirloomBTN3"))),a&&(a.innerHTML=e.protected?"UnProtect":"Protect")}
+export function newSelectHeirloom(a,b,c){selectHeirloom(a,b,c),protectHeirloom()}
+export function highdmgshield(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('highdmg'))return loom;}
+export function lowdmgshield(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('lowdmg'))return loom;}
+export function dhighdmgshield(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('dhighdmg'))return loom;}
+export function dlowdmgshield(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('dlowdmg'))return loom;}
 
-function getHeirloomEff(name, type) {
+export function getHeirloomEff(name, type) {
   if (type == "staff") {
     if (getPageSetting('slot1modst') == name) return 5;
     else if (getPageSetting('slot2modst') == name) return 5;
@@ -37,7 +50,7 @@ function getHeirloomEff(name, type) {
   }
 }
 
-function evaluateHeirloomMods2(loom, location) {
+export function evaluateHeirloomMods2(loom, location) {
 
   var index = loom;
   var eff = 0;
@@ -99,7 +112,7 @@ function evaluateHeirloomMods2(loom, location) {
 }
 
 var worth3 = {'Shield': [], 'Staff': [], 'Core': []};
-function worthOfHeirlooms3(){
+export function worthOfHeirlooms3(){
     worth3 = {'Shield': [], 'Staff': [], 'Core': []};
     for (var index in game.global.heirloomsExtra) {
         var theLoom = game.global.heirloomsExtra[index];
@@ -112,7 +125,7 @@ function worthOfHeirlooms3(){
     worth3['Core'].sort(valuesort);
 }
 
-function autoheirlooms3() {
+export function autoheirlooms3() {
 
     if(!heirloomsShown && game.global.heirloomsExtra.length > 0){
         var originalLength = game.global.heirloomsCarried.length;
@@ -199,25 +212,25 @@ function autoheirlooms3() {
 
 //Loom Swapping
 
-function lowHeirloom() {
+export function lowHeirloom() {
 	if (lowdmgshield() != undefined && game.global.ShieldEquipped.name != getPageSetting('lowdmg')) {
         selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
         equipHeirloom();
 	}
 }
-function dlowHeirloom() {
+export function dlowHeirloom() {
 	if (dlowdmgshield() != undefined && game.global.ShieldEquipped.name != getPageSetting('dlowdmg')) {
         selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
         equipHeirloom();
 	}
 }
-function highHeirloom() {
+export function highHeirloom() {
 	if (highdmgshield() != undefined && game.global.ShieldEquipped.name != getPageSetting('highdmg')) {
         selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
         equipHeirloom();
 	}
 }
-function dhighHeirloom() {
+export function dhighHeirloom() {
 	if (dhighdmgshield() != undefined && game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {
         selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
         equipHeirloom();
@@ -226,7 +239,7 @@ function dhighHeirloom() {
 
 //Nu
 
-function calcLoomNu(slot) {
+export function calcLoomNu(slot) {
 	nuloom();
 	var heirloom = getSelectedHeirloom();
 	var tot = 0;
@@ -238,7 +251,7 @@ function calcLoomNu(slot) {
 	return result;
 }
 
-function calcLoomNuInfinity(slot) {
+export function calcLoomNuInfinity(slot) {
 	nuloom();
 	var heirloom = getSelectedHeirloom();
 	if (Math.ceil(getModUpgradeCost(heirloom, slot, 1)) != "Infinity") {
@@ -248,7 +261,7 @@ function calcLoomNuInfinity(slot) {
 	}
 }
 
-function calcAutoNuRatio(slot) {
+export function calcAutoNuRatio(slot) {
 	nuloom();
 	var heirloom = getSelectedHeirloom();
 	
@@ -321,7 +334,7 @@ function calcAutoNuRatio(slot) {
 		return 150;
 }
 
-function nuRatio() {
+export function nuRatio() {
 
     //Find Nu Ratio
     var slot1, slot1r, slot2, slot2r, slot3, slot3r, slot4, slot4r, slot5, slot6, slot5r, slot6r, slot1spend, slot1spendr, slot2spend, slot2spendr, slot3spend, slot3spendr, slot4spend, slot4spendr, slot5spend, slot5spendr, slot6spend, slot6spendr;
@@ -417,7 +430,7 @@ function nuRatio() {
 	return 5;
 }
 
-function spendNu() {
+export function spendNu() {
 	nuloom();
 	var slot = nuRatio();
 	if (game.global.nullifium >= (getModUpgradeCost(getSelectedHeirloom(), slot, 1))) {
@@ -426,7 +439,7 @@ function spendNu() {
 	}
 }
 
-function generateHeirloomIcon(heirloom, location, number){
+export function generateHeirloomIcon(heirloom, location, number){
     if (typeof heirloom.name === 'undefined') return "<span class='icomoon icon-sad3'></span>";
     var icon = getHeirloomIcon(heirloom);
     var animated = (game.options.menu.showHeirloomAnimations.enabled) ? "animated " : "";
@@ -441,81 +454,81 @@ function generateHeirloomIcon(heirloom, location, number){
 }
 
 //Radon
-function Rhsshield1(){for(loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rhs1'))return loom;}
-function Rhsshield2(){for(loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rhs2'))return loom;}
-function Rdhsshield1(){for(loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rdhs1'))return loom;}
-function Rdhsshield2(){for(loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rdhs2'))return loom;}
-function Rhsworldstaff(){for(loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rhsworldstaff'))return loom;}
-function Rhsmapstaff(){for(loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rhsmapstaff'))return loom;}
-function Rhstributestaff(){for(loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rhstributestaff'))return loom;}
-function Rdhsworldstaff(){for(loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rdhsworldstaff'))return loom;}
-function Rdhsmapstaff(){for(loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rdhsmapstaff'))return loom;}
-function Rdhstributestaff(){for(loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rdhstributestaff'))return loom;}
+export function Rhsshield1(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rhs1'))return loom;}
+export function Rhsshield2(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rhs2'))return loom;}
+export function Rdhsshield1(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rdhs1'))return loom;}
+export function Rdhsshield2(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rdhs2'))return loom;}
+export function Rhsworldstaff(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rhsworldstaff'))return loom;}
+export function Rhsmapstaff(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rhsmapstaff'))return loom;}
+export function Rhstributestaff(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rhstributestaff'))return loom;}
+export function Rdhsworldstaff(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rdhsworldstaff'))return loom;}
+export function Rdhsmapstaff(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rdhsmapstaff'))return loom;}
+export function Rdhstributestaff(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('Rdhstributestaff'))return loom;}
 
-function Rhsequip1() {
+export function Rhsequip1() {
 	if (Rhsshield1() != "undefined" && game.global.ShieldEquipped.name != getPageSetting('Rhs1')) {
 		selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
 		equipHeirloom();
 	}
 }
-function Rhsequip2() {
+export function Rhsequip2() {
 	if (Rhsshield2() != "undefined" && game.global.ShieldEquipped.name != getPageSetting('Rhs2')) {
 		selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
 		equipHeirloom();
 	}
 }
-function Rdhsequip1() {
+export function Rdhsequip1() {
 	if (Rdhsshield1() != "undefined" && game.global.ShieldEquipped.name != getPageSetting('Rdhs1')) {
 		selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
 		equipHeirloom();
 	}
 }
-function Rdhsequip2() {
+export function Rdhsequip2() {
 	if (Rdhsshield2() != "undefined" && game.global.ShieldEquipped.name != getPageSetting('Rdhs2')) {
 		selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
 		equipHeirloom();
 	}
 }
-function Rhsworldstaffequip() {
+export function Rhsworldstaffequip() {
 	if (Rhsworldstaff() != "undefined" && game.global.StaffEquipped.name != getPageSetting('Rhsworldstaff')) {
 		selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
 		equipHeirloom();
 	}
 }
-function Rhsmapstaffequip() {
+export function Rhsmapstaffequip() {
 	if (Rhsmapstaff() != "undefined" && game.global.StaffEquipped.name != getPageSetting('Rhsmapstaff')) {
 		selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
 		equipHeirloom();
 	}
 }
 
-function Rhstributestaffequip() {
+export function Rhstributestaffequip() {
 	if (Rhstributestaff() != "undefined" && game.global.StaffEquipped.name != getPageSetting('Rhstributestaff')) {
 		selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
 		equipHeirloom();
 	}
 }
-function Rdhsworldstaffequip() {
+export function Rdhsworldstaffequip() {
 	if (Rdhsworldstaff() != "undefined" && game.global.StaffEquipped.name != getPageSetting('Rdhsworldstaff')) {
 		selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
 		equipHeirloom();
 	}
 }
-function Rdhsmapstaffequip() {
+export function Rdhsmapstaffequip() {
 	if (Rdhsmapstaff() != "undefined" && game.global.StaffEquipped.name != getPageSetting('Rdhsmapstaff')) {
 		selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
 		equipHeirloom();
 	}
 }
 
-function Rdhstributestaffequip() {
+export function Rdhstributestaffequip() {
 	if (Rdhstributestaff() != "undefined" && game.global.StaffEquipped.name != getPageSetting('Rdhstributestaff')) {
 		selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
 		equipHeirloom();
 	}
 }
 
-function Rheirloomswap() {
+export function Rheirloomswap() {
 	
 	//Swapping Shields
 	if (getPageSetting('Rhsshield') != false) {
@@ -540,7 +553,7 @@ function Rheirloomswap() {
 	}
 }
 
-function Rdheirloomswap() {
+export function Rdheirloomswap() {
 	
 	//Swapping Shields
 	if (getPageSetting('Rdhsshield') != false) {
@@ -565,7 +578,7 @@ function Rdheirloomswap() {
 	}
 }
 
-function HeirloomShieldSwapped() {
+export function HeirloomShieldSwapped() {
 	if (!game.global.ShieldEquipped.rarity >= 10) return;
 	gammaBurstPct = (getHeirloomBonus("Shield", "gammaBurst") / 100) > 0 ? (getHeirloomBonus("Shield", "gammaBurst") / 100) : 1;
 	shieldEquipped = game.global.ShieldEquipped.id;
