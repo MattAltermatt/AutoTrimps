@@ -12,15 +12,9 @@ const MANIFEST = [
   'AutoTrimps2.js',
   // modules/utils.js — converted to src/modules/utils.ts (Phase 1); published via legacy-bridge.
   // modules/calc.js — converted to src/modules/calc.ts (Phase 2)
-  'modules/import-export.js', 'modules/query.js', 'modules/portal.js',
-  // modules/buildings.js, jobs.js, upgrades.js, heirlooms.js — converted to src/modules/ (Phase 2)
-  // modules/equipment.js, modules/gather.js — converted to src/modules/ (Phase 2)
-  // modules/stance.js, mapfunctions.js — converted to src/modules/ (Phase 2)
-  // modules/dynprestige.js, modules/breedtimer.js — converted to src/modules/ (Phase 2)
-  // modules/nature.js, magmite.js, fight.js, scryer.js, ab.js, MAZ.js, fight-info.js, maps.js — converted to src/modules/ (Phase 2)
-  'modules/other.js',
-  // modules/perks.js — converted to src/modules/perks.ts (Phase 2)
-  'modules/performance.js',
+  // ✅ ALL legacy/modules/*.js converted to src/modules/*.ts (Phase 2 complete).
+  // Published via src/legacy-bridge.ts (+ side-effect imports in main.ts for perks/fight-info/
+  // performance). Only AutoTrimps2.js + the top-level UI/graphs files remain legacy below.
   // NOTE: highcharts.js is intentionally NOT bundled — Graphs.js injects Highcharts
   // itself from the CDN at runtime (Graphs.js:177), exactly as the original did.
   // Bundling our local copy too caused a double-define (Highcharts error #16).

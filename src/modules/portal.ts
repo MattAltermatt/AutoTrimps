@@ -1,10 +1,21 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/portal.js.
+// Auto-portal / helium-per-hour logic. Registers MODULES["portal"]. getPageSetting/debug from
+// converted utils (portal.js line 4 reads getPageSetting at load — now imported, resolves).
+// zonePostpone -> globalThis (read by AutoTrimps2); challengeSquaredMode declared module-level
+// (was a sloppy implicit global, portal-internal). portalzone/Rportalzone/RzonePostpone stay
+// module vars (internal). AutoPerks.clickAllocate() etc. resolve via the bridge at runtime.
+import { getPageSetting, debug } from './utils'
+
 MODULES["portal"] = {};
+var challengeSquaredMode;
 MODULES["portal"].timeout = 5000;
 MODULES["portal"].bufferExceedFactor = 5;
 var portalzone = getPageSetting('CustomAutoPortal');
-var zonePostpone = 0;
+globalThis.zonePostpone = 0;
 
-function autoPortal() {
+export function autoPortal() {
     if (!game.global.portalActive) return;
     switch (autoTrimpSettings.AutoPortal.selected) {
         case "Helium Per Hour":
@@ -75,7 +86,7 @@ function autoPortal() {
     }
 }
 
-function dailyAutoPortal() {
+export function dailyAutoPortal() {
     if (!game.global.portalActive) return;
     if (getPageSetting('AutoPortalDaily') == 1) {
         var OKtoPortal = false;
@@ -135,7 +146,7 @@ function dailyAutoPortal() {
     }
 }
 
-function c2runnerportal() {
+export function c2runnerportal() {
             if (game.global.world > getPageSetting('c2runnerportal')) {
                 if (game.global.runningChallengeSquared)
                     abandonChallenge();
@@ -146,7 +157,7 @@ function c2runnerportal() {
             }
 }
 
-function c2runner() {
+export function c2runner() {
    
 if (!game.global.portalActive) return;
     if (getPageSetting('c2runnerstart') == true && getPageSetting('c2runnerportal') > 0 && getPageSetting('c2runnerpercent') > 0) {
@@ -208,7 +219,7 @@ if (!game.global.portalActive) return;
     }
 }
 
-function doPortal(challenge) {
+export function doPortal(challenge) {
     var c2done = true;
     if(!game.global.portalActive) return;
     if (getPageSetting('spendmagmite')==1) {
@@ -286,8 +297,8 @@ function doPortal(challenge) {
     lastHeliumZone = 0; zonePostpone = 0;
 }
 
-function finishChallengeSquared(){var a=getPageSetting("FinishC2");game.global.world>=a&&(abandonChallenge(),debug("Finished challenge2 because we are on zone "+game.global.world,"other","oil"))}
-function findOutCurrentPortalLevel(){var a=-1,b=!1,d=getPageSetting("AutoPortal");switch(d){case"Off":break;case"Custom":"Daily"!=game.global.challengeActive&&(a=getPageSetting("CustomAutoPortal")+1),"Daily"==game.global.challengeActive&&(a=getPageSetting("Dailyportal")+1),b=!("Lead"!=getPageSetting("HeliumHourChallenge"));break;default:var e={Balance:41,Decay:56,Electricity:82,Crushed:126,Nom:146,Toxicity:166,Lead:181,Watch:181,Corrupted:191}[d];e&&(a=e);}return{level:a,lead:b}}
+export function finishChallengeSquared(){var a=getPageSetting("FinishC2");game.global.world>=a&&(abandonChallenge(),debug("Finished challenge2 because we are on zone "+game.global.world,"other","oil"))}
+export function findOutCurrentPortalLevel(){var a=-1,b=!1,d=getPageSetting("AutoPortal");switch(d){case"Off":break;case"Custom":"Daily"!=game.global.challengeActive&&(a=getPageSetting("CustomAutoPortal")+1),"Daily"==game.global.challengeActive&&(a=getPageSetting("Dailyportal")+1),b=!("Lead"!=getPageSetting("HeliumHourChallenge"));break;default:var e={Balance:41,Decay:56,Electricity:82,Crushed:126,Nom:146,Toxicity:166,Lead:181,Watch:181,Corrupted:191}[d];e&&(a=e);}return{level:a,lead:b}}
 
 //Radon
 
@@ -296,7 +307,7 @@ MODULES["portal"].RbufferExceedFactor = 5;
 var Rportalzone = getPageSetting('RCustomAutoPortal');
 var RzonePostpone = 0;
 
-function RautoPortal() {
+export function RautoPortal() {
     if (!game.global.portalActive) return;
     switch (autoTrimpSettings.RAutoPortal.selected) {
         case "Radon Per Hour":
@@ -362,7 +373,7 @@ function RautoPortal() {
     }
 }
 
-function RdailyAutoPortal() {
+export function RdailyAutoPortal() {
     if (!game.global.portalActive) return;
     if (getPageSetting('RAutoPortalDaily') == 1) {
         var OKtoPortal = false;
@@ -423,7 +434,7 @@ function RdailyAutoPortal() {
     }
 }
 
-function RdoPortal(challenge) {
+export function RdoPortal(challenge) {
     if(!game.global.portalActive) return;
     if (getPageSetting('autoheirlooms') == true && getPageSetting('typetokeep') != 'None' && getPageSetting('raretokeep') != 'None') {
 	autoheirlooms3();
@@ -505,7 +516,7 @@ function RdoPortal(challenge) {
     RresetVars();
 }
 
-function isNextU1DailyWind() {
+export function isNextU1DailyWind() {
     var currWindCost = game.empowerments.Wind.nextUberCost;
     var windCostChange = Math.max(currWindCost*.33,50);
     var nextWindCost = currWindCost - (windCostChange < 100 ? windCostChange : 100);

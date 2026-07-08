@@ -14,7 +14,7 @@ describe('buildUserscript', () => {
     expect(out).toContain('function loadPageVariables') // from src IIFE, not legacy concat
     expect(out).toContain('Object.assign(globalThis') // the seam bridge is bundled
     expect(out).toContain('function mainLoop') // AutoTrimps2.js
-    expect(out).toContain('MAZ') // last module in the manifest
+    expect(out).toContain('MODULES["portal"]') // portal now a converted src module (Phase 2)
 
     // src IIFE bundled and appended
     expect(out).toContain('[AutoTrimps] modern build booted')
@@ -23,15 +23,15 @@ describe('buildUserscript', () => {
     expect(out).not.toContain('Quiaaaa.github.io') // remote Graphs inject removed (T3)
     expect(out).not.toContain('basepath + pathname + modulename') // ATscriptLoad body gone (T1)
 
-    // Seam ordering (Phase 1): the converted-modules bridge must publish BEFORE any
-    // still-legacy module that calls a converted function at load time. portal.js's
-    // top-level `getPageSetting('CustomAutoPortal')` is the canonical case — emitting
-    // the src bundle last throws ReferenceError and halts the whole script. Guard it.
-    const at2Idx = out.indexOf('function mainLoop') // AutoTrimps2.js sentinel
-    const bridgeIdx = out.indexOf('Object.assign(globalThis') // the seam publish
-    const portalIdx = out.indexOf('MODULES["portal"]') // portal.js (loads after src)
+    // Seam ordering: the converted-modules bridge must publish BEFORE any still-legacy file
+    // that calls a converted function at load time. ALL legacy/modules/*.js are now converted
+    // (Phase 2 complete); the remaining legacy files are AutoTrimps2.js (first) + SettingsGUI.js
+    // / Graphs.js (last). The src bundle must sit after AutoTrimps2.js but before SettingsGUI.js.
+    const at2Idx = out.indexOf('/* ===== legacy/AutoTrimps2.js') // first legacy file
+    const bridgeIdx = out.indexOf('Object.assign(globalThis') // the seam publish (src bundle)
+    const settingsIdx = out.indexOf('/* ===== legacy/SettingsGUI.js') // still-legacy, after src
     expect(at2Idx).toBeGreaterThanOrEqual(0)
     expect(bridgeIdx).toBeGreaterThan(at2Idx) // src bundle emitted after AutoTrimps2.js
-    expect(portalIdx).toBeGreaterThan(bridgeIdx) // ...but before portal.js and the rest
+    expect(settingsIdx).toBeGreaterThan(bridgeIdx) // ...but before the remaining legacy files
   })
 })

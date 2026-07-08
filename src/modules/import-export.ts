@@ -1,6 +1,12 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/import-export.js.
+// Settings import/export + profile GUI. Registers MODULES[import-export]. $settingsProfiles internal; ATrunning/script resolve to AutoTrimps2 globals.
+import { debug, safeSetItems, saveSettings } from './utils'
+
 MODULES["import-export"] = {};
 var $settingsProfiles;
-function settingsProfileMakeGUI() {
+export function settingsProfileMakeGUI() {
     var $settingsProfilesLabel = document.createElement("Label");
     $settingsProfilesLabel.id = 'settingsProfiles Label';
     $settingsProfilesLabel.innerHTML = "Settings Profile: ";
@@ -38,7 +44,7 @@ function settingsProfileMakeGUI() {
 }   //self-executes at the bottom of the file.
 
 //Populate dropdown menu with list of AT SettingsProfiles
-function initializeSettingsProfiles() {
+export function initializeSettingsProfiles() {
     if ($settingsProfiles == null) return;
     //load the old data in:
     var loadLastProfiles = localStorage.getItem('ATSelectedSettingsProfile');
@@ -55,7 +61,7 @@ function initializeSettingsProfiles() {
 //This switches into the new profile when the dropdown is selected.
 //it is the "onchange" handler of the settingsProfiles dropdown
 //Asks them do a confirmation check tooltip first. The
-function settingsProfileDropdownHandler() {
+export function settingsProfileDropdownHandler() {
     if ($settingsProfiles == null) return;
     var index = $settingsProfiles.selectedIndex;
     var id = $settingsProfiles.options[index].id;
@@ -80,7 +86,7 @@ function settingsProfileDropdownHandler() {
     return;
 }
 
-function confirmedSwitchNow() {
+export function confirmedSwitchNow() {
     if ($settingsProfiles == null) return;
     var index = $settingsProfiles.selectedIndex;
     var profname = $settingsProfiles.options[index].text;
@@ -98,7 +104,7 @@ function confirmedSwitchNow() {
 }
 
 //called by ImportExportTooltip('NameSettingsProfiles')
-function nameAndSaveNewProfile() {
+export function nameAndSaveNewProfile() {
     //read the name in from tooltip
     try {
         var profname = document.getElementById("setSettingsNameTooltip").value.replace(/[\n\r]/gm, "");
@@ -132,11 +138,11 @@ function nameAndSaveNewProfile() {
 }
 
 //event handler for profile delete button - confirmation check tooltip
-function onDeleteProfileHandler() {
+export function onDeleteProfileHandler() {
     ImportExportTooltip('DeleteSettingsProfiles');  //calls a tooltip then onDeleteProfile() below
 }
 //Delete Profile runs after.
-function onDeleteProfile() {
+export function onDeleteProfile() {
     if ($settingsProfiles == null) return;
     var index = $settingsProfiles.selectedIndex;
     //Remove the option
@@ -153,7 +159,7 @@ function onDeleteProfile() {
     debug("Successfully deleted profile #: " + target, "profile");
 }
 
-function ImportExportTooltip(what, event) {
+export function ImportExportTooltip(what, event) {
     if (game.global.lockTooltip)
         return;
     var $elem = document.getElementById("tooltipDiv");
@@ -881,12 +887,12 @@ function ImportExportTooltip(what, event) {
         ondisplay();
 }
 
-function resetAutoTrimps(a,b){ATrunning=!1,setTimeout(function(d){localStorage.removeItem("autoTrimpSettings"),autoTrimpSettings=d?d:{};var e=document.getElementById("settingsRow");e.removeChild(document.getElementById("autoSettings")),e.removeChild(document.getElementById("autoTrimpsTabBarMenu")),automationMenuSettingsInit(),initializeAllTabs(),initializeAllSettings(),initializeSettingsProfiles(),updateCustomButtons(),saveSettings(),checkPortalSettings(),ATrunning=!0}(a),101),a?(debug("Successfully imported new AT settings...","profile"),b?ImportExportTooltip("message","Successfully Imported Autotrimps Settings File!: "+b):ImportExportTooltip("NameSettingsProfiles")):(debug("Successfully reset AT settings to Defaults...","profile"),ImportExportTooltip("message","Autotrimps has been successfully reset to its defaults!"))}
-function loadAutoTrimps(){try{var a=document.getElementById("importBox").value.replace(/[\n\r]/gm,""),b=JSON.parse(a);if(null==b)return void debug("Error importing AT settings, the string is empty.","profile")}catch(c){return void debug("Error importing AT settings, the string is bad."+c.message,"profile")}debug("Importing new AT settings file...","profile"),resetAutoTrimps(b)}
-function cleanupAutoTrimps(){for(var a in autoTrimpSettings){var b=document.getElementById(autoTrimpSettings[a].id);null==b&&delete autoTrimpSettings[a]}}
-function exportModuleVars(){return JSON.stringify(compareModuleVars())}
+export function resetAutoTrimps(a,b){ATrunning=!1,setTimeout(function(d){localStorage.removeItem("autoTrimpSettings"),autoTrimpSettings=d?d:{};var e=document.getElementById("settingsRow");e.removeChild(document.getElementById("autoSettings")),e.removeChild(document.getElementById("autoTrimpsTabBarMenu")),automationMenuSettingsInit(),initializeAllTabs(),initializeAllSettings(),initializeSettingsProfiles(),updateCustomButtons(),saveSettings(),checkPortalSettings(),ATrunning=!0}(a),101),a?(debug("Successfully imported new AT settings...","profile"),b?ImportExportTooltip("message","Successfully Imported Autotrimps Settings File!: "+b):ImportExportTooltip("NameSettingsProfiles")):(debug("Successfully reset AT settings to Defaults...","profile"),ImportExportTooltip("message","Autotrimps has been successfully reset to its defaults!"))}
+export function loadAutoTrimps(){try{var a=document.getElementById("importBox").value.replace(/[\n\r]/gm,""),b=JSON.parse(a);if(null==b)return void debug("Error importing AT settings, the string is empty.","profile")}catch(c){return void debug("Error importing AT settings, the string is bad."+c.message,"profile")}debug("Importing new AT settings file...","profile"),resetAutoTrimps(b)}
+export function cleanupAutoTrimps(){for(var a in autoTrimpSettings){var b=document.getElementById(autoTrimpSettings[a].id);null==b&&delete autoTrimpSettings[a]}}
+export function exportModuleVars(){return JSON.stringify(compareModuleVars())}
 
-function compareModuleVars() {
+export function compareModuleVars() {
     var diffs = {};
     var mods = Object.keys(MODULES);
     for (var i in mods) {
@@ -906,7 +912,7 @@ function compareModuleVars() {
     return diffs;
 }
 
-function importModuleVars(){try{var thestring=document.getElementById('importBox').value,strarr=thestring.split(/\n/);for(var line in strarr){var s=strarr[line];s=s.substring(0,s.indexOf(';')+1),s=s.replace(/\s/g,''),eval(s),strarr[line]=s}var tmpset=compareModuleVars()}catch(a){return void debug('Error importing MODULE vars, the string is bad.'+a.message,'profile')}localStorage.removeItem('storedMODULES'),safeSetItems('storedMODULES',JSON.stringify(tmpset))}
-function resetModuleVars(a){ATrunning=!1,setTimeout(function(){localStorage.removeItem('storedMODULES'),MODULES=JSON.parse(JSON.stringify(MODULESdefault)),safeSetItems('storedMODULES',JSON.stringify(storedMODULES)),ATrunning=!0}(a),101)}
+export function importModuleVars(){try{var thestring=document.getElementById('importBox').value,strarr=thestring.split(/\n/);for(var line in strarr){var s=strarr[line];s=s.substring(0,s.indexOf(';')+1),s=s.replace(/\s/g,''),eval(s),strarr[line]=s}var tmpset=compareModuleVars()}catch(a){return void debug('Error importing MODULE vars, the string is bad.'+a.message,'profile')}localStorage.removeItem('storedMODULES'),safeSetItems('storedMODULES',JSON.stringify(tmpset))}
+export function resetModuleVars(a){ATrunning=!1,setTimeout(function(){localStorage.removeItem('storedMODULES'),MODULES=JSON.parse(JSON.stringify(MODULESdefault)),safeSetItems('storedMODULES',JSON.stringify(storedMODULES)),ATrunning=!0}(a),101)}
 settingsProfileMakeGUI();
 initializeSettingsProfiles();

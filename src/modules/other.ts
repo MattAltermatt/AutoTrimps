@@ -1,25 +1,41 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/other.js.
+// Grab-bag automation: prestige-raid maps, robotrimp, spire, traps, misc (2354L, 62 fns).
+// Registers MODULES["other"]. getPageSetting/debug from converted utils. EVERY top-level var
+// (incl. multi-var blocks) was a global originally and the raid-map families (pMap*/repMap*/
+// mapbought*/...) are read cross-module by maps.ts + mapfunctions.ts, so all are published to
+// globalThis. Top-level implicit globals nextWorld (read by Graphs.js) + trapIndexs also ->
+// globalThis; the two function-internal implicit globals (daily3, praidSetting) inited below.
+import { getPageSetting, debug } from './utils'
+
+globalThis.daily3 = undefined; globalThis.praidSetting = undefined;
+
 MODULES["other"] = {};
 MODULES["other"].enableRoboTrimpSpam = true;
-var prestraid = !1,
-    dprestraid = !1,
-    failpraid = !1,
-    dfailpraid = !1,
-    bwraided = !1,
-    dbwraided = !1,
-    failbwraid = !1,
-    dfailbwraid = !1,
-    perked = !1,
-    prestraidon = !1,
-    dprestraidon = !1,
-    mapbought = !1,
-    dmapbought = !1,
-    bwraidon = !1,
-    dbwraidon = !1,
-    presteps = null,
-    minMaxMapCost, fMap, pMap, shouldFarmFrags = !1,
-    praidDone = !1;
+globalThis.prestraid = !1;
+globalThis.dprestraid = !1;
+globalThis.failpraid = !1;
+globalThis.dfailpraid = !1;
+globalThis.bwraided = !1;
+globalThis.dbwraided = !1;
+globalThis.failbwraid = !1;
+globalThis.dfailbwraid = !1;
+globalThis.perked = !1;
+globalThis.prestraidon = !1;
+globalThis.dprestraidon = !1;
+globalThis.mapbought = !1;
+globalThis.dmapbought = !1;
+globalThis.bwraidon = !1;
+globalThis.dbwraidon = !1;
+globalThis.presteps = null;
+globalThis.minMaxMapCost = undefined;
+globalThis.fMap = undefined;
+globalThis.pMap = undefined;
+globalThis.shouldFarmFrags = !1;
+globalThis.praidDone = !1;
 
-function armydeath() {
+export function armydeath() {
     if (game.global.mapsActive) return !1;
     var e = game.global.lastClearedCell + 1,
         l = game.global.gridArray[e].attack * dailyModifiers.empower.getMult(game.global.dailyChallenge.empower.strength, game.global.dailyChallenge.empower.stacks),
@@ -29,71 +45,71 @@ function armydeath() {
     return 3 == game.global.formation ? g /= 4 : "0" != game.global.formation && (g *= 2), g > game.global.gridArray[e].attack ? l *= getPierceAmt() : l -= g * (1 - getPierceAmt()), "Daily" == game.global.challengeActive && void 0 !== game.global.dailyChallenge.crits && (l *= dailyModifiers.crits.getMult(game.global.dailyChallenge.crits.strength)), void 0 !== game.global.dailyChallenge.bogged && (a -= game.global.soldierHealthMax * dailyModifiers.bogged.getMult(game.global.dailyChallenge.bogged.strength)), void 0 !== game.global.dailyChallenge.plague && (a -= game.global.soldierHealthMax * dailyModifiers.plague.getMult(game.global.dailyChallenge.plague.strength, game.global.dailyChallenge.plague.stacks)), challengeActive("Electricity") && (a -= game.global.soldierHealth -= game.global.soldierHealthMax * (.1 * game.challenges.Electricity.stacks)), "corruptCrit" == game.global.gridArray[e].corrupted ? l *= 5 : "healthyCrit" == game.global.gridArray[e].corrupted ? l *= 7 : "corruptBleed" == game.global.gridArray[e].corrupted ? a *= .8 : "healthyBleed" == game.global.gridArray[e].corrupted && (a *= .7), (a -= l) <= 1e3
 }
 
-function autoRoboTrimp() {
+export function autoRoboTrimp() {
     if (!(0 < game.global.roboTrimpCooldown) && game.global.roboTrimpLevel) {
         var a = parseInt(getPageSetting("AutoRoboTrimp"));
         0 == a || game.global.world >= a && (game.global.world - a) % 5 == 0 && !checkIfLiquidZone() && !game.global.useShriek && (magnetoShriek(), MODULES.other.enableRoboTrimpSpam && debug("Activated Robotrimp MagnetoShriek Ability @ z" + game.global.world, "graphs", "*podcast"))
     }
 }
 
-function isBelowThreshold(a) {
+export function isBelowThreshold(a) {
     return a != game.global.world
 }
 
-function buyWeps() {
+export function buyWeps() {
     if (!((getPageSetting('BuyWeaponsNew') == 1) || (getPageSetting('BuyWeaponsNew') == 3))) return;
     preBuy(), game.global.buyAmt = getPageSetting('gearamounttobuy'), game.equipment.Dagger.level < getPageSetting('CapEquip2') && canAffordBuilding('Dagger', null, null, !0) && buyEquipment('Dagger', !0, !0), game.equipment.Mace.level < getPageSetting('CapEquip2') && canAffordBuilding('Mace', null, null, !0) && buyEquipment('Mace', !0, !0), game.equipment.Polearm.level < getPageSetting('CapEquip2') && canAffordBuilding('Polearm', null, null, !0) && buyEquipment('Polearm', !0, !0), game.equipment.Battleaxe.level < getPageSetting('CapEquip2') && canAffordBuilding('Battleaxe', null, null, !0) && buyEquipment('Battleaxe', !0, !0), game.equipment.Greatsword.level < getPageSetting('CapEquip2') && canAffordBuilding('Greatsword', null, null, !0) && buyEquipment('Greatsword', !0, !0), !game.equipment.Arbalest.locked && game.equipment.Arbalest.level < getPageSetting('CapEquip2') && canAffordBuilding('Arbalest', null, null, !0) && buyEquipment('Arbalest', !0, !0), postBuy()
 }
 
-function buyArms() {
+export function buyArms() {
     if (!((getPageSetting('BuyArmorNew') == 1) || (getPageSetting('BuyArmorNew') == 3))) return;
     preBuy(), game.global.buyAmt = 10, game.equipment.Shield.level < getPageSetting('CapEquiparm') && canAffordBuilding('Shield', null, null, !0) && buyEquipment('Shield', !0, !0), game.equipment.Boots.level < getPageSetting('CapEquiparm') && canAffordBuilding('Boots', null, null, !0) && buyEquipment('Boots', !0, !0), game.equipment.Helmet.level < getPageSetting('CapEquiparm') && canAffordBuilding('Helmet', null, null, !0) && buyEquipment('Helmet', !0, !0), game.equipment.Pants.level < getPageSetting('CapEquiparm') && canAffordBuilding('Pants', null, null, !0) && buyEquipment('Pants', !0, !0), game.equipment.Shoulderguards.level < getPageSetting('CapEquiparm') && canAffordBuilding('Shoulderguards', null, null, !0) && buyEquipment('Shoulderguards', !0, !0), game.equipment.Breastplate.level < getPageSetting('CapEquiparm') && canAffordBuilding('Breastplate', null, null, !0) && buyEquipment('Breastplate', !0, !0), !game.equipment.Gambeson.locked && game.equipment.Gambeson.level < getPageSetting('CapEquiparm') && canAffordBuilding('Gambeson', null, null, !0) && buyEquipment('Gambeson', !0, !0), postBuy()
 }
 
-function isActiveSpireAT() {
+export function isActiveSpireAT() {
     return game.global.challengeActive != 'Daily' && game.global.spireActive && game.global.world >= getPageSetting('IgnoreSpiresUntil')
 }
 
-function disActiveSpireAT() {
+export function disActiveSpireAT() {
     return game.global.challengeActive == 'Daily' && game.global.spireActive && game.global.world >= getPageSetting('dIgnoreSpiresUntil')
 }
 
-function exitSpireCell() {
+export function exitSpireCell() {
     isActiveSpireAT() && game.global.lastClearedCell >= getPageSetting('ExitSpireCell') - 1 && endSpire()
 }
 
-function dailyexitSpireCell() {
+export function dailyexitSpireCell() {
     disActiveSpireAT() && game.global.lastClearedCell >= getPageSetting('dExitSpireCell') - 1 && endSpire()
 }
 
-function plusPres() {
+export function plusPres() {
     document.getElementById("biomeAdvMapsSelect").value = "Random", document.getElementById("advExtraLevelSelect").value = plusMapToRun(game.global.world), document.getElementById("advSpecialSelect").value = "p", document.getElementById("lootAdvMapsRange").value = 0, document.getElementById("difficultyAdvMapsRange").value = 9, document.getElementById("sizeAdvMapsRange").value = 9, document.getElementById("advPerfectCheckbox").checked = !1, document.getElementById("mapLevelInput").value = game.global.world, updateMapCost()
 }
 
-function plusMapToRun(a) {
+export function plusMapToRun(a) {
     return 9 == a % 10 ? 6 : 5 > a % 10 ? 5 - a % 10 : 11 - a % 10
 }
 
-function findLastBionic() {
+export function findLastBionic() {
     for (var a = game.global.mapsOwnedArray.length - 1; 0 <= a; a--)
         if ("Bionic" === game.global.mapsOwnedArray[a].location) return game.global.mapsOwnedArray[a]
 }
 
-function helptrimpsnotdie() {
+export function helptrimpsnotdie() {
     if (!game.global.preMapsActive && !game.global.fighting) buyArms();
 }
 
-function usedaily3() {
+export function usedaily3() {
     !0 != getPageSetting('use3daily') || 'Daily' != game.global.challengeActive || daily3 || (daily3 = !0), !1 == getPageSetting('use3daily') && 'Daily' != game.global.challengeActive && daily3 && (daily3 = !1), !0 == getPageSetting('use3daily') && 'Daily' != game.global.challengeActive && daily3 && (daily3 = !1)
 }
 
-function buyshitspire() {
+export function buyshitspire() {
     !0 == getPageSetting('spireshitbuy') && game.global.spireActive && game.global.world >= getPageSetting('IgnoreSpiresUntil') && (buyWeps(), buyArms())
 }
 
 //Helium
 
-function autoGoldenUpgradesAT(setting) {
+export function autoGoldenUpgradesAT(setting) {
     var num = getAvailableGoldenUpgrades();
     var setting2;
     if (num == 0) return;
@@ -121,7 +137,7 @@ function autoGoldenUpgradesAT(setting) {
 
 //Praiding
 
-function plusMapToRun1() {
+export function plusMapToRun1() {
     var map = 1;
     if (game.global.world % 10 == 5)
         map = 6;
@@ -136,7 +152,7 @@ function plusMapToRun1() {
     return map;
 }
 
-function plusMapToRun2() {
+export function plusMapToRun2() {
     var map = 2;
     if (game.global.world % 10 == 4)
         map = 7;
@@ -153,7 +169,7 @@ function plusMapToRun2() {
     return map;
 }
 
-function plusMapToRun3() {
+export function plusMapToRun3() {
     var map = 3;
     if (game.global.world % 10 == 3)
         map = 8;
@@ -172,7 +188,7 @@ function plusMapToRun3() {
     return map;
 }
 
-function plusMapToRun4() {
+export function plusMapToRun4() {
     var map = 4;
     if (game.global.world % 10 == 2)
         map = 9;
@@ -193,7 +209,7 @@ function plusMapToRun4() {
     return map;
 }
 
-function plusMapToRun5() {
+export function plusMapToRun5() {
     var map = 5;
     if (game.global.world % 10 == 1)
         map = 10;
@@ -216,7 +232,7 @@ function plusMapToRun5() {
     return map;
 }
 
-function plusPres1() {
+export function plusPres1() {
     document.getElementById("biomeAdvMapsSelect").value = "Depths";
     document.getElementById("advExtraLevelSelect").value = plusMapToRun1();
     document.getElementById("advSpecialSelect").value = "p";
@@ -317,7 +333,7 @@ function plusPres1() {
     }
 }
 
-function plusPres2() {
+export function plusPres2() {
     document.getElementById("biomeAdvMapsSelect").value = "Depths";
     document.getElementById("advExtraLevelSelect").value = plusMapToRun2();
     document.getElementById("advSpecialSelect").value = "p";
@@ -418,7 +434,7 @@ function plusPres2() {
     }
 }
 
-function plusPres3() {
+export function plusPres3() {
     document.getElementById("biomeAdvMapsSelect").value = "Depths";
     document.getElementById("advExtraLevelSelect").value = plusMapToRun3();
     document.getElementById("advSpecialSelect").value = "p";
@@ -519,7 +535,7 @@ function plusPres3() {
     }
 }
 
-function plusPres4() {
+export function plusPres4() {
     document.getElementById("biomeAdvMapsSelect").value = "Depths";
     document.getElementById("advExtraLevelSelect").value = plusMapToRun4();
     document.getElementById("advSpecialSelect").value = "p";
@@ -620,7 +636,7 @@ function plusPres4() {
     }
 }
 
-function plusPres5() {
+export function plusPres5() {
     document.getElementById("biomeAdvMapsSelect").value = "Depths";
     document.getElementById("advExtraLevelSelect").value = plusMapToRun5();
     document.getElementById("advSpecialSelect").value = "p";
@@ -721,7 +737,7 @@ function plusPres5() {
     }
 }
 
-function pcheck1() {
+export function pcheck1() {
 
     var HD;
     var P;
@@ -754,7 +770,7 @@ function pcheck1() {
     return go;
 }
 
-function pcheck2() {
+export function pcheck2() {
 
     var HD;
     var P;
@@ -787,7 +803,7 @@ function pcheck2() {
     return go;
 }
 
-function pcheck3() {
+export function pcheck3() {
 
     var HD;
     var P;
@@ -820,7 +836,7 @@ function pcheck3() {
     return go;
 }
 
-function pcheck4() {
+export function pcheck4() {
 
     var HD;
     var P;
@@ -853,7 +869,7 @@ function pcheck4() {
     return go;
 }
 
-function pcheck5() {
+export function pcheck5() {
 
     var HD;
     var P;
@@ -886,7 +902,7 @@ function pcheck5() {
     return go;
 }
 
-function pcheckmap1() {
+export function pcheckmap1() {
     var go = false;
     if (game.global.world % 10 == 0 && plusMapToRun1() == 1) {
         go = true;
@@ -921,7 +937,7 @@ function pcheckmap1() {
     return go;
 }
 
-function pcheckmap2() {
+export function pcheckmap2() {
     var go = false;
     if (game.global.world % 10 == 0 && plusMapToRun2() == 2) {
         go = true;
@@ -956,7 +972,7 @@ function pcheckmap2() {
     return go;
 }
 
-function pcheckmap3() {
+export function pcheckmap3() {
     var go = false;
     if (game.global.world % 10 == 0 && plusMapToRun3() == 3) {
         go = true;
@@ -991,7 +1007,7 @@ function pcheckmap3() {
     return go;
 }
 
-function pcheckmap4() {
+export function pcheckmap4() {
     var go = false;
     if (game.global.world % 10 == 0 && plusMapToRun4() == 4) {
         go = true;
@@ -1026,7 +1042,7 @@ function pcheckmap4() {
     return go;
 }
 
-function pcheckmap5() {
+export function pcheckmap5() {
     var go = false;
     if (game.global.world % 10 == 0 && plusMapToRun5() == 5) {
         go = true;
@@ -1061,23 +1077,23 @@ function pcheckmap5() {
     return go;
 }
 
-var pMap1 = undefined;
-var pMap2 = undefined;
-var pMap3 = undefined;
-var pMap4 = undefined;
-var pMap5 = undefined;
-var repMap1 = undefined;
-var repMap2 = undefined;
-var repMap3 = undefined;
-var repMap4 = undefined;
-var repMap5 = undefined;
-var mapbought1 = false;
-var mapbought2 = false;
-var mapbought3 = false;
-var mapbought4 = false;
-var mapbought5 = false;
+globalThis.pMap1 = undefined;
+globalThis.pMap2 = undefined;
+globalThis.pMap3 = undefined;
+globalThis.pMap4 = undefined;
+globalThis.pMap5 = undefined;
+globalThis.repMap1 = undefined;
+globalThis.repMap2 = undefined;
+globalThis.repMap3 = undefined;
+globalThis.repMap4 = undefined;
+globalThis.repMap5 = undefined;
+globalThis.mapbought1 = false;
+globalThis.mapbought2 = false;
+globalThis.mapbought3 = false;
+globalThis.mapbought4 = false;
+globalThis.mapbought5 = false;
 
-function Praiding() {
+export function Praiding() {
     var cell;
     cell = ((getPageSetting('Praidingcell') > 0) ? getPageSetting('Praidingcell') : 0);
     if (getPageSetting('Praidingzone').length) {
@@ -1280,7 +1296,7 @@ function Praiding() {
     }
 }
 
-function PraidHarder() {
+export function PraidHarder() {
     var maxPlusZones;
     var mapModifiers = ["p", "fa", "0"];
     var farmFragments;
@@ -1467,7 +1483,7 @@ function PraidHarder() {
     }
 }
 
-function relaxMapReqs(mapModifiers) {
+export function relaxMapReqs(mapModifiers) {
     for (var j = 0; j < mapModifiers.length; j++) {
         document.getElementById('sizeAdvMapsRange').value = 9;
         document.getElementById('advSpecialSelect').value = mapModifiers[j];
@@ -1483,7 +1499,7 @@ function relaxMapReqs(mapModifiers) {
     return false;
 }
 
-function BWraiding() {
+export function BWraiding() {
     var bwraidZ;
     var bwraidSetting;
     var bwraidMax;
@@ -1563,24 +1579,24 @@ function BWraiding() {
     }
 }
 
-var dpMap1 = undefined;
-var dpMap2 = undefined;
-var dpMap3 = undefined;
-var dpMap4 = undefined;
-var dpMap5 = undefined;
-var drepMap1 = undefined;
-var drepMap2 = undefined;
-var drepMap3 = undefined;
-var drepMap4 = undefined;
-var drepMap5 = undefined;
-var dmapbought1 = false;
-var dmapbought2 = false;
-var dmapbought3 = false;
-var dmapbought4 = false;
-var dmapbought5 = false;
-var dpraidDone = false;
+globalThis.dpMap1 = undefined;
+globalThis.dpMap2 = undefined;
+globalThis.dpMap3 = undefined;
+globalThis.dpMap4 = undefined;
+globalThis.dpMap5 = undefined;
+globalThis.drepMap1 = undefined;
+globalThis.drepMap2 = undefined;
+globalThis.drepMap3 = undefined;
+globalThis.drepMap4 = undefined;
+globalThis.drepMap5 = undefined;
+globalThis.dmapbought1 = false;
+globalThis.dmapbought2 = false;
+globalThis.dmapbought3 = false;
+globalThis.dmapbought4 = false;
+globalThis.dmapbought5 = false;
+globalThis.dpraidDone = false;
 
-function dailyPraiding() {
+export function dailyPraiding() {
     var cell;
     cell = ((getPageSetting('dPraidingcell') > 0) ? getPageSetting('dPraidingcell') : 0);
     if (getPageSetting('dPraidingzone').length) {
@@ -1783,7 +1799,7 @@ function dailyPraiding() {
     }
 }
 
-function dailyBWraiding() {
+export function dailyBWraiding() {
     var cell;
     cell = ((getPageSetting('dbwraidcell') > 0) ? getPageSetting('dbwraidcell') : 1);
     if (!dprestraidon && game.global.world == getPageSetting('dBWraidingz') && ((game.global.lastClearedCell + 1) >= cell) && !dbwraided && !dfailbwraid && getPageSetting('Dailybwraid')) {
@@ -1842,7 +1858,7 @@ function dailyBWraiding() {
     }
 }
 
-function trimpcide() {
+export function trimpcide() {
     if (game.portal.Anticipation.level > 0) {
         var antistacklimit = (game.talents.patience.purchased) ? 45 : 30;
         if (game.global.fighting && ((game.jobs.Amalgamator.owned > 0) ? Math.floor((new Date().getTime() - game.global.lastSoldierSentAt) / 1000) : Math.floor(game.global.lastBreedTime / 1000)) >= antistacklimit && (game.global.antiStacks < antistacklimit || antistacklimit == 0 && game.global.antiStacks >= 1) && !game.global.spireActive)
@@ -1855,7 +1871,7 @@ function trimpcide() {
     }
 }
 
-function avoidempower() {
+export function avoidempower() {
     if (armydeath()) {
         if (typeof game.global.dailyChallenge.bogged === 'undefined' && typeof game.global.dailyChallenge.plague === 'undefined') {
             mapsClicked(true);
@@ -1864,9 +1880,9 @@ function avoidempower() {
     }
 }
 
-var spirebreeding = false;
+globalThis.spirebreeding = false;
 
-function ATspirebreed() {
+export function ATspirebreed() {
     if (!spirebreeding && getPageSetting('SpireBreedTimer') > 0 && getPageSetting('IgnoreSpiresUntil') <= game.global.world && game.global.spireActive)
         var prespiretimer = game.global.GeneticistassistSetting;
     if (getPageSetting('SpireBreedTimer') > 0 && getPageSetting('IgnoreSpiresUntil') <= game.global.world && game.global.spireActive && game.global.GeneticistassistSetting != getPageSetting('SpireBreedTimer')) {
@@ -1886,22 +1902,22 @@ function ATspirebreed() {
     }
 }
 
-function fightalways() {
+export function fightalways() {
     if (game.global.gridArray.length === 0 || game.global.preMapsActive || !game.upgrades.Battle.done || game.global.fighting || (game.global.spireActive && game.global.world >= getPageSetting('IgnoreSpiresUntil')))
         return;
     if (!game.global.fighting)
         fightManual();
 }
 
-function armormagic() {
+export function armormagic() {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
     if (((getPageSetting('carmormagic') == 1 || getPageSetting('darmormagic') == 1) && game.global.world >= armormagicworld && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('carmormagic') == 2 || getPageSetting('darmormagic') == 2) && calcHDratio() >= MODULES["maps"].enoughDamageCutoff && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('carmormagic') == 3 || getPageSetting('darmormagic') == 3) && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)))
         buyArms();
 }
 
-trapIndexs = ["", "Fire", "Frost", "Poison", "Lightning", "Strength", "Condenser", "Knowledge"];
+globalThis.trapIndexs = ["", "Fire", "Frost", "Poison", "Lightning", "Strength", "Condenser", "Knowledge"];
 
-function tdStringCode2() {
+export function tdStringCode2() {
     var thestring = document.getElementById('importBox').value.replace(/\s/g, '');
     var s = new String(thestring);
     var index = s.indexOf("+", 0);
@@ -1922,63 +1938,67 @@ function tdStringCode2() {
     }
 }
 
-var oldPlayerSpireDrawInfo = playerSpire.drawInfo;
-playerSpire.drawInfo = function(arguments) {
-    var ret = oldPlayerSpireDrawInfo.apply(this, arguments);
+globalThis.oldPlayerSpireDrawInfo = playerSpire.drawInfo;
+playerSpire.drawInfo = function(drawArgs) {
+    // param renamed from `arguments` (illegal in strict ES module) to drawArgs; behavior identical.
+    var ret = oldPlayerSpireDrawInfo.apply(this, drawArgs);
     var elem = document.getElementById('spireTrapsWindow');
-    if (!elem) return arguments;
+    if (!elem) return drawArgs;
     var importBtn = "<div onclick='ImportExportTooltip(\"spireImport\")' class='spireControlBox'>Import</div>";
     elem.innerHTML = importBtn + elem.innerHTML;
-    return arguments;
+    return drawArgs;
 }
 
 //Radon
-function RbuyWeps() {
+export function RbuyWeps() {
     if (!((getPageSetting('RBuyWeaponsNew') == 1) || (getPageSetting('RBuyWeaponsNew') == 3))) return;
     preBuy(), game.global.buyAmt = getPageSetting('Rgearamounttobuy'), game.equipment.Dagger.level < getPageSetting('RCapEquip2') && canAffordBuilding('Dagger', null, null, !0) && buyEquipment('Dagger', !0, !0), game.equipment.Mace.level < getPageSetting('RCapEquip2') && canAffordBuilding('Mace', null, null, !0) && buyEquipment('Mace', !0, !0), game.equipment.Polearm.level < getPageSetting('RCapEquip2') && canAffordBuilding('Polearm', null, null, !0) && buyEquipment('Polearm', !0, !0), game.equipment.Battleaxe.level < getPageSetting('RCapEquip2') && canAffordBuilding('Battleaxe', null, null, !0) && buyEquipment('Battleaxe', !0, !0), game.equipment.Greatsword.level < getPageSetting('RCapEquip2') && canAffordBuilding('Greatsword', null, null, !0) && buyEquipment('Greatsword', !0, !0), !game.equipment.Arbalest.locked && game.equipment.Arbalest.level < getPageSetting('RCapEquip2') && canAffordBuilding('Arbalest', null, null, !0) && buyEquipment('Arbalest', !0, !0), postBuy()
 }
 
-function RbuyArms() {
+export function RbuyArms() {
     if (!((getPageSetting('RBuyArmorNew') == 1) || (getPageSetting('RBuyArmorNew') == 3))) return;
     preBuy(), game.global.buyAmt = 10, game.equipment.Shield.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Shield', null, null, !0) && buyEquipment('Shield', !0, !0), game.equipment.Boots.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Boots', null, null, !0) && buyEquipment('Boots', !0, !0), game.equipment.Helmet.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Helmet', null, null, !0) && buyEquipment('Helmet', !0, !0), game.equipment.Pants.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Pants', null, null, !0) && buyEquipment('Pants', !0, !0), game.equipment.Shoulderguards.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Shoulderguards', null, null, !0) && buyEquipment('Shoulderguards', !0, !0), game.equipment.Breastplate.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Breastplate', null, null, !0) && buyEquipment('Breastplate', !0, !0), !game.equipment.Gambeson.locked && game.equipment.Gambeson.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Gambeson', null, null, !0) && buyEquipment('Gambeson', !0, !0), postBuy()
 }
 
-function Rhelptrimpsnotdie() {
+export function Rhelptrimpsnotdie() {
     if (!game.global.preMapsActive && !game.global.fighting) RbuyArms();
 }
 
-var Rprestraid = !1,
-    Rdprestraid = !1,
-    Rfailpraid = !1,
-    Rdfailpraid = !1,
-    Rbwraided = !1,
-    Rdbwraided = !1,
-    Rfailbwraid = !1,
-    Rdfailbwraid = !1,
-    Rprestraidon = !1,
-    Rdprestraidon = !1,
-    Rmapbought = !1,
-    Rdmapbought = !1,
-    Rbwraidon = !1,
-    Rdbwraidon = !1,
-    Rpresteps = null,
-    RminMaxMapCost, RfMap, RpMap, RshouldFarmFrags = !1,
-    RpraidDone = !1;
+globalThis.Rprestraid = !1;
+globalThis.Rdprestraid = !1;
+globalThis.Rfailpraid = !1;
+globalThis.Rdfailpraid = !1;
+globalThis.Rbwraided = !1;
+globalThis.Rdbwraided = !1;
+globalThis.Rfailbwraid = !1;
+globalThis.Rdfailbwraid = !1;
+globalThis.Rprestraidon = !1;
+globalThis.Rdprestraidon = !1;
+globalThis.Rmapbought = !1;
+globalThis.Rdmapbought = !1;
+globalThis.Rbwraidon = !1;
+globalThis.Rdbwraidon = !1;
+globalThis.Rpresteps = null;
+globalThis.RminMaxMapCost = undefined;
+globalThis.RfMap = undefined;
+globalThis.RpMap = undefined;
+globalThis.RshouldFarmFrags = !1;
+globalThis.RpraidDone = !1;
 
-function Rfightalways() {
+export function Rfightalways() {
     if (game.global.gridArray.length === 0 || game.global.preMapsActive || !game.upgrades.Battle.done || game.global.fighting)
         return;
     if (!game.global.fighting)
         fightManual();
 }
 
-function Rarmormagic() {
+export function Rarmormagic() {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
     if (((getPageSetting('Rcarmormagic') == 1 || getPageSetting('Rdarmormagic') == 1) && game.global.world >= armormagicworld && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('Rcarmormagic') == 2 || getPageSetting('Rdarmormagic') == 2) && RcalcHDratio() >= MODULES["maps"].RenoughDamageCutoff && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('Rcarmormagic') == 3 || getPageSetting('Rdarmormagic') == 3) && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)))
         RbuyArms();
 }
 
-function questcheck() {
+export function questcheck() {
     if (game.global.world < game.challenges.Quest.getQuestStartZone()) {
         return 0;
     }
@@ -2019,13 +2039,13 @@ function questcheck() {
         return 0;
 }
 
-function Rgetequipcost(equip, resource, amt) {
+export function Rgetequipcost(equip, resource, amt) {
     var cost = Math.ceil(getBuildingItemPrice(game.equipment[equip], resource, true, amt) * (Math.pow(amt - game.portal.Artisanistry.modifier, game.portal.Artisanistry.radLevel)));
     return cost;
 }
 
 //smithylogic('Shield', 'wood', true)
-function smithylogic(name, resource, equip) {
+export function smithylogic(name, resource, equip) {
 
     var go = true;
 
@@ -2119,7 +2139,7 @@ function smithylogic(name, resource, equip) {
     }
 }
 
-function archstring() {
+export function archstring() {
     if (getPageSetting('Rarchon') == false) return;
     if (getPageSetting('Rarchstring1') != "undefined" && getPageSetting('Rarchstring2') != "undefined" && getPageSetting('Rarchstring3') != "undefined") {
         var string1 = getPageSetting('Rarchstring1'),
@@ -2141,7 +2161,7 @@ function archstring() {
     }
 }
 
-var fastimps = [
+globalThis.fastimps = [
     "Snimp",
     "Kittimp",
     "Gorillimp",
@@ -2179,7 +2199,7 @@ var fastimps = [
     "Ubersmith"
 ];
 
-function Rmanageequality() {
+export function Rmanageequality() {
 
     if (!(game.global.challengeActive == "Exterminate" && getPageSetting('Rexterminateon') == true && getPageSetting('Rexterminateeq') == true && !game.global.mapsActive)) {
         if (
@@ -2220,7 +2240,7 @@ function Rmanageequality() {
     }
 }
 
-function autoshrine() {
+export function autoshrine() {
     var universe;
     var mode = game.global.challengeActive == "Daily" ? "Daily" : "Standard";
   
@@ -2286,15 +2306,15 @@ function autoshrine() {
     }
 }
 
-var old_nextWorld = nextWorld;
-nextWorld = function() {
+globalThis.old_nextWorld = nextWorld;
+globalThis.nextWorld = function() {
     var retVal = old_nextWorld(...arguments);
     autoTrimpSettings.Hshrinecharge.value = 0;
     autoTrimpSettings.Rshrinecharge.value = 0;
     return retVal;
 }
 
-function autoBoneChargeWhenMax() {
+export function autoBoneChargeWhenMax() {
   // Uses bone charges when they are at max charges automatically.
 
   // If "Daily Only" was chosen and we're not on a daily challenge, exit.
@@ -2332,7 +2352,7 @@ function autoBoneChargeWhenMax() {
   }
 }
 
-function Rarmydeath() {
+export function Rarmydeath() {
     if (game.global.mapsActive) return false;
     var cell = game.global.lastClearedCell + 1;
     var attack = game.global.gridArray[cell].attack * dailyModifiers.empower.getMult(game.global.dailyChallenge.empower.strength, game.global.dailyChallenge.empower.stacks) * Math.pow(game.portal.Equality.modifier, game.portal.Equality.scalingCount);
@@ -2344,7 +2364,7 @@ function Rarmydeath() {
     else return false;
 }
 
-function Ravoidempower() {
+export function Ravoidempower() {
     if (Rarmydeath()) {
         if (typeof game.global.dailyChallenge.bogged === 'undefined' && typeof game.global.dailyChallenge.plague === 'undefined') {
             mapsClicked(true);

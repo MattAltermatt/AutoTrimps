@@ -28,5 +28,9 @@ import * as maps from './modules/maps'
 // mapfunctions imported after maps: it owns the R-map-state var inits, which must run after
 // maps' undefined placeholders so mapfunctions' real values win (matches original load order).
 import * as mapfunctions from './modules/mapfunctions'
+import * as portal from './modules/portal'
+import * as importExport from './modules/import-export'
+import * as query from './modules/query'
+import * as other from './modules/other'
 
-Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions })
+Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...portal, ...importExport, ...query, ...other })

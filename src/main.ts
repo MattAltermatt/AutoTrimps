@@ -14,5 +14,7 @@ import './modules/perks'
 // load-time code only touches game DOM + MODULES, so ordering is not critical, but it lives
 // here with the other side-effect-only converted modules.
 import './modules/fight-info'
+// performance is a self-contained IIFE registering MODULES.performance (no exports). Side-effect import.
+import './modules/performance'
 
 console.log('[AutoTrimps] modern build booted')
