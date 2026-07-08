@@ -3,4 +3,12 @@
 // legacy modules), so still-legacy load-time callers resolve the published functions.
 import './legacy-bridge'
 
+// perks has no exports — its API is the AutoPerks/RAutoPerks globals it assigns, and its
+// top-level AutoPerks.displayGUI() calls converted utils (safeSetItems) by bare name. So it
+// must run AFTER legacy-bridge's Object.assign publishes those globals — hence imported here,
+// after the bridge, not inside it. (ES imports run depth-first in order, so the bridge body
+// executes before this line.) Matches the original load order: perks ran after utils, before
+// SettingsGUI. Side-effect import only.
+import './modules/perks'
+
 console.log('[AutoTrimps] modern build booted')

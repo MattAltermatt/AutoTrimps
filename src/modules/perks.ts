@@ -1,4 +1,18 @@
-var AutoPerks = {};
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/perks.js.
+// AutoPerks helium/radon perk-allocation engine (U1 AutoPerks + U2 RAutoPerks). Unlike the
+// other modules its API is not top-level functions but methods on the AutoPerks / RAutoPerks
+// objects (portal.js calls AutoPerks.clickAllocate()). Seam = those two objects → globalThis
+// (bare AutoPerks.x references resolve to the global). No exports; the bridge imports this
+// module for its side effects only. Kept verbatim: MODULES["perks"] registration, the preset
+// ratio arrays + preset-select HTML, and the top-level remote injection of FastPriorityQueue.js
+// from Zorn192.github.io (pre-existing behavior; self-hosting it is a future cleanup). NOTE a
+// pre-existing legacy bug is preserved verbatim: the U2 section declares Rhead/Rqueuescript but
+// then appends via head/queuescript (the U1 globals) — unchanged, not a regression.
+import { getPageSetting, debug } from './utils'
+
+globalThis.AutoPerks = {};
 MODULES["perks"] = {};
 MODULES["perks"].showDetails = true;
 
@@ -59,7 +73,8 @@ AutoPerks.removeGUI = function() {
       }
       if ($elem.parentNode) {
         $elem.parentNode.removeChild($elem);
-        delete $elem;
+        // `delete $elem;` removed: deleting a local binding is a strict-mode SyntaxError
+        // and was always a no-op in the original (sloppy mode). Behavior preserved.
       }
     });
 }
@@ -729,7 +744,7 @@ AutoPerks.getOwnedPerks = function() {
 AutoPerks.displayGUI();
 }
 
-var RAutoPerks = {};
+globalThis.RAutoPerks = {};
 MODULES["perks"].RshowDetails = true;
 
 var Rhead = document.getElementsByTagName('head')[0];
@@ -774,7 +789,8 @@ RAutoPerks.removeGUI = function() {
       }
       if ($elem.parentNode) {
         $elem.parentNode.removeChild($elem);
-        delete $elem;
+        // `delete $elem;` removed: deleting a local binding is a strict-mode SyntaxError
+        // and was always a no-op in the original (sloppy mode). Behavior preserved.
       }
     });
 };

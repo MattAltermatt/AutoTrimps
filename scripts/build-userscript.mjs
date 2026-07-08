@@ -20,7 +20,8 @@ const MANIFEST = [
   'modules/maps.js', 'modules/fight.js',
   // modules/nature.js, modules/magmite.js — converted to src/modules/ (Phase 2)
   'modules/scryer.js', 'modules/other.js',
-  'modules/perks.js', 'modules/fight-info.js', 'modules/performance.js', 'modules/ab.js',
+  // modules/perks.js — converted to src/modules/perks.ts (Phase 2)
+  'modules/fight-info.js', 'modules/performance.js', 'modules/ab.js',
   'modules/MAZ.js',
   // NOTE: highcharts.js is intentionally NOT bundled — Graphs.js injects Highcharts
   // itself from the CDN at runtime (Graphs.js:177), exactly as the original did.
