@@ -21,5 +21,8 @@ import * as fight from './modules/fight'
 import * as scryer from './modules/scryer'
 import * as ab from './modules/ab'
 import * as MAZ from './modules/MAZ'
+// stance MUST be spread after calc: both define calcBaseDamageInX, and stance's copy won at
+// global scope in the original load order (calc loaded before stance). Spread order preserves it.
+import * as stance from './modules/stance'
 
-Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ })
+Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance })
