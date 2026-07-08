@@ -1,3 +1,9 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/gather.js.
+// Gather/trap automation (calcTPS, trap buffering, manual labor; U1 + U2 R* family). 61 game.* touches, @ts-nocheck. Module vars trapBuffering/maxTrapBuffering/maxZoneDuration are gather-internal. No shared vars, no implicit globals, no collisions.
+import { getPageSetting, debug } from './utils'
+
 //updated
 MODULES["gather"] = {};
 //These can be changed (in the console) if you know what you're doing:
@@ -10,11 +16,11 @@ var trapBuffering = false, maxTrapBuffering = false;
 var maxZoneDuration = 0;
 
 //Traps per second
-function calcTPS() {
+export function calcTPS() {
 	return Math.min(10, game.global.playerModifier / 5);
 }
 
-function calcMaxTraps() {
+export function calcMaxTraps() {
 	//Tries to keep in mind the longest duration any zone has lasted in this portal
 	var time = getZoneSeconds();
 	if (game.global.world == 1) maxZoneDuration = time;
@@ -25,7 +31,7 @@ function calcMaxTraps() {
 }
 
 //OLD: "Auto Gather/Build"
-function manualLabor2() {
+export function manualLabor2() {
 	//If not using auto-gather, return
 	if (getPageSetting('ManualGather2') == 0) return;
 
@@ -199,7 +205,7 @@ function manualLabor2() {
 	setGather(lowestResource);
 }
 
-function autogather3() {
+export function autogather3() {
     if ((game.global.buildingsQueue.length <= 1 && getPageSetting('gathermetal') == false) || (getPageSetting('gathermetal') == true)) setGather('metal');
     else setGather('buildings')
 }
@@ -208,7 +214,7 @@ function autogather3() {
 
 MODULES["gather"].RminScienceAmount = 200;
 
-function RmanualLabor2() {
+export function RmanualLabor2() {
 	
     //Vars
     var lowOnTraps = game.buildings.Trap.owned < 5;

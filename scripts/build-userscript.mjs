@@ -15,8 +15,8 @@ const MANIFEST = [
   'modules/import-export.js', 'modules/query.js', 'modules/portal.js',
   // modules/buildings.js, modules/jobs.js, modules/upgrades.js — converted to src/modules/ (Phase 2)
   'modules/heirlooms.js',
-  // modules/equipment.js — converted to src/modules/equipment.ts (Phase 2)
-  'modules/gather.js', 'modules/stance.js', 'modules/mapfunctions.js',
+  // modules/equipment.js, modules/gather.js — converted to src/modules/ (Phase 2)
+  'modules/stance.js', 'modules/mapfunctions.js',
   // modules/dynprestige.js, modules/breedtimer.js — converted to src/modules/ (Phase 2)
   'modules/maps.js', 'modules/fight.js',
   // modules/nature.js, modules/magmite.js — converted to src/modules/ (Phase 2)
