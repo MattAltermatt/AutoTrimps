@@ -1,3 +1,12 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/magmite.js.
+// Game-coupled magmite/generator logic. Registers MODULES["magmite"] (ambient global).
+// debug + getPageSetting imported from converted utils. tsc confirmed no module-owned
+// implicit globals (the only unresolved names are game fns: buyGeneratorUpgrade,
+// buyPermanentGeneratorUpgrade — resolved at runtime). No shared top-level vars.
+import { debug, getPageSetting } from './utils'
+
 MODULES["magmite"] = {};
 MODULES["magmite"].algorithm = 2;
 
@@ -8,7 +17,7 @@ var priceIncreases = {
     Overclocker: 32
 };
 
-function calcMiSpent(upgrade) {
+export function calcMiSpent(upgrade) {
     var total = 0;
     if (game.generatorUpgrades[upgrade].cost() <= game.generatorUpgrades[upgrade].baseCost || game.generatorUpgrades[upgrade].upgrades <= 0) return 0;
     else {
@@ -17,7 +26,7 @@ function calcMiSpent(upgrade) {
     }
 }
 
-function miRatio() {
+export function miRatio() {
 
     //Find Mi Ratio
     var eff, cap, sup, oc, effr, capr, supr, ocr, effspend, effspendr, capspend, capspendr, supspend, supspendr, ocspend, ocspendr;
@@ -76,7 +85,7 @@ function miRatio() {
 	return "Overclocker";
 }
 
-function autoMagmiteSpender() {
+export function autoMagmiteSpender() {
     if (getPageSetting('ratiospend') == true) {
         var tospend = miRatio();
         var upgrader = game.generatorUpgrades[tospend];
@@ -168,7 +177,7 @@ function autoMagmiteSpender() {
     }
 }
 
-function autoGenerator() {
+export function autoGenerator() {
 var defaultgenstate = getPageSetting('defaultgen');
 var beforefuelstate = getPageSetting('beforegen');
 var hybrid = game.permanentGeneratorUpgrades.Hybridization.owned;
