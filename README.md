@@ -2,9 +2,10 @@
 
 ## 🛠️ Development (modernized build)
 
-This fork is being modernized into a Vite + TypeScript build. Planning lives in
-**[GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/issues)** (grouped by
-milestone/phase); shipped work is recorded in [`HISTORY.md`](HISTORY.md); the full
+This fork is being modernized into a Vite + TypeScript build. All planning and shipped
+history lives in **[GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/issues)**
+(grouped by milestone/phase; completed work is closed issues — see the
+[Phases 0–2 record](https://github.com/MattAltermatt/AutoTrimps/issues/23)). The full
 architecture is in the [design spec](docs/superpowers/specs/2026-07-08-autotrimps-modernization-design.md).
 
 ```bash
