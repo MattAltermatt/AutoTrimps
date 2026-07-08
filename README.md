@@ -1,5 +1,23 @@
 # AutoTrimps - Zek Fork
 
+## 🛠️ Development (modernized build)
+
+This fork is being modernized into a Vite + TypeScript build. See
+[`ROADMAP.md`](ROADMAP.md) and the [design spec](docs/superpowers/specs/2026-07-08-autotrimps-modernization-design.md).
+
+```bash
+npm install
+npm run build         # → dist/autotrimps.user.js
+npm run build:watch   # rebuild on change
+npm run serve         # static-serve the local Trimps clone (:8080) with the bundle injected
+npm test              # vitest
+npm run typecheck     # tsc --noEmit
+npm run lint          # oxlint
+```
+
+The legacy runtime lives untouched in `legacy/` as a behavioral oracle during migration;
+files leave it only once their `src/` port is verified in the live game.
+
 
 
 ## Discussion / Discord Channel

@@ -1,0 +1,24 @@
+{
+  "name": "autotrimps",
+  "private": true,
+  "version": "6.0.0-dev.0",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-userscript.mjs",
+    "build:watch": "node scripts/build-userscript.mjs --watch",
+    "serve": "node scripts/serve-game.mjs",
+    "lint": "oxlint src tests scripts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "esbuild": "^0.28.0",
+    "oxlint": "^1.69.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.0",
+    "vitest": "^4.1.9"
+  }
+}
