@@ -2,6 +2,13 @@
 
 **Issue:** #20 (Phase UI — SettingsGUI breakup) · **Date:** 2026-07-08 · **Branch:** `feature/phase-ui-settings-breakup`
 
+> ✅ **IMPLEMENTED 2026-07-08.** 5 modules + `nuloom` relocation shipped across 7 commits. Byte-parity
+> proven vs `gh-pages`: 569 `createSetting` ids identical in order; 27/28 moved functions byte-identical
+> (`modifyParentNode` differs only by the intended `for (var i)` strict-mode fix). Live-verified in Chrome
+> (569 settings render, all types hydrate, `resetAutoTrimps` rebuilds, console clean). Fresh code review +
+> mechanical diff found no diff-attributable defects. A pre-existing saved-blob/reload bug (unrelated) was
+> logged to #22.
+
 ## 🎯 Goal
 
 Break up the 253 KB / 2620-line `legacy/SettingsGUI.js` monolith into typed `src/modules/*.ts`
