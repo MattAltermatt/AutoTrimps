@@ -1,11 +1,24 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/upgrades.js.
+// Upgrade purchase, giga-station automation, golden upgrades (U1 + U2 radon R* family).
+// getPageSetting/debug/setPageSetting imported from converted utils. TWO seam notes:
+//   1. upgradeList + RupgradeList are read by still-legacy query.js by bare name, so they
+//      publish to globalThis (shared-var seam) rather than module-scoped var.
+//   2. needGymystic is NOT exported: byte-identical to the (now-removed) buildings.js copy,
+//      never invoked as a function anywhere, and AutoTrimps2.js's boolean var needGymystic
+//      = true is the intended post-load value. Left module-scoped so the bridge does not
+//      overwrite that boolean at load. (This was the last needGymystic function in legacy.)
+import { getPageSetting, debug, setPageSetting } from './utils'
+
 //Helium
 
-var upgradeList = ['Miners', 'Scientists', 'Coordination', 'Speedminer', 'Speedlumber', 'Speedfarming', 'Speedscience', 'Speedexplorer', 'Megaminer', 'Megalumber', 'Megafarming', 'Megascience', 'Efficiency', 'TrainTacular', 'Trainers', 'Explorers', 'Blockmaster', 'Battle', 'Bloodlust', 'Bounty', 'Egg', 'Anger', 'Formations', 'Dominance', 'Barrier', 'UberHut', 'UberHouse', 'UberMansion', 'UberHotel', 'UberResort', 'Trapstorm', 'Gigastation', 'Shieldblock', 'Potency', 'Magmamancers'];
+globalThis.upgradeList = ['Miners', 'Scientists', 'Coordination', 'Speedminer', 'Speedlumber', 'Speedfarming', 'Speedscience', 'Speedexplorer', 'Megaminer', 'Megalumber', 'Megafarming', 'Megascience', 'Efficiency', 'TrainTacular', 'Trainers', 'Explorers', 'Blockmaster', 'Battle', 'Bloodlust', 'Bounty', 'Egg', 'Anger', 'Formations', 'Dominance', 'Barrier', 'UberHut', 'UberHouse', 'UberMansion', 'UberHotel', 'UberResort', 'Trapstorm', 'Gigastation', 'Shieldblock', 'Potency', 'Magmamancers'];
 MODULES["upgrades"] = {};
 MODULES["upgrades"].targetFuelZone = true;
 MODULES["upgrades"].customMetalRatio = 0.5; //Change the Custom Delta factor instead
 
-function gigaTargetZone() {
+export function gigaTargetZone() {
     //Init
     var targetZone = 59;
     var daily = game.global.challengeActive == 'Daily';
@@ -44,7 +57,7 @@ function gigaTargetZone() {
     return targetZone;
 }
 
-function autoGiga(targetZone, metalRatio = 0.5, slowDown = 10, customBase) {
+export function autoGiga(targetZone, metalRatio = 0.5, slowDown = 10, customBase) {
     //Pre Init
     if (!targetZone || targetZone < 60) targetZone = gigaTargetZone();
     
@@ -81,7 +94,7 @@ function autoGiga(targetZone, metalRatio = 0.5, slowDown = 10, customBase) {
     return +(Math.round(delta + "e+2")  + "e-2");
 }
 
-function firstGiga(forced) {
+export function firstGiga(forced) {
     //Build our first giga if: A) Has more than 2 Warps & B) Can't afford more Coords & C)* Lacking Health or Damage & D)* Has run at least 1 map stack or if forced to
     const maxHealthMaps = game.global.challengeActive === "Daily" ? getPageSetting('dMaxMapBonushealth') : getPageSetting('MaxMapBonushealth');
     const s = !(getPageSetting('CustomDeltaFactor') > 20);
@@ -111,7 +124,7 @@ function firstGiga(forced) {
 function needGymystic() {
     return game.upgrades['Gymystic'].allowed - game.upgrades['Gymystic'].done > 0;
 }
-function buyUpgrades() {
+export function buyUpgrades() {
 
     for (var upgrade in upgradeList) {
         upgrade = upgradeList[upgrade];
@@ -160,9 +173,9 @@ function buyUpgrades() {
 
 //Radon
 
-var RupgradeList = ['Miners', 'Scientists', 'Coordination', 'Speedminer', 'Speedlumber', 'Speedfarming', 'Speedscience', 'Speedexplorer', 'Megaminer', 'Megalumber', 'Megafarming', 'Megascience', 'Efficiency', 'Explorers', 'Battle', 'Bloodlust', 'Bounty', 'Egg', 'Rage', 'Prismatic', 'Prismalicious', 'Formations', 'Dominance', 'UberHut', 'UberHouse', 'UberMansion', 'UberHotel', 'UberResort', 'Trapstorm', 'Potency'];
+globalThis.RupgradeList = ['Miners', 'Scientists', 'Coordination', 'Speedminer', 'Speedlumber', 'Speedfarming', 'Speedscience', 'Speedexplorer', 'Megaminer', 'Megalumber', 'Megafarming', 'Megascience', 'Efficiency', 'Explorers', 'Battle', 'Bloodlust', 'Bounty', 'Egg', 'Rage', 'Prismatic', 'Prismalicious', 'Formations', 'Dominance', 'UberHut', 'UberHouse', 'UberMansion', 'UberHotel', 'UberResort', 'Trapstorm', 'Potency'];
 
-function RbuyUpgrades() {
+export function RbuyUpgrades() {
 
     for (var upgrade in RupgradeList) {
         upgrade = RupgradeList[upgrade];
@@ -183,7 +196,7 @@ function RbuyUpgrades() {
         }
 }
 
-function RautoGoldenUpgradesAT(setting) {
+export function RautoGoldenUpgradesAT(setting) {
     var num = getAvailableGoldenUpgrades();
     var setting2;
     if (num == 0) return;
