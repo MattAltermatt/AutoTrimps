@@ -37,11 +37,17 @@ locked the idiom every later slice copies. Design:
   verify + a fresh code review caught the src-last ordering bug (now fixed + guarded by a
   build-test ordering assertion).
 
-## 🔮 Phase 2..N — Module-by-module strangle
-Convert in dependency order — pure logic (calc, breedtimer, nature, magmite), systems
-(buildings, jobs, upgrades, equipment, gather, heirlooms, perks), combat/maps (fight,
-stance, scryer, maps, mapfunctions, MAZ, ab), infra (portal, import-export, query,
-performance, other). Each slice: convert → type → vitest → parity-verify → commit.
+## 🚧 Phase 2 — Module-by-module strangle *(in progress)*
+Convert in dependency order, each slice: faithful port → publish via seam → verify live → commit.
+
+- ✅ **Shipped 2026-07-08:** `dynprestige`, `breedtimer` (first `MODULES` module + shared-var
+  seam), `nature`, `magmite`. Idioms locked: converted→converted imports, implicit-global
+  audit (tsc-driven), `MODULES` ambient registry, shared-var→`globalThis` publish,
+  `@ts-nocheck` for game-coupled bodies.
+- 🎯 **Next — pure logic:** `calc` (69 KB core — damage/health/gains; big, likely multi-sitting).
+- 🗃️ **Remaining groups:** systems (buildings, jobs, upgrades, equipment, gather, heirlooms,
+  perks), combat/maps (fight, stance, scryer, maps, mapfunctions, MAZ, ab), infra (portal,
+  import-export, query, performance, other).
 
 ## 🎨 Phase UI — Break up SettingsGUI.js (253 KB)
 Decompose the monolith UI; modernize settings UX. Late — most entangled.
