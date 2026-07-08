@@ -1,3 +1,18 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/maps.js.
+// Auto-map decision engine (U1 autoMap + U2 RautoMap), 304 game.* touches. getPageSetting/
+// debug/setPageSetting from converted utils. ALL maps state vars were globals in the original
+// (16 top-level var + ~41 sloppy implicit globals) and MANY are read by other modules
+// (equipment/upgrades/mapfunctions/other/AutoTrimps2/SettingsGUI), so every one is published to
+// globalThis (shared-var seam). The 16 keep their init values; the 41 implicit ones are
+// initialised undefined below so strict-mode bare writes resolve. MODULES["maps"] kept verbatim.
+import { getPageSetting, debug, setPageSetting } from './utils'
+
+// Formerly-implicit-global maps state (see header) — published so external readers + strict-mode
+// writes both work.
+globalThis.enoughDamage = undefined; globalThis.enoughHealth = undefined; globalThis.shouldFarm = undefined; globalThis.RenoughDamage = undefined; globalThis.RenoughHealth = undefined; globalThis.RshouldFarm = undefined; globalThis.RneedToVoid = undefined; globalThis.RdoVoids = undefined; globalThis.Rshoulddoquest = undefined; globalThis.Rquestshieldzone = undefined; globalThis.Rquestequalityscale = undefined; globalThis.RshouldDoMaps = undefined; globalThis.Rshouldfragfarm = undefined; globalThis.Rshouldtimefarm = undefined; globalThis.Rdshouldtimefarm = undefined; globalThis.Rshouldsmithyfarm = undefined; globalThis.Rshouldtributefarm = undefined; globalThis.Rshoulddobogs = undefined; globalThis.Rshoulddopraid = undefined; globalThis.Rdshoulddopraid = undefined; globalThis.Rshouldinsanityfarm = undefined; globalThis.Rshouldalchfarm = undefined; globalThis.Rshouldhypofarm = undefined; globalThis.Rhyposhouldwood = undefined; globalThis.Rshouldstormfarm = undefined; globalThis.Rshoulddesofarm = undefined; globalThis.Rshouldequipfarm = undefined; globalThis.Rshouldshipfarm = undefined; globalThis.Rshouldmayhem = undefined; globalThis.Rshouldpanda = undefined; globalThis.RvanillaMAZ = undefined; globalThis.RdoMaxMapBonus = undefined; globalThis.Rinsanityfarm = undefined; globalThis.Rstormfarm = undefined; globalThis.Rdesofarm = undefined; globalThis.Rshipfarm = undefined; globalThis.Ralchfarm = undefined; globalThis.Rshouldcastle = undefined; globalThis.Rhypofarm = undefined; globalThis.Requipfarm = undefined; globalThis.RlastMapWeWereIn = undefined;
+
 //Helium
 MODULES.maps = {};
 MODULES.maps.numHitsSurvived = 8;
@@ -15,23 +30,23 @@ MODULES.maps.shouldFarmCell = 59;
 MODULES.maps.SkipNumUnboughtPrestiges = 2;
 MODULES.maps.UnearnedPrestigesRequired = 2;
 
-var doVoids = !1;
-var needToVoid = !1;
-var needPrestige = !1;
-var skippedPrestige = !1;
-var scryerStuck = !1;
-var shouldDoMaps = !1;
-var mapTimeEstimate = 0;
-var lastMapWeWereIn = null;
-var preSpireFarming = !1;
-var spireMapBonusFarming = !1;
-var spireTime = 0;
-var doMaxMapBonus = !1;
-var vanillaMapatZone = !1;
-var farmingWonder = !1;
-var additionalCritMulti = 2 < getPlayerCritChance() ? 25 : 5;
+globalThis.doVoids = !1;
+globalThis.needToVoid = !1;
+globalThis.needPrestige = !1;
+globalThis.skippedPrestige = !1;
+globalThis.scryerStuck = !1;
+globalThis.shouldDoMaps = !1;
+globalThis.mapTimeEstimate = 0;
+globalThis.lastMapWeWereIn = null;
+globalThis.preSpireFarming = !1;
+globalThis.spireMapBonusFarming = !1;
+globalThis.spireTime = 0;
+globalThis.doMaxMapBonus = !1;
+globalThis.vanillaMapatZone = !1;
+globalThis.farmingWonder = !1;
+globalThis.additionalCritMulti = 2 < getPlayerCritChance() ? 25 : 5;
 
-function updateAutoMapsStatus(get) {
+export function updateAutoMapsStatus(get) {
 
     var status;
     var minSp = getPageSetting('MinutestoFarmBeforeSpire');
@@ -84,9 +99,9 @@ function updateAutoMapsStatus(get) {
 }
 
 MODULES["maps"].advSpecialMapMod_numZones = 3;
-var advExtraMapLevels = 0;
+globalThis.advExtraMapLevels = 0;
 
-function testMapSpecialModController() {
+export function testMapSpecialModController() {
     var a = [];
     if (Object.keys(mapSpecialModifierConfig).forEach(function(o) {
             var p = mapSpecialModifierConfig[o];
@@ -126,7 +141,7 @@ function testMapSpecialModController() {
     }
 }
 
-function autoMap() {
+export function autoMap() {
 
     //Failsafes
     if (!game.global.mapsUnlocked || calcOurDmg("avg", false, true) <= 0) {
@@ -864,7 +879,7 @@ MODULES.maps.RshouldFarmCell = 59;
 MODULES.maps.RSkipNumUnboughtPrestiges = 2;
 MODULES.maps.RUnearnedPrestigesRequired = 2;
 
-function RupdateAutoMapsStatus(get) {
+export function RupdateAutoMapsStatus(get) {
 
     var status;
 
@@ -920,7 +935,7 @@ function RupdateAutoMapsStatus(get) {
 
 //RAutoMaps
 
-function RautoMap() {
+export function RautoMap() {
 
     //Failsafes
     if (!game.global.mapsUnlocked || RcalcOurDmg("avg", false, true) <= 0) {

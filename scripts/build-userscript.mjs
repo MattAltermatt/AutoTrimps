@@ -18,8 +18,7 @@ const MANIFEST = [
   // modules/stance.js — converted to src/modules/stance.ts (Phase 2)
   'modules/mapfunctions.js',
   // modules/dynprestige.js, modules/breedtimer.js — converted to src/modules/ (Phase 2)
-  'modules/maps.js',
-  // modules/nature.js, magmite.js, fight.js, scryer.js, ab.js, MAZ.js, fight-info.js — converted to src/modules/ (Phase 2)
+  // modules/nature.js, magmite.js, fight.js, scryer.js, ab.js, MAZ.js, fight-info.js, maps.js — converted to src/modules/ (Phase 2)
   'modules/other.js',
   // modules/perks.js — converted to src/modules/perks.ts (Phase 2)
   'modules/performance.js',
