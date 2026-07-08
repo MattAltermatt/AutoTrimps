@@ -570,7 +570,7 @@ AutoPerks.applyCalculations = function(perks,remainingHelium){
         if (MODULES["perks"].showDetails) {
             var exportPerks = {};
             for (var item in game.portal){
-                el = game.portal[item];
+                var el = game.portal[item];
                 if (el.locked || el.level <= 0) continue;
                 exportPerks[item] = el.level + el.levelTemp;
             }
@@ -735,7 +735,7 @@ AutoPerks.setPerksByName = function() {
 AutoPerks.getOwnedPerks = function() {
     var perks = [];
     for (var name in game.portal){
-        perk = game.portal[name];
+        var perk = game.portal[name];
         if(perk.locked || (typeof perk.level === 'undefined')) continue;
         perks.push(AutoPerks.getPerkByName(name));
     }
@@ -1301,7 +1301,7 @@ RAutoPerks.applyCalculations = function(perks,remainingRadon){
         if (MODULES["perks"].RshowDetails) {
             var exportPerks = {};
             for (var item in game.portal){
-                el = game.portal[item];
+                var el = game.portal[item];
                 if (el.radLocked || el.radLevel <= 0) continue;
                 exportPerks[item] = el.radLevel + el.levelTemp;
             }
@@ -1446,7 +1446,7 @@ RAutoPerks.setPerksByName = function() {
 RAutoPerks.getOwnedPerks = function() {
     var perks = [];
     for (var name in game.portal){
-        perk = game.portal[name];
+        var perk = game.portal[name];
         if(perk.radLocked || (typeof perk.radLevel === 'undefined')) continue;
         var ownedPerk = RAutoPerks.getPerkByName(name);
         if (typeof ownedPerk === 'undefined') continue;
