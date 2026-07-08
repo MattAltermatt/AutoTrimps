@@ -16,7 +16,8 @@ const MANIFEST = [
   'modules/equipment.js', 'modules/gather.js', 'modules/stance.js', 'modules/mapfunctions.js',
   // modules/dynprestige.js, modules/breedtimer.js — converted to src/modules/ (Phase 2)
   'modules/maps.js', 'modules/fight.js',
-  'modules/scryer.js', 'modules/magmite.js', 'modules/nature.js', 'modules/other.js',
+  // modules/nature.js — converted to src/modules/nature.ts (Phase 2)
+  'modules/scryer.js', 'modules/magmite.js', 'modules/other.js',
   'modules/perks.js', 'modules/fight-info.js', 'modules/performance.js', 'modules/ab.js',
   'modules/MAZ.js',
   // NOTE: highcharts.js is intentionally NOT bundled — Graphs.js injects Highcharts

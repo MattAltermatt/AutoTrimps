@@ -1,4 +1,11 @@
-function autoNatureTokens() {
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/nature.js.
+// Game-coupled nature-token logic. debug + getPageSetting imported from the converted
+// utils module (converted→converted wiring). No MODULES, no shared vars, no load-time exec.
+import { debug, getPageSetting } from './utils'
+
+export function autoNatureTokens() {
     var changed = false;
     var thresh = 0;
     if (getPageSetting('tokenthresh') > 0) {
@@ -56,13 +63,13 @@ function autoNatureTokens() {
         updateNatureInfoSpans();
 }
 
-function purchaseEnlight(nature) {
+export function purchaseEnlight(nature) {
 	if (game.global.uberNature == false && game.empowerments[nature].nextUberCost <= game.empowerments[nature].tokens) {
 	    naturePurchase('uberEmpower', nature);
 	}
 }
 
-function autoEnlight() {
+export function autoEnlight() {
 	var nature = "None", dnature = "None", cnature = "None";
 	var fillernature = [], poison, poisondiff, wind, winddiff, ice, icediff, dailynature = [], dpoison, dpoisondiff, dwind, dwinddiff, dice, dicediff, c2nature = [], cpoison, cpoisondiff, cwind, cwinddiff, cice, cicediff;
 
