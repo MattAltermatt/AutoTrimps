@@ -1,149 +1,164 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/mapfunctions.js.
+// The U2 (radon) map-selection / farming engine — 2779 lines, 371 game.* touches, 52 fns.
+// getPageSetting + debug from converted utils. This module OWNS the R-map-state globals
+// (RshouldFarm/RdoVoids/RneedToVoid/RshouldDoMaps/RdoMaxMapBonus/contractVoid/... — 103
+// top-level vars) that maps.ts, equipment.ts and still-legacy modules read cross-module, so
+// every top-level var is published to globalThis (shared-var seam; they were all globals in
+// the original concat). Plus 3 sloppy implicit-global writes (sepcial/levelzones/selectedMap)
+// initialised on globalThis below; functions with a local var selectedMap/levelzones keep it.
+import { getPageSetting, debug } from './utils'
+
+// Formerly-implicit-global state (see header) — published so strict-mode bare writes resolve.
+globalThis.sepcial = undefined; globalThis.levelzones = undefined; globalThis.selectedMap = undefined;
+
 //### RAutoMap Global VarsRshouldDoMaps
-var RshouldFarm = false;
-var RdoVoids = false;
-var RneedToVoid = false;
-var RneedPrestige = false;
-var RshouldDoMaps = false;
-var RlastMapWeWereIn = null;
-var RdoMaxMapBonus = false;
-var RvanillaMAZ = false;
-var contractVoid = false;
-var RadditionalCritMulti = 2 < getPlayerCritChance() ? 25 : 5;
+globalThis.RshouldFarm = false;
+globalThis.RdoVoids = false;
+globalThis.RneedToVoid = false;
+globalThis.RneedPrestige = false;
+globalThis.RshouldDoMaps = false;
+globalThis.RlastMapWeWereIn = null;
+globalThis.RdoMaxMapBonus = false;
+globalThis.RvanillaMAZ = false;
+globalThis.contractVoid = false;
+globalThis.RadditionalCritMulti = 2 < getPlayerCritChance() ? 25 : 5;
 
 //### Quest
-var Rshoulddoquest = false;
-var Rquestequalityscale = false;
-var Rquestshieldzone = 0;
+globalThis.Rshoulddoquest = false;
+globalThis.Rquestequalityscale = false;
+globalThis.Rquestshieldzone = 0;
 
 //### Map Module Vars
 
 //Frag Farm
-var Rshouldfragfarm = false;
+globalThis.Rshouldfragfarm = false;
 
 //Time Farm
-var Rtimefarm = false;
-var Rshouldtimefarm = false;
+globalThis.Rtimefarm = false;
+globalThis.Rshouldtimefarm = false;
 
 //dTime Farm
-var Rdtimefarm = false;
-var Rdshouldtimefarm = false;
+globalThis.Rdtimefarm = false;
+globalThis.Rdshouldtimefarm = false;
 
 //Smithy Farm
-var Rsmithyfarm = false;
-var Rshouldsmithyfarm = false;
+globalThis.Rsmithyfarm = false;
+globalThis.Rshouldsmithyfarm = false;
 
 //Tribute
-var Rshouldtributefarm = false;
+globalThis.Rshouldtributefarm = false;
 
 //Bog
-var Rshoulddobogs = false;
+globalThis.Rshoulddobogs = false;
 
 //Frozen Castle
-var Rshouldcastle = false;
+globalThis.Rshouldcastle = false;
 
 //Praid
-var Rshoulddopraid = false;
-var RAMPpMap1 = undefined;
-var RAMPpMap2 = undefined;
-var RAMPpMap3 = undefined;
-var RAMPpMap4 = undefined;
-var RAMPpMap5 = undefined;
-var RAMPfragmappy = undefined;
-var RAMPrepMap1 = undefined;
-var RAMPrepMap2 = undefined;
-var RAMPrepMap3 = undefined;
-var RAMPrepMap4 = undefined;
-var RAMPrepMap5 = undefined;
-var RAMPprefragmappy = undefined;
-var RAMPmapbought1 = false;
-var RAMPmapbought2 = false;
-var RAMPmapbought3 = false;
-var RAMPmapbought4 = false;
-var RAMPmapbought5 = false;
-var RAMPfragmappybought = false;
-var RAMPdone = false;
-var RAMPfragfarming = false;
+globalThis.Rshoulddopraid = false;
+globalThis.RAMPpMap1 = undefined;
+globalThis.RAMPpMap2 = undefined;
+globalThis.RAMPpMap3 = undefined;
+globalThis.RAMPpMap4 = undefined;
+globalThis.RAMPpMap5 = undefined;
+globalThis.RAMPfragmappy = undefined;
+globalThis.RAMPrepMap1 = undefined;
+globalThis.RAMPrepMap2 = undefined;
+globalThis.RAMPrepMap3 = undefined;
+globalThis.RAMPrepMap4 = undefined;
+globalThis.RAMPrepMap5 = undefined;
+globalThis.RAMPprefragmappy = undefined;
+globalThis.RAMPmapbought1 = false;
+globalThis.RAMPmapbought2 = false;
+globalThis.RAMPmapbought3 = false;
+globalThis.RAMPmapbought4 = false;
+globalThis.RAMPmapbought5 = false;
+globalThis.RAMPfragmappybought = false;
+globalThis.RAMPdone = false;
+globalThis.RAMPfragfarming = false;
 
 //dPraid
-var Rdshoulddopraid = false;
-var RdAMPpMap1 = undefined;
-var RdAMPpMap2 = undefined;
-var RdAMPpMap3 = undefined;
-var RdAMPpMap4 = undefined;
-var RdAMPpMap5 = undefined;
-var RdAMPfragmappy = undefined;
-var RdAMPrepMap1 = undefined;
-var RdAMPrepMap2 = undefined;
-var RdAMPrepMap3 = undefined;
-var RdAMPrepMap4 = undefined;
-var RdAMPrepMap5 = undefined;
-var RdAMPprefragmappy = undefined;
-var RdAMPmapbought1 = false;
-var RdAMPmapbought2 = false;
-var RdAMPmapbought3 = false;
-var RdAMPmapbought4 = false;
-var RdAMPmapbought5 = false;
-var RdAMPfragmappybought = false;
-var RdAMPdone = false;
-var RdAMPfragfarming = false;
+globalThis.Rdshoulddopraid = false;
+globalThis.RdAMPpMap1 = undefined;
+globalThis.RdAMPpMap2 = undefined;
+globalThis.RdAMPpMap3 = undefined;
+globalThis.RdAMPpMap4 = undefined;
+globalThis.RdAMPpMap5 = undefined;
+globalThis.RdAMPfragmappy = undefined;
+globalThis.RdAMPrepMap1 = undefined;
+globalThis.RdAMPrepMap2 = undefined;
+globalThis.RdAMPrepMap3 = undefined;
+globalThis.RdAMPrepMap4 = undefined;
+globalThis.RdAMPrepMap5 = undefined;
+globalThis.RdAMPprefragmappy = undefined;
+globalThis.RdAMPmapbought1 = false;
+globalThis.RdAMPmapbought2 = false;
+globalThis.RdAMPmapbought3 = false;
+globalThis.RdAMPmapbought4 = false;
+globalThis.RdAMPmapbought5 = false;
+globalThis.RdAMPfragmappybought = false;
+globalThis.RdAMPdone = false;
+globalThis.RdAMPfragfarming = false;
 
 //Mayhem
-var Rshouldmayhem = 0;
-var Rmayhemextraglobal = -1;
+globalThis.Rshouldmayhem = 0;
+globalThis.Rmayhemextraglobal = -1;
 
 //Panda
-var Rshouldpanda = 0;
-var Rpandaextraglobal = 1;
+globalThis.Rshouldpanda = 0;
+globalThis.Rpandaextraglobal = 1;
 
 //Insanity
-var Rinsanityfarm = false;
-var Rshouldinsanityfarm = false;
-var Rinsanityfragfarming = false;
-var insanityfragmappy = undefined;
-var insanityprefragmappy = undefined;
-var insanityfragmappybought = false;
+globalThis.Rinsanityfarm = false;
+globalThis.Rshouldinsanityfarm = false;
+globalThis.Rinsanityfragfarming = false;
+globalThis.insanityfragmappy = undefined;
+globalThis.insanityprefragmappy = undefined;
+globalThis.insanityfragmappybought = false;
 
 //Storm
-var Rstormfarm = false;
-var Rshouldstormfarm = false;
+globalThis.Rstormfarm = false;
+globalThis.Rshouldstormfarm = false;
 
 //Desolation
-var Rdesofarm = false;
-var Rshoulddesofarm = false;
-var Rdesoextraglobal = 1;
+globalThis.Rdesofarm = false;
+globalThis.Rshoulddesofarm = false;
+globalThis.Rdesoextraglobal = 1;
 
 //Equip Farm
-var Requipfarm = false;
-var Rshouldequipfarm = false;
-var Requipminusglobal = -1;
+globalThis.Requipfarm = false;
+globalThis.Rshouldequipfarm = false;
+globalThis.Requipminusglobal = -1;
 
 //Ships
-var Rshipfarm = false;
-var Rshouldshipfarm = false;
-var Rshipfragfarming = false;
-var shipfragmappy = undefined;
-var shipprefragmappy = undefined;
-var shipfragmappybought = false;
+globalThis.Rshipfarm = false;
+globalThis.Rshouldshipfarm = false;
+globalThis.Rshipfragfarming = false;
+globalThis.shipfragmappy = undefined;
+globalThis.shipprefragmappy = undefined;
+globalThis.shipfragmappybought = false;
 
 //Alch
-var Ralchfarm = false;
-var Rshouldalchfarm = false;
-var Rshouldhypofarm = false;
-var Ralchfragfarming = false;
-var alchfragmappy = undefined;
-var alchprefragmappy = undefined;
-var alchfragmappybought = false;
+globalThis.Ralchfarm = false;
+globalThis.Rshouldalchfarm = false;
+globalThis.Rshouldhypofarm = false;
+globalThis.Ralchfragfarming = false;
+globalThis.alchfragmappy = undefined;
+globalThis.alchprefragmappy = undefined;
+globalThis.alchfragmappybought = false;
 
 //Hypo
-var Rhypofarm = false;
-var Rhyposhouldwood = true;
-var Rshouldhypofarm = false;
-var Rhypofragfarming = false;
-var hypofragmappy = undefined;
-var hypoprefragmappy = undefined;
-var hypofragmappybought = false;
+globalThis.Rhypofarm = false;
+globalThis.Rhyposhouldwood = true;
+globalThis.Rshouldhypofarm = false;
+globalThis.Rhypofragfarming = false;
+globalThis.hypofragmappy = undefined;
+globalThis.hypoprefragmappy = undefined;
+globalThis.hypofragmappybought = false;
 
-function RresetVars() {
+export function RresetVars() {
     RshouldFarm = false;
     RdoVoids = false;
     RneedToVoid = false;
@@ -291,7 +306,7 @@ function RresetVars() {
 
 //###Other Functions - were in other.js but moved over
 
-function RfragMap() {
+export function RfragMap() {
     document.getElementById("biomeAdvMapsSelect").value = "Plentiful";
     document.getElementById("advExtraLevelSelect").value = 0;
     document.getElementById("advSpecialSelect").value = "fa";
@@ -325,12 +340,12 @@ function RfragMap() {
     }
 }
 
-function RfragCalc(frag) {
+export function RfragCalc(frag) {
     if (frag > game.resources.fragments.owned) Rshouldfragfarm = true;
     else Rshouldfragfarm = false;
 }
 
-function RselectFrag() {
+export function RselectFrag() {
     var selectedMap = "create";
     if (Rshouldfragfarm) {
         for (var map in game.global.mapsOwnedArray) {
@@ -345,7 +360,7 @@ function RselectFrag() {
     return selectedMap;
 }
 
-function RminFragMap(selection, number, special) {
+export function RminFragMap(selection, number, special) {
 
     document.getElementById("biomeAdvMapsSelect").value = selection;
     document.getElementById("advExtraLevelSelect").value = number;
@@ -409,7 +424,7 @@ function RminFragMap(selection, number, special) {
     }
 }
 
-function RfragCheck(what) {
+export function RfragCheck(what) {
     var cost = 0;
     var frag = false;
     var farmzone = 0;
@@ -456,7 +471,7 @@ function RfragCheck(what) {
     else return false;
 }
 
-function RAMPplusMapToRun(daily, number) {
+export function RAMPplusMapToRun(daily, number) {
     var map;
     var praidzone = daily ? getPageSetting('RdAMPraidzone') : getPageSetting('RAMPraidzone');
     var raidzone = daily ? getPageSetting('RdAMPraidraid') : getPageSetting('RAMPraidraid');
@@ -469,7 +484,7 @@ function RAMPplusMapToRun(daily, number) {
     return map;
 }
 
-function RAMPshouldrunmap(daily, number) {
+export function RAMPshouldrunmap(daily, number) {
     var go = false;
     var praidzone = daily ? getPageSetting('RdAMPraidzone') : getPageSetting('RAMPraidzone');
     var raidzone = daily ? getPageSetting('RdAMPraidraid') : getPageSetting('RAMPraidraid');
@@ -485,7 +500,7 @@ function RAMPshouldrunmap(daily, number) {
     return go;
 }
 
-function RAMPplusPres(daily, number) {
+export function RAMPplusPres(daily, number) {
     document.getElementById("biomeAdvMapsSelect").value = "Plentiful";
     document.getElementById("advExtraLevelSelect").value = daily ? RAMPplusMapToRun(true, number) : RAMPplusMapToRun(false, number);
     document.getElementById("advSpecialSelect").value = "p";
@@ -582,7 +597,7 @@ function RAMPplusPres(daily, number) {
     }
 }
 
-function RAMPplusPresfragmax(daily, number) {
+export function RAMPplusPresfragmax(daily, number) {
     document.getElementById("biomeAdvMapsSelect").value = "Plentiful";
     document.getElementById("advExtraLevelSelect").value = daily ? RAMPplusMapToRun(true, number) : RAMPplusMapToRun(false, number);
     document.getElementById("advSpecialSelect").value = "p";
@@ -595,7 +610,7 @@ function RAMPplusPresfragmax(daily, number) {
     return updateMapCost(true);
 }
 
-function RAMPplusPresfragmin(daily, number) {
+export function RAMPplusPresfragmin(daily, number) {
     document.getElementById("biomeAdvMapsSelect").value = "Plentiful";
     document.getElementById("advExtraLevelSelect").value = daily ? RAMPplusMapToRun(true, number) : RAMPplusMapToRun(false, number);
     document.getElementById("advSpecialSelect").value = "p";
@@ -757,7 +772,7 @@ function RAMPplusPresfragmin(daily, number) {
     }
 }
 
-function RAMPfrag(daily) {
+export function RAMPfrag(daily) {
     var cost = 0;
     var praidzone = daily ? getPageSetting('RdAMPraidzone') : getPageSetting('RAMPraidzone');
     var raidzone = daily ? getPageSetting('RdAMPraidraid') : getPageSetting('RAMPraidraid');
@@ -795,7 +810,7 @@ function RAMPfrag(daily) {
 
 //Time Farm
 
-function RtimeFarm(should, level, map, special, daily) {
+export function RtimeFarm(should, level, map, special, daily) {
     var timefarmzone = daily ? getPageSetting('Rdtimefarmzone') : getPageSetting('Rtimefarmzone');
     var timefarmindex = timefarmzone.indexOf(game.global.world);
 
@@ -825,7 +840,7 @@ function RtimeFarm(should, level, map, special, daily) {
     }
 }
 
-function RtimeFarmMap(daily) {
+export function RtimeFarmMap(daily) {
     if (getPageSetting('Rtimefarmlevel') != 0 || (daily && getPageSetting('Rdtimefarmlevel') != 0)) {
         levelzones = daily ? RtimeFarm(false, true, false, false, true) : RtimeFarm(false, true, false, false, false);
         if (levelzones > 0) {
@@ -843,7 +858,7 @@ function RtimeFarmMap(daily) {
 
 //Smithy Farm
 
-function RsmithyFarm(amount) {
+export function RsmithyFarm(amount) {
     var smithyfarmzone = getPageSetting('Rsmithyfarmzone');
     var smithyfarmindex = smithyfarmzone.indexOf(game.global.world);
 
@@ -861,7 +876,7 @@ function RsmithyFarm(amount) {
     }
 }
 
-function RmapLevelCalc() {
+export function RmapLevelCalc() {
     var HD = (RcalcHDratio() / 1.5);
     var level = 0;
     
@@ -881,7 +896,7 @@ function RmapLevelCalc() {
     return level;
 }
 
-function RsmithyCalc(level, selection, special, gather) {
+export function RsmithyCalc(level, selection, special, gather) {
     var smithys = game.buildings.Smithy.owned;
     var goal = RsmithyFarm(true) - smithys;
     var afford = true;
@@ -921,7 +936,7 @@ function RsmithyCalc(level, selection, special, gather) {
     }
 }
 
-function RsmithyFarmMap() {
+export function RsmithyFarmMap() {
     var levelzones = RsmithyCalc(true, false, false, false);
     if (levelzones > 0) {
         document.getElementById("mapLevelInput").value = game.global.world;
@@ -940,7 +955,7 @@ function RsmithyFarmMap() {
 
 //Tribute Farm
 
-function RtributeFarm(should, level, map, special) {
+export function RtributeFarm(should, level, map, special) {
     var tributefarmzone = getPageSetting('Rtributefarmzone');
     var tributefarmindex = tributefarmzone.indexOf(game.global.world);
 
@@ -965,7 +980,7 @@ function RtributeFarm(should, level, map, special) {
     }
 }
 
-function RtributeFarmMap() {
+export function RtributeFarmMap() {
     if (getPageSetting('Rtributefarmlevel') != 0) {
         levelzones = RtributeFarm(false, true, false, false);
         if (levelzones > 0) {
@@ -983,7 +998,7 @@ function RtributeFarmMap() {
 
 //Bogs
 
-function Rbogs() {
+export function Rbogs() {
     var bogzone = getPageSetting('Rblackbogzone');
     var bogamount = getPageSetting('Rblackbogamount');
     var bogindex = bogzone.indexOf(game.global.world);
@@ -1003,7 +1018,7 @@ function Rbogs() {
 
 //Praiding
 
-function RPraid(daily) {
+export function RPraid(daily) {
     var praidzone = daily ? getPageSetting('RdAMPraidzone') : getPageSetting('RAMPraidzone');
     var raidzone = daily ? getPageSetting('RdAMPraidraid') : getPageSetting('RAMPraidraid');
 
@@ -1020,7 +1035,7 @@ function RPraid(daily) {
     }
 }
 
-function RAMPreset(daily) {
+export function RAMPreset(daily) {
 
     if (!daily) {
         RAMPpMap1 = undefined;
@@ -1121,7 +1136,7 @@ function RAMPreset(daily) {
     }
 }
 
-function RAMP() {
+export function RAMP() {
     RAMPdone = false;
     var RAMPfragcheck = true;
     if (getPageSetting('RAMPraidfrag') > 0) {
@@ -1295,7 +1310,7 @@ function RAMP() {
     }
 }
 
-function dRAMP() {
+export function dRAMP() {
     RdAMPdone = false;
     debug("dcreatep selected");
     var RdAMPfragcheck = true;
@@ -1472,7 +1487,7 @@ function dRAMP() {
 
 //Mayhem
 
-function Rmayhem() {
+export function Rmayhem() {
     var hits = (getPageSetting('Rmayhemacut') > 0) ? getPageSetting('Rmayhemabcut') : 100;
     var hitssurv = (getPageSetting('Rmayhemhcut') > 0) ? getPageSetting('Rmayhemhcut') : 1;
     var enemyDamage = RcalcBadGuyDmg(null, RgetEnemyMaxAttack(game.global.world, 50, 'Snimp', 1.0));
@@ -1484,7 +1499,7 @@ function Rmayhem() {
     }
 }
 
-function RmayhemExtra() {
+export function RmayhemExtra() {
     var mayhemextra = 0;
     if (Rshouldmayhem > 0 && getPageSetting('Rmayhemmap') == 2) {
         mayhemextra = 0;
@@ -1562,7 +1577,7 @@ function RmayhemExtra() {
 
 //Panda
 
-function RpandaExtra() {
+export function RpandaExtra() {
     var pandaextra = 1;
     if (Rshouldpanda == true && getPageSetting('Rpandamaps') == true) {
         pandaextra = 1;
@@ -1632,7 +1647,7 @@ function RpandaExtra() {
 
 //Insanity
 
-function Rinsanity(should, level, reset) {
+export function Rinsanity(should, level, reset) {
     var insanityfarmzone = getPageSetting('Rinsanityfarmzone');
     var insanitystacksfarmindex = insanityfarmzone.indexOf(game.global.world);
 
@@ -1663,7 +1678,7 @@ function Rinsanity(should, level, reset) {
     }
 }
 
-function RinsanityMap() {
+export function RinsanityMap() {
     var insanityfragcheck = true;
     if (getPageSetting('Rinsanityfarmfrag') == true) {
         if (RfragCheck("insanity") == true) {
@@ -1737,7 +1752,7 @@ function RinsanityMap() {
 
 //Storm
 
-function Rstorm(should) {
+export function Rstorm(should) {
     var stormzone = getPageSetting('Rstormzone');
     var stormHD = getPageSetting('RstormHD');
     var stormmult = getPageSetting('Rstormmult');
@@ -1751,7 +1766,7 @@ function Rstorm(should) {
 
 //Desolation
 
-function Rdeso(should) {
+export function Rdeso(should) {
     var desozone = getPageSetting('Rdesozone');
     var desoHD = getPageSetting('RdesoHD');
     var desomult = getPageSetting('Rdesomult');
@@ -1763,7 +1778,7 @@ function Rdeso(should) {
     }
 }
 
-function RdesoExtra() {
+export function RdesoExtra() {
     var desoextra = 1;
     if (Rshoulddesofarm == true) {
         desoextra = 1;
@@ -1831,7 +1846,7 @@ function RdesoExtra() {
 
 //Ships
 
-function Rship(should, level, reset) {
+export function Rship(should, level, reset) {
 
     var shipfarmzone = getPageSetting('Rshipfarmzone');
     var shipamountfarmindex = shipfarmzone.indexOf(game.global.world);
@@ -1856,7 +1871,7 @@ function Rship(should, level, reset) {
     }
 }
 
-function RshipMap() {
+export function RshipMap() {
     var shipfragcheck = true;
     if (getPageSetting('Rshipfarmfrag') == true) {
         if (RfragCheck("ship") == true) {
@@ -1939,7 +1954,7 @@ function RshipMap() {
 
 //Alch
 
-function Ralch(should, level, reset) {
+export function Ralch(should, level, reset) {
     var alchfarmzone = getPageSetting('Ralchfarmzone');
     var alchstacksfarmindex = alchfarmzone.indexOf(game.global.world);
 
@@ -1985,7 +2000,7 @@ function Ralch(should, level, reset) {
     }
 }
 
-function RalchMap() {
+export function RalchMap() {
     var alchfragcheck = true;
     if (getPageSetting('Ralchfarmfrag') == true) {
         if (RfragCheck("alch") == true) {
@@ -2064,7 +2079,7 @@ function RalchMap() {
 
 //Hypo
 
-function Rhypo(should, level, reset) {
+export function Rhypo(should, level, reset) {
     var hypofarmzone = getPageSetting('Rhypofarmzone');
     var hypoamountfarmindex = hypofarmzone.indexOf(game.global.world);
 
@@ -2105,7 +2120,7 @@ function Rhypo(should, level, reset) {
 
 }
 
-function RhypoMap() {
+export function RhypoMap() {
     var hypofragcheck = true;
     if (getPageSetting('Rhypofarmfrag') == true) {
         if (RfragCheck("hypo") == true) {
@@ -2184,7 +2199,7 @@ function RhypoMap() {
 
 //Equip Farm
 
-function RequipExtra() {
+export function RequipExtra() {
     var equipminus = 0;
     if (Rshouldequipfarm) {
         equipminus = 0;
@@ -2259,7 +2274,7 @@ function RequipExtra() {
     return equipminus;
 }
 
-function Rshould(any, one) {
+export function Rshould(any, one) {
     if (any) {
         if (!Rshoulddopraid && !Rdshoulddopraid &&
             (RshouldDoMaps ||
@@ -2303,7 +2318,7 @@ function Rshould(any, one) {
     if (should != "no") return should;
 }
 
-function RselectMayhem() {
+export function RselectMayhem() {
     var selectedMap = "create";
     if (getPageSetting('Rmayhemmap') == 2) {
         for (var map in game.global.mapsOwnedArray) {
@@ -2327,7 +2342,7 @@ function RselectMayhem() {
     return selectedMap;
 }
 
-function RselectPanda() {
+export function RselectPanda() {
     var selectedMap = "create";
     if (getPageSetting('Rpandamaps') == true) {
         for (var map in game.global.mapsOwnedArray) {
@@ -2342,7 +2357,7 @@ function RselectPanda() {
     return selectedMap;
 }
 
-function RselectDeso() {
+export function RselectDeso() {
     var selectedMap = "create";
         for (var map in game.global.mapsOwnedArray) {
             if (!game.global.mapsOwnedArray[map].noRecycle && RdesoExtra() >= 0 && ((game.global.world + RdesoExtra()) == game.global.mapsOwnedArray[map].level)) {
@@ -2355,7 +2370,7 @@ function RselectDeso() {
     return selectedMap;
 }
 
-function RselectQuest() {
+export function RselectQuest() {
     var selectedMap = "create";
     if (Rshoulddoquest) {
         for (var map in game.global.mapsOwnedArray) {
@@ -2370,7 +2385,7 @@ function RselectQuest() {
     return selectedMap;
 }
 
-function RselectShip() {
+export function RselectShip() {
     var selectedMap = "create";
     var level = getPageSetting('Rshipfarmlevel');
     var levelzones = Rship(false, true, false);
@@ -2409,7 +2424,7 @@ function RselectShip() {
     return selectedMap;
 }
 
-function RselectSmithy() {
+export function RselectSmithy() {
     var selectedMap = "create";
     var levelzones = RsmithyCalc(true, false, false, false);
     var special = RsmithyCalc(false, false, true, false);
@@ -2436,7 +2451,7 @@ function RselectSmithy() {
     return selectedMap;
 }
 
-function RselectOther(other) {
+export function RselectOther(other) {
     var selectedMap = "create";
     var level = 0;
     var levelzones = 0;
@@ -2493,7 +2508,7 @@ function RselectOther(other) {
     return selectedMap;
 }
 
-function RselectMap(selectedMap) {
+export function RselectMap(selectedMap) {
     if (Rshould(true, false) && selectedMap == "world") {
 
             if (Rshould(false, true) == "frag") {
@@ -2545,7 +2560,7 @@ function RselectMap(selectedMap) {
     return selectedMap;
 }
 
-function RmapRepeat(selectedMap, shouldDoHealthMaps, restartVoidMap) {
+export function RmapRepeat(selectedMap, shouldDoHealthMaps, restartVoidMap) {
     var doDefaultMapBonus = game.global.mapBonus < getPageSetting('RMaxMapBonuslimit') - 1;
     if (
         (RvanillaMAZ) ||
@@ -2659,7 +2674,7 @@ function RmapRepeat(selectedMap, shouldDoHealthMaps, restartVoidMap) {
     }
 }
 
-function RquestMap(quest) {
+export function RquestMap(quest) {
     biomeAdvMapsSelect.value = "Plentiful";
     if (quest == 4) {
         document.getElementById("advSpecialSelect").value = "hc";
@@ -2759,7 +2774,7 @@ function RquestMap(quest) {
     }
 }
 
-function RlevelMap(what) {
+export function RlevelMap(what) {
     var extra = 0;
     var globalextra = 0;
     if (what == "mayhem") {

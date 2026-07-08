@@ -25,5 +25,8 @@ import * as MAZ from './modules/MAZ'
 // global scope in the original load order (calc loaded before stance). Spread order preserves it.
 import * as stance from './modules/stance'
 import * as maps from './modules/maps'
+// mapfunctions imported after maps: it owns the R-map-state var inits, which must run after
+// maps' undefined placeholders so mapfunctions' real values win (matches original load order).
+import * as mapfunctions from './modules/mapfunctions'
 
-Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps })
+Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions })
