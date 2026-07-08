@@ -1,7 +1,16 @@
+/* eslint-disable */
+// @ts-nocheck
+// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/breedtimer.js.
+// Game-coupled breed-timer logic. Registers into the shared MODULES global (kept
+// verbatim — treated like game/autoTrimpSettings, ambient-typed). getPageSetting is
+// imported from the converted utils module. The top-level addBreedingBoxTimers() runs
+// at load — verified game-DOM + tooltip() only, so safe under the early src slot.
+import { getPageSetting } from './utils'
+
 MODULES["breedtimer"] = {};
 MODULES["breedtimer"].voidCheckPercent = 95;
 
-function trimpsEffectivelyEmployed() {
+export function trimpsEffectivelyEmployed() {
     //Init
     var employedTrimps = game.resources.trimps.employed;
 
@@ -12,7 +21,7 @@ function trimpsEffectivelyEmployed() {
     return employedTrimps;
 }
 
-function breedingPS() {
+export function breedingPS() {
     //Init
     var trimps = game.resources.trimps;
     var breeding = new DecimalBreed(trimps.owned).minus(trimpsEffectivelyEmployed());
@@ -21,7 +30,7 @@ function breedingPS() {
     return potencyMod().minus(1).mul(10).mul(breeding);
 }
 
-function potencyMod() {
+export function potencyMod() {
     //Init
     var trimps = game.resources.trimps;
     var potencyMod = new DecimalBreed(trimps.potency);
@@ -67,7 +76,7 @@ function potencyMod() {
     return potencyMod.div(10).add(1);
 }
 
-function breedTotalTime() {
+export function breedTotalTime() {
     //Init
     var trimps = game.resources.trimps;
     var trimpsMax = trimps.realMax();
@@ -79,7 +88,7 @@ function breedTotalTime() {
     return DecimalBreed.log10(maxBreedable.div(breeding)).div(DecimalBreed.log10(potencyMod())).div(10);
 }
 
-function breedTimeRemaining() {
+export function breedTimeRemaining() {
     //Init
     var trimps = game.resources.trimps;
     var trimpsMax = trimps.realMax();
@@ -90,9 +99,11 @@ function breedTimeRemaining() {
     return DecimalBreed.log10(maxBreedable.div(breeding)).div(DecimalBreed.log10(potencyMod())).div(10);
 }
 
-var DecimalBreed = Decimal.clone({precision: 30, rounding: 4});
+// SEAM: shared top-level var read by still-legacy gather.js — must be a real global,
+// not a module-scoped var (which legacy can't see). Assigned to globalThis at load.
+globalThis.DecimalBreed = Decimal.clone({precision: 30, rounding: 4});
 var missingTrimps = new DecimalBreed(0);
-function ATGA2() {
+export function ATGA2() {
 	if (game.jobs.Geneticist.locked == false && getPageSetting('ATGA2') == true && getPageSetting('ATGA2timer') > 0 && game.global.challengeActive != "Trapper"){
 		var trimps = game.resources.trimps;
 		var trimpsMax = trimps.realMax();
@@ -187,8 +198,9 @@ function ATGA2() {
 	}
 }
 
-var addbreedTimerInsideText;
-function addBreedingBoxTimers() {
+// SEAM: shared global read by still-legacy AutoTrimps2.js (guiLoop) — written to
+// globalThis below (was a module var, invisible to legacy → ReferenceError ×74).
+export function addBreedingBoxTimers() {
     var breedbarContainer = document.querySelector('#trimps > div.row');
     var addbreedTimerContainer = document.createElement("DIV");
     addbreedTimerContainer.setAttribute('class', "col-xs-11");
@@ -199,7 +211,7 @@ function addBreedingBoxTimers() {
     addbreedTimerInside.setAttribute('style', 'display: block;');
     var addbreedTimerInsideIcon = document.createElement("SPAN");
     addbreedTimerInsideIcon.setAttribute('class', "icomoon icon-clock");
-    addbreedTimerInsideText = document.createElement("SPAN");
+    globalThis.addbreedTimerInsideText = document.createElement("SPAN");
     addbreedTimerInsideText.id = 'hiddenBreedTimer';
     addbreedTimerInside.appendChild(addbreedTimerInsideIcon);
     addbreedTimerInside.appendChild(addbreedTimerInsideText);
@@ -208,9 +220,9 @@ function addBreedingBoxTimers() {
 }
 addBreedingBoxTimers();
 
-function addToolTipToArmyCount(){var a=document.getElementById("trimpsFighting");"tooltipadded"!=a.className&&(a.setAttribute("onmouseover","tooltip(\"Army Count\", \"customText\", event, \"To Fight now would add: \" + prettify(getArmyTime()) + \" seconds to the breed timer.\")"),a.setAttribute("onmouseout","tooltip(\"hide\")"),a.setAttribute("class","tooltipadded"))}
+export function addToolTipToArmyCount(){var a=document.getElementById("trimpsFighting");"tooltipadded"!=a.className&&(a.setAttribute("onmouseover","tooltip(\"Army Count\", \"customText\", event, \"To Fight now would add: \" + prettify(getArmyTime()) + \" seconds to the breed timer.\")"),a.setAttribute("onmouseout","tooltip(\"hide\")"),a.setAttribute("class","tooltipadded"))}
 
-function abandonVoidMap() {
+export function abandonVoidMap() {
     var customVars = MODULES["breedtimer"];
     if (!getPageSetting('ForceAbandon')) return;
     if (game.global.mapsActive && getCurrentMapObject().location == "Void") {
@@ -230,7 +242,7 @@ function abandonVoidMap() {
         return;
 }
 
-function forceAbandonTrimps() {
+export function forceAbandonTrimps() {
     if (!getPageSetting('ForceAbandon')) return;
     if (!game.global.mapsUnlocked) return;
     if (game.global.mapsActive && getCurrentMapObject().location == "Void") return;

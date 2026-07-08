@@ -10,6 +10,9 @@ declare global {
   var enableDebug: boolean
   var ATmessageLogTabVisible: boolean
   var aWholeNewWorld: any
+  // Shared module config registry — `var MODULES = {}` in AutoTrimps2.js. Converted
+  // modules register `MODULES["x"] = {}` and read each other's config by bare name.
+  var MODULES: any
   // Log helpers defined in still-legacy modules.
   function getCurrentTime(): string
   function updatePortalTimer(flag?: boolean): string

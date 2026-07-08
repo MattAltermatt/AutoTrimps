@@ -7,5 +7,6 @@ import * as utils from './modules/utils'
 import * as time from './modules/time'
 import * as buystate from './modules/buystate'
 import * as dynprestige from './modules/dynprestige'
+import * as breedtimer from './modules/breedtimer'
 
-Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige })
+Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer })
