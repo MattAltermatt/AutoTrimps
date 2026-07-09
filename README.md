@@ -36,49 +36,27 @@ Discord is a chat program. Come to talk about AutoTrimps, for help, or suggestio
 
 
 
-## AT Script Installation
-### Browser
-Step 1:  
-Install TamperMonkey:  
-https://www.tampermonkey.net/
+## Installation
 
-Step 2:  
-Click this link: https://github.com/Zorn192/AutoTrimps/raw/gh-pages/.user.js  
-If clicking the link does not work, copy the contents of user.js into a new script inside tampermonkey.  
-If you are unsure how to do that, copy this:  
-```
-var script = document.createElement('script');
-script.id = 'AutoTrimps-Zek';
-script.src = 'https://Zorn192.github.io/AutoTrimps/AutoTrimps2.js';
-script.setAttribute('crossorigin',"anonymous");
-document.head.appendChild(script);
-```  
-Press F12 inside the game, this opens the console, and paste the text into it and hit enter, this will load the script. You will have to do this everytime you refresh the game though so I recommend getting tampermonkey to do it for you!
+The build is published by CI to **https://mattaltermatt.github.io/AutoTrimps/** — pick any
+method (all load the same auto-built script). Visit that page for one-click install options.
 
-Step 3:  
-Configure settings. Will NOT work as intended with default settings. 
+- **Tampermonkey (auto-updates):** install [Tampermonkey](https://www.tampermonkey.net/), then
+  open <https://mattaltermatt.github.io/AutoTrimps/autotrimps.user.js> — it prompts to install
+  and auto-updates on each release.
+- **Bookmarklet / console (no extension):** open
+  <https://mattaltermatt.github.io/AutoTrimps/> for a one-click bookmarklet and a copy-paste
+  console snippet. The console snippet must be re-pasted after each game refresh:
+  ```
+  var s=document.createElement('script');s.id='AutoTrimps-Zek';
+  s.src='https://mattaltermatt.github.io/AutoTrimps/autotrimps.user.js?'+Date.now();
+  s.setAttribute('crossorigin','anonymous');document.head.appendChild(s);
+  ```
+- **Steam:** save `autotrimps.user.js` into `Steam\steamapps\common\Trimps\mods\mods.js` and
+  restart the game.
 
-### Steam
-Step 1:  
-Go to this link to open the mods.js file on Github: <a href="https://github.com/Zorn192/AutoTrimps/blob/gh-pages/mods.js">mods.js</a>  
-Then, right click the Raw button, hit Save link as, and save the mods.js file somewhere to your computer where you can find it, like desktop.  
-![Download mods.js](https://i.imgur.com/opuO6yd.png)  
-
-Step 2:  
-In your Steam Library (where you see all your games in the Steam app), right click on Trimps, go to Manage, then Browse local files.  
-A folder where Trimps is installed inside Steam should open.  
-![Go to Trimps directory](https://imgur.com/cr35LK2.png)
-
-Inside this folder, navigate to the mods folder (you should be in Steam\steamapps\common\Trimps\mods), and place the mods.js file there, like so:  
-![Insert mods.js](https://imgur.com/muW6cUh.png)
-
-Advanced users: If you have other mods installed then just copy the text in AT's mods.js and place it somewhere in your existing mods.js file.
-
-Step 3:  
-Restart the game, or if the game is already running, hit F5 to refresh.
-
-Step 4:  
-Configure your settings. AT will not work properly if they are not configured!
+After loading, **configure your settings** — AutoTrimps will *not* behave as intended with
+defaults.
 
 ## Graphs only Script Installation
 ### Browser

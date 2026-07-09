@@ -1,5 +1,26 @@
 import { describe, it, expect } from 'vitest'
-import { buildUserscript } from '../scripts/build-userscript.mjs'
+import { buildUserscript, resolveVersion, landingHtml } from '../scripts/build-userscript.mjs'
+
+describe('resolveVersion', () => {
+  it('appends the CI run number for a monotonic version', () => {
+    expect(resolveVersion('6.0.0-dev.0', '42')).toBe('6.0.0-dev.0.42')
+  })
+  it('falls back to the bare package version locally', () => {
+    expect(resolveVersion('6.0.0-dev.0', undefined)).toBe('6.0.0-dev.0')
+    expect(resolveVersion('6.0.0-dev.0', '')).toBe('6.0.0-dev.0')
+  })
+})
+
+describe('landingHtml', () => {
+  it('is a self-contained install page referencing the stable Pages URL', () => {
+    const html = landingHtml()
+    expect(html).toContain('<!doctype html>')
+    expect(html).toContain('https://mattaltermatt.github.io/AutoTrimps/autotrimps.user.js')
+    expect(html).toContain('javascript:(function()') // bookmarklet
+    expect(html).toContain("document.createElement('script')") // console snippet
+    expect(html).toContain('mods.js') // Steam note
+  })
+})
 
 describe('buildUserscript', () => {
   it('assembles a self-contained userscript from legacy + src', async () => {
@@ -8,6 +29,8 @@ describe('buildUserscript', () => {
     // Userscript header present
     expect(out.startsWith('// ==UserScript==')).toBe(true)
     expect(out).toContain('@match')
+    expect(out).toContain('@downloadURL  https://mattaltermatt.github.io/AutoTrimps/autotrimps.user.js')
+    expect(out).toContain('@updateURL    https://mattaltermatt.github.io/AutoTrimps/autotrimps.user.js')
 
     // Legacy behavior is bundled (sentinels from utils, AutoTrimps2, a late module)
     // utils is now a converted src module, published via legacy-bridge (Phase 1)
