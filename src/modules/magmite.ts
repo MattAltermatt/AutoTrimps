@@ -1,23 +1,22 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/magmite.js.
-// Game-coupled magmite/generator logic. Registers MODULES["magmite"] (ambient global).
-// debug + getPageSetting imported from converted utils. tsc confirmed no module-owned
-// implicit globals (the only unresolved names are game fns: buyGeneratorUpgrade,
-// buyPermanentGeneratorUpgrade — resolved at runtime). No shared top-level vars.
+// TRUE-TS (Phase 1 · Wave 2, #29): faithful port of legacy/modules/magmite.js, now
+// strict-typed. Game-coupled magmite/generator logic. Registers MODULES["magmite"] (ambient
+// global). Native game fns (buyGeneratorUpgrade, buyPermanentGeneratorUpgrade,
+// changeGeneratorState) typed ambient in src/game/trimps.d.ts and read by bare name (no
+// imports → esbuild byte-identical to the @ts-nocheck original, the conversion gate).
+// debug + getPageSetting imported from converted utils. No shared top-level vars.
 import { debug, getPageSetting } from './utils'
 
 MODULES["magmite"] = {};
 MODULES["magmite"].algorithm = 2;
 
-var priceIncreases = {
+var priceIncreases: Record<string, number> = {
     Efficiency: 8,
     Capacity: 32,
     Supply: 64,
     Overclocker: 32
 };
 
-export function calcMiSpent(upgrade) {
+export function calcMiSpent(upgrade: string) {
     var total = 0;
     if (game.generatorUpgrades[upgrade].cost() <= game.generatorUpgrades[upgrade].baseCost || game.generatorUpgrades[upgrade].upgrades <= 0) return 0;
     else {
@@ -87,7 +86,7 @@ export function miRatio() {
 
 export function autoMagmiteSpender() {
     if (getPageSetting('ratiospend') == true) {
-        var tospend = miRatio();
+        var tospend = miRatio() as string;
         var upgrader = game.generatorUpgrades[tospend];
         if (game.global.magmite >= upgrader.cost()) {
             debug("Auto Spending " + upgrader.cost() + " Magmite on: " + tospend + " #" + (game.generatorUpgrades[tospend].upgrades + 1), "magmite");
@@ -126,14 +125,14 @@ export function autoMagmiteSpender() {
                     var sup = game.generatorUpgrades["Supply"];
                     if ((typeof eff === 'undefined') || (typeof cap === 'undefined') || (typeof sup === 'undefined'))
                         return;
-                    var EffObj = {};
+                    var EffObj: any = {};
                     EffObj.name = "Efficiency";
                     EffObj.lvl = eff.upgrades + 1;
                     EffObj.cost = eff.cost();
                     EffObj.benefit = EffObj.lvl * 0.1;
                     EffObj.effInc = (((1 + EffObj.benefit) / (1 + ((EffObj.lvl - 1) * 0.1)) - 1) * 100);
                     EffObj.miCostPerPct = EffObj.cost / EffObj.effInc;
-                    var CapObj = {};
+                    var CapObj: any = {};
                     CapObj.name = "Capacity";
                     CapObj.lvl = cap.upgrades + 1;
                     CapObj.cost = cap.cost();
@@ -141,7 +140,7 @@ export function autoMagmiteSpender() {
                     CapObj.benefit = Math.sqrt(CapObj.totalCap);
                     CapObj.effInc = ((CapObj.benefit / Math.sqrt(3 + (0.4 * (CapObj.lvl - 1))) - 1) * 100);
                     CapObj.miCostPerPct = CapObj.cost / CapObj.effInc;
-                    var upgrade, item;
+                    var upgrade, item: string;
                     if (EffObj.miCostPerPct <= CapObj.miCostPerPct)
                         item = EffObj.name;
                     else {
@@ -169,10 +168,10 @@ export function autoMagmiteSpender() {
                 }
 
             }
-        } catch (err) {
+        } catch (err: any) {
             debug("AutoSpendMagmite Error encountered: " + err.message, "magmite");
         }
-        if (didSpend)
+        if (didSpend!)
             debug("Leftover magmite: " + game.global.magmite, "magmite");
     }
 }

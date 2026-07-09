@@ -1,9 +1,9 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/buildings.js.
-// Housing / storage / building-purchase logic (U1 + U2 radon R* family). Deeply
-// game-coupled (127 game.* touches), so @ts-nocheck. getPageSetting + debug imported
-// from converted utils. Module-level vars (housingList, RhousingList, smithybought) are
+// TRUE-TS (Phase 1 · Wave 2, #29): faithful port of legacy/modules/buildings.js, now
+// strict-typed. Housing / storage / building-purchase logic (U1 + U2 radon R* family).
+// Deeply game-coupled (127 game.* touches) — native/AT globals typed ambient in
+// src/game/*.d.ts and read by bare name (no imports → esbuild byte-identical to the
+// @ts-nocheck original, the conversion gate). getPageSetting + debug imported from
+// converted utils. Module-level vars (housingList, RhousingList, smithybought) are
 // buildings-internal → stay module-scoped var. TWO seam notes:
 //   1. bestFoodBuilding: was a sloppy-mode implicit global (missing var) used only inside
 //      buyFoodEfficientHousing; localized to a var here (no external reader) to avoid a
@@ -27,7 +27,7 @@ function needGymystic() {
     return game.upgrades['Gymystic'].allowed - game.upgrades['Gymystic'].done > 0;
 }
 
-export function safeBuyBuilding(building) {
+export function safeBuyBuilding(building: string) {
     if (isBuildingInQueue(building))
         return false;
     if (game.buildings[building].locked)
@@ -85,7 +85,7 @@ export function buyFoodEfficientHousing() {
     var unlockedHousing = ["Hut", "House", "Mansion", "Hotel", "Resort"].filter(b => !game.buildings[b].locked);
 
     //Resets Border Color
-    unlockedHousing.forEach(b => document.getElementById(b).style.border = "1px solid #FFFFFF")
+    unlockedHousing.forEach(b => document.getElementById(b)!.style.border = "1px solid #FFFFFF")
 
     //Checks for Limits
     if (!ignoresLimit) {
@@ -95,7 +95,7 @@ export function buyFoodEfficientHousing() {
                 return true;
 
             //But paints their border before removing them
-            document.getElementById(b).style.border = "1px solid orange"
+            document.getElementById(b)!.style.border = "1px solid orange"
             return false
         })
     }
@@ -112,7 +112,7 @@ export function buyFoodEfficientHousing() {
 
     //If Food Efficiency Ignores Limit is enabled, then it only buy Huts and Houses here
     if (!ignoresLimit || ["Hut", "House"].includes(bestFoodBuilding.name)) {
-        document.getElementById(bestFoodBuilding.name).style.border = "1px solid #00CC01";
+        document.getElementById(bestFoodBuilding.name)!.style.border = "1px solid #00CC01";
         safeBuyBuilding(bestFoodBuilding.name);
     }
 }
@@ -125,13 +125,13 @@ export function buyGemEfficientHousing() {
             unlockedHousing.push(gemHousing[house]);
         }
     }
-    var obj = {};
+    var obj: Record<string, number> = {};
     for (var house in unlockedHousing) {
         var building = game.buildings[unlockedHousing[house]];
         var cost = getBuildingItemPrice(building, "gems", false, 1);
         var ratio = cost / building.increase.by;
         obj[unlockedHousing[house]] = ratio;
-        document.getElementById(unlockedHousing[house]).style.border = "1px solid #FFFFFF";
+        document.getElementById(unlockedHousing[house])!.style.border = "1px solid #FFFFFF";
     }
     var keysSorted = Object.keys(obj).sort(function (a, b) {
             return obj[a] - obj[b];
@@ -142,12 +142,12 @@ export function buyGemEfficientHousing() {
         if (max === false) max = -1;
         if (game.buildings[keysSorted[best]].owned < max || max == -1 || (getPageSetting('GemEfficiencyIgnoresMax') && keysSorted[best] != "Gateway")) {
             bestGemBuilding = keysSorted[best];
-            document.getElementById(bestGemBuilding).style.border = "1px solid #00CC00";
+            document.getElementById(bestGemBuilding)!.style.border = "1px solid #00CC00";
 
             //Gateway Wall
             if (bestGemBuilding == "Gateway" && getPageSetting('GatewayWall') > 1) {
                 if (getBuildingItemPrice(game.buildings.Gateway, "fragments", false, 1) > (game.resources.fragments.owned / getPageSetting('GatewayWall'))) {
-                    document.getElementById(bestGemBuilding).style.border = "1px solid orange";
+                    document.getElementById(bestGemBuilding)!.style.border = "1px solid orange";
                     bestGemBuilding = null;
                     continue;
                 }
@@ -294,7 +294,7 @@ export function buyBuildings() {
 export function buyStorage() {
     var customVars = MODULES["buildings"];
     var packMod = 1 + game.portal.Packrat.level * game.portal.Packrat.modifier;
-    var Bs = {
+    var Bs: Record<string, string> = {
         'Barn': 'food',
         'Shed': 'wood',
         'Forge': 'metal'
@@ -322,7 +322,7 @@ export function buyStorage() {
 
 var RhousingList = ['Hut', 'House', 'Mansion', 'Hotel', 'Resort', 'Gateway', 'Collector'];
 
-export function RsafeBuyBuilding(building) {
+export function RsafeBuyBuilding(building: string) {
     if (isBuildingInQueue(building))
         return false;
     if (game.buildings[building].locked)
@@ -377,7 +377,7 @@ export function RbuyFoodEfficientHousing() {
             'name': unlockedHousing[house],
             'ratio': ratio
         });
-        document.getElementById(unlockedHousing[house]).style.border = "1px solid #FFFFFF";
+        document.getElementById(unlockedHousing[house])!.style.border = "1px solid #FFFFFF";
     }
     buildorder.sort(function (a, b) {
         return a.ratio - b.ratio;
@@ -389,7 +389,7 @@ export function RbuyFoodEfficientHousing() {
         bestfoodBuilding = bb.name;
     }
     if (smithylogic(bestfoodBuilding, 'wood', false) && bestfoodBuilding) {
-        document.getElementById(bestfoodBuilding).style.border = "1px solid #00CC01";
+        document.getElementById(bestfoodBuilding)!.style.border = "1px solid #00CC01";
         RsafeBuyBuilding(bestfoodBuilding);
     }
     }
@@ -403,13 +403,13 @@ export function RbuyGemEfficientHousing() {
             unlockedHousing.push(gemHousing[house]);
         }
     }
-    var obj = {};
+    var obj: Record<string, number> = {};
     for (var house in unlockedHousing) {
         var building = game.buildings[unlockedHousing[house]];
         var cost = getBuildingItemPrice(building, "gems", false, 1);
         var ratio = cost / building.increase.by;
         obj[unlockedHousing[house]] = ratio;
-        document.getElementById(unlockedHousing[house]).style.border = "1px solid #FFFFFF";
+        document.getElementById(unlockedHousing[house])!.style.border = "1px solid #FFFFFF";
     }
     var keysSorted = Object.keys(obj).sort(function (a, b) {
             return obj[a] - obj[b];
@@ -420,7 +420,7 @@ export function RbuyGemEfficientHousing() {
         if (max === false) max = -1;
         if (game.buildings[keysSorted[best]].owned < max || max == -1) {
             bestBuilding = keysSorted[best];
-            document.getElementById(bestBuilding).style.border = "1px solid #00CC00";
+            document.getElementById(bestBuilding)!.style.border = "1px solid #00CC00";
             break;
         }
     }
@@ -445,7 +445,7 @@ export function mostEfficientHousing() {
         }
     }
 
-    var mostEfficient = {
+    var mostEfficient: { name: string | null; time: number } = {
         name: "",
         time: Infinity
     }
@@ -479,10 +479,10 @@ export function mostEfficientHousing() {
     return mostEfficient.name;
 }
 
-export function RbuyStorage(buyFood, buyWood, buyMetal) {
+export function RbuyStorage(buyFood: boolean, buyWood: boolean, buyMetal: boolean) {
 
     // Simple map for resources to the names of their storage buildings.
-    var Resources = {};
+    var Resources: Record<string, string> = {};
     if (buyFood) {Resources.food = "Barn";}
     if (buyWood) {Resources.wood = "Shed";}
     if (buyMetal) {Resources.metal = "Forge";}
@@ -503,7 +503,7 @@ export function RbuyStorage(buyFood, buyWood, buyMetal) {
     }
 
     // Calculate whatever would send us over the current max
-    var jestImps = {};
+    var jestImps: Record<string, number> = {};
     for (var Res in Resources){
 
         // Calculate maximum resources for given resource

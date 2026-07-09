@@ -1,7 +1,7 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/upgrades.js.
-// Upgrade purchase, giga-station automation, golden upgrades (U1 + U2 radon R* family).
+// TRUE-TS (Phase 1 · Wave 2, #29): faithful port of legacy/modules/upgrades.js, now
+// strict-typed. Upgrade purchase, giga-station automation, golden upgrades (U1 + U2 radon
+// R* family). Native/AT globals typed ambient in src/game/*.d.ts and read by bare name (no
+// imports → esbuild byte-identical to the @ts-nocheck original, the conversion gate).
 // getPageSetting/debug/setPageSetting imported from converted utils. TWO seam notes:
 //   1. upgradeList + RupgradeList are read by still-legacy query.js by bare name, so they
 //      publish to globalThis (shared-var seam) rather than module-scoped var.
@@ -57,7 +57,7 @@ export function gigaTargetZone() {
     return targetZone;
 }
 
-export function autoGiga(targetZone, metalRatio = 0.5, slowDown = 10, customBase) {
+export function autoGiga(targetZone?: number, metalRatio = 0.5, slowDown = 10, customBase?: number) {
     //Pre Init
     if (!targetZone || targetZone < 60) targetZone = gigaTargetZone();
     
@@ -91,10 +91,10 @@ export function autoGiga(targetZone, metalRatio = 0.5, slowDown = 10, customBase
     }
     
     //Returns a number in the x.yy format, and as a number, not a string
-    return +(Math.round(delta + "e+2")  + "e-2");
+    return +(Math.round((delta + "e+2") as any)  + "e-2");
 }
 
-export function firstGiga(forced) {
+export function firstGiga(forced?: boolean) {
     //Build our first giga if: A) Has more than 2 Warps & B) Can't afford more Coords & C)* Lacking Health or Damage & D)* Has run at least 1 map stack or if forced to
     const maxHealthMaps = game.global.challengeActive === "Daily" ? getPageSetting('dMaxMapBonushealth') : getPageSetting('MaxMapBonushealth');
     const s = !(getPageSetting('CustomDeltaFactor') > 20);
@@ -196,7 +196,7 @@ export function RbuyUpgrades() {
         }
 }
 
-export function RautoGoldenUpgradesAT(setting) {
+export function RautoGoldenUpgradesAT(setting: string) {
     var num = getAvailableGoldenUpgrades();
     var setting2;
     if (num == 0) return;

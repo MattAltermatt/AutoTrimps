@@ -31,6 +31,31 @@ declare global {
   function canAffordBuilding(...args: any[]): boolean
   function calculateMaxAfford(...args: any[]): number
   function getBuildingItemPrice(...args: any[]): number
+  function buyBuilding(...args: any[]): void
+  function bwRewardUnlocked(...args: any[]): boolean
+  function canAffordCoordinationTrimps(...args: any[]): boolean
+  function toggleAutoStorage(...args: any[]): void
+  function simpleSeconds(...args: any[]): number
+  function scaleToCurrentMap(...args: any[]): number
+  function getPsString(...args: any[]): number // updates.js
+  function buyUpgrade(...args: any[]): any
+  function canAffordTwoLevel(...args: any[]): boolean
+  function getAvailableGoldenUpgrades(...args: any[]): number
+  function buyGoldenUpgrade(...args: any[]): boolean
+
+  // Native game generator/magmite helpers (main.js).
+  function buyGeneratorUpgrade(...args: any[]): void
+  function buyPermanentGeneratorUpgrade(...args: any[]): void
+  function changeGeneratorState(...args: any[]): void
+
+  // Native game gather/labor helpers (main.js / updates.js).
+  function setGather(...args: any[]): void
+  function getPlayerModifier(...args: any[]): number
+  function getZoneSeconds(...args: any[]): number // updates.js
+
+  // Native game equipment helpers (main.js).
+  function buyEquipment(...args: any[]): any
+  function getNextPrestigeCost(...args: any[]): number
 
   // Native game heirloom management (main.js).
   function selectHeirloom(...args: any[]): void

@@ -1,7 +1,8 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/gather.js.
-// Gather/trap automation (calcTPS, trap buffering, manual labor; U1 + U2 R* family). 61 game.* touches, @ts-nocheck. Module vars trapBuffering/maxTrapBuffering/maxZoneDuration are gather-internal. No shared vars, no implicit globals, no collisions.
+// TRUE-TS (Phase 1 · Wave 2, #29): faithful port of legacy/modules/gather.js, now
+// strict-typed. Gather/trap automation (calcTPS, trap buffering, manual labor; U1 + U2 R*
+// family). 61 game.* touches; native/AT globals typed ambient in src/game/*.d.ts and read by
+// bare name (no imports → esbuild byte-identical to the @ts-nocheck original, the conversion
+// gate). Module vars trapBuffering/maxTrapBuffering/maxZoneDuration are gather-internal.
 import { getPageSetting, debug } from './utils'
 
 //updated
@@ -54,8 +55,8 @@ export function manualLabor2() {
 
 	// Init - Science
 	var firstFightOK = game.global.world > 1 || game.global.lastClearedCell >= 0;
-	var researchAvailable = document.getElementById('scienceCollectBtn').style.display != 'none' && document.getElementById('science').style.visibility != 'hidden';
-	var scienceAvailable = document.getElementById('science').style.visibility != 'hidden';
+	var researchAvailable = document.getElementById('scienceCollectBtn')!.style.display != 'none' && document.getElementById('science')!.style.visibility != 'hidden';
+	var scienceAvailable = document.getElementById('science')!.style.visibility != 'hidden';
 	var needBattle = !game.upgrades.Battle.done && game.resources.science.owned < 10;
 	var needScience = game.resources.science.owned < scienceNeeded;
 	var needScientists = firstFightOK && game.global.challengeActive != 'Scientist' && !game.upgrades.Scientists.done && game.resources.science.owned < 100 && scienceAvailable;
@@ -158,7 +159,7 @@ export function manualLabor2() {
 	}
 
 	//Untouched mess
-	var manualResourceList = {
+	var manualResourceList: Record<string, string> = {
 		'food': 'Farmer',
 		'wood': 'Lumberjack',
 		'metal': 'Miner',
@@ -169,8 +170,8 @@ export function manualLabor2() {
 	for (var resource in manualResourceList) {
 		var job = manualResourceList[resource];
 		var currentRate = game.jobs[job].owned * game.jobs[job].modifier;
-		// debug('Current rate for ' + resource + ' is ' + currentRate + ' is hidden? ' + (document.getElementById(resource).style.visibility == 'hidden'));
-		if (document.getElementById(resource).style.visibility != 'hidden') {
+		// debug('Current rate for ' + resource + ' is ' + currentRate + ' is hidden? ' + (document.getElementById(resource)!.style.visibility == 'hidden'));
+		if (document.getElementById(resource)!.style.visibility != 'hidden') {
 			//find the lowest resource rate
 			if (currentRate === 0) {
 				currentRate = game.resources[resource].owned;
@@ -351,10 +352,10 @@ export function RmanualLabor2() {
     }
 	
     //MISC.
-    else if (getPageSetting('RManualGather2') != 2 && game.resources.science.owned < MODULES["gather"].RminScienceAmount && document.getElementById('scienceCollectBtn').style.display != 'none' && document.getElementById('science').style.visibility != 'hidden') {
+    else if (getPageSetting('RManualGather2') != 2 && game.resources.science.owned < MODULES["gather"].RminScienceAmount && document.getElementById('scienceCollectBtn')!.style.display != 'none' && document.getElementById('science')!.style.visibility != 'hidden') {
         setGather('science');
     }
-    else if (game.resources.science.owned < (RscienceNeeded * 0.8) && document.getElementById('scienceCollectBtn').style.display != 'none' && document.getElementById('science').style.visibility != 'hidden') {
+    else if (game.resources.science.owned < (RscienceNeeded * 0.8) && document.getElementById('scienceCollectBtn')!.style.display != 'none' && document.getElementById('science')!.style.visibility != 'hidden') {
         setGather('science');
     }
     else if (trapTrimpsOK && needToTrap && game.buildings.Trap.owned == 0 && canAffordBuilding('Trap')) {
@@ -370,7 +371,7 @@ export function RmanualLabor2() {
     else if (!game.global.trapBuildToggled && (game.global.buildingsQueue[0] == 'Barn.1' || game.global.buildingsQueue[0] == 'Shed.1' || game.global.buildingsQueue[0] == 'Forge.1')) {
         setGather('buildings');
     }
-    else if (game.resources.science.owned >= RscienceNeeded && document.getElementById('scienceCollectBtn').style.display != 'none' && document.getElementById('science').style.visibility != 'hidden') {
+    else if (game.resources.science.owned >= RscienceNeeded && document.getElementById('scienceCollectBtn')!.style.display != 'none' && document.getElementById('science')!.style.visibility != 'hidden') {
         if (game.global.challengeActive != "Transmute" && (getPlayerModifier() < getPerSecBeforeManual('Scientist') && hasTurkimp) || getPageSetting('RManualGather2') == 2) {
             setGather('metal');
         } else if (getPageSetting('RManualGather2') != 2) {

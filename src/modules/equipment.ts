@@ -1,11 +1,10 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/equipment.js.
-// Auto-equip / prestige / equipment-efficiency logic (U1 + the parallel U2 radon R*
-// family). Deeply game-coupled (146 game.* touches), so @ts-nocheck like the other
-// Phase-2 bodies. getPageSetting + debug imported from converted utils — the only
-// converted deps. No cross-module shared vars: module-level vars (equipmentList,
-// Best, resourcesNeeded, preBuy*2, and R* twins) are equipment-internal, so they stay
+// TRUE-TS (Phase 1 · Wave 2, #29): faithful port of legacy/modules/equipment.js, now
+// strict-typed. Auto-equip / prestige / equipment-efficiency logic (U1 + the parallel U2
+// radon R* family). Deeply game-coupled (146 game.* touches); native/AT globals typed
+// ambient in src/game/*.d.ts and read by bare name (no imports → esbuild byte-identical to
+// the @ts-nocheck original, the conversion gate). getPageSetting + debug imported from
+// converted utils. No cross-module shared vars: module-level vars (equipmentList, Best,
+// resourcesNeeded, preBuy*2, and R* twins) are equipment-internal, so they stay
 // module-scoped var. The one bare implicit-global write (needGymystic, in
 // evaluateEquipmentEfficiency) resolves to the var declared in AutoTrimps2.js, which
 // loads before this bundle — so no strict-mode ReferenceError at runtime.
@@ -20,7 +19,7 @@ MODULES["equipment"].capDivisor = 10;
 MODULES["equipment"].alwaysLvl2 = getPageSetting('always2');
 MODULES["equipment"].waitTill60 = true;
 MODULES["equipment"].equipHealthDebugMessage = false;
-var equipmentList = {
+var equipmentList: Record<string, any> = {
     'Dagger': {
         Upgrade: 'Dagadder',
         Stat: 'attack',
@@ -106,12 +105,12 @@ var equipmentList = {
         Equip: false
     }
 };
-var mapresourcetojob = {"food": "Farmer", "wood": "Lumberjack", "metal": "Miner", "science": "Scientist"}; 
-export function equipEffect(a,b){if(b.Equip)return a[b.Stat+'Calculated'];var c=a.increase.by*a.owned,d=game.upgrades.Gymystic.done?game.upgrades.Gymystic.modifier+0.01*(game.upgrades.Gymystic.done-1):1,e=a.increase.by*(a.owned+1)*d;return e-c}
-export function equipCost(a,b){var c=parseFloat(getBuildingItemPrice(a,b.Resource,b.Equip,1));return c=b.Equip?Math.ceil(c*Math.pow(1-game.portal.Artisanistry.modifier,game.portal.Artisanistry.level)):Math.ceil(c*Math.pow(1-game.portal.Resourceful.modifier,game.portal.Resourceful.level)),c}
-export function PrestigeValue(a){var b=game.upgrades[a].prestiges,c=game.equipment[b],d;d=c.blockNow?"block":"undefined"==typeof c.health?"attack":"health";var e=Math.round(c[d]*Math.pow(1.19,c.prestige*game.global.prestige[d]+1));return e}
+var mapresourcetojob: Record<string, string> = {"food": "Farmer", "wood": "Lumberjack", "metal": "Miner", "science": "Scientist"};
+export function equipEffect(a: any,b: any){if(b.Equip)return a[b.Stat+'Calculated'];var c=a.increase.by*a.owned,d=game.upgrades.Gymystic.done?game.upgrades.Gymystic.modifier+0.01*(game.upgrades.Gymystic.done-1):1,e=a.increase.by*(a.owned+1)*d;return e-c}
+export function equipCost(a: any,b: any){var c=parseFloat(getBuildingItemPrice(a,b.Resource,b.Equip,1) as any);return c=b.Equip?Math.ceil(c*Math.pow(1-game.portal.Artisanistry.modifier,game.portal.Artisanistry.level)):Math.ceil(c*Math.pow(1-game.portal.Resourceful.modifier,game.portal.Resourceful.level)),c}
+export function PrestigeValue(a: any){var b=game.upgrades[a].prestiges,c=game.equipment[b],d;d=c.blockNow?"block":"undefined"==typeof c.health?"attack":"health";var e=Math.round(c[d]*Math.pow(1.19,c.prestige*game.global.prestige[d]+1));return e}
 
-export function evaluateEquipmentEfficiency(equipName) {
+export function evaluateEquipmentEfficiency(equipName: string) {
     var equip = equipmentList[equipName];
     var gameResource = equip.Equip ? game.equipment[equipName] : game.buildings[equipName];
     if (equipName == 'Shield') {
@@ -149,9 +148,9 @@ export function evaluateEquipmentEfficiency(equipName) {
                 StatusBorder = 'red';
             } else {
                 var CurrEffect = gameResource.level * Effect;
-                var NeedLevel = Math.ceil(CurrEffect / NextEffect);
+                var NeedLevel = Math.ceil(CurrEffect / NextEffect!);
                 var Ratio = gameResource.cost[equip.Resource][1];
-                var NeedResource = NextCost * (Math.pow(Ratio, NeedLevel) - 1) / (Ratio - 1);
+                var NeedResource = NextCost! * (Math.pow(Ratio, NeedLevel) - 1) / (Ratio - 1);
                 if (game.resources[equip.Resource].owned > NeedResource) {
                     StatusBorder = 'red';
                 } else {
@@ -199,8 +198,8 @@ export function evaluateEquipmentEfficiency(equipName) {
     };
 }
 
-var resourcesNeeded;
-var Best;
+var resourcesNeeded: any;
+var Best: any;
 
 export function orangewindstack(){(9<game.equipment.Dagger.level&&0==game.upgrades.Dagadder.locked&&buyUpgrade('Dagadder',!0,!0),9<game.equipment.Mace.level&&0==game.upgrades.Megamace.locked&&buyUpgrade('Megamace',!0,!0),9<game.equipment.Polearm.level&&0==game.upgrades.Polierarm.locked&&buyUpgrade('Polierarm',!0,!0),9<game.equipment.Battleaxe.level&&0==game.upgrades.Axeidic.locked&&buyUpgrade('Axeidic',!0,!0),9<game.equipment.Greatsword.level&&0==game.upgrades.Greatersword.locked&&buyUpgrade('Greatersword',!0,!0),9<game.equipment.Arbalest.level&&0==game.upgrades.Harmbalest.locked&&buyUpgrade('Harmbalest',!0,!0),0==game.upgrades.Bootboost.locked&&buyUpgrade('Bootboost',!0,!0),0==game.upgrades.Hellishmet.locked&&buyUpgrade('Hellishmet',!0,!0),0==game.upgrades.Pantastic.locked&&buyUpgrade('Pantastic',!0,!0),0==game.upgrades.Smoldershoulder.locked&&buyUpgrade('Smoldershoulder',!0,!0),0==game.upgrades.Bestplate.locked&&buyUpgrade('Bestplate',!0,!0),0==game.upgrades.GambesOP.locked&&buyUpgrade('GambesOP',!0,!0),0==game.upgrades.Supershield.locked&&buyUpgrade('Supershield',!0,!0))}
 export function dorangewindstack(){(9<game.equipment.Dagger.level&&0==game.upgrades.Dagadder.locked&&buyUpgrade('Dagadder',!0,!0),9<game.equipment.Mace.level&&0==game.upgrades.Megamace.locked&&buyUpgrade('Megamace',!0,!0),9<game.equipment.Polearm.level&&0==game.upgrades.Polierarm.locked&&buyUpgrade('Polierarm',!0,!0),9<game.equipment.Battleaxe.level&&0==game.upgrades.Axeidic.locked&&buyUpgrade('Axeidic',!0,!0),9<game.equipment.Greatsword.level&&0==game.upgrades.Greatersword.locked&&buyUpgrade('Greatersword',!0,!0),9<game.equipment.Arbalest.level&&0==game.upgrades.Harmbalest.locked&&buyUpgrade('Harmbalest',!0,!0),0==game.upgrades.Bootboost.locked&&buyUpgrade('Bootboost',!0,!0),0==game.upgrades.Hellishmet.locked&&buyUpgrade('Hellishmet',!0,!0),0==game.upgrades.Pantastic.locked&&buyUpgrade('Pantastic',!0,!0),0==game.upgrades.Smoldershoulder.locked&&buyUpgrade('Smoldershoulder',!0,!0),0==game.upgrades.Bestplate.locked&&buyUpgrade('Bestplate',!0,!0),0==game.upgrades.GambesOP.locked&&buyUpgrade('GambesOP',!0,!0),0==game.upgrades.Supershield.locked&&buyUpgrade('Supershield',!0,!0))}
@@ -303,7 +302,7 @@ export function autoLevelEquipment() {
         var equip = equipmentList[equipName];
         var gameResource = equip.Equip ? game.equipment[equipName] : game.buildings[equipName];
         if (!gameResource.locked) {
-            var $equipName = document.getElementById(equipName);
+            var $equipName = document.getElementById(equipName)!;
             $equipName.style.color = 'white';
             var evaluation = evaluateEquipmentEfficiency(equipName);
             var BKey = equip.Stat + equip.Resource;
@@ -375,7 +374,7 @@ export function autoLevelEquipment() {
     for (var stat in Best) {
         var eqName = Best[stat].Name;
         if (eqName !== '') {
-            var $eqName = document.getElementById(eqName);
+            var $eqName = document.getElementById(eqName)!;
             var DaThing = equipmentList[eqName];
             if (eqName == 'Gym' && needGymystic) {
                 $eqName.style.color = 'white';
@@ -420,7 +419,7 @@ MODULES["equipment"].RnumHitsSurvived = 10;
 MODULES["equipment"].RnumHitsSurvivedScry = 80;
 MODULES["equipment"].RcapDivisor = 10;
 MODULES["equipment"].RequipHealthDebugMessage = false;
-var RequipmentList = {
+var RequipmentList: Record<string, any> = {
     'Dagger': {
         Upgrade: 'Dagadder',
         Stat: 'attack',
@@ -501,16 +500,16 @@ var RequipmentList = {
     }
 };
 
-var Rmapresourcetojob = {"food": "Farmer", "wood": "Lumberjack", "metal": "Miner", "science": "Scientist"}; 
+var Rmapresourcetojob: Record<string, string> = {"food": "Farmer", "wood": "Lumberjack", "metal": "Miner", "science": "Scientist"};
 
-export function RequipEffect(gameResource, equip) {
+export function RequipEffect(gameResource: any, equip: any) {
     if (equip.Equip) {
         return gameResource[equip.Stat + 'Calculated'];
     }
 }
 
-export function RequipCost(gameResource, equip) {
-    var price = parseFloat(getBuildingItemPrice(gameResource, equip.Resource, equip.Equip, 1));
+export function RequipCost(gameResource: any, equip: any) {
+    var price = parseFloat(getBuildingItemPrice(gameResource, equip.Resource, equip.Equip, 1) as any);
     if (equip.Equip)
         price = Math.ceil(price * (Math.pow(1 - game.portal.Artisanistry.modifier, game.portal.Artisanistry.radLevel)));
         price *= autoBattle.oneTimers.Artisan.owned ? autoBattle.oneTimers.Artisan.getMult() : 1;
@@ -520,7 +519,7 @@ export function RequipCost(gameResource, equip) {
     return price;
 }
 
-export function RPrestigeValue(what) {
+export function RPrestigeValue(what: any) {
     var name = game.upgrades[what].prestiges;
     var equipment = game.equipment[name];
     var stat;
@@ -529,7 +528,7 @@ export function RPrestigeValue(what) {
     return toReturn;
 }
 
-export function RevaluateEquipmentEfficiency(equipName) {
+export function RevaluateEquipmentEfficiency(equipName: string) {
     var equip = RequipmentList[equipName];
     var gameResource = equip.Equip ? game.equipment[equipName] : game.buildings[equipName];
     var Effect = equipEffect(gameResource, equip);
@@ -556,9 +555,9 @@ export function RevaluateEquipmentEfficiency(equipName) {
                 StatusBorder = 'red';
             } else {
                 var CurrEffect = gameResource.level * Effect;
-                var NeedLevel = Math.ceil(CurrEffect / NextEffect);
+                var NeedLevel = Math.ceil(CurrEffect / NextEffect!);
                 var Ratio = gameResource.cost[equip.Resource][1];
-                var NeedResource = NextCost * (Math.pow(Ratio, NeedLevel) - 1) / (Ratio - 1);
+                var NeedResource = NextCost! * (Math.pow(Ratio, NeedLevel) - 1) / (Ratio - 1);
                 if (game.resources[equip.Resource].owned > NeedResource) {
                     StatusBorder = 'red';
                 } else {
@@ -595,8 +594,8 @@ export function RevaluateEquipmentEfficiency(equipName) {
     };
 }
 
-var RresourcesNeeded;
-var RBest;
+var RresourcesNeeded: any;
+var RBest: any;
 var RpreBuyAmt2=1;
 var RpreBuyFiring2=1;
 var RpreBuyTooltip2=false;
@@ -654,7 +653,7 @@ export function RautoLevelEquipment() {
         var equip = RequipmentList[equipName];
         var gameResource = game.equipment[equipName];
         if (!gameResource.locked) {
-            var $equipName = document.getElementById(equipName);
+            var $equipName = document.getElementById(equipName)!;
             $equipName.style.color = 'white';
             var evaluation = RevaluateEquipmentEfficiency(equipName);
             var BKey = equip.Stat + equip.Resource;
@@ -713,7 +712,7 @@ export function RautoLevelEquipment() {
     for (var stat in RBest) {
         var eqName = RBest[stat].Name;
         if (eqName !== '') {
-            var $eqName = document.getElementById(eqName);
+            var $eqName = document.getElementById(eqName)!;
             var DaThing = RequipmentList[eqName];
             $eqName.style.color = RBest[stat].Wall ? 'orange' : 'red';
             $eqName.style.border = '2px solid red';
@@ -747,7 +746,7 @@ export function RautoLevelEquipment() {
 
 export function RareWeAttackLevelCapped(){var a=[];for(var b in RequipmentList){var c=RequipmentList[b],d=c.Equip?game.equipment[b]:game.buildings[b];if(!d.locked){var e=RevaluateEquipmentEfficiency(b);"attack"==e.Stat&&a.push(e)}}return a.every(f=>0==f.Factor&&!0==f.Wall)}
 
-export function Rgetequips(map, special) { //(level, p b or false)
+export function Rgetequips(map: any, special: any) { //(level, p b or false)
     var specialCount = 0;
     var unlocksObj;
     var world;
@@ -777,7 +776,7 @@ export function Rgetequips(map, special) { //(level, p b or false)
         if (special.startAt < 0) continue;
         if (special.lastAt < game.global.world) continue;
         if ((special.filterUpgrade)) {
-            var mapConfigLoc = game.mapConfig.locations[Rlocation];
+            var mapConfigLoc = game.mapConfig.locations[Rlocation as any];
             if (typeof mapConfigLoc.upgrade === 'object') {
                 var usable = false;
                 for (var x = 0; x < mapConfigLoc.upgrade.length; x++) {
@@ -830,7 +829,7 @@ export function Rgetequips(map, special) { //(level, p b or false)
 
 //barakatx2
 const prestigeZones = [["Supershield","Dagadder","Bootboost"], ["Megamace", "Hellishmet"], ["Polierarm", "Pantastic"], ["Axeidic", "Smoldershoulder"], ["Greatersword", "Harmbalest", "Bestplate", "GambesOP"]]
-    function attainablePrestiges(zone) {
+    function attainablePrestiges(zone: any) {
         const baseExpectedPrestigesAvailable = Math.floor(zone / 10) * 2 - 1
         const prestigeZoneOffset = Math.floor(Math.min(zone % 10, 5))
         var attainablePrestiges = 0
@@ -844,7 +843,7 @@ const prestigeZones = [["Supershield","Dagadder","Bootboost"], ["Megamace", "Hel
 
 //Shol Territory
 
-export function mostEfficientEquipment(fakeLevels = {}) {
+export function mostEfficientEquipment(fakeLevels: Record<string, any> = {}) {
 
     for (var i in RequipmentList) {
         if (typeof fakeLevels[i] === 'undefined') {
@@ -889,7 +888,7 @@ export function mostEfficientEquipment(fakeLevels = {}) {
 
 }
 
-export function Requipcalc(capattack, caphealth, level2, zonego, attack, health, name, resource, stat, source, amount, percent) {
+export function Requipcalc(capattack: any, caphealth: any, level2: any, zonego: any, attack: any, health: any, name: any, resource: any, stat: any, source: any, amount: any, percent: any) {
 
     if (canAffordBuilding(name, null, null, true, false, amount) && smithylogic(name, resource, true) &&
         (
@@ -920,7 +919,7 @@ export function Requipcalc(capattack, caphealth, level2, zonego, attack, health,
     }
 }
 
-export function getMaxAffordable(baseCost, totalResource, costScaling, isCompounding) {
+export function getMaxAffordable(baseCost: any, totalResource: any, costScaling: any, isCompounding: any) {
 
     if (!isCompounding) {
         return Math.floor(
@@ -931,7 +930,7 @@ export function getMaxAffordable(baseCost, totalResource, costScaling, isCompoun
     }
 }
 
-export function buyPrestigeMaybe(equipName) {
+export function buyPrestigeMaybe(equipName: string) {
 
     if (game.global.challengeActive == "Pandemonium" && game.challenges.Pandemonium.isEquipBlocked(equipName)) {
             return false;
@@ -1023,7 +1022,7 @@ export function RautoEquip() {
 
         // Set up for attack
         var equipName = bestBuys[0];
-        var resourceUsed = resourceUsed = (equipName == 'Shield') ? 'wood' : 'metal';
+        var resourceUsed: any = resourceUsed = (equipName == 'Shield') ? 'wood' : 'metal';
         var equipCap = attackEquipCap;
         var underStats = RcalcHDratio() >= getPageSetting('Rdmgcuntoff');
 
@@ -1060,7 +1059,7 @@ export function RautoEquip() {
 
 }
 
-export function getTotalMultiCost(baseCost, multiBuyCount, costScaling, isCompounding) {
+export function getTotalMultiCost(baseCost: any, multiBuyCount: any, costScaling: any, isCompounding: any) {
     if (!isCompounding) {
         return multiBuyCount * (multiBuyCount * costScaling - costScaling + 2 * baseCost) / 2;
     } else {
@@ -1132,7 +1131,7 @@ export function estimateEquipsForZone() {
     var attackNeeded = ourAttack * attackNeededMulti;
     var healthNeeded = ourHealth * healthNeededMulti / (getTotalHealthMod() * game.resources.trimps.maxSoldiers);
 
-    var bonusLevels = {}; // How many levels you'll be getting in each shield-gambeson armor slots
+    var bonusLevels: Record<string, any> = {}; // How many levels you'll be getting in each shield-gambeson armor slots
     
     while (healthNeeded > 0) {
         var bestArmor = mostEfficientEquipment(bonusLevels)[1];
