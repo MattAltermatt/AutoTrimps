@@ -1,7 +1,6 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/fight.js.
-// Better-auto-fight dispatchers. Registers MODULES["fight"]. trimpsEffectivelyEmployed imported from converted breedtimer; pauseFight/fightManual/challengeActive are game/legacy globals. No shared vars, no implicit globals.
+// TRUE TS (Phase 1 · #31): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/fight.js.
+// Better-auto-fight dispatchers. Registers MODULES["fight"]. trimpsEffectivelyEmployed imported from converted breedtimer; pauseFight/fightManual/challengeActive are game/legacy globals (ambient seam). No shared vars, no implicit globals.
 import { trimpsEffectivelyEmployed } from './breedtimer'
 
 MODULES["fight"] = {};

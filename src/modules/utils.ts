@@ -1,11 +1,10 @@
-/* eslint-disable */
-// @ts-nocheck
+// TRUE TS (Phase 1 · #31): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/utils.js.
+// The settings + logging tangle: getPageSetting/setPageSetting/debug/message2 + the frozen
+// serializeSettings blobs. Imported by nearly every module. autoTrimpSettings + the game/DOM
+// globals resolve via the ambient seam (at-legacy.d.ts / trimps.d.ts). Byte-identical to
+// gh-pages (type-only fixes). The peeled clean leaves time.ts / buystate.ts carry real types.
 import { timeStamp } from './time'
-// FAITHFUL PORT (Phase 1): relocated verbatim from legacy/modules/utils.js. The
-// settings + logging tangle stays untyped for now (spec: typing is pay-as-you-go,
-// tightened per-slice). The peeled clean leaves time.ts / buystate.ts carry real
-// types + tests. Typing this remainder + the settings↔logging untangle is a future
-// dedicated slice.
 if (!String.prototype.includes) {
     String.prototype.includes = function(search, start) {
         'use strict';
@@ -21,16 +20,16 @@ if (!String.prototype.includes) {
 }
 
 export function loadPageVariables() {
-    var tmp = JSON.parse(localStorage.getItem('autoTrimpSettings'));
+    var tmp = JSON.parse(localStorage.getItem('autoTrimpSettings')!);
     if (tmp !== null && tmp['ATversion'] != undefined) {
         autoTrimpSettings = tmp;
     }
 }
 
-export function safeSetItems(a,b){try{localStorage.setItem(a,b)}catch(c){22==c.code&&debug("Error: LocalStorage is full, or error. Attempt to delete some portals from your graph or restart browser.")}}
+export function safeSetItems(a: string,b: string){try{localStorage.setItem(a,b)}catch(c: any){22==c.code&&debug("Error: LocalStorage is full, or error. Attempt to delete some portals from your graph or restart browser.")}}
 
 export function serializeSettings() {
-    return JSON.stringify(Object.keys(autoTrimpSettings).reduce((v, k) => {
+    return JSON.stringify(Object.keys(autoTrimpSettings).reduce((v: Record<string, any>, k) => {
         const el = autoTrimpSettings[k];
         switch (el.type) {
         case 'boolean':
@@ -55,7 +54,7 @@ export function serializeSettings550() {
     return '{"ManualGather2":2,"ATversion":"2.1.6.9b-genbtc-4-2-2018 + KFrowde + Zeker0","BetterAutoFight":3,"AutoStance":2,"BuyStorage":true,"BuyBuildings":true,"BuyUpgrades":true,"BuyJobs":true,"TrapTrimps":false,"AutoHeirlooms":true,"HireScientists":true,"WorkerRatios":false,"ManageBreedtimer":false,"AutoPortal":"Custom","HeliumHourChallenge":"Corrupted","CustomAutoPortal":560,"HeHrDontPortalBefore":496,"HeliumHrBuffer":3,"AutoFinishDaily":true,"AutoFinishDailyZone":0,"AutoStartDaily":true,"PauseScript":false,"BuyArmor":true,"BuyArmorUpgrades":true,"BuyWeapons":true,"BuyWeaponUpgrades":true,"BuyShieldblock":false,"Prestige":"Dagadder","PrestigeBackup":{"selected":"Dagadder","id":"PrestigeBackup","name":"PrestigeBackup"},"DynamicPrestige2":-1,"PrestigeSkipMode":false,"AlwaysArmorLvl2":true,"WaitTill60":true,"DelayArmorWhenNeeded":false,"CapEquip2":200,"AutoMaps":1,"DynamicSiphonology":true,"LowerFarmingZone":true,"MinutestoFarmBeforeSpire":0,"RunBionicBeforeSpire":false,"ExitSpireCell":-1,"CorruptionCalc":true,"FarmWhenNomStacks7":true,"VoidMaps":555,"RunNewVoids":false,"RunNewVoidsUntil":600,"VoidCheck":1,"MaxTox":false,"DisableFarm":-1,"FarmerRatio":20,"LumberjackRatio":10,"MinerRatio":1000,"MaxScientists":"-1","MaxExplorers":3000,"MaxTrainers":-1,"MaxHut":100,"MaxHouse":0,"MaxMansion":0,"MaxHotel":0,"MaxResort":0,"MaxGateway":0,"MaxWormhole":0,"MaxCollector":0,"FirstGigastation":1,"DeltaGigastation":1,"MaxGym":"-1","MaxTribute":"-1","MaxNursery":-1,"BreedFire":false,"AutoMagmamancers":false,"WarpstationCap":false,"WarpstationWall3":-1,"WarpstationCoordBuy":false,"AutoRoboTrimp":270,"AutoGoldenUpgrades":"Void 60","AutoHeirlooms2":false,"AutoUpgradeHeirlooms":false,"TrainerCaptoTributes":"-1","NoNurseriesUntil":498,"AutoMagmiteSpender2":2,"ForceAbandon":true,"GymWall":-1,"DynamicGyms":true,"AutoAllocatePerks":2,"SpireBreedTimer":-1,"UseScryerStance":false,"ScryerUseWhenOverkill":false,"ScryerMinZone":530,"ScryerMaxZone":-1,"ScryerUseinMaps2":0,"ScryerUseinVoidMaps2":0,"ScryerUseinSpire2":0,"ScryerSkipBoss2":0,"ScryerSkipCorrupteds2":2,"ScryerDieToUseS":true,"SpamGeneral":true,"SpamUpgrades":false,"SpamEquipment":false,"SpamMaps":false,"SpamOther":false,"SpamBuilding":false,"SpamJobs":false,"ManualCoords":false,"TrimpleZ":0,"ScryerDieZ":230.6,"IgnoreCrits":2,"ForcePresZ":-1,"PreferMetal":false,"PreSpireNurseries":7000,"FinishC2":-1,"PowerSaving":0,"PrestigeSkip2":false,"AutoEggs":false,"UseAutoGen":1,"AutoGen2":3,"AutoGen2End":320,"AutoGen2SupplyEnd":false,"AutoGen3":0,"AutoGenDC":1,"AutoGenC2":1,"AutoGen2Override":1,"SupplyWall":1,"OneTimeOnly":false,"BuyOvclock":false,"IgnoreSpiresUntil":500,"goldStrat":"Max then Helium","goldAlternating":2,"goldZone":600,"MaxStacksForSpire":true,"UsePatience":false,"AutoNatureTokens":true,"AutoPoison":"Empowerment","AutoWind":"Convert to Poison","AutoIce":"Convert to Poison","MaxMapBonusAfterZone":-1,"SpamGraphs":false,"allowSettingsUpload":false,"EnhanceGrids":false,"EnableAFK":{"id":"EnableAFK","name":"Enable AFK","description":"Enables CPU and RAM saving AFK-mode","type":"action","value":1},"SpamMagmite":false,"SpamPerks":true,"analyticsID":"7f11701e-adc9-477c-a08d-2b66fe3ec2a2","ChangeLog":{"id":"ChangeLog","name":"Show Changelog","description":"Shows the changelog popup message that AT loads on startup in case you missed it.","type":"action","value":1},"AdvMapSpecialModifier":false,"GeneticistTimer":-1,"goldNoBattle":true,"BuyUpgradesNew":1,"AutoFinishDailyNew":0,"BuyBuildingsNew":0,"BuyJobsNew":0,"BuyArmorNew":1,"BuyWeaponsNew":1,"PrestigeSkip1_2":0,"RunNewVoidsUntilNew":0,"DailyVoidMod":570,"PlusMapVoidToggle":0,"Praidingzone":[495,546,555,561,566,570],"BWraid":false,"BWraidingmin":-1,"BWraidingmax":[640],"lootdumpz":265,"lootdumpa":10000,"WindStackingMin":-1,"ScryUseinPoison":-1,"ScryUseinWind":-1,"ScryUseinIce":-1,"BuyOneTimeOC":2,"AutoHeirloomsNew":2,"ShowSettings":true,"BWraidingz":[597],"fastallocate":true,"VoidPraid":true,"trimpsnotdie":true,"gearamounttobuy":5,"Dailyportal":560,"dVoidPraid":true,"dPraidingzone":[495,510,525,540,555,570],"Dailybwraid":false,"dBWraidingz":[495],"dBWraidingmax":[515],"dExitSpireCell":-1,"WindStackingMax":190,"buyheliumy":-1,"buynojobsc":true,"Trimpicide":true,"fightforever":0,"use3daily":true,"windcutoff":-1,"spireshitbuy":true,"hardcorewind":-1,"PraidHarder":false,"PraidFarmFrags":false,"PraidBeforeFarm":false,"dPraidHarder":false,"dMaxPraidZone":[-1],"dPraidFarmFragsZ":[-1],"dPraidBeforeFarmZ":[-1],"MaxPraidZone":[505,535,545,555,561],"PraidFarmFragsZ":[495],"PraidBeforeFarmZ":[-1],"fuellater":260,"dWindStackingMin":450,"dWindStackingMax":190,"dwindcutoff":160,"dhardcorewind":480,"ScryerSkipHealthy":2,"addpoison":true,"amalcoord":true,"dAutoGoldenUpgrades":"Void 60","cAutoGoldenUpgrades":"Battle","dhardcorewindmax":"-1","cfightforever":true,"work":false,"in":false,"progress":false,"hardcorewindmax":"-1","dfightforever":2,"fuelend":320,"defaultgen":0,"spendmagmite":2,"spendmagmitesetting":1,"ultwind":-1,"ultwindcut":0.05,"CapEquiparm":100,"amalcoordhd":0.0000025,"onlyminmaxworld":false,"amalcoordz":398,"dultwind":"-1","dultwindcut":"0.00025","dwindhealthy":"false","windhealthy":false,"mapcutoff":4,"darmormagic":3,"carmormagic":3,"fuckanti":"-1","dscryvoidmaps":true,"scryvoidmaps":true,"dusebstance":true,"usebstance":true,"AutoPortalDaily":2,"dCustomAutoPortal":575,"dHeHrDontPortalBefore":"999","dHeliumHrBuffer":"0","dHeliumHourChallenge":"Corrupted","hidebuildings":true,"fuckjobs":true,"amalcoordt":6,"screwessence":false,"beforegen":0,"c2runnerstart":false,"c2runnerportal":"999","buywepsvoid":true,"mapc2hd":"-1","ScryerUseinBW":0,"dwindcutoffmap":160,"windcutoffmap":"-1"}';
 }
 
-export function getPageSetting(setting) {
+export function getPageSetting(setting: string) {
     if (autoTrimpSettings.hasOwnProperty(setting) == false) {
         return false;
     }
@@ -63,7 +62,7 @@ export function getPageSetting(setting) {
         return autoTrimpSettings[setting].enabled;
     } else if (autoTrimpSettings[setting].type == 'multiValue') {
         return Array.from(autoTrimpSettings[setting].value)
-        .map(x => parseInt(x));
+        .map(x => parseInt(x as string));
     } else if (autoTrimpSettings[setting].type == 'textValue') {
         return autoTrimpSettings[setting].value;
     } else if (autoTrimpSettings[setting].type == 'value' || autoTrimpSettings[setting].type == 'valueNegative') {
@@ -75,13 +74,13 @@ export function getPageSetting(setting) {
     }
 }
 
-export function setPageSetting(setting, value) {
+export function setPageSetting(setting: string, value: any) {
     if (autoTrimpSettings.hasOwnProperty(setting) == false) {
         return false;
     }
     if (autoTrimpSettings[setting].type == 'boolean') {
         autoTrimpSettings[setting].enabled = value;
-        document.getElementById(setting).setAttribute('class', 'noselect settingsBtn settingBtn' + autoTrimpSettings[setting].enabled);
+        document.getElementById(setting)!.setAttribute('class', 'noselect settingsBtn settingBtn' + autoTrimpSettings[setting].enabled);
     } else if (autoTrimpSettings[setting].type == 'value' || autoTrimpSettings[setting].type == 'valueNegative') {
         autoTrimpSettings[setting].value = value;
     } else if (autoTrimpSettings[setting].type == 'textValue') {
@@ -90,7 +89,7 @@ export function setPageSetting(setting, value) {
         autoTrimpSettings[setting].value = value;
     } else if (autoTrimpSettings[setting].type == 'multitoggle') {
         autoTrimpSettings[setting].value = value;
-        document.getElementById(setting).setAttribute('class', 'noselect settingsBtn settingBtn' + autoTrimpSettings[setting].value);
+        document.getElementById(setting)!.setAttribute('class', 'noselect settingsBtn settingBtn' + autoTrimpSettings[setting].value);
     } else if (autoTrimpSettings[setting].type == 'dropdown') {
         autoTrimpSettings[setting].selected = value;
     }
@@ -98,7 +97,7 @@ export function setPageSetting(setting, value) {
 
 export function saveSettings(){safeSetItems('autoTrimpSettings',serializeSettings())}
 
-export function debug(message, type?, lootIcon?) {
+export function debug(message: any, type?: any, lootIcon?: any) {
     var general = getPageSetting('SpamGeneral');
     var upgrades = getPageSetting('SpamUpgrades');
     var equips = getPageSetting('SpamEquipment');
@@ -153,11 +152,11 @@ export function debug(message, type?, lootIcon?) {
 
 // timeStamp → src/modules/time.ts (imported above; debug() uses it)
 // preBuy/postBuy/preBuy2/postBuy2 → src/modules/buystate.ts (published via legacy-bridge)
-export function setTitle(){aWholeNewWorld&&(document.title='('+game.global.world+') Trimps '+document.getElementById('versionNumber').innerHTML)}
+export function setTitle(){aWholeNewWorld&&(document.title='('+game.global.world+') Trimps '+document.getElementById('versionNumber')!.innerHTML)}
 var lastmessagecount = 1;
-export function message2(a,b,c,d){var e=document.getElementById("log"),f=e.scrollTop+10>e.scrollHeight-e.clientHeight,g=ATmessageLogTabVisible?"block":"none",h="";c&&"*"==c.charAt(0)?(c=c.replace("*",""),h="icomoon icon-"):h="glyphicon glyphicon-",game.options.menu.timestamps.enabled&&(a=(1==game.options.menu.timestamps.enabled?getCurrentTime():updatePortalTimer(!0))+" "+a),c&&(a="<span class=\""+h+c+"\"></span> "+a),a="<span class=\"glyphicon glyphicon-superscript\"></span> "+a,a="<span class=\"icomoon icon-text-color\"></span>"+a;var i="<span class='"+b+"Message message "+d+"' style='display: "+g+"'>"+a+"</span>",j=document.getElementsByClassName(b+"Message");if(1<j.length&&-1<j[j.length-1].innerHTML.indexOf(a)){var k=j[j.length-1].innerHTML;lastmessagecount++;var l=k.lastIndexOf(" x");-1!=l&&(j[j.length-1].innerHTML=k.slice(0,l)),j[j.length-1].innerHTML+=" x"+lastmessagecount}else lastmessagecount=1,e.innerHTML+=i;f&&(e.scrollTop=e.scrollHeight),trimMessages(b)}
-var ATbutton=document.createElement('button');ATbutton.innerHTML='AutoTrimps',ATbutton.setAttribute('id','AutoTrimpsFilter'),ATbutton.setAttribute('type','button'),ATbutton.setAttribute('onclick','filterMessage2(\'AutoTrimps\')'),ATbutton.setAttribute('class','btn btn-success logFlt');var tab=document.createElement('DIV');tab.setAttribute('class','btn-group'),tab.setAttribute('role','group'),tab.appendChild(ATbutton),document.getElementById('logBtnGroup').appendChild(tab);
-export function filterMessage2(a){var displayed;var b=document.getElementById("log");displayed=!ATmessageLogTabVisible,ATmessageLogTabVisible=displayed;var c=document.getElementsByClassName(a+"Message"),d=displayed?a:a+" off",e=document.getElementById(a+"Filter");e.innerHTML=d,e.className="",e.className=getTabClass(displayed),displayed=displayed?"block":"none";for(var f=0;f<c.length;f++)c[f].style.display=displayed;b.scrollTop=b.scrollHeight}
+export function message2(a: any,b: any,c: any,d: any){var e=document.getElementById("log")!,f=e.scrollTop+10>e.scrollHeight-e.clientHeight,g=ATmessageLogTabVisible?"block":"none",h="";c&&"*"==c.charAt(0)?(c=c.replace("*",""),h="icomoon icon-"):h="glyphicon glyphicon-",game.options.menu.timestamps.enabled&&(a=(1==game.options.menu.timestamps.enabled?getCurrentTime():updatePortalTimer(!0))+" "+a),c&&(a="<span class=\""+h+c+"\"></span> "+a),a="<span class=\"glyphicon glyphicon-superscript\"></span> "+a,a="<span class=\"icomoon icon-text-color\"></span>"+a;var i="<span class='"+b+"Message message "+d+"' style='display: "+g+"'>"+a+"</span>",j=document.getElementsByClassName(b+"Message");if(1<j.length&&-1<j[j.length-1].innerHTML.indexOf(a)){var k=j[j.length-1].innerHTML;lastmessagecount++;var l=k.lastIndexOf(" x");-1!=l&&(j[j.length-1].innerHTML=k.slice(0,l)),j[j.length-1].innerHTML+=" x"+lastmessagecount}else lastmessagecount=1,e.innerHTML+=i;f&&(e.scrollTop=e.scrollHeight),trimMessages(b)}
+var ATbutton=document.createElement('button');ATbutton.innerHTML='AutoTrimps',ATbutton.setAttribute('id','AutoTrimpsFilter'),ATbutton.setAttribute('type','button'),ATbutton.setAttribute('onclick','filterMessage2(\'AutoTrimps\')'),ATbutton.setAttribute('class','btn btn-success logFlt');var tab=document.createElement('DIV');tab.setAttribute('class','btn-group'),tab.setAttribute('role','group'),tab.appendChild(ATbutton),document.getElementById('logBtnGroup')!.appendChild(tab);
+export function filterMessage2(a: any){var displayed;var b=document.getElementById("log")!;displayed=!ATmessageLogTabVisible,ATmessageLogTabVisible=displayed;var c=document.getElementsByClassName(a+"Message"),d=displayed?a:a+" off",e=document.getElementById(a+"Filter")!;e.innerHTML=d,e.className="",e.className=getTabClass(displayed),displayed=displayed?"block":"none";for(var f=0;f<c.length;f++)(c[f] as any).style.display=displayed;b.scrollTop=b.scrollHeight}
 
 // formatMinutesForDescriptions → src/modules/time.ts (published via legacy-bridge)
 

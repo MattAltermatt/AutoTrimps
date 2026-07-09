@@ -1,11 +1,10 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/import-export.js.
+// TRUE TS (Phase 1 · #31): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/import-export.js.
 // Settings import/export + profile GUI. Registers MODULES[import-export]. $settingsProfiles internal; ATrunning/script resolve to AutoTrimps2 globals.
 import { debug, safeSetItems, saveSettings } from './utils'
 
 MODULES["import-export"] = {};
-var $settingsProfiles;
+var $settingsProfiles: any;
 export function settingsProfileMakeGUI() {
     var $settingsProfilesLabel = document.createElement("Label");
     $settingsProfilesLabel.id = 'settingsProfiles Label';
@@ -49,7 +48,7 @@ export function initializeSettingsProfiles() {
     //load the old data in:
     var loadLastProfiles = localStorage.getItem('ATSelectedSettingsProfile');
     var oldpresets = loadLastProfiles ? JSON.parse(loadLastProfiles) : new Array(); //load the import.
-    oldpresets.forEach(function(elem){
+    oldpresets.forEach(function(elem: any){
         //Populate dropdown menu to reflect new name:
         let optionElementReference = new Option(elem.name);
         optionElementReference.id = 'customProfileRead';
@@ -91,9 +90,9 @@ export function confirmedSwitchNow() {
     var index = $settingsProfiles.selectedIndex;
     var profname = $settingsProfiles.options[index].text;
     //load the stored profiles from browser
-    var loadLastProfiles = JSON.parse(localStorage.getItem('ATSelectedSettingsProfile'));
+    var loadLastProfiles = JSON.parse(localStorage.getItem('ATSelectedSettingsProfile')!);
     if (loadLastProfiles != null) {
-        var results = loadLastProfiles.filter(function(elem,i){
+        var results = loadLastProfiles.filter(function(elem: any,i: any){
             return elem.name == profname;
         });
         if (results.length > 0) {
@@ -107,12 +106,12 @@ export function confirmedSwitchNow() {
 export function nameAndSaveNewProfile() {
     //read the name in from tooltip
     try {
-        var profname = document.getElementById("setSettingsNameTooltip").value.replace(/[\n\r]/gm, "");
+        var profname = (document.getElementById("setSettingsNameTooltip") as any).value.replace(/[\n\r]/gm, "");
         if (profname == null) {
             debug("Error in naming, the string is empty.", "profile");
             return;
         }
-    } catch (err) {
+    } catch (err: any) {
         debug("Error in naming, the string is bad." + err.message, "profile");
         return;
     }
@@ -159,10 +158,10 @@ export function onDeleteProfile() {
     debug("Successfully deleted profile #: " + target, "profile");
 }
 
-export function ImportExportTooltip(what, event) {
+export function ImportExportTooltip(what: any, event?: any) {
     if (game.global.lockTooltip)
         return;
-    var $elem = document.getElementById("tooltipDiv");
+    var $elem = document.getElementById("tooltipDiv")!;
     swapClass("tooltipExtra", "tooltipExtraNone", $elem);
     var ondisplay = null;
     var tooltipText;
@@ -174,19 +173,19 @@ export function ImportExportTooltip(what, event) {
         if (document.queryCommandSupported('copy')) {
             costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
             ondisplay = function() {
-                document.getElementById('exportArea').select();
-                document.getElementById('clipBoardBtn').addEventListener('click', function(event) {
-                    document.getElementById('exportArea').select();
+                (document.getElementById('exportArea') as any).select();
+                (document.getElementById('clipBoardBtn') as any).addEventListener('click', function(event: any) {
+                    (document.getElementById('exportArea') as any).select();
                     try {
                         document.execCommand('copy');
-                    } catch (err) {
-                        document.getElementById('clipBoardBtn').innerHTML = "Error, not copied";
+                    } catch (err: any) {
+                        (document.getElementById('clipBoardBtn') as any).innerHTML = "Error, not copied";
                     }
                 });
             };
         } else {
             ondisplay = function() {
-                document.getElementById('exportArea').select();
+                (document.getElementById('exportArea') as any).select();
             };
         }
         costText += "</div>";
@@ -196,13 +195,13 @@ export function ImportExportTooltip(what, event) {
         if (document.queryCommandSupported('copy')) {
             costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
             ondisplay = function() {
-                document.getElementById('exportArea').select();
-                document.getElementById('clipBoardBtn').addEventListener('click', function(event) {
-                    document.getElementById('exportArea').select();
+                (document.getElementById('exportArea') as any).select();
+                (document.getElementById('clipBoardBtn') as any).addEventListener('click', function(event: any) {
+                    (document.getElementById('exportArea') as any).select();
                     try {
                         document.execCommand('copy');
-                    } catch (err) {
-                        document.getElementById('clipBoardBtn').innerHTML = "Error, not copied";
+                    } catch (err: any) {
+                        (document.getElementById('clipBoardBtn') as any).innerHTML = "Error, not copied";
                     }
                 });
             };
@@ -213,19 +212,19 @@ export function ImportExportTooltip(what, event) {
         if (document.queryCommandSupported('copy')) {
             costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
             ondisplay = function() {
-                document.getElementById('exportArea').select();
-                document.getElementById('clipBoardBtn').addEventListener('click', function(event) {
-                    document.getElementById('exportArea').select();
+                (document.getElementById('exportArea') as any).select();
+                (document.getElementById('clipBoardBtn') as any).addEventListener('click', function(event: any) {
+                    (document.getElementById('exportArea') as any).select();
                     try {
                         document.execCommand('copy');
-                    } catch (err) {
-                        document.getElementById('clipBoardBtn').innerHTML = "Error, not copied";
+                    } catch (err: any) {
+                        (document.getElementById('clipBoardBtn') as any).innerHTML = "Error, not copied";
                     }
                 });
             };
     } else {
             ondisplay = function() {
-                document.getElementById('exportArea').select();
+                (document.getElementById('exportArea') as any).select();
             };
         }
         costText += "</div>";
@@ -233,13 +232,13 @@ export function ImportExportTooltip(what, event) {
         tooltipText = "Import your AUTOTRIMPS save string! It'll be fine, I promise.<br/><br/><textarea id='importBox' style='width: 100%' rows='5'></textarea>";
         costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip(); loadAutoTrimps();'>Import</div><div class='btn btn-info' onclick='cancelTooltip()'>Cancel</div></div>";
         ondisplay = function() {
-            document.getElementById('importBox').focus();
+            (document.getElementById('importBox') as any).focus();
         };
     } else if (what == "spireImport") {
         tooltipText = "Import your SPIRE string! <br/><br/><textarea id='importBox' style='width: 100%' rows='5'></textarea>";
         costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip(); tdStringCode2();'>Import</div><div class='btn btn-info' onclick='cancelTooltip()'>Cancel</div></div>";
         ondisplay = function() {
-            document.getElementById('importBox').focus();
+            (document.getElementById('importBox') as any).focus();
         };
     } else if (what == "CleanupAutoTrimps") {
         cleanupAutoTrimps();
@@ -251,19 +250,19 @@ export function ImportExportTooltip(what, event) {
         if (document.queryCommandSupported('copy')) {
             costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
             ondisplay = function() {
-                document.getElementById('exportArea').select();
-                document.getElementById('clipBoardBtn').addEventListener('click', function(event) {
-                    document.getElementById('exportArea').select();
+                (document.getElementById('exportArea') as any).select();
+                (document.getElementById('clipBoardBtn') as any).addEventListener('click', function(event: any) {
+                    (document.getElementById('exportArea') as any).select();
                     try {
                         document.execCommand('copy');
-                    } catch (err) {
-                        document.getElementById('clipBoardBtn').innerHTML = "Error, not copied";
+                    } catch (err: any) {
+                        (document.getElementById('clipBoardBtn') as any).innerHTML = "Error, not copied";
                     }
                 });
             };
         } else {
             ondisplay = function() {
-                document.getElementById('exportArea').select();
+                (document.getElementById('exportArea') as any).select();
             };
         }
         costText += "</div>";
@@ -271,10 +270,10 @@ export function ImportExportTooltip(what, event) {
         tooltipText = "Enter your Autotrimps MODULE variable settings to load, and save locally for future use between refreshes:<br/><br/><textarea id='importBox' style='width: 100%' rows='5'></textarea>";
         costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip(); importModuleVars();'>Import</div><div class='btn btn-info' onclick='cancelTooltip()'>Cancel</div></div>";
         ondisplay = function() {
-            document.getElementById('importBox').focus();
+            (document.getElementById('importBox') as any).focus();
         };
     } else if (what == "ATModuleLoad") {
-        var mods = document.getElementById('ATModuleListDropdown');
+        var mods = document.getElementById('ATModuleListDropdown') as any;
         var modnames = "";
         for (script in mods.selectedOptions) {
             var $item = mods.selectedOptions[script];
@@ -286,7 +285,7 @@ export function ImportExportTooltip(what, event) {
         tooltipText = "Autotrimps - Loaded the MODULE .JS File(s): " + modnames;
         costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip();'>OK</div></div>";
     } else if (what == "ATModuleUnload") {
-        var mods = document.getElementById('ATModuleListDropdown');
+        var mods = document.getElementById('ATModuleListDropdown') as any;
         var modnames = "";
         for (script in mods.selectedOptions) {
             var $item = mods.selectedOptions[script];
@@ -305,7 +304,7 @@ export function ImportExportTooltip(what, event) {
         tooltipText = "<img src='" + basepath + "mi.png'>";
         costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip();'>Thats all the help you get.</div></div>";
     } else if (what == 'c2table') {
-        var c2list = {
+        var c2list: Record<string, any> = {
     Size: {
         number: 1,
         percent: getIndividualSquaredReward('Size') + '%',
@@ -519,7 +518,7 @@ export function ImportExportTooltip(what, event) {
     
 };
         function c2listcolor(){
-			function a(b,c,d){ 
+			function a(b: any,c: any,d: any){
 				var e=100*(game.c2[b]/(game.global.highestLevelCleared+1));
 				c2list[b].color=e>=c?"LIMEGREEN":e<c&&e>=d?"GOLD":e<d&&1<=e?"#de0000":"DEEPSKYBLUE"
 			}
@@ -528,7 +527,7 @@ export function ImportExportTooltip(what, event) {
 				})
 		}
        function Rc2listcolor(){
-			function a(b,c,d){ 
+			function a(b: any,c: any,d: any){
 				var e=100*(game.c2[b]/(game.global.highestRadonLevelCleared+1));
 				c2list[b].color=e>=c?"LIMEGREEN":e<c&&e>=d?"GOLD":e<d&&1<=e?"#de0000":"DEEPSKYBLUE";
 			}
@@ -865,7 +864,7 @@ export function ImportExportTooltip(what, event) {
         tooltipText = "What would you like the name of the Settings Profile to be?<br/><br/><textarea id='setSettingsNameTooltip' style='width: 100%' rows='1'></textarea>";
         costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' style='width: 10vw' onclick='cancelTooltip(); nameAndSaveNewProfile();'>Import</div><div class='btn btn-info' style='margin-left: 5vw' onclick='cancelTooltip();document.getElementById(\"settingsProfiles\").selectedIndex=0;'>Cancel</div></div>";
         ondisplay = function() {
-            document.getElementById('setSettingsNameTooltip').focus();
+            (document.getElementById('setSettingsNameTooltip') as any).focus();
         };
     } else if (what == 'DeleteSettingsProfiles') {
         titleText = "<b>WARNING:</b> Delete Profile???"
@@ -879,21 +878,21 @@ export function ImportExportTooltip(what, event) {
     game.global.lockTooltip = true;
     $elem.style.left = "33.75%";
     $elem.style.top = "25%";
-    document.getElementById("tipTitle").innerHTML = titleText;
-    document.getElementById("tipText").innerHTML = tooltipText;
-    document.getElementById("tipCost").innerHTML = costText;
+    document.getElementById("tipTitle")!.innerHTML = titleText;
+    document.getElementById("tipText")!.innerHTML = tooltipText;
+    document.getElementById("tipCost")!.innerHTML = costText;
     $elem.style.display = "block";
     if (ondisplay !== null)
         ondisplay();
 }
 
-export function resetAutoTrimps(a,b){ATrunning=!1,setTimeout(function(d){localStorage.removeItem("autoTrimpSettings"),autoTrimpSettings=d?d:{};var e=document.getElementById("settingsRow");e.removeChild(document.getElementById("autoSettings")),e.removeChild(document.getElementById("autoTrimpsTabBarMenu")),automationMenuSettingsInit(),initializeAllTabs(),initializeAllSettings(),initializeSettingsProfiles(),updateCustomButtons(),saveSettings(),checkPortalSettings(),ATrunning=!0}(a),101),a?(debug("Successfully imported new AT settings...","profile"),b?ImportExportTooltip("message","Successfully Imported Autotrimps Settings File!: "+b):ImportExportTooltip("NameSettingsProfiles")):(debug("Successfully reset AT settings to Defaults...","profile"),ImportExportTooltip("message","Autotrimps has been successfully reset to its defaults!"))}
-export function loadAutoTrimps(){try{var a=document.getElementById("importBox").value.replace(/[\n\r]/gm,""),b=JSON.parse(a);if(null==b)return void debug("Error importing AT settings, the string is empty.","profile")}catch(c){return void debug("Error importing AT settings, the string is bad."+c.message,"profile")}debug("Importing new AT settings file...","profile"),resetAutoTrimps(b)}
+export function resetAutoTrimps(a?: any,b?: any){ATrunning=!1,setTimeout((function(d: any){localStorage.removeItem("autoTrimpSettings"),autoTrimpSettings=d?d:{};var e=document.getElementById("settingsRow")!;e.removeChild(document.getElementById("autoSettings")!),e.removeChild(document.getElementById("autoTrimpsTabBarMenu")!),automationMenuSettingsInit(),initializeAllTabs(),initializeAllSettings(),initializeSettingsProfiles(),updateCustomButtons(),saveSettings(),checkPortalSettings(),ATrunning=!0} as any)(a),101),a?(debug("Successfully imported new AT settings...","profile"),b?ImportExportTooltip("message","Successfully Imported Autotrimps Settings File!: "+b):ImportExportTooltip("NameSettingsProfiles")):(debug("Successfully reset AT settings to Defaults...","profile"),ImportExportTooltip("message","Autotrimps has been successfully reset to its defaults!"))}
+export function loadAutoTrimps(){try{var a=(document.getElementById("importBox") as any).value.replace(/[\n\r]/gm,""),b=JSON.parse(a);if(null==b)return void debug("Error importing AT settings, the string is empty.","profile")}catch(c: any){return void debug("Error importing AT settings, the string is bad."+c.message,"profile")}debug("Importing new AT settings file...","profile"),resetAutoTrimps(b)}
 export function cleanupAutoTrimps(){for(var a in autoTrimpSettings){var b=document.getElementById(autoTrimpSettings[a].id);null==b&&delete autoTrimpSettings[a]}}
 export function exportModuleVars(){return JSON.stringify(compareModuleVars())}
 
 export function compareModuleVars() {
-    var diffs = {};
+    var diffs: Record<string, any> = {};
     var mods = Object.keys(MODULES);
     for (var i in mods) {
         var mod = mods[i];
@@ -912,7 +911,7 @@ export function compareModuleVars() {
     return diffs;
 }
 
-export function importModuleVars(){try{var thestring=document.getElementById('importBox').value,strarr=thestring.split(/\n/);for(var line in strarr){var s=strarr[line];s=s.substring(0,s.indexOf(';')+1),s=s.replace(/\s/g,''),eval(s),strarr[line]=s}var tmpset=compareModuleVars()}catch(a){return void debug('Error importing MODULE vars, the string is bad.'+a.message,'profile')}localStorage.removeItem('storedMODULES'),safeSetItems('storedMODULES',JSON.stringify(tmpset))}
-export function resetModuleVars(a){ATrunning=!1,setTimeout(function(){localStorage.removeItem('storedMODULES'),MODULES=JSON.parse(JSON.stringify(MODULESdefault)),safeSetItems('storedMODULES',JSON.stringify(storedMODULES)),ATrunning=!0}(a),101)}
+export function importModuleVars(){try{var thestring=(document.getElementById('importBox') as any).value,strarr=thestring.split(/\n/);for(var line in strarr){var s=strarr[line];s=s.substring(0,s.indexOf(';')+1),s=s.replace(/\s/g,''),eval(s),strarr[line]=s}var tmpset=compareModuleVars()}catch(a: any){return void debug('Error importing MODULE vars, the string is bad.'+a.message,'profile')}localStorage.removeItem('storedMODULES'),safeSetItems('storedMODULES',JSON.stringify(tmpset))}
+export function resetModuleVars(a?: any){ATrunning=!1,setTimeout((function(){localStorage.removeItem('storedMODULES'),MODULES=JSON.parse(JSON.stringify(MODULESdefault)),safeSetItems('storedMODULES',JSON.stringify(storedMODULES)),ATrunning=!0} as any)(a),101)}
 settingsProfileMakeGUI();
 initializeSettingsProfiles();

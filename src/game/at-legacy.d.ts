@@ -53,6 +53,31 @@ declare global {
   var contractVoid: any
   // AT-fork functions read as free-ids by portal.ts (Wave 3 #30), resolved via the bridge.
   function settingChanged(...rest: any[]): any     // settings-engine.ts
+  // Settings-engine free-id reads (settings-engine.ts #31), resolved via the bridge.
+  var ATversion: any                                 // AutoTrimps2.js var
+  var magmiteSpenderChanged: any                     // AutoTrimps2.js var
+  function saveSettings(...rest: any[]): any         // utils.ts
+  function updateCustomButtons(...rest: any[]): any  // settings-visibility.ts
+  function checkPortalSettings(...rest: any[]): any  // settings-visibility.ts
+  // Free-id reads by settings-visibility.ts (#31), resolved via the bridge.
+  function debug(...rest: any[]): any                // utils.ts
+  function findOutCurrentPortalLevel(...rest: any[]): any // portal.ts
+  // Settings accessors (utils.ts, converted) + GRAPHSETTINGS store (Graphs.js) read as
+  // free-ids by settings-menu.ts (#31), resolved via the bridge / still-legacy Graphs.js.
+  function getPageSetting(...rest: any[]): any    // utils.ts
+  function setPageSetting(...rest: any[]): any    // utils.ts
+  var GRAPHSETTINGS: any                          // Graphs.js
+  // Settings-UI boot fns bridged; read bare by settings-boot.ts.
+  function automationMenuInit(...rest: any[]): any        // settings-menu.ts
+  function automationMenuSettingsInit(...rest: any[]): any // settings-menu.ts
+  function initializeAllTabs(...rest: any[]): any          // settings-menu.ts
+  function initializeAllSettings(...rest: any[]): any      // settings-defs.ts
+  // Settings-def builders read bare by settings-defs.ts (#31), resolved via the bridge.
+  function createSetting(...rest: any[]): any              // settings-engine.ts
+  function modifyParentNode(...rest: any[]): any           // settings-engine.ts
+  function settingsProfileMakeGUI(...rest: any[]): any     // settings-engine.ts
+  // AutoTrimps2.js loader path prefix, read bare by settings-boot.ts.
+  var basepath: string
   function autoMagmiteSpender(...rest: any[]): any  // magmite.ts
   function autoheirlooms3(...rest: any[]): any      // heirlooms.ts
   function highdmgshield(...rest: any[]): any       // heirlooms.ts
@@ -63,6 +88,11 @@ declare global {
   var lastRadonZone: any   // AutoTrimps2.js var
   var AutoPerks: any        // globalThis-assigned in perks.ts
   var RAutoPerks: any       // globalThis-assigned in perks.ts
+  // localStorage-write helper (AutoTrimps2.js var) read bare by perks.ts.
+  function safeSetItems(...args: any[]): any
+  // Remote-injected priority queue (legacy/FastPriorityQueue.js, loaded via script tag) —
+  // `new FastPriorityQueue(cmp)` in perks.ts; `any` covers construct + poll/add/size.
+  var FastPriorityQueue: any
 
   // Shared combat-base globals (AutoTrimps2 vars). stance.ts writes them; calc.ts reads.
   var baseDamage: number
@@ -268,6 +298,9 @@ declare global {
   function Ralch(...args: any[]): any
   function RalchMap(...args: any[]): any
   function Rdeso(...args: any[]): any
+  // maps.ts status readouts, bridged; read bare by performance.ts (AFK overlay).
+  function updateAutoMapsStatus(...args: any[]): any
+  function RupdateAutoMapsStatus(...args: any[]): any
 
   // ── other.ts (Wave 3 #30) bridged helpers + owned globals ────────────────────
   // Buy-state seam (buystate.ts, converted) + void-map helpers (breedtimer.ts,
@@ -423,5 +456,23 @@ declare global {
   // AT helpers defined in sibling converted modules, read by bare name here.
   function Rgetequips(...args: any[]): any
   function RcalcEnemyHealth(...args: any[]): any
+
+  // Settings (de)serialization defined in utils.ts, read by bare name from
+  // import-export.ts (export string builders + profile save).
+  function serializeSettings(...args: any[]): any
+  function serializeSettings550(...args: any[]): any
+  function serializeSettings60(...args: any[]): any
+  // Runtime module loader + paths — `var`/functions in AutoTrimps2.js.
+  function ATscriptLoad(...args: any[]): any
+  function ATscriptUnload(...args: any[]): any
+  var modulepath: any
+  // Automation run flag + module config snapshots — `var` in AutoTrimps2.js.
+  var ATrunning: any
+  var MODULESdefault: any
+  var storedMODULES: any
+  // `settingsProfiles` <select> exposed as a DOM-id global; `script` is a
+  // for-in loop var that was an implicit global in the sloppy-mode legacy.
+  var settingsProfiles: any
+  var script: any
 }
 export {}

@@ -1,5 +1,5 @@
-/* eslint-disable */
-// @ts-nocheck
+// TRUE TS (Phase 1 · #31): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/SettingsGUI.js (boot slice).
 // Boot for the settings UI. Published to global via legacy-bridge; INVOKED by AutoTrimps2.js's
 // initializeAutoTrimps() at t≈4000ms — right AFTER loadPageVariables() — exactly where legacy
 // async-loaded SettingsGUI.js. This ordering is load-bearing: createSetting rehydrates the flat

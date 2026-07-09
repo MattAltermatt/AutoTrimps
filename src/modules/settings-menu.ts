@@ -1,6 +1,6 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT of legacy/SettingsGUI.js tab/menu chrome: automationMenuInit (1–62),
+// TRUE TS (Phase 1 · #31): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/SettingsGUI.js tab/menu chrome.
+// automationMenuInit (1–62),
 // modifyParentNode (65–86), automationMenuSettingsInit (88–92), createTabs/createTabContents/
 // toggleTab/minimizeAllTabs/maximizeAllTabs (97–124), initializeAllTabs (202–267),
 // autoToggle/autoPlusSettingsMenu (1227–1272), toggleAutoMaps (2279–end). Bodies verbatim.
@@ -14,8 +14,8 @@
 //    bridged functions share this closure, so behavior is identical.
 //  - modifyParentNode used a bare `i` (implicit global) that throws under module strict mode;
 //    changed to `var i` (behavior-identical loop counter).
-let addTabsDiv;
-let addtabsUL;
+let addTabsDiv: any;
+let addtabsUL: any;
 
 export function automationMenuInit() {
     var settingBtnSrch = document.getElementsByClassName("btn btn-default");
@@ -27,7 +27,7 @@ export function automationMenuInit() {
     newItem.appendChild(document.createTextNode("AutoTrimps"));
     newItem.setAttribute("class", "btn btn-default");
     newItem.setAttribute("onclick", "autoToggle()");
-    var settingbarRow = document.getElementById("settingsTable").firstElementChild.firstElementChild;
+    var settingbarRow: any = document.getElementById("settingsTable")!.firstElementChild!.firstElementChild;
     settingbarRow.insertBefore(newItem, settingbarRow.childNodes[10]);
 
     var newContainer = document.createElement("DIV");
@@ -40,7 +40,7 @@ export function automationMenuInit() {
     var abutton = document.createElement("SPAN");
     abutton.appendChild(document.createTextNode("Auto Maps"));
     abutton.setAttribute("id", "autoMapLabel");
-    var fightButtonCol = document.getElementById("battleBtnsColumn");
+    var fightButtonCol: any = document.getElementById("battleBtnsColumn");
     newContainer.appendChild(abutton);
     fightButtonCol.appendChild(newContainer);
 
@@ -70,32 +70,32 @@ export function automationMenuInit() {
     newContainer.appendChild(abutton);
     fightButtonCol.appendChild(newContainer);
 
-    var $portalTimer = document.getElementById('portalTimer');
+    var $portalTimer: any = document.getElementById('portalTimer');
     $portalTimer.setAttribute('onclick', 'toggleSetting(\'pauseGame\')');
     $portalTimer.setAttribute('style', 'cursor: default');
 
-    var btns = document.getElementsByClassName("fightBtn");
+    var btns: any = document.getElementsByClassName("fightBtn");
     for (var x = 0; x < btns.length; x++) {
         btns[x].style.padding = "0.01vw 0.01vw";
     }
 }
 
-export function modifyParentNode(setting, id) {
-    var elem = document.getElementById(id).parentNode.parentNode.children;
+export function modifyParentNode(setting: any, id: any) {
+    var elem = (document.getElementById(id) as any).parentNode.parentNode.children;
     for (var i = 0; i < elem.length; i++) {
-        if (document.getElementById(id).parentNode.parentNode.children[i].children[0] === undefined) {
+        if ((document.getElementById(id) as any).parentNode.parentNode.children[i].children[0] === undefined) {
             continue
         } else {
-            if (document.getElementById(id).parentNode.parentNode.children[i].children[0].id === id) {
+            if ((document.getElementById(id) as any).parentNode.parentNode.children[i].children[0].id === id) {
                 if (autoTrimpSettings[setting].enabled) {
                     if (elem.length > (i + 1)) {
-                        if (document.getElementById(id).parentNode.parentNode.children[(i + 1)].style.length == 0) {
-                            document.getElementById(id).parentNode.parentNode.children[(i + 1)].remove()
+                        if ((document.getElementById(id) as any).parentNode.parentNode.children[(i + 1)].style.length == 0) {
+                            (document.getElementById(id) as any).parentNode.parentNode.children[(i + 1)].remove()
                             break;
                         }
                     }
                 } else {
-                    document.getElementById(id).parentNode.parentNode.children[i].insertAdjacentHTML('afterend', '<br>');
+                    (document.getElementById(id) as any).parentNode.parentNode.children[i].insertAdjacentHTML('afterend', '<br>');
                 }
             }
 
@@ -104,18 +104,18 @@ export function modifyParentNode(setting, id) {
 }
 
 export function automationMenuSettingsInit() {
-    var a = document.getElementById("settingsRow"),
+    var a: any = document.getElementById("settingsRow"),
         b = document.createElement("DIV");
     b.id = "autoSettings", b.setAttribute("style", "display: none; max-height: 92.5vh;overflow: auto;"), b.setAttribute("class", "niceScroll"), a.appendChild(b)
 }
 
-export function createTabs(a, b) {
+export function createTabs(a: any, b: any) {
     var c = document.createElement("li"),
         d = document.createElement("a");
     d.className = "tablinks", d.setAttribute("onclick", "toggleTab(event, '" + a + "')"), d.href = "#", d.appendChild(document.createTextNode(a)), c.id = "tab" + a, c.appendChild(d), addtabsUL.appendChild(c), createTabContents(a, b)
 }
 
-export function createTabContents(a, b) {
+export function createTabContents(a: any, b: any) {
     var c = document.createElement('div');
     c.className = 'tabcontent', c.id = a;
     var d = document.createElement('div');
@@ -124,18 +124,18 @@ export function createTabContents(a, b) {
     e.setAttribute('style', 'font-size: 1.2vw;'), e.appendChild(document.createTextNode(b)), d.appendChild(e), c.appendChild(d), addTabsDiv.appendChild(c)
 }
 
-export function toggleTab(a, b) {
-    -1 < a.currentTarget.className.indexOf(" active") ? (document.getElementById(b).style.display = "none", a.currentTarget.className = a.currentTarget.className.replace(" active", "")) : (document.getElementById(b).style.display = "block", a.currentTarget.className += " active")
+export function toggleTab(a: any, b: any) {
+    -1 < a.currentTarget.className.indexOf(" active") ? (document.getElementById(b)!.style.display = "none", a.currentTarget.className = a.currentTarget.className.replace(" active", "")) : (document.getElementById(b)!.style.display = "block", a.currentTarget.className += " active")
 }
 
 export function minimizeAllTabs() {
-    for (var a = document.getElementsByClassName("tabcontent"), b = 0, c = a.length; b < c; b++) a[b].style.display = "none";
+    for (var a = document.getElementsByClassName("tabcontent"), b = 0, c = a.length; b < c; b++) (a[b] as any).style.display = "none";
     for (var d = document.getElementsByClassName("tablinks"), b = 0, c = d.length; b < c; b++) d[b].className = d[b].className.replace(" active", "")
 }
 
 export function maximizeAllTabs() {
-    for (var a = document.getElementsByClassName("tabcontent"), b = 0, c = a.length; b < c; b++) a[b].style.display = "block";
-    for (var d = document.getElementsByClassName("tablinks"), b = 0, c = d.length; b < c; b++) d[b].style.display = "block", d[b].className.includes(" active") || (d[b].className += " active")
+    for (var a = document.getElementsByClassName("tabcontent"), b = 0, c = a.length; b < c; b++) (a[b] as any).style.display = "block";
+    for (var d = document.getElementsByClassName("tablinks"), b = 0, c = d.length; b < c; b++) (d[b] as any).style.display = "block", d[b].className.includes(" active") || (d[b].className += " active")
 }
 
 export function initializeAllTabs() {
@@ -144,7 +144,7 @@ export function initializeAllTabs() {
     addtabsUL.className = "tab";
     addtabsUL.id = 'autoTrimpsTabBarMenu';
     addtabsUL.style.display = "none";
-    var sh = document.getElementById("settingsRow")
+    var sh: any = document.getElementById("settingsRow")
     sh.insertBefore(addtabsUL, sh.childNodes[2]);
     createTabs("Core", "Core - Main Controls for the script");
     createTabs("Buildings", "Building Settings");
@@ -200,35 +200,35 @@ export function initializeAllTabs() {
     addtabsUL.appendChild(li_2);
     addtabsUL.appendChild(li_1);
     addtabsUL.appendChild(li_0);
-    document.getElementById("autoSettings").appendChild(addTabsDiv);
-    document.getElementById("Core").style.display = "block";
+    document.getElementById("autoSettings")!.appendChild(addTabsDiv);
+    document.getElementById("Core")!.style.display = "block";
     document.getElementsByClassName("tablinks")[0].className += " active";
 }
 
-export function autoToggle(what) {
+export function autoToggle(what: any) {
     if (what) {
-        var $what = document.getElementById(what);
+        var $what: any = document.getElementById(what);
         if ($what.style.display === 'block') {
             $what.style.display = 'none';
-            document.getElementById(what + 'BTN').style.border = '';
+            document.getElementById(what + 'BTN')!.style.border = '';
         } else {
             $what.style.display = 'block';
-            document.getElementById(what + 'BTN').style.border = '4px solid green';
+            document.getElementById(what + 'BTN')!.style.border = '4px solid green';
         }
     } else {
         if (game.options.displayed)
             toggleSettingsMenu();
-        var $item = document.getElementById('graphParent');
+        var $item: any = document.getElementById('graphParent');
         if ($item.style.display === 'block') {
             $item.style.display = 'none';
             trimpStatsDisplayed = false;
             GRAPHSETTINGS.open = false;
         }
-        var $item = document.getElementById('autoTrimpsTabBarMenu');
+        var $item: any = document.getElementById('autoTrimpsTabBarMenu');
         if ($item.style.display === 'block')
             $item.style.display = 'none';
         else $item.style.display = 'block';
-        var $item = document.getElementById('autoSettings');
+        var $item: any = document.getElementById('autoSettings');
         if ($item.style.display === 'block')
             $item.style.display = 'none';
         else $item.style.display = 'block';
@@ -236,16 +236,16 @@ export function autoToggle(what) {
 }
 
 export function autoPlusSettingsMenu() {
-    var $item = document.getElementById('autoSettings');
+    var $item: any = document.getElementById('autoSettings');
     if ($item.style.display === 'block')
         $item.style.display = 'none';
-    var $item = document.getElementById('graphParent');
+    var $item: any = document.getElementById('graphParent');
     if ($item.style.display === 'block') {
         $item.style.display = 'none';
         trimpStatsDisplayed = false;
         GRAPHSETTINGS.open = false;
     }
-    var $item = document.getElementById('autoTrimpsTabBarMenu');
+    var $item: any = document.getElementById('autoTrimpsTabBarMenu');
     if ($item.style.display === 'block')
         $item.style.display = 'none';
     toggleSettingsMenu();
@@ -258,7 +258,7 @@ export function toggleAutoMaps() {
         } else {
             setPageSetting('AutoMaps', 1);
         }
-        document.getElementById('autoMapBtn').setAttribute('class', 'noselect settingsBtn settingBtn' + autoTrimpSettings.AutoMaps.value);
+        document.getElementById('autoMapBtn')!.setAttribute('class', 'noselect settingsBtn settingBtn' + autoTrimpSettings.AutoMaps.value);
     }
     if (game.global.universe == 2) {
         if (getPageSetting('RAutoMaps')) {
@@ -266,7 +266,7 @@ export function toggleAutoMaps() {
         } else {
             setPageSetting('RAutoMaps', 1);
         }
-        document.getElementById('autoMapBtn').setAttribute('class', 'noselect settingsBtn settingBtn' + autoTrimpSettings.RAutoMaps.value);
+        document.getElementById('autoMapBtn')!.setAttribute('class', 'noselect settingsBtn settingBtn' + autoTrimpSettings.RAutoMaps.value);
     }
     saveSettings();
 }

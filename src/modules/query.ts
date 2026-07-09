@@ -1,20 +1,19 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/query.js.
-// Per-second/cost query helpers + setScienceNeeded (minified). No converted deps; RscienceNeeded/scienceNeeded resolve to the AutoTrimps2.js globals (read cross-module by gather/jobs).
+// TRUE TS (Phase 1 · #31): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/query.js.
+// Per-second/cost query helpers + setScienceNeeded (minified). No converted deps; RscienceNeeded/scienceNeeded resolve to the AutoTrimps2.js globals (read cross-module by gather/jobs). game/DOM/legacy globals resolve via the ambient seam.
 
-export function getPerSecBeforeManual(a){var b=0,c=game.jobs[a].increase;if("custom"==c)return 0;if(0<game.jobs[a].owned){if(b=game.jobs[a].owned*game.jobs[a].modifier,0<game.portal.Motivation.level&&(b+=b*game.portal.Motivation.level*game.portal.Motivation.modifier),0<game.portal.Motivation_II.level&&(b*=1+game.portal.Motivation_II.level*game.portal.Motivation_II.modifier),0<game.portal.Meditation.level&&(b*=(1+0.01*game.portal.Meditation.getBonusPercent()).toFixed(2)),0<game.jobs.Magmamancer.owned&&"metal"==c&&(b*=game.jobs.Magmamancer.getBonusPercent()),"Meditate"==game.global.challengeActive?b*=1.25:"Size"==game.global.challengeActive&&(b*=1.5),"Toxicity"==game.global.challengeActive){var d=game.challenges.Toxicity.lootMult*game.challenges.Toxicity.stacks/100;b*=1+d}"Balance"==game.global.challengeActive&&(b*=game.challenges.Balance.getGatherMult()),"Decay"==game.global.challengeActive&&(b*=10,b*=Math.pow(0.995,game.challenges.Decay.stacks)),"Daily"==game.global.challengeActive&&("undefined"!=typeof game.global.dailyChallenge.dedication&&(b*=dailyModifiers.dedication.getMult(game.global.dailyChallenge.dedication.strength)),"undefined"!=typeof game.global.dailyChallenge.famine&&"fragments"!=c&&"science"!=c&&(b*=dailyModifiers.famine.getMult(game.global.dailyChallenge.famine.strength))),"Watch"==game.global.challengeActive&&(b/=2),"Lead"==game.global.challengeActive&&1==game.global.world%2&&(b*=2),b=calcHeirloomBonus("Staff",a+"Speed",b)}return b}
-export function checkJobPercentageCost(a,b){var c="food",d=game.jobs[a],e=d.cost[c],f=0;b||(b=game.global.buyAmt),f="undefined"==typeof e[1]?e*b:Math.floor(e[0]*Math.pow(e[1],d.owned)*((Math.pow(e[1],b)-1)/(e[1]-1)));var g;if(game.resources[c].owned<f){var h=getPsString(c,!0);return 0<h&&(g=calculateTimeToMax(null,h,f-game.resources[c].owned)),[!1,g]}return g=0<game.resources[c].owned?(100*(f/game.resources[c].owned)).toFixed(1):0,[!0,g]}
-export function getScienceCostToUpgrade(a){var b=game.upgrades[a];return void 0!==b.cost.resources.science&&void 0!==b.cost.resources.science[0]?Math.floor(b.cost.resources.science[0]*Math.pow(b.cost.resources.science[1],b.done)):void 0!==b.cost.resources.science&&void 0==b.cost.resources.science[0]?b.cost.resources.science:0}
-export function getEnemyMaxAttack(a,b,c,d,e){var f=0;return f+=50*Math.sqrt(a)*Math.pow(3.27,a/2),f-=10,1==a?(f*=0.35,f=0.2*f+0.75*f*(b/100)):2==a?(f*=0.5,f=0.32*f+0.68*f*(b/100)):60>a?f=0.375*f+0.7*f*(b/100):(f=0.4*f+0.9*f*(b/100),f*=Math.pow(1.15,a-59)),60>a&&(f*=0.85),d&&(f*=d),f*=e?getCorruptScale("attack"):game.badGuys[c].attack,Math.floor(f)}
-export function getEnemyMaxHealth(a,b,c){b||(b=30);var d=0;return d+=130*Math.sqrt(a)*Math.pow(3.265,a/2),d-=110,1==a||2==a&&10>b?(d*=0.6,d=0.25*d+0.72*d*(b/100)):60>a?d=0.4*d+0.4*d*(b/110):(d=0.5*d+0.8*d*(b/100),d*=Math.pow(1.1,a-59)),60>a&&(d*=0.75),d*=c?getCorruptScale("health"):game.badGuys.Grimp.health,Math.floor(d)}
-export function getCurrentEnemy(a){a||(a=1);var b;return game.global.mapsActive||game.global.preMapsActive?game.global.mapsActive&&!game.global.preMapsActive&&('undefined'==typeof game.global.mapGridArray[game.global.lastClearedMapCell+a]?b=game.global.mapGridArray[game.global.gridArray.length-1]:b=game.global.mapGridArray[game.global.lastClearedMapCell+a]):'undefined'==typeof game.global.gridArray[game.global.lastClearedCell+a]?b=game.global.gridArray[game.global.gridArray.length-1]:b=game.global.gridArray[game.global.lastClearedCell+a],b}
+export function getPerSecBeforeManual(a: any){var b=0,c=game.jobs[a].increase;if("custom"==c)return 0;if(0<game.jobs[a].owned){if(b=game.jobs[a].owned*game.jobs[a].modifier,0<game.portal.Motivation.level&&(b+=b*game.portal.Motivation.level*game.portal.Motivation.modifier),0<game.portal.Motivation_II.level&&(b*=1+game.portal.Motivation_II.level*game.portal.Motivation_II.modifier),0<game.portal.Meditation.level&&(b*=(1+0.01*game.portal.Meditation.getBonusPercent()).toFixed(2) as any),0<game.jobs.Magmamancer.owned&&"metal"==c&&(b*=game.jobs.Magmamancer.getBonusPercent()),"Meditate"==game.global.challengeActive?b*=1.25:"Size"==game.global.challengeActive&&(b*=1.5),"Toxicity"==game.global.challengeActive){var d=game.challenges.Toxicity.lootMult*game.challenges.Toxicity.stacks/100;b*=1+d}"Balance"==game.global.challengeActive&&(b*=game.challenges.Balance.getGatherMult()),"Decay"==game.global.challengeActive&&(b*=10,b*=Math.pow(0.995,game.challenges.Decay.stacks)),"Daily"==game.global.challengeActive&&("undefined"!=typeof game.global.dailyChallenge.dedication&&(b*=dailyModifiers.dedication.getMult(game.global.dailyChallenge.dedication.strength)),"undefined"!=typeof game.global.dailyChallenge.famine&&"fragments"!=c&&"science"!=c&&(b*=dailyModifiers.famine.getMult(game.global.dailyChallenge.famine.strength))),"Watch"==game.global.challengeActive&&(b/=2),"Lead"==game.global.challengeActive&&1==game.global.world%2&&(b*=2),b=calcHeirloomBonus("Staff",a+"Speed",b)}return b}
+export function checkJobPercentageCost(a: any,b: any){var c="food",d=game.jobs[a],e=d.cost[c],f=0;b||(b=game.global.buyAmt),f="undefined"==typeof e[1]?e*b:Math.floor(e[0]*Math.pow(e[1],d.owned)*((Math.pow(e[1],b)-1)/(e[1]-1)));var g;if(game.resources[c].owned<f){var h=getPsString(c,!0);return 0<h&&(g=calculateTimeToMax(null,h,f-game.resources[c].owned)),[!1,g]}return g=0<game.resources[c].owned?(100*(f/game.resources[c].owned)).toFixed(1):0,[!0,g]}
+export function getScienceCostToUpgrade(a: any){var b=game.upgrades[a];return void 0!==b.cost.resources.science&&void 0!==b.cost.resources.science[0]?Math.floor(b.cost.resources.science[0]*Math.pow(b.cost.resources.science[1],b.done)):void 0!==b.cost.resources.science&&void 0==b.cost.resources.science[0]?b.cost.resources.science:0}
+export function getEnemyMaxAttack(a: any,b: any,c: any,d: any,e: any){var f=0;return f+=50*Math.sqrt(a)*Math.pow(3.27,a/2),f-=10,1==a?(f*=0.35,f=0.2*f+0.75*f*(b/100)):2==a?(f*=0.5,f=0.32*f+0.68*f*(b/100)):60>a?f=0.375*f+0.7*f*(b/100):(f=0.4*f+0.9*f*(b/100),f*=Math.pow(1.15,a-59)),60>a&&(f*=0.85),d&&(f*=d),f*=e?getCorruptScale("attack"):game.badGuys[c].attack,Math.floor(f)}
+export function getEnemyMaxHealth(a: any,b: any,c: any){b||(b=30);var d=0;return d+=130*Math.sqrt(a)*Math.pow(3.265,a/2),d-=110,1==a||2==a&&10>b?(d*=0.6,d=0.25*d+0.72*d*(b/100)):60>a?d=0.4*d+0.4*d*(b/110):(d=0.5*d+0.8*d*(b/100),d*=Math.pow(1.1,a-59)),60>a&&(d*=0.75),d*=c?getCorruptScale("health"):game.badGuys.Grimp.health,Math.floor(d)}
+export function getCurrentEnemy(a: any){a||(a=1);var b;return game.global.mapsActive||game.global.preMapsActive?game.global.mapsActive&&!game.global.preMapsActive&&('undefined'==typeof game.global.mapGridArray[game.global.lastClearedMapCell+a]?b=game.global.mapGridArray[game.global.gridArray.length-1]:b=game.global.mapGridArray[game.global.lastClearedMapCell+a]):'undefined'==typeof game.global.gridArray[game.global.lastClearedCell+a]?b=game.global.gridArray[game.global.gridArray.length-1]:b=game.global.gridArray[game.global.lastClearedCell+a],b}
 export function getCorruptedCellsNum(){for(var a,b=0,c=0;c<game.global.gridArray.length-1;c++)a=game.global.gridArray[c],"Corruption"==a.mutation&&b++;return b}
-export function getCorruptScale(a){return"attack"===a?mutations.Corruption.statScale(3):"health"===a?mutations.Corruption.statScale(10):void 0}
-export function isBuildingInQueue(a){for(var c in game.global.buildingsQueue)if(game.global.buildingsQueue[c].includes(a))return!0}
+export function getCorruptScale(a: any){return"attack"===a?mutations.Corruption.statScale(3):"health"===a?mutations.Corruption.statScale(10):void 0}
+export function isBuildingInQueue(a: any){for(var c in game.global.buildingsQueue)if(game.global.buildingsQueue[c].includes(a))return!0}
 export function setScienceNeeded(){for(var a in scienceNeeded=0,upgradeList)if(a=upgradeList[a],game.upgrades[a].allowed>game.upgrades[a].done){if(1==game.global.world&&1e3>=game.global.totalHeliumEarned&&a.startsWith("Speed"))continue;scienceNeeded+=getScienceCostToUpgrade(a)}needGymystic&&(scienceNeeded+=getScienceCostToUpgrade("Gymystic"))}
 export function RsetScienceNeeded(){for(var a in RscienceNeeded=0,RupgradeList)if(a=RupgradeList[a],game.upgrades[a].allowed>game.upgrades[a].done){if(1==game.global.world&&1e3>=game.global.totalRadonEarned&&a.startsWith("Speed"))continue;RscienceNeeded+=getScienceCostToUpgrade(a)}}
-export function RgetEnemyMaxAttack(world, level, name) {
+export function RgetEnemyMaxAttack(world: any, level: any, name: any) {
 			var amt = 0;
 			var attackBase = (game.global.universe == 2) ? 750 : 50;
 			amt += attackBase * Math.sqrt(world) * Math.pow(3.27, world / 2);
@@ -53,7 +52,7 @@ export function RgetEnemyMaxAttack(world, level, name) {
 			return Math.floor(amt);
 }
 
-export function RgetEnemyMaxHealth(world, level) {
+export function RgetEnemyMaxHealth(world: any, level: any) {
 			if (!level)
 				level = 30;
 			var amt = 0;
@@ -86,7 +85,7 @@ export function RgetEnemyMaxHealth(world, level) {
 			}
 			return Math.floor(amt);
 }
-export function getPotencyMod(howManyMoreGenes) {
+export function getPotencyMod(howManyMoreGenes?: any) {
     var potencyMod = game.resources.trimps.potency;
     //Add potency (book)
     if (game.upgrades.Potency.done > 0) potencyMod *= Math.pow(1.1, game.upgrades.Potency.done);

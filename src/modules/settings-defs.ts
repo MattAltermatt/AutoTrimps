@@ -1,11 +1,10 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT of legacy/SettingsGUI.js:84-1036 — initializeAllSettings, the 570 createSetting
-// calls. ORDER AND COMPLETENESS ARE THE PERSISTENCE CONTRACT: the flat saved blob is rehydrated
-// inside createSetting; a dropped/renamed/reordered call silently kills that setting. Interleaved
-// insertAdjacentHTML('afterend','<br>') layout calls and modifyParentNode() calls are preserved
-// verbatim and in order. createSetting/modifyParentNode/settingsProfileMakeGUI resolve at runtime
-// via the global bridge.
+// TRUE TS (Phase 1 · #31): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/settings-defs.js.
+// initializeAllSettings, the 570 createSetting calls. ORDER AND COMPLETENESS ARE THE PERSISTENCE
+// CONTRACT: the flat saved blob is rehydrated inside createSetting; a dropped/renamed/reordered
+// call silently kills that setting. Interleaved insertAdjacentHTML('afterend','<br>') layout calls
+// and modifyParentNode() calls are preserved verbatim and in order.
+// createSetting/modifyParentNode/settingsProfileMakeGUI resolve at runtime via the global bridge.
 
 export function initializeAllSettings() {
 
@@ -27,7 +26,7 @@ export function initializeAllSettings() {
     createSetting('AutoEggs', 'AutoEggs', 'Click easter egg if it exists, upon entering a new zone. Warning: Quite overpowered. Please solemnly swear that you are up to no good.', 'boolean', false, null, 'Core');
     createSetting('AutoBoneChargeMax', ['Manual Bone Charge', 'Bone Charge When Max', 'Bone Charge (Daily Only)'], 'Automatically uses a Bone Charge from the Bone Shrine if you are at max charges. The start zone can be configured under <i>Bone Charge Start Z.</i><br><br><b>Bone Charge (Daily Only)</b> as the name suggests; will only use a Bone Charge when at max and if on a daily challenge.<br><br><b>Default: Off (Manual Bone Charge).</b>', 'multitoggle', 0, null, "Core");
     createSetting('AutoBoneChargeMaxStartZone', 'Bone Charge Start Z', 'Enter the zone number at which you wish to <i>start</i> using Bone Charges.<br><br>Alternatively, set it to <i><b>-1</b></i> to automatically update the zone to 10% of your highest zone cleared. For example, if your highest zone cleared was 400, bone charges would be automatically used from zone 360 onwards.<br><br><b>Default: Automated (-1).</b>', 'value', -1, null, "Core");
-    document.getElementById('AutoEggs').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('AutoEggs') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
 
     //RCore
 
@@ -42,13 +41,13 @@ export function initializeAllSettings() {
     //Portal
     createSetting('AutoPortal', 'AutoPortal', 'Automatically portal. Will NOT auto-portal if you have a challenge active, the challenge setting dictates which challenge it will select for the next run. All challenge settings will portal right after the challenge ends, regardless. Helium Per Hour only <b>portals at cell 1</b> of the first level where your He/Hr went down even slightly compared to the current runs Best He/Hr. Take note, there is a Buffer option, which is like a grace percentage of how low it can dip without triggering. Setting a buffer will portal mid-zone if you exceed 5x of the buffer.  CAUTION: Selecting He/hr may immediately portal you if its lower-(use Pause AutoTrimps button to pause the script first to avoid this)', 'dropdown', 'Off', ['Off', 'Helium Per Hour', 'Balance', 'Decay', 'Electricity', 'Life', 'Crushed', 'Nom', 'Toxicity', 'Watch', 'Lead', 'Corrupted', 'Domination', 'Experience', 'Custom'], "Core");
     createSetting('HeliumHourChallenge', 'Portal Challenge', 'Automatically portal into this challenge when using helium per hour or custom autoportal. Custom portals after cell 100 of the zone specified. Do not choose a challenge if you havent unlocked it. ', 'dropdown', 'None', ['None', 'Balance', 'Decay', 'Electricity', 'Life', 'Crushed', 'Nom', 'Toxicity', 'Watch', 'Lead', 'Corrupted', 'Domination', 'Experience'], "Core");
-    document.getElementById("HeliumHourChallengeLabel").innerHTML = "Portal Challenge:";
+    (document.getElementById("HeliumHourChallengeLabel") as any).innerHTML = "Portal Challenge:";
     createSetting('CustomAutoPortal', 'Custom Portal', 'Automatically portal AFTER clearing this level.(ie: setting to 200 would portal when you first reach level 201)', 'value', '999', null, "Core");
     createSetting('HeHrDontPortalBefore', 'Don\'t Portal Before', 'Do NOT allow Helium per Hour AutoPortal setting to portal BEFORE this level is reached. It is an additional check that prevents drops in helium/hr from triggering autoportal. Set to 0 or -1 to completely disable this check. (only shows up with Helium per Hour set)', 'value', '999', null, "Core");
     createSetting('HeliumHrBuffer', 'He/Hr Portal Buffer %', 'IMPORTANT SETTING. When using the He/Hr Autoportal, it will portal if your He/Hr drops by this amount of % lower than your best for current run, default is 0% (ie: set to 5 to portal at 95% of your best). Now with stuck protection - Allows portaling midzone if we exceed set buffer amount by 5x. (ie a normal 2% buffer setting would now portal mid-zone you fall below 10% buffer).', 'value', '0', null, 'Core');
 
     //RPortal
-    document.getElementById('Rdumpgreed').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Rdumpgreed') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('RAutoPortal', 'AutoPortal', 'Automatically portal. Will NOT auto-portal if you have a challenge active, the challenge setting dictates which challenge it will select for the next run. All challenge settings will portal right after the challenge ends, regardless. Radon Per Hour only <b>portals at cell 1</b> of the first level where your Rn/Hr went down even slightly compared to the current runs Best Rn/Hr. Take note, there is a Buffer option, which is like a grace percentage of how low it can dip without triggering. Setting a buffer will portal mid-zone if you exceed 5x of the buffer.  CAUTION: Selecting Rn/hr may immediately portal you if its lower-(use Pause AutoTrimps button to pause the script first to avoid this)', 'dropdown', 'Off', ['Off', 'Radon Per Hour', 'Bublé', 'Melt', 'Quagmire', 'Archaeology', 'Insanity', 'Nurture', 'Alchemy', 'Hypothermia', 'Custom'], "Core");
     createSetting('RadonHourChallenge', 'Portal Challenge', 'Automatically portal into this challenge when using radon per hour or custom autoportal. Custom portals after cell 100 of the zone specified. Do not choose a challenge if you havent unlocked it. ', 'dropdown', 'None', ['None', 'Bublé', 'Melt', 'Quagmire', 'Archaeology', 'Insanity', 'Nurture', 'Alchemy', 'Hypothermia'], "Core");
     createSetting('RCustomAutoPortal', 'Custom Portal', 'Automatically portal AFTER clearing this level.(ie: setting to 200 would portal when you first reach level 201)', 'value', '999', null, "Core");
@@ -58,12 +57,12 @@ export function initializeAllSettings() {
 
     //Pause + Switch
     createSetting('PauseScript', 'Pause AutoTrimps', 'Pause AutoTrimps Script (not including the graphs module)', 'boolean', null, null, 'Core');
-    var $pauseScript = document.getElementById('PauseScript');
+    var $pauseScript: any = document.getElementById('PauseScript');
     $pauseScript.parentNode.style.setProperty('float', 'right');
     $pauseScript.parentNode.style.setProperty('margin-right', '1vw');
     $pauseScript.parentNode.style.setProperty('margin-left', '0');
     createSetting('radonsettings', ['Helium', 'Radon'], 'Switch between Helium (U1) and Radon (U2) settings. ', 'multitoggle', 0, null, 'Core');
-    var $radonsettings = document.getElementById('radonsettings');
+    var $radonsettings: any = document.getElementById('radonsettings');
     $radonsettings.parentNode.style.setProperty('float', 'right');
     $radonsettings.parentNode.style.setProperty('margin-right', '1vw');
     $radonsettings.parentNode.style.setProperty('margin-left', '0');
@@ -80,13 +79,13 @@ export function initializeAllSettings() {
     createSetting('dscryvoidmaps', 'Daily VM Scryer', 'Only use in Dailies if you have Scryhard II, for er, obvious reasons. Works without the scryer options. ', 'boolean', false, null, 'Daily');
 
     //Spire
-    document.getElementById('dscryvoidmaps').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('dscryvoidmaps') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('dIgnoreSpiresUntil', 'Daily Ignore Spires Until', 'Spire specific settings like end-at-cell are ignored until at least this zone is reached in Dailies (0 to disable). ', 'value', '200', null, 'Daily');
     createSetting('dExitSpireCell', 'Daily Exit Spire Cell', 'What cell to exit spire in dailys. ', 'value', -1, null, 'Daily');
     createSetting('dPreSpireNurseries', 'Daily Nurseries pre-Spire', 'Set the maximum number of Nurseries to build for Spires in Dailies. Overrides No Nurseries Until z and Max Nurseries so you can keep them seperate! Disable with -1.', 'value', -1, null, 'Daily');
 
     //Windstacking
-    document.getElementById('dPreSpireNurseries').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('dPreSpireNurseries') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('use3daily', 'Daily Windstacking', '<b> This must be on for Daily windstacking settings to appear!</b> Overrides your Autostance settings to use the WS stance on Dailies. Make sure Windstack HD is set otherwise this does nothing. ', 'boolean', false, null, 'Daily');
     createSetting('dWindStackingMin', 'Daily Windstack Min Zone', 'For use with Windstacking Stance, enables windstacking in zones above and inclusive of the zone set for dailys. (Get specified windstacks then change to D, kill bad guy, then repeat). This is designed to force S use until you have specified stacks in wind zones, overriding scryer settings. All windstack settings apart from Daily WS MAX work off this setting. ', 'value', '-1', null, 'Daily');
     createSetting('dWindStackingMinHD', 'Daily Windstack H:D', 'For use with Windstacking Stance in Dailies, fiddle with this to maximise your stacks in wind zones for Dailies. If H:D is above this setting it will not use W stance. If it is below it will. Use something like 10 decillion if you just want to use W stance. ', 'value', '1e33', null, 'Daily');
@@ -98,7 +97,7 @@ export function initializeAllSettings() {
     createSetting('dwsmaxhd', 'Daily WSM H:D', 'Fiddle with this to maximise your DWSM settings. Default is 0.00025. ', 'value', '-1', null, 'Daily');
 
     //Raiding
-    document.getElementById('dwsmaxhd').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('dwsmaxhd') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('dPraidingzone', 'Daily P Raiding Z', 'Raids Maps for prestiges at zone specified in Dailies. Example: 495, will raid Maps at 501. Once all gear is obtained from the map, it will revert back to regular farming. Extremely helpful for spire. Best used in poison zones. <b>You can use multiple values like this 495,506,525! </b>', 'multiValue', [-1], null, 'Daily');
     createSetting('dPraidingcell', 'Daily P Raiding Cell', 'What Cell to start P Raiding at. Recommend below your BW Raiding cell if used together. -1 to Raid at cell 1. ', 'value', -1, null, 'Daily');
     createSetting('dPraidingHD', 'Daily P Raiding HD', 'Checks if you can raid the map. If your HD value (calculated using the maps you will raid) is below this value it will not buy the map and you will stop raiding. The higher this value the higher zones it will raid. Can raid up to +10 depending on the zone. -1 or 0 to remove this check.', 'value', -1, null, 'Daily');
@@ -114,7 +113,7 @@ export function initializeAllSettings() {
     createSetting('dBWraidingmax', 'Daily Max BW to raid', 'Raids BWs until zone specified in dailys. Example: 515, will raid all BWs for all gear until 515. Will skip lower BWs if you have enough damage. Once all gear is obtained, will return to regular farming. Now accepts comma separated lists - see description of Daily Z to BW raid setting for details.', 'multiValue', [-1], null, 'Daily');
 
     //Shrine - U1 (Daily)
-    document.getElementById('dBWraidingmax').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('dBWraidingmax') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Hdshrine', ['Daily AutoShrine Off', 'Daily AutoShrine On', 'DAS: Normal'], 'Turn this on if you want to use Shrines automatically in Dailies. Use DAS: Normal if you want to use the settings in the Maps tab if do not wish to copy them here. ', 'multitoggle', 0, null, 'Daily');
     createSetting('Hdshrinemaz', 'Daily AutoShrine Settings', 'Click to open Daily AutoShrine settings. <br> <b>Zone:</b> What zone to use Bone Shrine charges. <br> <b>Cell:</b> What cell to use Bone Shrine charges at, if you use it after cell 80 you will get the benefit of all the books. to use. <br> <b>Amount:</b> How many Bone Shrine charges you wish to use. <br> <b>Example:</b> If you put Zone: 40\, Cell: 10\, Amount: 3\, you will use 3 Bone Shrine Charges at zone 40 at cell 10 in a Daily. ', 'infoclick', false, null, 'Daily');
     createSetting('Hdshrinezone', 'AutoShrine: Zone', 'zone', 'multiValue', [-1], null, 'Daily');
@@ -130,7 +129,7 @@ export function initializeAllSettings() {
     createSetting('Rdarmormagic', ['Daily Armor Magic Off', 'DAM: Above 80%', 'DAM: H:D', 'DAM: Always'], 'Will buy Armor to try and prevent death on Bleed/Plague/Bogged Dailies under the 3 conditions. <br><b>Above 80%:</b> Will activate at and above 80% of your HZE. <br><b>H:D:</b> Will activate at and above the H:D you have defined in maps. <br><b>Always</b> Will activate always. <br>All options will activate at or <b>below 25% of your health.</b> ', 'multitoggle', 0, null, "Daily");
 
     //dRaiding
-    document.getElementById('Rdarmormagic').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Rdarmormagic') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('RdAMPraid', ['Daily Praiding Off', 'Daily Praiding On', 'DPR: Normal'], '<b>MASTER BUTTON</b><br>Toggle Daily Prestige Raiding. Use DPR: Zone, DPR: Raid and DPR: Cell to Raid Prestiges in higher Maps.<br> I.e: World is 95, DPR: Zone is [95,105], DPR: Raid is [105,115], DPR: Cell is 1. Will go into map creation at cell 1, create maps 101, 102, 103, 104, 105 with Prestige option. If you can\'t afford P maps, it will try without. If still unable to afford will buy the highest maps first without buying 101 and 102 for example. Raiding will take longer if you can\'t afford it. Once all maps are created it will run the lowest created then move onto the next till all created maps are finished. If you have enabled DPR: Recycle it will then recycle those maps. DPR: Normal will use the settings in Raiding tab so if they are the same you do not have to copy them over. ', 'multitoggle', 0, null, 'Daily');
     createSetting('RdAMPraidmaz', 'Daily Praiding Settings', 'Click to open the Daily Praiding settings. ', 'infoclick', false, null, 'Daily');
     createSetting('RdAMPraidzone', 'DPR: Zone', 'Zones to Prestige Raid. Can use 95,105,115! ', 'multiValue', [-1], null, 'Daily');
@@ -140,7 +139,7 @@ export function initializeAllSettings() {
     createSetting('RdAMPraidrecycle', 'DPR: Recycle', 'Recycle maps created in Daily Prestige Raiding. ', 'boolean', false, null, 'Daily');
 
     //dTimefarm
-    document.getElementById('RdAMPraidrecycle').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('RdAMPraidrecycle') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rdtimefarm', ['Daily Time Farm Off', 'Daily Time Farm On', 'DTF: Normal'], 'Turn this on if you want to use Daily Time Farming. Use DTF: Normal if you want to use the settings in the Maps tab if do not wish to copy them here. ', 'multitoggle', 0, null, 'Daily');
     createSetting('Rdtimefarmmaz', 'DTM Settings', 'Click to open the Daily Time Farm settings. It will also put all your workers into what you are gathering. <br> <b>Zone:</b> What zone to start time farming. <br> <b>Cell:</b> What cell to start time farming at. <br> <b>Time:</b> How much time in Minutes to farm. <br> <b>Level:</b> How many map levels above your zone to use. <br> <b>Map:</b> What kind of map you want to use. <br> <b>Special:</b> What type of special you want to use. <br> <b>Gather:</b> What resource you would like to gather. <br> <b>Example:</b> If you put Zone: 60\, Cell: 10\, Time: 3\, Level: 5\, Map: Gardens\, Special: Large Metal Cache\, Gather: Metal\, while in a Daily you will farm at zone 60 at cell 10 for 3 minutes in a +5 Gardens map that has a Large Metal Cache while gathering metal. ', 'infoclick', false, null, 'Daily');
     createSetting('Rdtimefarmzone', 'DTF: Zone', 'zone', 'multiValue', [-1], null, 'Daily');
@@ -158,25 +157,25 @@ export function initializeAllSettings() {
 
 
     //RHeirloom
-    document.getElementById('dlowdmg').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('dlowdmg') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rdhs', ['DHS: Off', 'DHS: On', 'DHS: Normal'], 'Heirloom swapping master button for Dailies. Turn this on to allow heirloom swapping and its associated settings. Use DHS: Normal to use the non-daily settings. ', 'multitoggle', 0, null, 'Daily');
 
     //DShield Swapping
-    document.getElementById('Rdhs').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Rdhs') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rdhsshield', 'Daily Shields', 'Toggle to swap Shields in Dailies', 'boolean', false, null, 'Daily');
     createSetting('Rdhsz', 'DHSh: Zone', 'Which zone to swap from your first heirloom you have defined to your second heirloom you have defined. I.e if this value is 75 it will switch to the second heirloom <b>on z75</b>', 'value', '-1', null, 'Daily');
     createSetting('Rdhs1', 'DHSh: First', '<b>First Heirloom to use</b><br><br>Enter the name of your first heirloom. This is the heirloom that you will use before swapping to the second heirloom at the zone you have defined in the HS: Zone. ', 'textValue', 'undefined', null, 'Daily');
     createSetting('Rdhs2', 'DHSh: Second', '<b>Second Heirloom to use</b><br><br>Enter the name of your second heirloom. This is the heirloom that you will use after swapping from the first heirloom at the zone you have defined in the HS: Zone. ', 'textValue', 'undefined', null, 'Daily');
 
     //DStaff Swapping
-    document.getElementById('Rdhs2').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Rdhs2') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rdhsstaff', 'Daily Staffs', 'Toggle to swap Staffs', 'boolean', false, null, 'Daily');
     createSetting('Rdhsworldstaff', 'DHSt: World', '<b>World Staff</b><br><br>Enter the name of your world staff for Dailies.', 'textValue', 'undefined', null, 'Daily');
     createSetting('Rdhsmapstaff', 'DHSt: Map', '<b>Mapping staff</b><br><br>Enter the name of your mapping staff for Dailies.', 'textValue', 'undefined', null, 'Daily');
     createSetting('Rdhstributestaff', 'DHSt: Tribute', '<b>Tribute farming staff</b><br><br>Enter the name of the staff you would like to equip during tribute farming for Dailies', 'textValue', 'undefined', null, 'Daily');
 
     //Shrine - U2 (Daily)
-    document.getElementById('Rdhstributestaff').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Rdhstributestaff') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rdshrine', ['Daily AutoShrine Off', 'Daily AutoShrine On', 'DAS: Normal'], 'Turn this on if you want to use Shrines automatically in Dailies. Use DAS: Normal if you want to use the settings in the Maps tab if do not wish to copy them here. ', 'multitoggle', 0, null, 'Daily');
     createSetting('Rdshrinemaz', 'Daily AutoShrine Settings', 'Click to open Daily AutoShrine settings. <br> <b>Zone:</b> What zone to use Bone Shrine charges. <br> <b>Cell:</b> What cell to use Bone Shrine charges at, if you use it after cell 80 you will get the benefit of all the books. to use. <br> <b>Amount:</b> How many Bone Shrine charges you wish to use. <br> <b>Example:</b> If you put Zone: 40\, Cell: 10\, Amount: 3\, you will use 3 Bone Shrine Charges at zone 40 at cell 10 in a Daily. ', 'infoclick', false, null, 'Daily');
     createSetting('Rdshrinezone', 'AutoShrine: Zone', 'zone', 'multiValue', [-1], null, 'Daily');
@@ -184,7 +183,7 @@ export function initializeAllSettings() {
     createSetting('Rdshrineamount', 'AutoShrine: Amount', 'amount', 'multiValue', [-1], null, 'Daily');
 
     //Portal Line
-    document.getElementById('Rdshrineamount').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Rdshrineamount') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('AutoStartDaily', 'Auto Start Daily', 'Starts Dailies for you. When you portal with this on, it will select the oldest Daily and run it. Use the settings in this tab to decide whats next. ', 'boolean', false, null, 'Daily');
     createSetting('u2daily', 'Daily in U2', 'If this is on, you will do your daily in U2. ', 'boolean', false, null, 'Daily');
     createSetting('AutoPortalDaily', ['Daily Portal Off', 'DP: He/Hr', 'DP: Custom'], '<b>DP: He/Hr:</b> Portals when your world zone is above the minium you set (if applicable) and the buffer falls below the % you have defined. <br><b>DP: Custom:</b> Portals after clearing the zone you have defined in Daily Custom Portal. ', 'multitoggle', '0', null, "Daily");
@@ -198,7 +197,7 @@ export function initializeAllSettings() {
     createSetting('drunnewvoidspoison', 'New Voids Poison', 'Only run new voids in poison zones.', 'boolean', false, null, 'Daily');
 
     //RPortal Line
-    document.getElementById('dlowdmg').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('dlowdmg') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('RAutoStartDaily', 'Auto Start Daily', 'Starts Dailies for you. When you portal with this on, it will select the oldest Daily and run it. Use the settings in this tab to decide whats next. ', 'boolean', false, null, 'Daily');
     createSetting('u1daily', 'Daily in U1', 'If this is on, you will do your daily in U1. ', 'boolean', false, null, 'Daily');
     createSetting('RAutoPortalDaily', ['Daily Portal Off', 'DP: Rn/Hr', 'DP: Custom'], '<b>DP: Rn/Hr:</b> Portals when your world zone is above the minium you set (if applicable) and the buffer falls below the % you have defined. <br><b>DP: Custom:</b> Portals after clearing the zone you have defined in Daily Custom Portal. ', 'multitoggle', '0', null, "Daily");
@@ -222,7 +221,7 @@ export function initializeAllSettings() {
     createSetting('novmsc2', 'No VMs', 'Turn off VM running for C2s. Handy for the C2 Runner. ', 'boolean', 'false', null, "C2");
 
     //C2 Runner Line
-    document.getElementById('novmsc2').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('novmsc2') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('c2runnerstart', 'C2 Runner', 'Runs the normal C2s in sequence according to difficulty. See C2Table for list. Once zone you have defined has been reached, will portal into next. I will advise you not to touch the challenges (abandoning, doing a different one, etc) if you are running this, it could break it. Only runs challenges that need updating, will not run ones close-ish to your HZE. ', 'boolean', false, null, 'C2');
     createSetting('c2runnerportal', 'C2 Runner Portal', 'Automatically portal AFTER clearing this level in C2 Runner. (ie: setting to 200 would portal when you first reach level 201)', 'value', '999', null, "C2");
     createSetting('c2runnerpercent', 'C2 Runner %', 'What percent Threshhold you want C2s to be over. E.g 85, will only run C2s with HZE% below this number. Default is 85%. Must have a value set for C2 Runner to... well, run. ', 'value', '85', null, "C2");
@@ -313,7 +312,7 @@ export function initializeAllSettings() {
     createSetting('RMaxExplorers', 'Max Explorers', 'Advanced. Cap your explorers (This is an absolute number not a ratio). recommend: -1', 'value', '-1', null, "Jobs");
 
     //Ships
-    document.getElementById('RMaxExplorers').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('RMaxExplorers') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rshipfarmon', 'Ship Farming', 'Turn Ship Farming off or on. You need to have unlocked Large Savory Cache to use this. If you have not I would recommend Time Farm instead. ', 'boolean', 'false', null, "Jobs");
     createSetting('Rshipfarmzone', 'SF: Zone', 'Farms for specified worshippers in SF: Amount at zone according to this settings value. Can use 59,61,62. ', 'multiValue', [-1], null, 'Jobs');
     createSetting('Rshipfarmcell', 'SF: Cell', 'Ship Farm at this Cell. -1 to run them at the default value, which is 1. ', 'value', '-1', null, 'Jobs');
@@ -354,7 +353,7 @@ export function initializeAllSettings() {
     createSetting('Requipzone', 'AE: Zone', 'What zone to stop caring about H:D and buy as much prestiges and equipment as possible. ', 'value', -1, null, "Gear");
     createSetting('Requippercent', 'AE: Percent', 'What percent of resources to spend on equipment before the zone you have set in AE: Zone', 'value', 1, null, "Gear");
     createSetting('Requip2', 'AE: 2', 'Always buys level 2 of weapons and armor regardless of efficiency', 'boolean', true, null, "Gear");
-    document.getElementById('Requip2').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Requip2') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Requipfarmon', 'AE: Farm', 'AutoEquip Farm. Calculates metal needed to reach the target you have defined in the AEF settings. Will try to buy the best map you can make. Will never make a plus map as this is intended for us on deep push runs. ', 'boolean', false, null, "Gear");
     createSetting('Requipfarmzone', 'AEF: Zone', 'What zone to start AEF: H:D and AEF: Multiplier. ', 'value', '-1', null, 'Gear');
     createSetting('RequipfarmHD', 'AEF: H:D', 'What H:D to use for AEF target. ', 'value', '-1', null, 'Gear');
@@ -376,7 +375,7 @@ export function initializeAllSettings() {
     createSetting('AMUstar', 'AMU: Imploding Star', 'Turn on to run this map every run. ', 'boolean', false, null, 'Maps');
     createSetting('automapsportal', 'AM Portal', 'Makes sure Auto Maps is on on portal. ', 'boolean', false, null, 'Maps');
     createSetting('automapsalways', 'AM Always', 'Makes sure Auto Maps is on always. ', 'boolean', false, null, 'Maps');
-    document.getElementById('automapsportal').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('automapsportal') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
 
     //Line 2
     createSetting('DynamicSiphonology', 'Dynamic Siphonology', 'Recommended Always ON. Use the right level of siphonology based on your damage output. IE: Only uses  siphonology if you are weak. With this OFF it means it ALWAYS uses the lowest siphonology map you can create. Siphonology is a perk you get at level 115-125ish, and means you receive map bonus stacks for running maps below your current zone - Up to 3 zones below (1 per perk level).', 'boolean', true, null, 'Maps');
@@ -408,7 +407,7 @@ export function initializeAllSettings() {
     createSetting('finishExpOnBw', 'Finish XP on BW', 'Finish Experience challenge by completing this level of BW. <b>This level of BW should already be in your inventory.</b> Use BW Raiding module if you want to raid to a specific level of BW before 601, or else you may accidentally complete the challenge at a lower or higher BW than intended using this setting. If this is an invalid BW value, it will run the next lowest valid BW zone (e.g. 606 will run 605).', 'value', '605', null, 'Maps');
 
     //Shrine - U1
-    document.getElementById('finishExpOnBw').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('finishExpOnBw') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Hshrine', 'AutoShrine', 'Turn this on if you want to use Shrines automatically. ', 'boolean', false, null, 'Maps');
     createSetting('Hshrinemaz', 'AutoShrine Settings', 'Click to open AutoShrine settings. <br> <b>Zone:</b> What zone to use Bone Shrine charges. <br> <b>Cell:</b> What cell to use Bone Shrine charges at, if you use it after cell 80 you will get the benefit of all the books. to use. <br> <b>Amount:</b> How many Bone Shrine charges you wish to use. <br> <b>Example:</b> If you put Zone: 40\, Cell: 10\, Amount: 3\, you will use 3 Bone Shrine Charges at zone 40 at cell 10. ', 'infoclick', false, null, 'Maps');
     createSetting('Hshrinezone', 'AutoShrine: Zone', 'zone', 'multiValue', [-1], null, 'Maps');
@@ -439,7 +438,7 @@ export function initializeAllSettings() {
     createSetting('Rfrozencastle', 'Frozen Castle', '-1 to disable. When to run the map Frozen Castle. Use it like this: 200,91. The first number is what zone Frozen Castle should be run at, the second number is what Cell to run it at. In this example AutoMaps would run Frozen Castle at z200 cell 91. Must define both values. Works in any challenge so be careful. ', 'multiValue', [-1], null, 'Maps');
 
     //Timefarm
-    document.getElementById('Rfrozencastle').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Rfrozencastle') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rtimefarm', 'Time Farm', 'Turn this on if you want to use Time Farming. ', 'boolean', false, null, 'Maps');
     createSetting('Rtimefarmmaz', 'Time Farm Settings', 'Click to open the Time Farm settings. It will also put all your workers into what you are gathering. <br> <b>Zone:</b> What zone to start time farming. <br> <b>Cell:</b> What cell to start time farming at. <br> <b>Time:</b> How much time in Minutes to farm. <br> <b>Level:</b> How many map levels above your zone to use. <br> <b>Map:</b> What kind of map you want to use. <br> <b>Special:</b> What type of special you want to use. <br> <b>Gather:</b> What resource you would like to gather. <br> <b>Example:</b> If you put Zone: 60\, Cell: 10\, Time: 3\, Level: 5\, Map: Gardens\, Special: Large Metal Cache\, Gather: Metal\, you will farm at zone 60 at cell 10 for 3 minutes in a +5 Gardens map that has a Large Metal Cache while gathering metal. ', 'infoclick', false, null, 'Maps');
     createSetting('Rtimefarmzone', 'TF: Zone', 'zone', 'multiValue', [-1], null, 'Maps');
@@ -451,7 +450,7 @@ export function initializeAllSettings() {
     createSetting('Rtimefarmgather', 'TF: Gather Selection', 'gather', 'textValue', 'undefined', null, 'Maps');
 
     //Smithyfarm
-    document.getElementById('Rtimefarmgather').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Rtimefarmgather') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rsmithyfarm', 'Smithy Farm', 'Turn this on if you want to use Smithy Farming. ', 'boolean', false, null, 'Maps');
     createSetting('Rsmithyfarmmaz', 'Smithy Farm Settings', 'Click to open the Smithy Farm settings. <br> <b>Zone:</b> What zone to start smithy farming.<br> <b>Cell:</b> What cell to start smithy farming at. <br> <b>Smithys:</b> How many smithys you want to have at that zone. <br> <b>Example:</b> If you put Zone: 60\, Cell: 10\, Smithys: 2\, you will farm at zone 60 at cell 10 for 2 total smithies in an autogenerated map that will fill your resource needs\, gather and job appropriately', 'infoclick', false, null, 'Maps');
     createSetting('Rsmithyfarmzone', 'SF: Zone', 'zone', 'multiValue', [-1], null, 'Maps');
@@ -459,7 +458,7 @@ export function initializeAllSettings() {
     createSetting('Rsmithyfarmamount', 'SF: Smithys', 'smithys', 'multiValue', [-1], null, 'Maps');
 
     //Tributefarm
-    document.getElementById('Rsmithyfarmamount').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Rsmithyfarmamount') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rtributefarm', 'Tribute Farm', 'Turn this on if you want to use Tribute Farming. ', 'boolean', false, null, 'Maps');
     createSetting('Rtributefarmmaz', 'Tribute Farm Settings', 'Click to open the Tribute Farm settings. <br> <b>Zone:</b> What zone to start tribute farming. It will also put all your workers into farming. <br> <b>Cell:</b> What cell to start tribute farming at. <br> <b>Tributes:</b> How many tributes to farm. <br> <b>Level:</b> How many map levels above your zone to use. <br> <b>Map:</b> What kind of map you want to use. <br> <b>Special:</b> What type of special you want to use. <br> <b>Gather:</b> What resource you would like to gather. <br> <b>Example:</b> If you put Zone: 40\, Cell: 10\, Tributes: 1000\, Level: 5\, Map: Gardens\, Special: Large Savory Cache\, Gather: Food\, you will farm at zone 40 at cell 10 for 1000 tributes in a +5 Gardens map that has a Large Savory Cache while gathering food. ', 'infoclick', false, null, 'Maps');
     createSetting('Rtributefarmzone', 'TrF: Zone', 'zone', 'multiValue', [-1], null, 'Maps');
@@ -471,7 +470,7 @@ export function initializeAllSettings() {
     createSetting('Rtributegatherselection', 'TrF: Gather Selection', 'gather', 'textValue', 'undefined', null, 'Maps');
 
     //Shrine - U2
-    document.getElementById('Rtributegatherselection').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Rtributegatherselection') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rshrine', 'AutoShrine', 'Turn this on if you want to use Shrines automatically. ', 'boolean', false, null, 'Maps');
     createSetting('Rshrinemaz', 'AutoShrine Settings', 'Click to open AutoShrine settings. <br> <b>Zone:</b> What zone to use Bone Shrine charges. <br> <b>Cell:</b> What cell to use Bone Shrine charges at, if you use it after cell 80 you will get the benefit of all the books. to use. <br> <b>Amount:</b> How many Bone Shrine charges you wish to use. <br> <b>Example:</b> If you put Zone: 40\, Cell: 10\, Amount: 3\, you will use 3 Bone Shrine Charges at zone 40 at cell 10. ', 'infoclick', false, null, 'Maps');
     createSetting('Rshrinezone', 'AutoShrine: Zone', 'zone', 'multiValue', [-1], null, 'Maps');
@@ -547,25 +546,25 @@ export function initializeAllSettings() {
     createSetting('ATGA2timer', 'ATGA: Timer', '<b>ATGA Timer</b><br>This is the default time your ATGA will use. ', 'value', '-1', null, 'ATGA');
 
     //Zone Timers
-    document.getElementById('ATGA2timer').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('ATGA2timer') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('zATGA2timer', 'ATGA: T: Before Z', '<b>ATGA Timer: Before Z</b><br>ATGA will use the value you define in ATGA: T: BZT before the zone you have defined in this setting, overwriting your default timer. Useful for Liq or whatever. ', 'value', '-1', null, 'ATGA');
     createSetting('ztATGA2timer', 'ATGA: T: BZT', '<b>ATGA Timer: Before Z Timer</b><br>ATGA will use this value before the zone you have defined in ATGA: T: Before Z, overwriting your default timer. Useful for Liq or whatever. Does not work on challenges. ', 'value', '-1', null, 'ATGA');
     createSetting('ATGA2timerz', 'ATGA: T: After Z', '<b>ATGA Timer: After Z</b><br>ATGA will use the value you define in ATGA: T: AZT after the zone you have defined in this setting, overwriting your default timer. Useful for super push runs or whatever. Does not work on challenges. ', 'value', '-1', null, 'ATGA');
     createSetting('ATGA2timerzt', 'ATGA: T: AZT', '<b>ATGA Timer: After Z Timer</b><br>ATGA will use this value after the zone that has been defined in ATGA: T: After Z, overwriting your default timer. Useful for super push runs or whatever. ', 'value', '-1', null, 'ATGA');
 
     //Spire Timers
-    document.getElementById('ATGA2timerzt').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('ATGA2timerzt') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('sATGA2timer', 'ATGA: T: Spire', '<b>ATGA Timer: Spire</b><br>ATGA will use this value in Spires. Respects your ignore Spires setting. Do not use this if you use the setting in the Spire tab! (As that uses vanilla GA) Nothing overwrites this except Daily Spire. ', 'value', '-1', null, 'ATGA');
     createSetting('dsATGA2timer', 'ATGA: T: Daily Spire', '<b>ATGA Timer: Daily Spire</b><br>ATGA will use this value in Daily Spires. Respects your ignore Spires setting. Do not use this if you use the setting in the Spire tab! (As that uses vanilla GA) Nothing overwrites this. ', 'value', '-1', null, 'ATGA');
 
     //Daily Timers
-    document.getElementById('dsATGA2timer').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('dsATGA2timer') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('dATGA2Auto', ['ATGA: Manual', 'ATGA: Auto No Spire', 'ATGA: Auto Dailies'], '<b>EXPERIMENTAL</b><br><b>ATGA Timer: Auto Dailies</b><br>ATGA will use automatically set breed timers in plague and bogged, overwriting your default timer.<br/>Set No Spire to not override in spire, respecting ignore spire settings.', 'multitoggle', 2, null, 'ATGA');
     createSetting('dATGA2timer', 'ATGA: T: Dailies', '<b>ATGA Timer: Normal Dailies</b><br>ATGA will use this value for normal Dailies such as ones without plague etc, overwriting your default timer. Useful for pushing your dailies that extra bit at the end. Overwrites Default, Before Z and After Z. ', 'value', '-1', null, 'ATGA');
     createSetting('dhATGA2timer', 'ATGA: T: D: Hard', '<b>ATGA Timer: Hard Dailies</b><br>ATGA will use this value in Dailies that are considered Hard. Such Dailies include plaged, bloodthirst and Dailies with a lot of negative mods. Overwrites Default, Before Z and After Z and normal Daily ATGA Timer. ', 'value', '-1', null, 'ATGA');
 
     //C2 Timers
-    document.getElementById('dhATGA2timer').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('dhATGA2timer') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('cATGA2timer', 'ATGA: T: C2', '<b>ATGA Timer: C2s</b><br>ATGA will use this value in C2s. Overwrites Default, Before Z and After Z. ', 'value', '-1', null, 'ATGA');
     createSetting('chATGA2timer', 'ATGA: T: C: Hard', '<b>ATGA Timer: Hard C2s</b><br>ATGA will use this value in C2s that are considered Hard. Electricity, Nom, Toxicity. Overwrites Default, Before Z and After Z and C2 ATGA', 'value', '-1', null, 'ATGA');
 
@@ -588,7 +587,7 @@ export function initializeAllSettings() {
     createSetting('Rchallengehidedeso', 'Desolation', 'Set this on if you wish to hide the Desolation challenge settings. ', 'boolean', false, null, 'Challenges');
 
     //Quagmire
-    document.getElementById('Rchallengehidedeso').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Rchallengehidedeso') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rblackbog', 'Quagmire', 'Enable Bog Running for Quagmire. ', 'boolean', false, null, 'Challenges');
     createSetting('Rblackbogmaz', 'Quagmire Settings', 'Click to open the Quagmire settings. <br> <b>Zone:</b> What zone to start bogging. <br> <b>Black Bogs:</b> How many Black Bogs to at specified zones. <br> <b>Example:</b> If you put Zone: 40\, Black Bogs: 10\, you will run 10 black bogs at zone 40. ', 'infoclick', false, null, 'Challenges');
     createSetting('Rblackbogzone', 'Zone', 'zone', 'multiValue', [-1], null, 'Challenges');
@@ -732,7 +731,7 @@ export function initializeAllSettings() {
     createSetting('AutoGenC2', ['C2: Normal', 'C2: Fuel', 'C2: Hybrid'], '<b>Normal:</b> Uses the AutoGen settings. <br><b>Fuel:</b> Fuels the entire C2. <br><b>Hybrid:</b> Uses Hybrid for the entire C2. Using Hybrid mode before unlocking is very naughty and will be punished! ', 'multitoggle', 1, null, 'Magma');
 
     //Spend Mi
-    document.getElementById('AutoGenC2').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('AutoGenC2') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('spendmagmite', ['Spend Magmite OFF', 'Spend Magmite (Portal)', 'Spend Magmite Always'], 'Auto Spends any unspent Magmite immediately before portaling. (Or Always, if toggled). Part 1 buys any permanent one-and-done upgrades in order from most expensive to least. Part 2 then analyzes Efficiency vs Capacity for cost/benefit, and buys Efficiency if its BETTER than Capacity. If not, if the PRICE of Capacity is less than the price of Supply, it buys Capacity. If not, it buys Supply. And then it repeats itself until you run out of Magmite and cant buy anymore. ', 'multitoggle', 1, null, 'Magma');
     createSetting('ratiospend', 'Ratio Spending', 'Spends Magmite in a Ratio you define. ', 'boolean', false, null, 'Magma');
     createSetting('effratio', 'Efficiency', 'Use -1 or 0 to not spend on this. Any value above 0 will spend. ', 'value', -1, null, 'Magma');
@@ -748,31 +747,31 @@ export function initializeAllSettings() {
     createSetting('lowdmg', 'WS: Low Damage', '<b>LOW DAMAGE HEIRLOOM</b><br><br>Enter the name of your low damage heirloom. This is the heirloom that you will use for windstacking. ', 'textValue', 'undefined', null, 'Heirlooms');
 
     //Heirloom Swapping
-    document.getElementById('lowdmg').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('lowdmg') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rhs', 'Heirloom Swapping', 'Heirloom swapping master button. Turn this on to allow heirloom swapping and its associated settings. ', 'boolean', false, null, 'Heirlooms');
 
     //Shield Swapping
-    document.getElementById('Rhs').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Rhs') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rhsshield', 'Shields', 'Toggle to swap Shields', 'boolean', false, null, 'Heirlooms');
     createSetting('Rhsz', 'HS: Zone', 'Which zone to swap from your first heirloom you have defined to your second heirloom you have defined. I.e if this value is 75 it will switch to the second heirloom <b>on z75</b>', 'value', '-1', null, 'Heirlooms');
     createSetting('Rhs1', 'HS: First', '<b>First Heirloom to use</b><br><br>Enter the name of your first heirloom. This is the heirloom that you will use before swapping to the second heirloom at the zone you have defined in the HS: Zone. ', 'textValue', 'undefined', null, 'Heirlooms');
     createSetting('Rhs2', 'HS: Second', '<b>Second Heirloom to use</b><br><br>Enter the name of your second heirloom. This is the heirloom that you will use after swapping from the first heirloom at the zone you have defined in the HS: Zone. ', 'textValue', 'undefined', null, 'Heirlooms');
 
     //Staff Swapping
-    document.getElementById('Rhs2').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Rhs2') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rhsstaff', 'Staffs', 'Toggle to swap Staffs', 'boolean', false, null, 'Heirlooms');
     createSetting('Rhsworldstaff', 'World', '<b>World Staff</b><br><br>Enter the name of your world staff.', 'textValue', 'undefined', null, 'Heirlooms');
     createSetting('Rhsmapstaff', 'Map', '<b>Mapping staff</b><br><br>Enter the name of your mapping staff.', 'textValue', 'undefined', null, 'Heirlooms');
     createSetting('Rhstributestaff', 'Tribute', '<b>Tribute farming staff</b><br><br>Enter the name of the staff you would like to equip during tribute farming.', 'textValue', 'undefined', null, 'Heirlooms');
 
     //Heirloom Line
-    document.getElementById('Rhstributestaff').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Rhstributestaff') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('autoheirlooms', 'Auto Heirlooms', 'Auto Heirlooms master button. Turn this on to enable all Auto Heirloom settings. <br><br><b>The Modifier points will be explained here.</b> The more points an heirloom has, the better chance it has of being kept. If empty is selected, it will muliplty the score by 4. <br><br>E.g Mod 1 = CC (+5 if dropped, 1st modifier) <br>Mod 2 = CD (+5 if dropped, 2nd modifier) <br>Mod 3 = PB (+5 if dropped, 3rd modifier) <br>Mod 4 = Empty (x4 if dropped, +0 if not) <br>Mod 5 = Empty (x4 if dropped, +0 if not) <br><br>If an heirloom dropped with these exact modifiers, it would get a score of 192 (5+5+5*4*4=240). The highest point heirlooms will be kept. <br> <b>You MUST select at least one modifier. It will fill up the slots first then recycle the lowest rarity. </b>', 'boolean', false, null, 'Heirlooms');
     createSetting('typetokeep', ['None', 'Shields', 'Staffs', 'Cores', 'All'], '<b>Shields: </b>Keeps Shields and nothing else.<br><b>Staffs: </b>Keeps Staffs and nothing else.<br><b>Cores: </b>Keeps Cores and nothing else.<br><b>All: </b>Keeps 4 Shields and 3 Staffs and 3 Cores. If you have protected heirlooms in your inventory it will overrite one slot. E.g if one heirloom is protected, you will keep 4 Shields and 3 Staffs and 2 Cores. ', 'multitoggle', 0, null, 'Heirlooms');
     createSetting('raretokeep', 'Rarity to Keep', 'Auto Heirlooms. Keeps the selected rarity of heirloom, recycles all others when your inventory is full. You may keep lower rarity heirlooms if you have empty slots. ', 'dropdown', 'Any', ["Any", "Common", "Uncommon", "Rare", "Epic", "Legendary", "Magnificent", "Ethereal", "Magmatic", "Plagued", "Radiating", "Hazardous", "Enigmatic", "Mutated"], 'Heirlooms');
 
     //Shield Line
-    document.getElementById('raretokeep').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('raretokeep') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('keepshields', 'Shields', 'Auto Heirlooms. Enables in-depth shield settings. ', 'boolean', false, null, 'Heirlooms');
     createSetting('slot1modsh', 'Shield: Modifier 1', 'Auto Heirlooms. Keeps Shields with selected Mod. Modifier 1 is worth 5 points. ', 'dropdown', 'empty', ["empty", "playerEfficiency", "trainerEfficiency", "storageSize", "breedSpeed", "trimpHealth", "trimpAttack", "trimpBlock", "critDamage", "critChance", "voidMaps", "plaguebringer", "prismatic", "gammaBurst", "inequality", "doubleCrit"], 'Heirlooms');
     createSetting('slot2modsh', 'Shield: Modifier 2', 'Auto Heirlooms. Keeps Shields with selected Mod. Modifier 2 is worth 5 points. ', 'dropdown', 'empty', ["empty", "playerEfficiency", "trainerEfficiency", "storageSize", "breedSpeed", "trimpHealth", "trimpAttack", "trimpBlock", "critDamage", "critChance", "voidMaps", "plaguebringer", "prismatic", "gammaBurst", "inequality", "doubleCrit"], 'Heirlooms');
@@ -783,7 +782,7 @@ export function initializeAllSettings() {
     createSetting('slot7modsh', 'Shield: Modifier 7', 'Auto Heirlooms. Keeps Shields with selected Mod. Modifier 7 is worth 5 points. ', 'dropdown', 'empty', ["empty", "playerEfficiency", "trainerEfficiency", "storageSize", "breedSpeed", "trimpHealth", "trimpAttack", "trimpBlock", "critDamage", "critChance", "voidMaps", "plaguebringer", "prismatic", "gammaBurst", "inequality", "doubleCrit"], 'Heirlooms');
 
     //Staff Line
-    document.getElementById('slot7modsh').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('slot7modsh') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('keepstaffs', 'Staffs', 'Auto Heirlooms. Enables in-depth staff settings. ', 'boolean', false, null, 'Heirlooms');
     createSetting('slot1modst', 'Staff: Modifier 1', 'Auto Heirlooms. Keeps Staffs with selected Mod. Modifier 1 is worth 5 points. ', 'dropdown', 'empty', ["empty", "metalDrop", "foodDrop", "woodDrop", "gemsDrop", "fragmentsDrop", "MinerSpeed", "FarmerSpeed", "LumberjackSpeed", "DragimpSpeed", "ExplorerSpeed", "ScientistSpeed", "FluffyExp", "ParityPower", "SeedDrop"], 'Heirlooms');
     createSetting('slot2modst', 'Staff: Modifier 2', 'Auto Heirlooms. Keeps Staffs with selected Mod. Modifier 2 is worth 5 points. ', 'dropdown', 'empty', ["empty", "metalDrop", "foodDrop", "woodDrop", "gemsDrop", "fragmentsDrop", "MinerSpeed", "FarmerSpeed", "LumberjackSpeed", "DragimpSpeed", "ExplorerSpeed", "ScientistSpeed", "FluffyExp", "ParityPower", "SeedDrop"], 'Heirlooms');
@@ -794,7 +793,7 @@ export function initializeAllSettings() {
     createSetting('slot7modst', 'Staff: Modifier 7', 'Auto Heirlooms. Keeps Staffs with selected Mod. Modifier 7 is worth 5 points. ', 'dropdown', 'empty', ["empty", "metalDrop", "foodDrop", "woodDrop", "gemsDrop", "fragmentsDrop", "MinerSpeed", "FarmerSpeed", "LumberjackSpeed", "DragimpSpeed", "ExplorerSpeed", "ScientistSpeed", "FluffyExp", "ParityPower", "SeedDrop"], 'Heirlooms');
 
     //Core Line
-    document.getElementById('slot7modst').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('slot7modst') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('keepcores', 'Cores', 'Auto Heirlooms. Enables in-depth core settings. ', 'boolean', false, null, 'Heirlooms');
     createSetting('slot1modcr', 'Cores: Modifier 1', 'Auto Heirlooms. Keeps Cores with selected Mod. Modifier 1 is worth 5 points. ', 'dropdown', 'empty', ["empty", "fireTrap", "poisonTrap", "lightningTrap", "runestones", "strengthEffect", "condenserEffect"], 'Heirlooms');
     createSetting('slot2modcr', 'Cores: Modifier 2', 'Auto Heirlooms. Keeps Cores with selected Mod. Modifier 2 is worth 5 points. ', 'dropdown', 'empty', ["empty", "fireTrap", "poisonTrap", "lightningTrap", "runestones", "strengthEffect", "condenserEffect"], 'Heirlooms');
@@ -808,7 +807,7 @@ export function initializeAllSettings() {
     createSetting('AutoGoldenUpgrades', 'AutoGoldenUpgrades', 'Buys Golden Upgrades in Fillers. Helium buys all Helium golden upgrades. Battle buys all Battle golden upgrades. Void buys 8 Void golden upgrades (max number you can buy) then buys helium golden upgrades. Void + Battle buys 8 voids then battle. Will run way faster than Vanilla AutoGold so if you have this on expect it to win over vanilla settings. ', 'dropdown', 'Off', ["Off", "Helium", "Battle", "Void", "Void + Battle"], 'Golden');
     createSetting('dAutoGoldenUpgrades', 'Daily AutoGoldenUpgrades', 'Buys Golden Upgrades in Dailies. Helium buys all Helium golden upgrades. Battle buys all Battle golden upgrades. Void buys 8 Void golden upgrades (max number you can buy) then buys helium golden upgrades. Void + Battle buys 8 voids then battle. Will run way faster than Vanilla AutoGold so if you have this on expect it to win over vanilla settings. ', 'dropdown', 'Off', ["Off", "Helium", "Battle", "Void", "Void + Battle"], 'Golden');
     createSetting('cAutoGoldenUpgrades', 'C2 AutoGoldenUpgrades', 'Buys Golden Upgrades in C2s. Helium buys all Helium golden upgrades. Battle buys all Battle golden upgrades. Void buys 8 Void golden upgrades (max number you can buy) then buys helium golden upgrades. Void + Battle buys 8 voids then battle. Will run way faster than Vanilla AutoGold so if you have this on expect it to win over vanilla settings. ', 'dropdown', 'Off', ["Off", "Battle", "Void", "Void + Battle"], 'Golden');
-    document.getElementById('cAutoGoldenUpgrades').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('cAutoGoldenUpgrades') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('voidheliumbattle', 'Void Battle', '<b>-1 to disable.</b><br> Buys Battle goldens instead of Helium at this zone and onwards. This option only appears when selecting void. ', 'value', -1, null, 'Golden');
     createSetting('dvoidheliumbattle', 'Daily Void Battle', '<b>-1 to disable.</b><br> Buys Battle goldens instead of Helium at this zone and onwards in Dailies. This option only appears when selecting void. ', 'value', -1, null, 'Golden');
     createSetting('radonbattle', 'Helium Battle', '<b>-1 to disable.</b><br> Buys Battle goldens instead of helium after this many helium goldens have been purchased and onwards. This option only appears when selecting helium. ', 'value', -1, null, 'Golden');
@@ -822,7 +821,7 @@ export function initializeAllSettings() {
     createSetting('RAutoGoldenUpgrades', 'AutoGoldenUpgrades', 'Buys Golden Upgrades in Fillers. Radon buys all Radon golden upgrades. Battle buys all Battle golden upgrades. Void buys 8 Void golden upgrades (max number you can buy) then buys helium golden upgrades. Void + Battle buys 8 voids then battle. ', 'dropdown', 'Off', ["Off", "Radon", "Battle", "Void", "Void + Battle"], 'Golden');
     createSetting('RdAutoGoldenUpgrades', 'Daily AutoGoldenUpgrades', 'Buys Golden Upgrades in Dailies. Radon buys all Radon golden upgrades. Battle buys all Battle golden upgrades. Void buys 8 Void golden upgrades (max number you can buy) then buys helium golden upgrades. Void + Battle buys 8 voids then battle. ', 'dropdown', 'Off', ["Off", "Radon", "Battle", "Void", "Void + Battle"], 'Golden');
     createSetting('RcAutoGoldenUpgrades', 'C2 AutoGoldenUpgrades', 'Buys Golden Upgrades in C2s. Radon buys all Radon golden upgrades. Battle buys all Battle golden upgrades. Void buys 8 Void golden upgrades (max number you can buy) then buys helium golden upgrades. Void + Battle buys 8 voids then battle. ', 'dropdown', 'Off', ["Off", "Battle", "Void", "Void + Battle"], 'Golden');
-    document.getElementById('RcAutoGoldenUpgrades').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('RcAutoGoldenUpgrades') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rvoidheliumbattle', 'Void Battle', '<b>-1 to disable.</b><br> Buys Battle goldens instead of Radon at this zone and onwards. This option only appears when selecting void. ', 'value', -1, null, 'Golden');
     createSetting('Rdvoidheliumbattle', 'Daily Void Battle', '<b>-1 to disable.</b><br> Buys Battle goldens instead of Radon at this zone and onwards in Dailies. This option only appears when selecting void. ', 'value', -1, null, 'Golden');
     createSetting('Rradonbattle', 'Radon Battle', '<b>-1 to disable.</b><br> Buys Battle goldens instead of Radon after this many Radon goldens have been purchased and onwards. This option only appears when selecting radon. ', 'value', -1, null, 'Golden');
@@ -854,37 +853,37 @@ export function initializeAllSettings() {
     createSetting('AutoIce', 'Ice', 'Spend/convert Ice tokens', 'dropdown', 'Off', ['Off', 'Empowerment', 'Transfer', 'Convert to Poison', 'Convert to Wind', 'Convert to Both'], 'Nature');
 
     //Enlights
-    document.getElementById('AutoIce').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('AutoIce') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('autoenlight', 'Enlight: Auto', 'Enables Automatic Enlightenment. Use the settings to define how it works. ', 'boolean', false, null, 'Nature');
-    document.getElementById('autoenlight').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('autoenlight') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('pfillerenlightthresh', 'E: F: Poison', 'Activate Poison Enlight when Enlight cost is below this Thresh in Fillers. Consumes Tokens. -1 to disable. ', 'value', -1, null, 'Nature');
     createSetting('wfillerenlightthresh', 'E: F: Wind', 'Activate Wind Enlight when Enlight cost is below this Thresh in Fillers. Consumes Tokens. -1 to disable. ', 'value', -1, null, 'Nature');
     createSetting('ifillerenlightthresh', 'E: F: Ice', 'Activate Ice Enlight when Enlight cost is below this Thresh in Fillers. Consumes Tokens. -1 to disable. ', 'value', -1, null, 'Nature');
-    document.getElementById('ifillerenlightthresh').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('ifillerenlightthresh') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('pdailyenlightthresh', 'E: D: Poison', 'Activate Poison Enlight when Enlight cost is below this Thresh in Dailies. Consumes Tokens. -1 to disable. ', 'value', -1, null, 'Nature');
     createSetting('wdailyenlightthresh', 'E: D: Wind', 'Activate Wind Enlight when Enlight cost is below this Thresh in Dailies. Consumes Tokens. -1 to disable. ', 'value', -1, null, 'Nature');
     createSetting('idailyenlightthresh', 'E: D: Ice', 'Activate Ice Enlight when Enlight cost is below this Thresh in Dailies. Consumes Tokens. -1 to disable. ', 'value', -1, null, 'Nature');
-    document.getElementById('idailyenlightthresh').parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('idailyenlightthresh') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('pc2enlightthresh', 'E: C: Poison', 'Activate Poison Enlight when Enlight cost is below this Thresh in C2s. Consumes Tokens. -1 to disable. ', 'value', -1, null, 'Nature');
     createSetting('wc2enlightthresh', 'E: C: Wind', 'Activate Wind Enlight when Enlight cost is below this Thresh in C2s. Consumes Tokens. -1 to disable. ', 'value', -1, null, 'Nature');
     createSetting('ic2enlightthresh', 'E: C: Ice', 'Activate Ice Enlight when Enlight cost is below this Thresh in C2s. Consumes Tokens. -1 to disable. ', 'value', -1, null, 'Nature');
 
 
     //MAZ window Stuff
-    document.getElementById('Rtimefarmmaz').setAttribute('onclick', 'MAZLookalike("Time Farm", "Rtimefarm")');
-    document.getElementById('Rdtimefarmmaz').setAttribute('onclick', 'MAZLookalike("dTime Farm", "Rdtimefarm")');
-    document.getElementById('Rsmithyfarmmaz').setAttribute('onclick', 'MAZLookalike("Smithy Farm", "Rsmithyfarm")');
-    document.getElementById('Rtributefarmmaz').setAttribute('onclick', 'MAZLookalike("Tribute Farm", "Rtributefarm")');
-    document.getElementById('Hshrinemaz').setAttribute('onclick', 'MAZLookalike("Shrine - U1", "Hshrine")');
-    document.getElementById('Hdshrinemaz').setAttribute('onclick', 'MAZLookalike("Shrine - U1 (Daily)", "Hdshrine")');
-    document.getElementById('Rshrinemaz').setAttribute('onclick', 'MAZLookalike("Shrine - U2", "Rshrine")');
-    document.getElementById('Rdshrinemaz').setAttribute('onclick', 'MAZLookalike("Shrine - U2 (Daily)", "Rdshrine")');
-    document.getElementById('Rblackbogmaz').setAttribute('onclick', 'MAZLookalike("Quagmire", "Rblackbog")');
-    document.getElementById('Rinsanitymaz').setAttribute('onclick', 'MAZLookalike("Insanity", "Rinsanityon")');
-    document.getElementById('Ralchfarmmaz').setAttribute('onclick', 'MAZLookalike("Alch", "Ralchon")');
-    document.getElementById('Rhypofarmmaz').setAttribute('onclick', 'MAZLookalike("Hypo", "Rhypoon")');
-    document.getElementById('RAMPraidmaz').setAttribute('onclick', 'MAZLookalike("Praid", "RAMPraid")');
-    document.getElementById('RdAMPraidmaz').setAttribute('onclick', 'MAZLookalike("dPraid", "RdAMPraid")');
+    (document.getElementById('Rtimefarmmaz') as any).setAttribute('onclick', 'MAZLookalike("Time Farm", "Rtimefarm")');
+    (document.getElementById('Rdtimefarmmaz') as any).setAttribute('onclick', 'MAZLookalike("dTime Farm", "Rdtimefarm")');
+    (document.getElementById('Rsmithyfarmmaz') as any).setAttribute('onclick', 'MAZLookalike("Smithy Farm", "Rsmithyfarm")');
+    (document.getElementById('Rtributefarmmaz') as any).setAttribute('onclick', 'MAZLookalike("Tribute Farm", "Rtributefarm")');
+    (document.getElementById('Hshrinemaz') as any).setAttribute('onclick', 'MAZLookalike("Shrine - U1", "Hshrine")');
+    (document.getElementById('Hdshrinemaz') as any).setAttribute('onclick', 'MAZLookalike("Shrine - U1 (Daily)", "Hdshrine")');
+    (document.getElementById('Rshrinemaz') as any).setAttribute('onclick', 'MAZLookalike("Shrine - U2", "Rshrine")');
+    (document.getElementById('Rdshrinemaz') as any).setAttribute('onclick', 'MAZLookalike("Shrine - U2 (Daily)", "Rdshrine")');
+    (document.getElementById('Rblackbogmaz') as any).setAttribute('onclick', 'MAZLookalike("Quagmire", "Rblackbog")');
+    (document.getElementById('Rinsanitymaz') as any).setAttribute('onclick', 'MAZLookalike("Insanity", "Rinsanityon")');
+    (document.getElementById('Ralchfarmmaz') as any).setAttribute('onclick', 'MAZLookalike("Alch", "Ralchon")');
+    (document.getElementById('Rhypofarmmaz') as any).setAttribute('onclick', 'MAZLookalike("Hypo", "Rhypoon")');
+    (document.getElementById('RAMPraidmaz') as any).setAttribute('onclick', 'MAZLookalike("Praid", "RAMPraid")');
+    (document.getElementById('RdAMPraidmaz') as any).setAttribute('onclick', 'MAZLookalike("dPraid", "RdAMPraid")');
 
     //Display
 
@@ -895,10 +894,10 @@ export function initializeAllSettings() {
     createSetting('showautomapstatus', 'Enable AutoMap Status', 'Enables the display of the map status. Turn this off to reduce memory. ', 'boolean', true, null, 'Display');
     createSetting('Rshowautomapstatus', 'Enable AutoMap Status', 'Enables the display of the map status. Turn this off to reduce memory. ', 'boolean', true, null, 'Display');
     createSetting('EnableAFK', 'Go AFK Mode', '(Action Button). Go AFK uses a Black Screen, and suspends ALL the Trimps GUI visual update functions (updateLabels) to improve performance by not doing unnecessary stuff. This feature is primarily just a CPU and RAM saving mode. Everything will resume when you come back and press the Back button. Console debug output is also disabled. The blue color means this is not a settable setting, just a button. You can now also click the Zone # (World Info) area to go AFK now.', 'action', 'MODULES["performance"].EnableAFKMode()', null, 'Display');
-    document.getElementById('battleSideTitle').setAttribute('onclick', 'MODULES["performance"].EnableAFKMode()');
-    document.getElementById('battleSideTitle').setAttribute('onmouseover', "getZoneStats(event);this.style.cursor='pointer'");
+    (document.getElementById('battleSideTitle') as any).setAttribute('onclick', 'MODULES["performance"].EnableAFKMode()');
+    (document.getElementById('battleSideTitle') as any).setAttribute('onmouseover', "getZoneStats(event);this.style.cursor='pointer'");
     createSetting('ChangeLog', 'Show Changelog', '(Action Button). Shows the changelog popup message that AT loads on startup again, in case you missed it. The blue color means this is not a settable setting, just a button.', 'action', 'printChangelog()', null, 'Display');
-    document.getElementById('Display').lastChild.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('Display') as any).lastChild.insertAdjacentHTML('afterend', '<br>');
 
 
 
@@ -930,31 +929,31 @@ export function initializeAllSettings() {
     createSetting('Export550', '550+ AT Settings', 'Gives you an AT settings String that you can use to import. Use if you are z550+. May not work for you perfectly, should really only be used as an example! ', 'infoclick', 'Export550', null, 'Import Export');
     createSetting('CleanupAutoTrimps', 'Cleanup Saved Settings ', 'Deletes old values from previous versions of the script from your AutoTrimps Settings file.', 'infoclick', 'CleanupAutoTrimps', null, 'Import Export');
 
-    document.getElementById('Rchallengehidearch').setAttribute('onclick', 'settingChanged("Rchallengehidearch"), modifyParentNode("Rchallengehidearch", "Rarchstring3")');
+    (document.getElementById('Rchallengehidearch') as any).setAttribute('onclick', 'settingChanged("Rchallengehidearch"), modifyParentNode("Rchallengehidearch", "Rarchstring3")');
     modifyParentNode("Rchallengehidearch", "Rarchstring3");
 
-    document.getElementById('Rchallengehidemayhem').setAttribute('onclick', 'settingChanged("Rchallengehidemayhem"), modifyParentNode("Rchallengehidemayhem", "Rmayhemmap")');
+    (document.getElementById('Rchallengehidemayhem') as any).setAttribute('onclick', 'settingChanged("Rchallengehidemayhem"), modifyParentNode("Rchallengehidemayhem", "Rmayhemmap")');
     modifyParentNode("Rchallengehidemayhem", "Rmayhemmap");
 
-    document.getElementById('Rchallengehidestorm').setAttribute('onclick', 'settingChanged("Rchallengehidestorm"), modifyParentNode("Rchallengehidestorm", "Rstormmult")');
+    (document.getElementById('Rchallengehidestorm') as any).setAttribute('onclick', 'settingChanged("Rchallengehidestorm"), modifyParentNode("Rchallengehidestorm", "Rstormmult")');
     modifyParentNode("Rchallengehidestorm", "Rstormmult");
 
-    document.getElementById('Rchallengehideinsanity').setAttribute('onclick', 'settingChanged("Rchallengehideinsanity"), modifyParentNode("Rchallengehideinsanity", "Rinsanityfarmfrag")');
+    (document.getElementById('Rchallengehideinsanity') as any).setAttribute('onclick', 'settingChanged("Rchallengehideinsanity"), modifyParentNode("Rchallengehideinsanity", "Rinsanityfarmfrag")');
     modifyParentNode("Rchallengehideinsanity", "Rinsanityfarmfrag");
 
-    document.getElementById('Rchallengehideexterminate').setAttribute('onclick', 'settingChanged("Rchallengehideexterminate"), modifyParentNode("Rchallengehideexterminate", "Rexterminateeq")');
+    (document.getElementById('Rchallengehideexterminate') as any).setAttribute('onclick', 'settingChanged("Rchallengehideexterminate"), modifyParentNode("Rchallengehideexterminate", "Rexterminateeq")');
     modifyParentNode("Rchallengehideexterminate", "Rexterminateeq");
 
-    document.getElementById('Rchallengehidepanda').setAttribute('onclick', 'settingChanged("Rchallengehidepanda"), modifyParentNode("Rchallengehidepanda", "Rpandahits")');
+    (document.getElementById('Rchallengehidepanda') as any).setAttribute('onclick', 'settingChanged("Rchallengehidepanda"), modifyParentNode("Rchallengehidepanda", "Rpandahits")');
     modifyParentNode("Rchallengehidepanda", "Rpandahits");
 
-    document.getElementById('Rchallengehidealchemy').setAttribute('onclick', 'settingChanged("Rchallengehidealchemy"), modifyParentNode("Rchallengehidealchemy", "Ralchfarmfrag")');
+    (document.getElementById('Rchallengehidealchemy') as any).setAttribute('onclick', 'settingChanged("Rchallengehidealchemy"), modifyParentNode("Rchallengehidealchemy", "Ralchfarmfrag")');
     modifyParentNode("Rchallengehidealchemy", "Ralchfarmfrag");
 
-    document.getElementById('Rchallengehidehypothermia').setAttribute('onclick', 'settingChanged("Rchallengehidehypothermia"), modifyParentNode("Rchallengehidehypothermia", "Rhypostorage")');
+    (document.getElementById('Rchallengehidehypothermia') as any).setAttribute('onclick', 'settingChanged("Rchallengehidehypothermia"), modifyParentNode("Rchallengehidehypothermia", "Rhypostorage")');
     modifyParentNode("Rchallengehidehypothermia", "Rhypostorage");
     
-    document.getElementById('Rchallengehidedeso').setAttribute('onclick', 'settingChanged("Rchallengehidedeso"), modifyParentNode("Rchallengehidedeso", "Rdesomult")');
+    (document.getElementById('Rchallengehidedeso') as any).setAttribute('onclick', 'settingChanged("Rchallengehidedeso"), modifyParentNode("Rchallengehidedeso", "Rdesomult")');
     modifyParentNode("Rchallengehidedeso", "Rdesomult");
 
     settingsProfileMakeGUI();

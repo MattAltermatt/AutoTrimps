@@ -22,6 +22,7 @@ declare global {
   function getCurrentMapCell(...args: any[]): any
   function getEnergyShieldMult(...args: any[]): number
   function calcHeirloomBonus(...args: any[]): number
+  function calculateTimeToMax(...args: any[]): number // main.js
   function getRetainModifier(...args: any[]): number
   function checkIfLiquidZone(...args: any[]): boolean
   function countRemainingEssenceDrops(...args: any[]): number // main.js (Scryer essence)
@@ -38,6 +39,7 @@ declare global {
   function runMap(...args: any[]): void // main.js
   // Portal / daily / challenge window helpers (main.js) — read by portal.ts.
   function cancelTooltip(...args: any[]): void
+  function unlockTooltip(...args: any[]): void
   function tooltip(...args: any[]): void
   // DOM class-swap helper (main.js) + tooltip-identity global read by the keydown handlers.
   function swapClass(...args: any[]): void
@@ -48,6 +50,9 @@ declare global {
   function viewPortalUpgrades(...args: any[]): void
   function numTab(...args: any[]): void
   function buyPortalUpgrade(...args: any[]): void
+  function getPortalUpgradePrice(...args: any[]): number
+  function respecPerks(...args: any[]): void
+  function clearPerks(...args: any[]): void
   function activateClicked(...args: any[]): void
   function cancelPortal(...args: any[]): void
   function portalClicked(...args: any[]): void
@@ -56,6 +61,8 @@ declare global {
   function checkCompleteDailies(...args: any[]): void
   function getDailyTimeString(...args: any[]): any
   function getDailyChallenge(...args: any[]): any
+  function countDailyWeight(...args: any[]): number // main.js
+  function getDailyHeliumValue(...args: any[]): number // main.js
   var portalWindowOpen: any // main.js var (boolean)
   var portalUniverse: any   // main.js var (number)
 
@@ -137,6 +144,8 @@ declare global {
   function getTotalPortals(...args: any[]): number
   function toggleEqualityScale(...args: any[]): void
   function toggleSetting(...args: any[]): void
+  function toggleSettingsMenu(...args: any[]): void
+  var trimpStatsDisplayed: boolean
   function countStackedVoidMaps(...args: any[]): number
   var offlineProgress: any
   var mapSpecialModifierConfig: any
@@ -153,9 +162,12 @@ declare global {
   function magnetoShriek(...args: any[]): any
   function endSpire(...args: any[]): any
   function fightManual(...args: any[]): any
+  function pauseFight(...args: any[]): any
   function manageEqualityStacks(...args: any[]): any
   function updateEqualityScaling(...args: any[]): any
   function toggleGeneticistassist(...args: any[]): any
+  // Challenge² reward math, read by bare name from import-export.ts (c2 table).
+  function getIndividualSquaredReward(...args: any[]): any
 }
 
 export {}

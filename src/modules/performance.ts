@@ -1,9 +1,8 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/performance.js.
-// Self-contained IIFE ;(function(M,W){...})(MODULES, window) registering MODULES.performance (AFK overlay etc.). No exports; side-effect import. enableDebug resolves to the AutoTrimps2.js global.
+// TRUE TS (Phase 1 · #31): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/performance.js.
+// Self-contained IIFE ;(function(M,W){...})(MODULES, window) registering MODULES.performance (AFK overlay etc.). No exports; side-effect import. enableDebug/game/DOM globals resolve via the ambient seam.
 
-;(function(M, W)
+;(function(M: any, W: any)
 {
 	M["performance"] = {};
 	M["performance"].isAFK = false; //start with AFK disabled

@@ -1,6 +1,6 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT of legacy/SettingsGUI.js:1226–1548 — the createSetting factory + tooltip/value/
+// TRUE TS (Phase 1 · #31): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/SettingsGUI.js:1226–1548.
+// The createSetting factory + tooltip/value/
 // text input handlers. Bodies copied verbatim. Cross-module names (autoTrimpSettings, ATversion,
 // saveSettings, updateCustomButtons, checkPortalSettings, tooltip, cancelTooltip, unlockTooltip,
 // prettify, ImportExportTooltip, game, magmiteSpenderChanged) resolve at runtime via the global
@@ -14,10 +14,10 @@
 // behavior-identical (verified: no other legacy/src code references it).
 let ranstring = '';
 
-export function createSetting(id, name, description, type, defaultValue, list, container) {
+export function createSetting(id: any, name: any, description: any, type: any, defaultValue: any, list: any, container: any) {
     var btnParent = document.createElement("DIV");
     btnParent.setAttribute('style', 'display: inline-block; vertical-align: top; margin-left: 1vw; margin-bottom: 1vw; width: 13.142vw;');
-    var btn = document.createElement("DIV");
+    var btn: any = document.createElement("DIV");
     btn.id = id;
     var loaded = autoTrimpSettings[id];
     if (type == 'boolean') {
@@ -36,8 +36,8 @@ export function createSetting(id, name, description, type, defaultValue, list, c
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = name;
         btnParent.appendChild(btn);
-        if (container) document.getElementById(container).appendChild(btnParent);
-        else document.getElementById("autoSettings").appendChild(btnParent);
+        if (container) document.getElementById(container)!.appendChild(btnParent);
+        else document.getElementById("autoSettings")!.appendChild(btnParent);
     } else if (type == 'value' || type == 'valueNegative') {
         if (!(loaded && id == loaded.id && loaded.type === type))
             autoTrimpSettings[id] = {
@@ -54,8 +54,8 @@ export function createSetting(id, name, description, type, defaultValue, list, c
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = name;
         btnParent.appendChild(btn);
-        if (container) document.getElementById(container).appendChild(btnParent);
-        else document.getElementById("autoSettings").appendChild(btnParent);
+        if (container) document.getElementById(container)!.appendChild(btnParent);
+        else document.getElementById("autoSettings")!.appendChild(btnParent);
     } else if (type == 'multiValue' || type == 'valueNegative') {
         if (!(loaded && id == loaded.id && loaded.type === type))
             autoTrimpSettings[id] = {
@@ -72,8 +72,8 @@ export function createSetting(id, name, description, type, defaultValue, list, c
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = name;
         btnParent.appendChild(btn);
-        if (container) document.getElementById(container).appendChild(btnParent);
-        else document.getElementById("autoSettings").appendChild(btnParent);
+        if (container) document.getElementById(container)!.appendChild(btnParent);
+        else document.getElementById("autoSettings")!.appendChild(btnParent);
     } else if (type == 'textValue') {
         if (!(loaded && id == loaded.id && loaded.type === type))
             autoTrimpSettings[id] = {
@@ -90,8 +90,8 @@ export function createSetting(id, name, description, type, defaultValue, list, c
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = name;
         btnParent.appendChild(btn);
-        if (container) document.getElementById(container).appendChild(btnParent);
-        else document.getElementById("autoSettings").appendChild(btnParent);
+        if (container) document.getElementById(container)!.appendChild(btnParent);
+        else document.getElementById("autoSettings")!.appendChild(btnParent);
     } else if (type == 'dropdown') {
         if (!(loaded && id == loaded.id && loaded.type === type))
             autoTrimpSettings[id] = {
@@ -102,7 +102,7 @@ export function createSetting(id, name, description, type, defaultValue, list, c
                 selected: loaded === undefined ? defaultValue : loaded,
                 list: list
             };
-        var btn = document.createElement("select");
+        var btn: any = document.createElement("select");
         btn.id = id;
         if (game.options.menu.darkTheme.enabled == 2) btn.setAttribute("style", "color: #C8C8C8; font-size: 1.0vw;");
         else btn.setAttribute("style", "color:black; font-size: 1.0vw;");
@@ -123,8 +123,8 @@ export function createSetting(id, name, description, type, defaultValue, list, c
         dropdownLabel.setAttribute('style', 'margin-right: 0.3vw; font-size: 0.8vw;');
         btnParent.appendChild(dropdownLabel);
         btnParent.appendChild(btn);
-        if (container) document.getElementById(container).appendChild(btnParent);
-        else document.getElementById("autoSettings").appendChild(btnParent);
+        if (container) document.getElementById(container)!.appendChild(btnParent);
+        else document.getElementById("autoSettings")!.appendChild(btnParent);
     } else if (type == 'infoclick') {
         btn.setAttribute('class', 'noselect settingsBtn settingBtn3');
         btn.setAttribute("onclick", 'ImportExportTooltip(\'' + defaultValue + '\', \'update\')');
@@ -133,8 +133,8 @@ export function createSetting(id, name, description, type, defaultValue, list, c
         btn.setAttribute("style", "background-color: #d88839; color: black; font-size: 1.1vw;");
         btn.textContent = name;
         btnParent.appendChild(btn);
-        if (container) document.getElementById(container).appendChild(btnParent);
-        else document.getElementById("autoSettings").appendChild(btnParent);
+        if (container) document.getElementById(container)!.appendChild(btnParent);
+        else document.getElementById("autoSettings")!.appendChild(btnParent);
         return;
     } else if (type == 'multitoggle') {
         if (!(loaded && id == loaded.id && loaded.type === type))
@@ -152,8 +152,8 @@ export function createSetting(id, name, description, type, defaultValue, list, c
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = autoTrimpSettings[id]["name"][autoTrimpSettings[id]["value"]];
         btnParent.appendChild(btn);
-        if (container) document.getElementById(container).appendChild(btnParent);
-        else document.getElementById("autoSettings").appendChild(btnParent);
+        if (container) document.getElementById(container)!.appendChild(btnParent);
+        else document.getElementById("autoSettings")!.appendChild(btnParent);
     } else if (type === 'action') {
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn settingBtn3');
@@ -162,8 +162,8 @@ export function createSetting(id, name, description, type, defaultValue, list, c
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = name;
         btnParent.appendChild(btn);
-        if (container) document.getElementById(container).appendChild(btnParent);
-        else document.getElementById("autoSettings").appendChild(btnParent);
+        if (container) document.getElementById(container)!.appendChild(btnParent);
+        else document.getElementById("autoSettings")!.appendChild(btnParent);
         return;
     }
     if (autoTrimpSettings[id].name != name)
@@ -173,7 +173,7 @@ export function createSetting(id, name, description, type, defaultValue, list, c
     autoTrimpSettings["ATversion"] = ATversion;
 }
 
-export function createInput(id, name, description) {
+export function createInput(id: any, name: any, description: any) {
     var $btnParent = document.createElement("DIV");
     $btnParent.setAttribute('style', 'display: inline-block; vertical-align: top; margin-left: 0.5vw; margin-bottom: 0.5vw; width: 6.5vw;');
     $btnParent.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
@@ -187,14 +187,14 @@ export function createInput(id, name, description) {
     $label.setAttribute('style', 'text-align: left; margin-left: 0.2vw; font-size: 0.6vw');
     $label.innerHTML = name;
     $btnParent.appendChild($label);
-    document.getElementById("autoSettings").appendChild($btnParent);
+    document.getElementById("autoSettings")!.appendChild($btnParent);
 }
 
-export function settingChanged(id) {
+export function settingChanged(id: any) {
     var btn = autoTrimpSettings[id];
     if (btn.type == 'boolean') {
         btn.enabled = !btn.enabled;
-        document.getElementById(id).setAttribute('class', 'noselect settingsBtn settingBtn' + btn.enabled);
+        document.getElementById(id)!.setAttribute('class', 'noselect settingsBtn settingBtn' + btn.enabled);
     }
     if (btn.type == 'multitoggle') {
         if (id == 'AutoMagmiteSpender2' && btn.value == 1) {
@@ -206,14 +206,14 @@ export function settingChanged(id) {
         btn.value++;
         if (btn.value > btn.name.length - 1)
             btn.value = 0;
-        document.getElementById(id).setAttribute('class', 'noselect settingsBtn settingBtn' + btn.value);
-        document.getElementById(id).textContent = btn.name[btn.value];
+        document.getElementById(id)!.setAttribute('class', 'noselect settingsBtn settingBtn' + btn.value);
+        document.getElementById(id)!.textContent = btn.name[btn.value];
     }
     if (btn.type == 'dropdown') {
-        btn.selected = document.getElementById(id).value;
+        btn.selected = (document.getElementById(id) as any).value;
         if (id == "Prestige") {
             autoTrimpSettings["PrestigeBackup"] = {
-                selected: document.getElementById(id).value,
+                selected: (document.getElementById(id) as any).value,
                 name: "PrestigeBackup",
                 id: "PrestigeBackup"
             };
@@ -224,9 +224,9 @@ export function settingChanged(id) {
     checkPortalSettings();
 }
 
-export function autoSetValueToolTip(id, text, negative, multi) {
+export function autoSetValueToolTip(id: any, text: any, negative: any, multi: any) {
     ranstring = text;
-    var elem = document.getElementById("tooltipDiv");
+    var elem = document.getElementById("tooltipDiv")!;
     var tooltipText = 'Type a number below. You can also use shorthand such as 2e5 or 200k.';
     if (negative)
         tooltipText += ' Accepts negative numbers as validated inputs.';
@@ -237,11 +237,11 @@ export function autoSetValueToolTip(id, text, negative, multi) {
     game.global.lockTooltip = true;
     elem.style.left = '32.5%';
     elem.style.top = '25%';
-    document.getElementById('tipTitle').textContent = ranstring + ':  Value Input';
-    document.getElementById('tipText').innerHTML = tooltipText;
-    document.getElementById('tipCost').innerHTML = costText;
+    document.getElementById('tipTitle')!.textContent = ranstring + ':  Value Input';
+    document.getElementById('tipText')!.innerHTML = tooltipText;
+    document.getElementById('tipCost')!.innerHTML = costText;
     elem.style.display = 'block';
-    var box = document.getElementById('customNumberBox');
+    var box: any = document.getElementById('customNumberBox');
     try {
         box.setSelectionRange(0, box.value.length);
     } catch (e) {
@@ -250,24 +250,24 @@ export function autoSetValueToolTip(id, text, negative, multi) {
     box.focus();
 }
 
-export function autoSetTextToolTip(id, text) {
+export function autoSetTextToolTip(id: any, text: any) {
     ranstring = text;
-    var elem = document.getElementById("tooltipDiv");
+    var elem = document.getElementById("tooltipDiv")!;
     var tooltipText = 'Type your input below';
     tooltipText += `<br/><br/><input id="customTextBox" style="width: 50%" onkeypress="onKeyPressSetting(event, '${id}')" value="${autoTrimpSettings[id].value}"></input>`;
     var costText = '<div class="maxCenter"><div class="btn btn-info" onclick="autoSetText(\'' + id + '\')">Apply</div><div class="btn btn-info" onclick="cancelTooltip()">Cancel</div></div>';
     game.global.lockTooltip = true;
     elem.style.left = '32.5%';
     elem.style.top = '25%';
-    document.getElementById('tipTitle').textContent = ranstring + ':  Value Input';
-    document.getElementById('tipText').innerHTML = tooltipText;
-    document.getElementById('tipCost').innerHTML = costText;
+    document.getElementById('tipTitle')!.textContent = ranstring + ':  Value Input';
+    document.getElementById('tipText')!.innerHTML = tooltipText;
+    document.getElementById('tipCost')!.innerHTML = costText;
     elem.style.display = 'block';
-    var box = document.getElementById('customTextBox');
+    var box: any = document.getElementById('customTextBox');
     box.focus();
 }
 
-export function onKeyPressSetting(event, id, negative, multi) {
+export function onKeyPressSetting(event: any, id: any, negative: any, multi: any) {
     if (event.which == 13 || event.keyCode == 13) {
         if (negative !== undefined && multi !== undefined)
             autoSetValue(id, negative, multi);
@@ -276,7 +276,7 @@ export function onKeyPressSetting(event, id, negative, multi) {
     }
 }
 
-export function parseNum(num) {
+export function parseNum(num: any) {
     if (num.split('e')[1]) {
         num = num.split('e');
         num = Math.floor(parseFloat(num[0]) * (Math.pow(10, parseInt(num[1]))));
@@ -298,11 +298,11 @@ export function parseNum(num) {
     return num;
 }
 
-export function autoSetValue(id, negative, multi) {
-    var num = 0;
+export function autoSetValue(id: any, negative: any, multi: any) {
+    var num: any = 0;
     unlockTooltip();
     tooltip('hide');
-    var numBox = document.getElementById('customNumberBox');
+    var numBox: any = document.getElementById('customNumberBox');
     if (numBox) {
         num = numBox.value.toLowerCase();
         if (multi) {
@@ -313,26 +313,26 @@ export function autoSetValue(id, negative, multi) {
     } else return;
     autoTrimpSettings[id].value = num;
     if (Array.isArray(num)) {
-        document.getElementById(id).textContent = ranstring + ': ' + num[0] + '+';
+        document.getElementById(id)!.textContent = ranstring + ': ' + num[0] + '+';
     } else if (num > -1 || negative)
-        document.getElementById(id).textContent = ranstring + ': ' + prettify(num);
+        document.getElementById(id)!.textContent = ranstring + ': ' + prettify(num);
     else
-        document.getElementById(id).innerHTML = ranstring + ': ' + "<span class='icomoon icon-infinity'></span>";
+        document.getElementById(id)!.innerHTML = ranstring + ': ' + "<span class='icomoon icon-infinity'></span>";
     saveSettings();
     checkPortalSettings();
 }
 
-export function autoSetText(id) {
+export function autoSetText(id: any) {
     var textVal = 'empty';
     unlockTooltip();
     tooltip('hide');
-    var textBox = document.getElementById('customTextBox');
+    var textBox: any = document.getElementById('customTextBox');
     if (textBox) {
         textVal = textBox.value
     } else return;
     autoTrimpSettings[id].value = textVal;
     if (textVal != undefined) {
-        document.getElementById(id).textContent = ranstring + ': ' + textVal;
+        document.getElementById(id)!.textContent = ranstring + ': ' + textVal;
     }
     saveSettings();
     checkPortalSettings();
