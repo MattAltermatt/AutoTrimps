@@ -26,7 +26,7 @@ export function autoNatureTokens() {
             debug('Upgraded Empowerment of ' + nature, 'nature');
         }
         else if (setting == 'Transfer') {
-            if (empowerment.retainLevel >= 80+thresh || empowerment.tokens < thresh)
+            if (empowerment.retainLevel >= 80 || empowerment.tokens < thresh) // Fix (#22): game caps retainLevel at 80; thresh is tokens, not levels.
                 continue;
             var cost = getNextNatureCost(nature, true);
             if (empowerment.tokens < cost) continue;

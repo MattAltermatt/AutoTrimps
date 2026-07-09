@@ -1311,7 +1311,7 @@ export function RautoMap() {
                     break;
                 }
                 if (theMap.name == 'Dimension of Rage' && document.getElementById("portalBtn").style.display == "none" && game.upgrades.Rage.done == 1) {
-                    if (game.global.challenge != "Unlucky" && (game.global.world < 16 || RcalcHDratio() < 2)) continue;
+                    if (game.global.challengeActive != "Unlucky" && (game.global.world < 16 || RcalcHDratio() < 2)) continue;
                     selectedMap = theMap.id;
                     break;
                 }

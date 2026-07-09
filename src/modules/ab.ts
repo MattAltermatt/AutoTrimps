@@ -153,6 +153,9 @@ export function ABfarmsave() {
 }
 
 export function ABfarmswitch() {
+    // Fix (#22): guard the '-1' sentinel default like ABfarmsave does; indexing the string '-1'
+    // as an array ([0]/[2]) corrupted enemyLevel and threw on .indexOf, aborting the tick.
+    if (getPageSetting('RABfarmstring') == "-1") return;
 
     if (autoBattle.enemyLevel != getPageSetting('RABfarmstring')[0]) {
         autoBattle.enemyLevel = getPageSetting('RABfarmstring')[0];
