@@ -2313,8 +2313,8 @@ export function autoshrine() {
 globalThis.old_nextWorld = nextWorld;
 globalThis.nextWorld = function() {
     var retVal = old_nextWorld(...arguments);
-    autoTrimpSettings.Hshrinecharge.value = 0;
-    autoTrimpSettings.Rshrinecharge.value = 0;
+    if (autoTrimpSettings.Hshrinecharge) autoTrimpSettings.Hshrinecharge.value = 0;
+    if (autoTrimpSettings.Rshrinecharge) autoTrimpSettings.Rshrinecharge.value = 0;
     return retVal;
 }
 
