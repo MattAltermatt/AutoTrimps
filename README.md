@@ -30,7 +30,9 @@ Discord is a chat program. Come to talk about AutoTrimps, for help, or suggestio
 
 
 ## Current Version - Ongoing Development!
-- Zek Fork. All changes made by Zek using GenBTC as base. Currently up-to-date as of 06/2022.
+- Zek Fork (changes by Zek, GenBTC as base). This modernization fork (MattAltermatt) ports
+  the runtime to TypeScript/Vite and re-syncs automation to current Trimps — automation parity
+  is current as of **Trimps v5.10.1** (synced 2026-07-08). See [GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/issues) for phase-by-phase status.
 
 
 

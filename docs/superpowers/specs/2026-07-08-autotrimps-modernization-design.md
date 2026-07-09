@@ -1,7 +1,7 @@
 # AutoTrimps Modernization — Design Spec
 
 **Date:** 2026-07-08
-**Status:** Approved (brainstorm) → ready for implementation plan
+**Status:** Implemented — Phases 0–2, Phase UI (#20), Phase Parity (#21) shipped to `gh-pages`. This spec remains the living architecture reference; remaining legacy = `AutoTrimps2.js` + `Graphs.js`/highcharts/mods. Live phase status: [GitHub Milestones](https://github.com/MattAltermatt/AutoTrimps/milestones).
 **Horizon:** Long-term, multi-session side project
 
 ---

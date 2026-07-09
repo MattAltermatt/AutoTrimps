@@ -1,0 +1,99 @@
+# CLAUDE.md — AutoTrimps
+
+AutoTrimps automation userscript for the game **Trimps** — a modernization fork porting a
+~18k-line legacy JavaScript userscript to **TypeScript + Vite** via an incremental strangler.
+See [VISION.md](VISION.md) for the north-star and
+[the design spec](docs/superpowers/specs/2026-07-08-autotrimps-modernization-design.md) for the
+architecture.
+
+Default branch: **`gh-pages`** (this is a GitHub-Pages-deployed fork; the built userscript is
+served from it). Work on `feature/...` branches, FF-merge to `gh-pages`.
+
+## Build & test commands
+
+```bash
+npm install
+npm run build        # → dist/autotrimps.user.js (legacy concat + esbuild(src/main.ts))
+npm run build:watch  # rebuild on change
+npm run serve        # static-serve the local Trimps clone on :8080 with the bundle injected
+npm test             # vitest
+npm run typecheck    # tsc --noEmit
+npm run lint         # oxlint src tests scripts
+```
+
+Local verify: `npm run build && npm run serve` → open `http://localhost:8080/`, confirm
+"AutoTrimps - Zek Fork Loaded!" and a clean console. The game clone lives at `../trimps-game`
+(v5.10.1); the serve script aliases the built bundle at `/autotrimps.dev.js`.
+
+## Layout
+
+- `legacy/` — untouched original `.js`, the behavioral oracle. Only `AutoTrimps2.js` (loader) +
+  `Graphs.js`/highcharts/mods wrappers remain here; everything else is ported.
+- `src/modules/` — the ~30 converted TypeScript modules.
+- `src/game/*.d.ts` — ambient types for the game's global API (the seam).
+- `scripts/build-userscript.mjs` — the userscript assembler; `scripts/serve-game.mjs` — dev server.
+
+## Planning
+
+100% GitHub-native — no ROADMAP/CHANGELOG/HISTORY files. Open work =
+[GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/issues) grouped by
+**Milestones (= phases)**; shipped record = closed issues; the frozen Phases 0–2 narrative is
+[issue #23](https://github.com/MattAltermatt/AutoTrimps/issues/23).
+
+## Conventions
+
+**Per-module conversion recipe** (see `.claude/skills/convert-legacy-module/`): relocate the
+legacy `.js` verbatim → `src/modules/<name>.ts`, faithful port behind the seam, verify live in
+the clone, *then* refactor internals freely. **Copy dense/minified lines verbatim — never retype**
+(transcription is the dominant risk); exact-string vitest guards the two frozen serializeSettings
+blobs.
+
+**The transition seam** — converted modules `export` normally; `src/legacy-bridge.ts` does
+`Object.assign(globalThis, { ...module })` (wildcard spread — can't forget a name). ⚠️ The `src`
+IIFE is emitted **right after `AutoTrimps2.js`, BEFORE the remaining legacy modules**, NOT last:
+still-legacy modules call converted fns at *load* time (e.g. `portal.js` top-level
+`getPageSetting(...)`), so a src-last bundle throws ReferenceError before the bridge runs.
+`scripts/build-userscript.mjs` splits `MANIFEST` around this; a build test guards the order.
+
+**Reverse direction** — converted code reads game/legacy globals as free identifiers, typed
+ambient in `src/game/trimps.d.ts` (game API) + `src/game/at-legacy.d.ts` (not-yet-converted AT
+globals; shrinks as modules convert).
+
+**Shared top-level vars → `globalThis`** — a converted module's top-level `var X` that
+still-legacy code reads becomes module-scoped and invisible (ReferenceError). Assign
+`globalThis.X = ...` at the write site and drop the module `var`. Scout per module:
+`grep '^var ' legacy/modules/<m>.js` then check each name for readers outside the module.
+
+**Implicit-global audit is REQUIRED and must be SCOPE-AWARE per module** — bare `x = ...` writes
+(no var/let) were sloppy-mode implicit globals; strict ESM throws. A file-wide regex gives FALSE
+NEGATIVES (a `var perk` in a sibling function masks a bare `perk =` in another — shipped a bug
+this way). Use a TS-compiler-API scope-walk, keep an ambient allowlist of engine + cross-module
+globals. Localize with `var` (`for (i=…)` → `for (var i=…)`).
+
+**Per-module typing** — game-coupled + minified body → `/* eslint-disable */` + `@ts-nocheck`
+faithful port; genuinely pure/peelable bits → real typed module + vitest (`time.ts`/`buystate.ts`
+precedent).
+
+**Byte-parity gate before FF-merge** (`.claude/agents/legacy-parity-verifier.md`): diff the
+ordered `createSetting` id list + per-function bodies against `git show gh-pages:<file>`. The
+`createSetting` define-pass is the persistence contract — a dropped/reordered call leaves a
+setting bare and `getPageSetting` returns undefined.
+
+**Game-parity work** (`.claude/agents/parity-gap-analyzer.md`) — the game clone is `../trimps-game`.
+The fork is structurally immune to changes it *delegates* to native game code (it reads native
+`locked`/unlock flags, calls native `buyJob`/`buyUpgrade`); drift lives only in its own
+from-scratch prediction math. Mirror game constants exactly — **never change game balance numbers.**
+
+**Merge cadence** — per-module/phase `feature/...` branch → port → live-verify → squash +
+FF-merge to `gh-pages` + delete branch. `dist/` is gitignored (regenerated by `npm run build`).
+
+## Recent decisions
+
+- **Planning is 100% GitHub-native** (2026-07-08) — ROADMAP/CHANGELOG/HISTORY deleted; Issues +
+  Milestones + issue #23 (frozen Phases 0–2) are canonical. In-repo docs point at GitHub, never
+  duplicate it.
+- **Phase 2 + Phase UI (#20) + Phase Parity (#21) shipped** — 26 modules converted, `SettingsGUI.js`
+  decomposed into 5 modules, automation synced v5.9.0→v5.10.1 (11 gaps). Only `AutoTrimps2.js` +
+  `Graphs.js`/highcharts/mods remain legacy. Next: **Phase Bugs (#22)**.
+- **A prior from-scratch rewrite was abandoned** — refactor in place via the strangler, don't
+  reinvent the wheel.

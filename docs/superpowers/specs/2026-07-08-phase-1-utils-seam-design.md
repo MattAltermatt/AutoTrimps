@@ -1,7 +1,7 @@
 # Phase 1 — First Module Conversion & the Transition Seam
 
 **Date:** 2026-07-08
-**Status:** Approved (brainstorm) → ready for implementation plan
+**Status:** Implemented — `utils.ts` + peeled `time.ts`/`buystate.ts` shipped (Phase 1); the transition seam idiom locked here is reused by every later slice.
 **Parent spec:** `2026-07-08-autotrimps-modernization-design.md`
 **Module:** `legacy/modules/utils.js` → `src/modules/*.ts`
 
