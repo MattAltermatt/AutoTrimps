@@ -39,10 +39,7 @@ declare global {
   var calcSpecificEnemyAttack: typeof import('../modules/calc').calcSpecificEnemyAttack
   function getPierceAmt(...rest: any[]): number
   var addPoison: typeof import('../modules/calc').addPoison
-  // NOT a typeof-import: real query.getCurrentEnemy requires 1 arg, but callers across
-  // calc/other/scryer/stance call getCurrentEnemy() with 0 (relying on the old optional
-  // param). Latent arg-count mismatch -> #32.
-  function getCurrentEnemy(offset?: number): any
+  var getCurrentEnemy: typeof import('../modules/query').getCurrentEnemy
   function getEmpowerment(zone?: number): string
   function challengeActive(name?: string): any
   var calcCurrentStance: typeof import('../modules/calc').calcCurrentStance
@@ -118,10 +115,10 @@ declare global {
   var baseMaxDamage: number
 
   // Enemy-attack / corruption predictors (query.ts) + spire helpers (other.ts).
-  // NOT typeof-imports: real query.getEnemyMaxAttack requires 5 args but callers pass 4;
-  // real RgetEnemyMaxAttack requires 3 args but callers pass 4 (extra). Latent arg-count
-  // mismatches -> #32.
-  function getEnemyMaxAttack(...rest: any[]): number
+  var getEnemyMaxAttack: typeof import('../modules/query').getEnemyMaxAttack
+  // NOT a typeof-import: real RgetEnemyMaxAttack takes 3 args (world, level, name), but
+  // callers pass a 4th (a multiplier/difficulty) that the fn silently drops — unlike its
+  // U1 sibling getEnemyMaxAttack, which applies that arg as `d`. Balance asymmetry -> #32.
   function RgetEnemyMaxAttack(...rest: any[]): number
   var getCorruptedCellsNum: typeof import('../modules/query').getCorruptedCellsNum
   var getCorruptScale: typeof import('../modules/query').getCorruptScale
@@ -285,9 +282,7 @@ declare global {
   var stormdynamicHD: typeof import('../modules/calc').stormdynamicHD
   var equipfarmdynamicHD: typeof import('../modules/equipment').equipfarmdynamicHD
   var estimateEquipsForZone: typeof import('../modules/equipment').estimateEquipsForZone
-  // NOT a typeof-import: real query.getEnemyMaxHealth requires 3 args, but maps.ts:399
-  // calls getEnemyMaxHealth(siphlvl) with 1. Latent arg-count mismatch -> #32.
-  function getEnemyMaxHealth(...args: any[]): number
+  var getEnemyMaxHealth: typeof import('../modules/query').getEnemyMaxHealth
   var dRAMP: typeof import('../modules/mapfunctions').dRAMP
   var RAMP: typeof import('../modules/mapfunctions').RAMP
   var RAMPreset: typeof import('../modules/mapfunctions').RAMPreset
