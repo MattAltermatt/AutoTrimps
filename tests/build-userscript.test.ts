@@ -22,6 +22,20 @@ describe('landingHtml', () => {
   })
 })
 
+describe('buildUserscript version wiring', () => {
+  it('stamps the CI run number into the built @version header', async () => {
+    const prev = process.env.GITHUB_RUN_NUMBER
+    process.env.GITHUB_RUN_NUMBER = '777'
+    try {
+      const out = await buildUserscript()
+      expect(out).toMatch(/@version {6}\d+\.\d+\.\d+.*\.777\n/)
+    } finally {
+      if (prev === undefined) delete process.env.GITHUB_RUN_NUMBER
+      else process.env.GITHUB_RUN_NUMBER = prev
+    }
+  })
+})
+
 describe('buildUserscript', () => {
   it('assembles a self-contained userscript from legacy + src', async () => {
     const out: string = await buildUserscript()

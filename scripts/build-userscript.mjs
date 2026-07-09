@@ -152,7 +152,7 @@ export async function buildUserscript() {
   const firstJs = await readModule(first)
   const restJs = (await Promise.all(rest.map(readModule))).join('')
   const srcIife = await bundleSrc()
-  return `${header(pkg.version)}${firstJs}\n;\n/* ===== src/main.ts (bundled — seam: converted modules published before remaining legacy) ===== */\n${srcIife}\n;\n${restJs}\n`
+  return `${header(resolveVersion(pkg.version, process.env.GITHUB_RUN_NUMBER))}${firstJs}\n;\n/* ===== src/main.ts (bundled — seam: converted modules published before remaining legacy) ===== */\n${srcIife}\n;\n${restJs}\n`
 }
 
 async function writeBuild() {
