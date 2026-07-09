@@ -173,7 +173,12 @@ export function getCritMulti(high) {
     var highTierMulti = getMegaCritDamageMult(Math.ceil(critChance));
     var highTierChance = critChance - Math.floor(critChance)
 
-    return ((1 - highTierChance) * lowTierMulti + highTierChance * highTierMulti) * CritD
+    // Scruffy's doubleCrit ability + Shield doubleCrit mod (5.10.0): a second independent roll adds one
+    // more crit tier with prob doubleCritChance, multiplying the mult by the mega-crit base per tier.
+    var doubleCritChance = (typeof getPlayerDoubleCritChance === 'function') ? Math.min(getPlayerDoubleCritChance(), 1) : 0;
+    var doubleCritFactor = 1 + doubleCritChance * (getMegaCritDamageMult(2) - 1);
+
+    return ((1 - highTierChance) * lowTierMulti + highTierChance * highTierMulti) * doubleCritFactor * CritD
 }
 
 export function calcOurBlock(stance) {
@@ -595,6 +600,16 @@ export function calcSpire(cell, name, what) {
         exitCell = (getPageSetting('dExitSpireCell') - 1);
     var enemy = cell == 99 ? (exitCell == 99 ? game.global.gridArray[99].name : "Snimp") : name;
     var base = (what == "attack") ? game.global.getEnemyAttack(exitCell, enemy, false) : (calcEnemyBaseHealth(game.global.world, exitCell, enemy) * 2);
+    if (game.global.universe == 2) {
+        // U2 Mega-Spire (Z300, 1000 cells / 10 floors): the game's getSpireStats scales enemies by
+        // Math.pow(200, spireLevel + 1) per floor, NOT by the U1 per-cell mod^cell. game.global.world
+        // stays pinned at 300 for the whole spire, so the world-based branch below never advanced.
+        // getEnemyAttack(...,false) already bakes in badGuys.attack once (as origAttack does), so only
+        // the health path — whose base skips badGuys at world>=60 — needs the explicit multiply.
+        if (what == "health") base *= game.badGuys[enemy][what];
+        base *= Math.pow(200, game.global.spireLevel + 1);
+        return base;
+    }
     var mod = (what == "attack") ? 1.17 : 1.14;
     var spireNum = Math.floor((game.global.world - 100) / 100);
     if (spireNum > 1) {
@@ -1076,7 +1091,12 @@ export function RgetCritMulti() {
     var highTierMulti = getMegaCritDamageMult(Math.ceil(critChance));
     var highTierChance = critChance - Math.floor(critChance)
 
-    return ((1 - highTierChance) * lowTierMulti + highTierChance * highTierMulti) * CritD
+    // Scruffy's doubleCrit ability + Shield doubleCrit mod (5.10.0): a second independent roll adds one
+    // more crit tier with prob doubleCritChance, multiplying the mult by the mega-crit base per tier.
+    var doubleCritChance = (typeof getPlayerDoubleCritChance === 'function') ? Math.min(getPlayerDoubleCritChance(), 1) : 0;
+    var doubleCritFactor = 1 + doubleCritChance * (getMegaCritDamageMult(2) - 1);
+
+    return ((1 - highTierChance) * lowTierMulti + highTierChance * highTierMulti) * doubleCritFactor * CritD
 }
 
 export function RcalcOurDmg(minMaxAvg, equality) {
@@ -1236,9 +1256,9 @@ export function RcalcOurDmg(minMaxAvg, equality) {
     }
 
     //Scruffy Level 20 - Dailies
-    if (game.global.stringVersion >= '5.7.0') {
-        number *= Fluffy.isRewardActive('SADailies') && game.global.challengeActive == "Daily" ? Fluffy.rewardConfig.SADailies.attackMod() : 1;
-    }
+    // Game applies this unconditionally (main.js spireDaily); the old `stringVersion >= '5.7.0'`
+    // guard was a lexicographic string compare that turned false once the game passed 5.10.0.
+    number *= Fluffy.isRewardActive('SADailies') && game.global.challengeActive == "Daily" ? Fluffy.rewardConfig.SADailies.attackMod() : 1;
 
     // AB
     number *= autoBattle.bonuses.Stats.getMult();
@@ -1313,6 +1333,12 @@ export function RcalcOurHealth() {
 
     if (Fluffy.isRewardActive("healthy")) {
         health *= 1.5;
+    }
+
+    // Scruffy's scaledHealth ability (5.10.0): +50% max HP per Scruffy level, up to ~16.5x at L31.
+    // Mirrors main.js soldierHealthMax; the fork previously checked only the older flat `healthy`.
+    if (Fluffy.isRewardActive("scaledHealth")) {
+        health *= Fluffy.rewardConfig.scaledHealth.mult();
     }
 
     if (game.portal.Observation.radLevel > 0) {

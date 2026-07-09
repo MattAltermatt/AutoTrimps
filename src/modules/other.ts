@@ -75,11 +75,15 @@ export function disActiveSpireAT() {
 }
 
 export function exitSpireCell() {
-    isActiveSpireAT() && game.global.lastClearedCell >= getPageSetting('ExitSpireCell') - 1 && endSpire()
+    // U1 only: the 1-100 ExitSpireCell setting was designed for the single-zone U1 spire. In the U2
+    // Mega-Spire (Z300, 10 floors) lastClearedCell resets to -1 each floor, so this fired on floor 1
+    // and endSpire()->finishU2Spire() aborted the whole 1000-cell run. Floor-aware U2 exit is a
+    // separate feature (see issue #21 backlog).
+    game.global.universe == 1 && isActiveSpireAT() && game.global.lastClearedCell >= getPageSetting('ExitSpireCell') - 1 && endSpire()
 }
 
 export function dailyexitSpireCell() {
-    disActiveSpireAT() && game.global.lastClearedCell >= getPageSetting('dExitSpireCell') - 1 && endSpire()
+    game.global.universe == 1 && disActiveSpireAT() && game.global.lastClearedCell >= getPageSetting('dExitSpireCell') - 1 && endSpire()
 }
 
 export function plusPres() {

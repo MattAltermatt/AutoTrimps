@@ -16,6 +16,13 @@ export function getCurrentAB(effect) {
         var bleed = autoBattle.enemy.bleedResist;
         var shock = autoBattle.enemy.shockResist;
 
+        // L151-160 enemies (5.10.0) are 100% immune to one damage type (enemy.immune), yet its numeric
+        // resist stays at 0 and would read as "least resisted". Force the immune type to Infinity resist
+        // so the preset switcher never picks a status the enemy fully blocks.
+        if (autoBattle.enemy.immune == "poison") poison = Infinity;
+        else if (autoBattle.enemy.immune == "bleed") bleed = Infinity;
+        else if (autoBattle.enemy.immune == "shock") shock = Infinity;
+
         var lowestResist = Math.min(poison,bleed,shock);
 
         var outEffect = "";

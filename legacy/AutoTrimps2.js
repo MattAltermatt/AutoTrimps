@@ -300,7 +300,7 @@ function mainLoop() {
         if ((getPageSetting('Rshrine') == true) || (getPageSetting('Rdshrine') == 1) || (getPageSetting('Rdshrine') == 2)) autoshrine();
 
         //AB
-        if (game.stats.highestRadLevel.valueTotal() >= 75 && getPageSetting('RAB') == true) {
+        if (game.stats.highestRadLevel.valueTotal() >= 75 && !autoBattle.sealed && getPageSetting('RAB') == true) {
             if (getPageSetting('RABpreset') == true) ABswitch();
             if (getPageSetting('RABdustsimple') == 1) ABdustsimple();
             else if (getPageSetting('RABdustsimple') == 2) ABdustsimplenonhid();

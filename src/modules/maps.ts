@@ -1111,7 +1111,7 @@ export function RautoMap() {
         for (var x = 0; x < setZone.length; x++) {
             if (!setZone[x].on) continue;
             if (game.global.world < setZone[x].world || game.global.world > setZone[x].through) continue;
-            if (game.global.preMapsActive && setZone[x].done == totalPortals + "_" + game.global.world + "_" + nextCell) continue;
+            if (game.global.preMapsActive && setZone[x].done == totalPortals + "_" + game.global.world + "_" + nextCell + (game.global.universe == 2 && game.global.spireActive ? "_" + game.global.spireLevel : "")) continue;
             if (setZone[x].times === -1 && game.global.world !== setZone[x].world) continue;
             if (setZone[x].times > 0 && (game.global.world - setZone[x].world) % setZone[x].times !== 0) continue;
             if (setZone[x].cell === game.global.lastClearedCell + 2) {
