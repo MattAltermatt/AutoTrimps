@@ -1,6 +1,5 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/stance.js.
+// TRUE TS (Phase 1 · #26): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/stance.js.
 // Auto-stance / one-shot / survival combat math (65 game.* touches). getPageSetting from
 // converted utils; calc functions (calcOurDmg/calcOurBlock/calcOurHealth/etc.) resolve via
 // the bridge at runtime (no top-level calls). SEAM: baseMinDamage/baseMaxDamage -> globalThis
@@ -33,7 +32,7 @@ export function autoStanceNew() {
     else if(game.global.formation == 1 && game.global.soldierHealth == game.global.soldierHealthMax)        setFormation('2');
 }
 
-export function debugStance(maxPower, ignoreArmy) {
+export function debugStance(maxPower?: boolean, ignoreArmy?: boolean): string | false {
     //Returns what stance we should be using right now, or false if none grants survival
     for (var critPower=2; critPower >= -2; critPower--) {
         if      (survive("D",  critPower, ignoreArmy)) {return "D"  + critPower}
@@ -47,7 +46,7 @@ export function debugStance(maxPower, ignoreArmy) {
     return false;
 }
 
-export function maxOneShotPower(considerEdges) {
+export function maxOneShotPower(considerEdges?: boolean): number {
     var power = 2;
 
     //No enemy to kill
@@ -70,7 +69,7 @@ export function maxOneShotPower(considerEdges) {
     return power;
 }
 
-export function oneShotZone(zone, type, specificStance, maxOrMin) {
+export function oneShotZone(zone: number, type?: string, specificStance?: unknown, maxOrMin?: boolean): number {
     //Calculates our minimum damage
     var baseDamage = calcOurDmg(maxOrMin ? "max" : "min", false, true);
     var damageLeft = baseDamage + addPoison(false, (type == "world") ? zone : game.global.world);
@@ -90,7 +89,7 @@ export function oneShotZone(zone, type, specificStance, maxOrMin) {
     return power-1;
 }
 
-export function oneShotPower(specificStance, offset = 0, maxOrMin) {
+export function oneShotPower(specificStance?: unknown, offset: number = 0, maxOrMin?: boolean): number {
     //Calculates our minimum damage
     var baseDamage = calcOurDmg(maxOrMin ? "max" : "min", false, true);
     var damageLeft = baseDamage + addPoison(true);
@@ -114,7 +113,7 @@ export function oneShotPower(specificStance, offset = 0, maxOrMin) {
     return power-1;
 }
 
-export function challengeDamage(maxHealth, minDamage, maxDamage, missingHealth, block, pierce, critPower = 2) {
+export function challengeDamage(maxHealth?: number, minDamage?: number, maxDamage?: number, missingHealth?: number, block?: number, pierce?: number, critPower: number = 2): number {
     //Pre-Init
     if (!maxHealth) maxHealth = calcOurHealth();
     if (!minDamage) minDamage = calcOurDmg("min", false, true) + addPoison(true);
@@ -171,7 +170,7 @@ export function challengeDamage(maxHealth, minDamage, maxDamage, missingHealth, 
     return harm;
 }
 
-export function directDamage(block, pierce, currentHealth, minDamage, critPower = 2) {
+export function directDamage(block?: number, pierce?: number, currentHealth?: number, minDamage?: number, critPower: number = 2): number {
     //Pre Init
     if (!block) block = calcOurBlock(false);
     if (!pierce) pierce = (game.global.brokenPlanet && !game.global.mapsActive) ? getPierceAmt() : 0;
@@ -191,9 +190,12 @@ export function directDamage(block, pierce, currentHealth, minDamage, critPower 
     var enemyFast = isDoubleAttack || challengeActive("Slow") || ((game.badGuys[enemy.name].fast || enemy.mutation == "Corruption") && game.global.challengeActive != "Coordinate" && challengeActive("Nom") == false);
     
     //Dodge Dailies
+    // Hoisted to function scope for strict TS: faithful `var dodgeDaily` was function-hoisted and
+    // stays `undefined` when the block doesn't run (`!undefined` === true, matching the original).
+    let dodgeDaily: boolean | undefined;
     if (game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.slippery !== "undefined") {
         var slipStr = game.global.dailyChallenge.slippery.strength;
-        var dodgeDaily = (slipStr > 15 && game.global.world % 2 == 0) || (slipStr <= 15 && game.global.world % 2 == 1);
+        dodgeDaily = (slipStr > 15 && game.global.world % 2 == 0) || (slipStr <= 15 && game.global.world % 2 == 1);
     }
 
     //Double Attack and One Shot situations
@@ -203,7 +205,7 @@ export function directDamage(block, pierce, currentHealth, minDamage, critPower 
     return harm;
 }
 
-export function survive(formation = "S", critPower = 2, ignoreArmy) {
+export function survive(formation: string = "S", critPower: number = 2, ignoreArmy?: boolean): boolean {
     //Check if the formation is valid
     if (formation == "D"  && !game.upgrades.Dominance.done) return false;
     if (formation == "XB" && !game.upgrades.Barrier.done) return false;

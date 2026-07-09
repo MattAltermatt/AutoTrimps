@@ -18,5 +18,34 @@ declare global {
   function updatePortalTimer(flag?: boolean): string
   function getTabClass(displayed: boolean): string
   function trimMessages(b: string): void
+
+  // Combat / prediction math read by bare name from still-@ts-nocheck modules
+  // (calc.ts, fight-info, nature, heirlooms). Pragmatic boundary signatures — these
+  // move to real typed imports as their owning modules convert (Wave 1 #27/#28).
+  function calcOurDmg(minMaxAvg?: string, ...rest: any[]): number
+  function calcOurBlock(...rest: any[]): number
+  function calcOurHealth(...rest: any[]): number
+  function calcEnemyHealth(...rest: any[]): number
+  function calcSpecificEnemyHealth(...rest: any[]): number
+  function calcSpecificEnemyAttack(...rest: any[]): number
+  function getPierceAmt(...rest: any[]): number
+  function addPoison(...rest: any[]): number
+  function getCurrentEnemy(offset?: number): any
+  function getEmpowerment(zone?: number): string
+  function challengeActive(name?: string): any
+  function calcCurrentStance(): number | undefined
+  function setFormation(formation?: string | number): void
+  function lowHeirloom(): void
+  function highHeirloom(): void
+  function dlowHeirloom(): void
+  function dhighHeirloom(): void
+  var dailyModifiers: any
+
+  // Shared combat-base globals (AutoTrimps2 vars). stance.ts writes them; calc.ts reads.
+  var baseDamage: number
+  var baseBlock: number
+  var baseHealth: number
+  var baseMinDamage: number
+  var baseMaxDamage: number
 }
 export {}
