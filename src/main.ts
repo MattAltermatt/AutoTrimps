@@ -16,9 +16,8 @@ import './modules/perks'
 import './modules/fight-info'
 // performance is a self-contained IIFE registering MODULES.performance (no exports). Side-effect import.
 import './modules/performance'
-// settings-boot runs the settings-UI load-time self-invocations (automationMenuInit → …Tabs →
-// …Settings) that legacy/SettingsGUI.js used to run in the concat tail. Imported LAST so the
-// bridge has already published settings-engine/menu/visibility/defs. Side-effect import only.
-import './modules/settings-boot'
+// NOTE: settings-boot is imported+published by legacy-bridge (its bootSettingsUI export must be a
+// global). It no longer self-invokes at bundle-eval time — initializeAutoTrimps() calls it after
+// loadPageVariables() so the 570 createSetting calls rehydrate the loaded save, not empty defaults.
 
 console.log('[AutoTrimps] modern build booted')

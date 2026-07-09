@@ -53,10 +53,16 @@ function deLoaderize(src) {
     /function ATscriptUnload\(a\) \{[\s\S]*?\n\}/,
     'function ATscriptUnload(a) { /* bundled: no-op */ }'
   )
-  // T3: initializeAutoTrimps body -> just init, no injection
+  // T3: initializeAutoTrimps body -> init + settings boot, no remote injection. bootSettingsUI()
+  // MUST run after loadPageVariables(): it wraps the flat saved blob (autoTrimpSettings[id]) into
+  // typed setting objects via createSetting, so running it before the load (as a bundle-eval-time
+  // self-invocation) wrapped empty defaults that loadPageVariables then clobbered back to bare
+  // values — getPageSetting returned undefined for all settings and Praiding threw every tick (#22).
+  // This mirrors legacy's order: loadPageVariables() → ATscriptLoad('', 'SettingsGUI') (which ran
+  // the same boot). bootSettingsUI is published globally by src/legacy-bridge.ts.
   src = src.replace(
     /function initializeAutoTrimps\(\) \{[\s\S]*?debug\('AutoTrimps - Zek Fork Loaded!', '\*spinner3'\);\s*\}/,
-    "function initializeAutoTrimps() {\n    loadPageVariables();\n    debug('AutoTrimps - Zek Fork Loaded!', '*spinner3');\n}"
+    "function initializeAutoTrimps() {\n    loadPageVariables();\n    bootSettingsUI();\n    debug('AutoTrimps - Zek Fork Loaded!', '*spinner3');\n}"
   )
   return src
 }

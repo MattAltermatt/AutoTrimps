@@ -36,5 +36,10 @@ import * as settingsEngine from './modules/settings-engine'
 import * as settingsMenu from './modules/settings-menu'
 import * as settingsVisibility from './modules/settings-visibility'
 import * as settingsDefs from './modules/settings-defs'
+// settings-boot defines bootSettingsUI() (the automationMenuInit → …Tabs → …Settings sequence).
+// It no longer self-invokes: AutoTrimps2.js's initializeAutoTrimps() calls it after
+// loadPageVariables(), matching legacy's SettingsGUI load point. Spread here so that bare global
+// call resolves. Its module body only DEFINES the function, so bridge-eval order is irrelevant.
+import * as settingsBoot from './modules/settings-boot'
 
-Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...portal, ...importExport, ...query, ...other, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs })
+Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...portal, ...importExport, ...query, ...other, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs, ...settingsBoot })
