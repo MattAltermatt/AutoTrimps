@@ -162,3 +162,13 @@ export function filterMessage2(a: any){var displayed;var b=document.getElementBy
 
 window.onerror=function(b,c,d,e,f){var g=['Message: '+b,'URL: '+c,'Line: '+d,'Column: '+e,'Error object: '+JSON.stringify(f)].join(' - ');0!=d&&console.log('AT logged error: '+g)};
 export function throwErrorfromModule(){throw new Error("We have successfully read the thrown error message out of a module")}
+
+/**
+ * Typed `document.getElementById`. Returns the element asserted to the requested
+ * subtype (default HTMLInputElement, which structurally covers .value/.checked/
+ * .select()/.focus()). Same "assume element exists & has this shape" contract the
+ * old `getElementById(id) as any` implied — runtime-identical, the cast erases.
+ */
+export function byId<T extends HTMLElement = HTMLInputElement>(id: string): T {
+    return document.getElementById(id) as T
+}

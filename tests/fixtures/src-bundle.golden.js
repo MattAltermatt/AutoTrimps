@@ -9,6 +9,7 @@
   // src/modules/utils.ts
   var utils_exports = {};
   __export(utils_exports, {
+    byId: () => byId,
     debug: () => debug2,
     filterMessage2: () => filterMessage2,
     getPageSetting: () => getPageSetting2,
@@ -233,6 +234,9 @@
   };
   function throwErrorfromModule() {
     throw new Error("We have successfully read the thrown error message out of a module");
+  }
+  function byId(id) {
+    return document.getElementById(id);
   }
 
   // src/modules/buystate.ts
