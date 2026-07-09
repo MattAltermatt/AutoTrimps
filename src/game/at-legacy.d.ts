@@ -1,8 +1,15 @@
-// Ambient declarations for AutoTrimps globals that still live in un-converted
-// legacy modules (mostly AutoTrimps2.js). Converted code reads/writes these by
-// bare name at runtime; this file only satisfies the type-checker. It SHRINKS as
-// the owning modules convert — a global moves out of here the moment its module
-// becomes a real import.
+// at-legacy.d.ts — the PERMANENT bare-name globalThis seam between converted modules.
+// (Phase 1 is complete; this file no longer "shrinks as modules convert".) Converted
+// modules read each other's state by bare name via legacy-bridge's globalThis spread,
+// so those names need ambient declarations here. Three kinds of entry:
+//   1. Functions with a single converted owning module -> declared
+//      `var fn: typeof import('../modules/X').fn` so the ambient signature is generated
+//      from the source of truth and cannot drift.
+//   2. Functions with NO single typed source (native game fns bridged here, functions
+//      exported from two modules, or still-legacy AutoTrimps2.js fns) -> kept as a
+//      hand-written signature; there is nothing to import from.
+//   3. Informal cross-module state flags (booleans/numbers/undefined tri-states) -> kept
+//      `any` by design; precisely typing all of them is low-value and risks wrong narrowing.
 declare global {
   // Settings store — `var autoTrimpSettings = {}` in AutoTrimps2.js.
   var autoTrimpSettings: any
@@ -19,70 +26,75 @@ declare global {
   function getTabClass(displayed: boolean): string
   function trimMessages(b: string): void
 
-  // Combat / prediction math read by bare name from still-@ts-nocheck modules
-  // (calc.ts, fight-info, nature, heirlooms). Pragmatic boundary signatures — these
-  // move to real typed imports as their owning modules convert (Wave 1 #27/#28).
+  // Combat / prediction math read by bare name (calc.ts). Mostly typeof-imports below;
+  // calcOurDmg stays hand-written — see its note.
+  // NOT a typeof-import: real calc.calcOurDmg returns `number | undefined`, but callers
+  // assign it into `number`-typed globals/locals unguarded (stance baseDamage/baseMin/baseMax,
+  // equipment ourDamage, maps ourBaseDamage/mapdmg). Latent bug -> #32.
   function calcOurDmg(minMaxAvg?: string, ...rest: any[]): number
-  function calcOurBlock(...rest: any[]): number
-  function calcOurHealth(...rest: any[]): number
-  function calcEnemyHealth(...rest: any[]): number
-  function calcSpecificEnemyHealth(...rest: any[]): number
-  function calcSpecificEnemyAttack(...rest: any[]): number
+  var calcOurBlock: typeof import('../modules/calc').calcOurBlock
+  var calcOurHealth: typeof import('../modules/calc').calcOurHealth
+  var calcEnemyHealth: typeof import('../modules/calc').calcEnemyHealth
+  var calcSpecificEnemyHealth: typeof import('../modules/calc').calcSpecificEnemyHealth
+  var calcSpecificEnemyAttack: typeof import('../modules/calc').calcSpecificEnemyAttack
   function getPierceAmt(...rest: any[]): number
-  function addPoison(...rest: any[]): number
+  var addPoison: typeof import('../modules/calc').addPoison
+  // NOT a typeof-import: real query.getCurrentEnemy requires 1 arg, but callers across
+  // calc/other/scryer/stance call getCurrentEnemy() with 0 (relying on the old optional
+  // param). Latent arg-count mismatch -> #32.
   function getCurrentEnemy(offset?: number): any
   function getEmpowerment(zone?: number): string
   function challengeActive(name?: string): any
-  function calcCurrentStance(): number | undefined
+  var calcCurrentStance: typeof import('../modules/calc').calcCurrentStance
   function setFormation(formation?: string | number): void
-  function lowHeirloom(): void
-  function highHeirloom(): void
-  function dlowHeirloom(): void
-  function dhighHeirloom(): void
+  var lowHeirloom: typeof import('../modules/heirlooms').lowHeirloom
+  var highHeirloom: typeof import('../modules/heirlooms').highHeirloom
+  var dlowHeirloom: typeof import('../modules/heirlooms').dlowHeirloom
+  var dhighHeirloom: typeof import('../modules/heirlooms').dhighHeirloom
   // stance.ts exports (Wave 1 #26) read as free-ids by scryer.ts (Wave 3 #30).
   // oneShotPower stays `any` — its return feeds `||` expressions that assign back into
   // scryer's boolean `transitionRequired`, so a `number` return would union-cascade.
-  function survive(stance?: string, cp?: number): boolean
+  var survive: typeof import('../modules/stance').survive
   function oneShotPower(...rest: any[]): any
-  function windStance(...rest: any[]): void
-  function autoStance(...rest: any[]): void
-  function autoStance2(...rest: any[]): void
+  var windStance: typeof import('../modules/stance').windStance
+  var autoStance: typeof import('../modules/stance').autoStance
+  var autoStance2: typeof import('../modules/stance').autoStance2
   function calcBaseDamageInX(...rest: any[]): void
   var dailyModifiers: any
   // U2 void-contract flag — globalThis-assigned in mapfunctions.ts; read by ab.ts + maps.ts.
   var contractVoid: any
   // AT-fork functions read as free-ids by portal.ts (Wave 3 #30), resolved via the bridge.
-  function settingChanged(...rest: any[]): any     // settings-engine.ts
+  var settingChanged: typeof import('../modules/settings-engine').settingChanged
   // Settings-engine free-id reads (settings-engine.ts #31), resolved via the bridge.
   var ATversion: any                                 // AutoTrimps2.js var
   var magmiteSpenderChanged: any                     // AutoTrimps2.js var
-  function saveSettings(...rest: any[]): any         // utils.ts
-  function updateCustomButtons(...rest: any[]): any  // settings-visibility.ts
-  function checkPortalSettings(...rest: any[]): any  // settings-visibility.ts
+  var saveSettings: typeof import('../modules/utils').saveSettings
+  var updateCustomButtons: typeof import('../modules/settings-visibility').updateCustomButtons
+  var checkPortalSettings: typeof import('../modules/settings-visibility').checkPortalSettings
   // Free-id reads by settings-visibility.ts (#31), resolved via the bridge.
-  function debug(...rest: any[]): any                // utils.ts
-  function findOutCurrentPortalLevel(...rest: any[]): any // portal.ts
+  var debug: typeof import('../modules/utils').debug
+  var findOutCurrentPortalLevel: typeof import('../modules/portal').findOutCurrentPortalLevel
   // Settings accessors (utils.ts, converted) + GRAPHSETTINGS store (Graphs.js) read as
   // free-ids by settings-menu.ts (#31), resolved via the bridge / still-legacy Graphs.js.
-  function getPageSetting(...rest: any[]): any    // utils.ts
-  function setPageSetting(...rest: any[]): any    // utils.ts
+  var getPageSetting: typeof import('../modules/utils').getPageSetting
+  var setPageSetting: typeof import('../modules/utils').setPageSetting
   function byId<T extends HTMLElement = HTMLInputElement>(id: string): T  // utils.ts (typed DOM helper)
   var GRAPHSETTINGS: any                          // Graphs.js
   // Settings-UI boot fns bridged; read bare by settings-boot.ts.
-  function automationMenuInit(...rest: any[]): any        // settings-menu.ts
-  function automationMenuSettingsInit(...rest: any[]): any // settings-menu.ts
-  function initializeAllTabs(...rest: any[]): any          // settings-menu.ts
-  function initializeAllSettings(...rest: any[]): any      // settings-defs.ts
+  var automationMenuInit: typeof import('../modules/settings-menu').automationMenuInit
+  var automationMenuSettingsInit: typeof import('../modules/settings-menu').automationMenuSettingsInit
+  var initializeAllTabs: typeof import('../modules/settings-menu').initializeAllTabs
+  var initializeAllSettings: typeof import('../modules/settings-defs').initializeAllSettings
   // Settings-def builders read bare by settings-defs.ts (#31), resolved via the bridge.
-  function createSetting(...rest: any[]): any              // settings-engine.ts
-  function modifyParentNode(...rest: any[]): any           // settings-engine.ts
+  var createSetting: typeof import('../modules/settings-engine').createSetting
+  var modifyParentNode: typeof import('../modules/settings-menu').modifyParentNode
   function settingsProfileMakeGUI(...rest: any[]): any     // settings-engine.ts
   // AutoTrimps2.js loader path prefix, read bare by settings-boot.ts.
   var basepath: string
-  function autoMagmiteSpender(...rest: any[]): any  // magmite.ts
-  function autoheirlooms3(...rest: any[]): any      // heirlooms.ts
-  function highdmgshield(...rest: any[]): any       // heirlooms.ts
-  function RresetVars(...rest: any[]): any           // mapfunctions.ts
+  var autoMagmiteSpender: typeof import('../modules/magmite').autoMagmiteSpender
+  var autoheirlooms3: typeof import('../modules/heirlooms').autoheirlooms3
+  var highdmgshield: typeof import('../modules/heirlooms').highdmgshield
+  var RresetVars: typeof import('../modules/mapfunctions').RresetVars
   // AutoTrimps2.js / perks.ts globals read+written bare by portal.ts.
   var zonePostpone: any    // globalThis-assigned in portal.ts, read by AutoTrimps2
   var lastHeliumZone: any  // AutoTrimps2.js var
@@ -90,6 +102,9 @@ declare global {
   var AutoPerks: any        // globalThis-assigned in perks.ts
   var RAutoPerks: any       // globalThis-assigned in perks.ts
   // localStorage-write helper (AutoTrimps2.js var) read bare by perks.ts.
+  // NOT a typeof-import: utils.safeSetItems types value `string`, but perks.ts passes
+  // numbers (.selectedIndex/ratioSet) at 4 sites — runtime-benign localStorage coercion,
+  // type-dishonest. Latent bug tracked in #32; kept loose here so callers still compile.
   function safeSetItems(...args: any[]): any
   // Remote-injected priority queue (legacy/FastPriorityQueue.js, loaded via script tag) —
   // `new FastPriorityQueue(cmp)` in perks.ts; `any` covers construct + poll/add/size.
@@ -102,48 +117,46 @@ declare global {
   var baseMinDamage: number
   var baseMaxDamage: number
 
-  // Enemy-attack / corruption predictors still in @ts-nocheck AT modules
-  // (query.ts, other.ts) — pragmatic boundary sigs; move to real imports as those
-  // modules convert.
+  // Enemy-attack / corruption predictors (query.ts) + spire helpers (other.ts).
+  // NOT typeof-imports: real query.getEnemyMaxAttack requires 5 args but callers pass 4;
+  // real RgetEnemyMaxAttack requires 3 args but callers pass 4 (extra). Latent arg-count
+  // mismatches -> #32.
   function getEnemyMaxAttack(...rest: any[]): number
   function RgetEnemyMaxAttack(...rest: any[]): number
-  function getCorruptedCellsNum(...rest: any[]): number
-  function getCorruptScale(...rest: any[]): number
-  function isActiveSpireAT(...rest: any[]): boolean
-  function disActiveSpireAT(...rest: any[]): boolean
+  var getCorruptedCellsNum: typeof import('../modules/query').getCorruptedCellsNum
+  var getCorruptScale: typeof import('../modules/query').getCorruptScale
+  var isActiveSpireAT: typeof import('../modules/other').isActiveSpireAT
+  var disActiveSpireAT: typeof import('../modules/other').disActiveSpireAT
   // gammaBurst % — `var` in AutoTrimps2.js.
   var gammaBurstPct: number
 
-  // Buy-state save/restore (buystate.ts, converted) + affordability/quest helpers still in
-  // @ts-nocheck AT modules (equipment.ts, other.ts, mapfunctions.ts) + AutoTrimps2.js / mods.js.
-  // Pragmatic boundary sigs; move to real imports as those modules convert.
-  function preBuy2(...rest: any[]): any
-  function postBuy2(...rest: any[]): void
-  function getMaxAffordable(...rest: any[]): number
-  function questcheck(...rest: any[]): number
-  function RsmithyCalc(...rest: any[]): any
+  // Buy-state save/restore (buystate.ts) + affordability/quest helpers
+  // (equipment.ts, other.ts, mapfunctions.ts).
+  var preBuy2: typeof import('../modules/buystate').preBuy2
+  var postBuy2: typeof import('../modules/buystate').postBuy2
+  var getMaxAffordable: typeof import('../modules/equipment').getMaxAffordable
+  var questcheck: typeof import('../modules/other').questcheck
+  var RsmithyCalc: typeof import('../modules/mapfunctions').RsmithyCalc
 
   // Building-purchase helpers read by bare name from buildings.ts: isBuildingInQueue
-  // (query.ts), smithylogic (other.ts) still @ts-nocheck; calcBadGuyDmg/RcalcHDratio
-  // (calc.ts) + evaluateEquipmentEfficiency (equipment.ts) converted but bridged by bare
-  // name. Pragmatic boundary sigs; move to real imports as those modules convert.
-  function isBuildingInQueue(...rest: any[]): boolean
-  function smithylogic(...rest: any[]): boolean
-  function calcBadGuyDmg(...rest: any[]): number
-  function RcalcHDratio(...rest: any[]): number
-  function evaluateEquipmentEfficiency(...rest: any[]): any
+  // (query.ts), smithylogic (other.ts), calcBadGuyDmg/RcalcHDratio (calc.ts),
+  // evaluateEquipmentEfficiency (equipment.ts).
+  var isBuildingInQueue: typeof import('../modules/query').isBuildingInQueue
+  var smithylogic: typeof import('../modules/other').smithylogic
+  var calcBadGuyDmg: typeof import('../modules/calc').calcBadGuyDmg
+  var RcalcHDratio: typeof import('../modules/calc').RcalcHDratio
+  var evaluateEquipmentEfficiency: typeof import('../modules/equipment').evaluateEquipmentEfficiency
   // bestBuilding — `var` in AutoTrimps2.js (loads first); buildings.ts writes it as the
   // shared "chosen building" seam. Rhyposhouldwood — radon hypo-farm wood flag (AT var).
   var bestBuilding: any
   var Rhyposhouldwood: any
 
   // Upgrade-purchase helpers read by bare name from upgrades.ts: getPerSecBeforeManual
-  // (query.ts) still @ts-nocheck; calcHDratio (calc.ts) converted but bridged. upgradeList /
-  // RupgradeList — `globalThis.X = [...]` seam arrays written here, read by still-legacy
-  // query.js by bare name. enoughHealth / enoughDamage — combat-readiness flags (AutoTrimps2.js
-  // vars) read in the firstGiga gate.
-  function getPerSecBeforeManual(...rest: any[]): number
-  function calcHDratio(...rest: any[]): number
+  // (query.ts), calcHDratio (calc.ts). upgradeList / RupgradeList — `globalThis.X = [...]`
+  // seam arrays. enoughHealth / enoughDamage — combat-readiness flags (AutoTrimps2.js vars)
+  // read in the firstGiga gate.
+  var getPerSecBeforeManual: typeof import('../modules/query').getPerSecBeforeManual
+  var calcHDratio: typeof import('../modules/calc').calcHDratio
   var upgradeList: string[]
   var RupgradeList: string[]
   var enoughHealth: any
@@ -153,31 +166,33 @@ declare global {
   // converted) + safeBuyBuilding (buildings.ts, converted) reach here via the bridge.
   // RscienceNeeded — radon science threshold (AutoTrimps2.js var). Decimal-returning breed
   // fns typed `any` at the boundary (we don't own break_infinity's Decimal).
-  function trimpsEffectivelyEmployed(...rest: any[]): number
-  function breedingPS(...rest: any[]): any
-  function breedTimeRemaining(...rest: any[]): any
+  var trimpsEffectivelyEmployed: typeof import('../modules/breedtimer').trimpsEffectivelyEmployed
+  var breedingPS: typeof import('../modules/breedtimer').breedingPS
+  var breedTimeRemaining: typeof import('../modules/breedtimer').breedTimeRemaining
   // DecimalBreed = Decimal.clone({...}) at breedtimer.ts load — a constructor with static
   // methods (log10) AND callable (gather.ts calls DecimalBreed(0.1)); `any` covers new/call/static.
   var DecimalBreed: any
   // DOM SPAN created by breedtimer.addBreedingBoxTimers(), assigned to globalThis at load.
   var addbreedTimerInsideText: any
-  function safeBuyBuilding(...rest: any[]): any
+  var safeBuyBuilding: typeof import('../modules/buildings').safeBuyBuilding
   var RscienceNeeded: number
 
   // Equipment/prestige helpers read by bare name from equipment.ts. Prediction math
-  // (highDamageShield/getTotalHealthMod/Rcalc* in calc.ts, RgetEnemyMaxHealth in query.ts)
-  // converted-but-bridged; doMaxMapBonus (maps.ts) / RdoMaxMapBonus (mapfunctions.ts) /
-  // Rgetequipcost (other.ts) still @ts-nocheck. needGymystic / shouldFarm — AutoTrimps2.js
+  // (highDamageShield/getTotalHealthMod/Rcalc* in calc.ts, RgetEnemyMaxHealth in query.ts,
+  // Rgetequipcost in other.ts); doMaxMapBonus (maps.ts) / RdoMaxMapBonus (mapfunctions.ts)
+  // are boolean state flags kept `any`. needGymystic / shouldFarm — AutoTrimps2.js
   // combat-readiness vars (needGymystic is the boolean seam noted in the module header).
-  function highDamageShield(...rest: any[]): any
-  function getTotalHealthMod(...rest: any[]): number
+  var highDamageShield: typeof import('../modules/calc').highDamageShield
+  var getTotalHealthMod: typeof import('../modules/calc').getTotalHealthMod
   // maps.ts / mapfunctions.ts boolean state flags (globalThis-assigned, read bare).
   var doMaxMapBonus: any
   var RdoMaxMapBonus: any
-  function Rgetequipcost(...rest: any[]): number
-  function RgetEnemyMaxHealth(...rest: any[]): number
-  function RcalcOurDmg(...rest: any[]): number
-  function RcalcBadGuyDmg(...rest: any[]): number
+  var Rgetequipcost: typeof import('../modules/other').Rgetequipcost
+  var RgetEnemyMaxHealth: typeof import('../modules/query').RgetEnemyMaxHealth
+  var RcalcOurDmg: typeof import('../modules/calc').RcalcOurDmg
+  var RcalcBadGuyDmg: typeof import('../modules/calc').RcalcBadGuyDmg
+  // NOT a typeof-import: real RcalcOurHealth() takes 0 args, but equipment.ts calls
+  // RcalcOurHealth(true) (ignored arg) at 649/1054. Latent bug tracked in #32.
   function RcalcOurHealth(...rest: any[]): number
   var needGymystic: any
   var shouldFarm: any
@@ -262,54 +277,58 @@ declare global {
   var RdAMPrepMap3: any
   var RdAMPrepMap4: any
   var RdAMPrepMap5: any
-  // AT fns read bare by maps.ts: prediction math (calc.ts / equipment.ts / query.ts,
-  // converted-but-bridged) + the U2 radon map orchestrators (mapfunctions.ts).
-  function areWeAttackLevelCapped(...args: any[]): any
-  function calcSpire(...args: any[]): number
-  function desodynamicHD(...args: any[]): number
-  function stormdynamicHD(...args: any[]): number
-  function equipfarmdynamicHD(...args: any[]): any
-  function estimateEquipsForZone(...args: any[]): any
+  // AT fns read bare by maps.ts: prediction math (calc.ts / equipment.ts / query.ts)
+  // + the U2 radon map orchestrators (mapfunctions.ts).
+  var areWeAttackLevelCapped: typeof import('../modules/equipment').areWeAttackLevelCapped
+  var calcSpire: typeof import('../modules/calc').calcSpire
+  var desodynamicHD: typeof import('../modules/calc').desodynamicHD
+  var stormdynamicHD: typeof import('../modules/calc').stormdynamicHD
+  var equipfarmdynamicHD: typeof import('../modules/equipment').equipfarmdynamicHD
+  var estimateEquipsForZone: typeof import('../modules/equipment').estimateEquipsForZone
+  // NOT a typeof-import: real query.getEnemyMaxHealth requires 3 args, but maps.ts:399
+  // calls getEnemyMaxHealth(siphlvl) with 1. Latent arg-count mismatch -> #32.
   function getEnemyMaxHealth(...args: any[]): number
-  function dRAMP(...args: any[]): any
-  function RAMP(...args: any[]): any
-  function RAMPreset(...args: any[]): any
-  function Rbogs(...args: any[]): any
-  function RfragMap(...args: any[]): any
-  function Rhypo(...args: any[]): any
-  function RhypoMap(...args: any[]): any
-  function Rinsanity(...args: any[]): any
-  function RinsanityMap(...args: any[]): any
-  function RlevelMap(...args: any[]): any
-  function RmapRepeat(...args: any[]): any
-  function Rmayhem(...args: any[]): any
-  function RPraid(...args: any[]): any
-  function RquestMap(...args: any[]): any
-  function RselectMap(...args: any[]): any
-  function Rship(...args: any[]): any
-  function RshipMap(...args: any[]): any
-  function Rshould(...args: any[]): any
-  function RsmithyFarm(...args: any[]): any
-  function RsmithyFarmMap(...args: any[]): any
-  function Rstorm(...args: any[]): any
-  function RtimeFarm(...args: any[]): any
-  function RtimeFarmMap(...args: any[]): any
-  function RtributeFarm(...args: any[]): any
-  function RtributeFarmMap(...args: any[]): any
-  function Ralch(...args: any[]): any
-  function RalchMap(...args: any[]): any
-  function Rdeso(...args: any[]): any
+  var dRAMP: typeof import('../modules/mapfunctions').dRAMP
+  var RAMP: typeof import('../modules/mapfunctions').RAMP
+  var RAMPreset: typeof import('../modules/mapfunctions').RAMPreset
+  var Rbogs: typeof import('../modules/mapfunctions').Rbogs
+  var RfragMap: typeof import('../modules/mapfunctions').RfragMap
+  var Rhypo: typeof import('../modules/mapfunctions').Rhypo
+  var RhypoMap: typeof import('../modules/mapfunctions').RhypoMap
+  var Rinsanity: typeof import('../modules/mapfunctions').Rinsanity
+  var RinsanityMap: typeof import('../modules/mapfunctions').RinsanityMap
+  var RlevelMap: typeof import('../modules/mapfunctions').RlevelMap
+  var RmapRepeat: typeof import('../modules/mapfunctions').RmapRepeat
+  var Rmayhem: typeof import('../modules/mapfunctions').Rmayhem
+  var RPraid: typeof import('../modules/mapfunctions').RPraid
+  var RquestMap: typeof import('../modules/mapfunctions').RquestMap
+  var RselectMap: typeof import('../modules/mapfunctions').RselectMap
+  var Rship: typeof import('../modules/mapfunctions').Rship
+  var RshipMap: typeof import('../modules/mapfunctions').RshipMap
+  var Rshould: typeof import('../modules/mapfunctions').Rshould
+  var RsmithyFarm: typeof import('../modules/mapfunctions').RsmithyFarm
+  var RsmithyFarmMap: typeof import('../modules/mapfunctions').RsmithyFarmMap
+  var Rstorm: typeof import('../modules/mapfunctions').Rstorm
+  var RtimeFarm: typeof import('../modules/mapfunctions').RtimeFarm
+  var RtimeFarmMap: typeof import('../modules/mapfunctions').RtimeFarmMap
+  var RtributeFarm: typeof import('../modules/mapfunctions').RtributeFarm
+  var RtributeFarmMap: typeof import('../modules/mapfunctions').RtributeFarmMap
+  var Ralch: typeof import('../modules/mapfunctions').Ralch
+  var RalchMap: typeof import('../modules/mapfunctions').RalchMap
+  var Rdeso: typeof import('../modules/mapfunctions').Rdeso
   // maps.ts status readouts, bridged; read bare by performance.ts (AFK overlay).
+  // NOT typeof-imports: real (R)updateAutoMapsStatus return can be `undefined`, but
+  // performance.ts indexes the result [0] unguarded (AFK overlay, 151/155). Latent -> #32.
   function updateAutoMapsStatus(...args: any[]): any
   function RupdateAutoMapsStatus(...args: any[]): any
 
   // ── other.ts (Wave 3 #30) bridged helpers + owned globals ────────────────────
   // Buy-state seam (buystate.ts, converted) + void-map helpers (breedtimer.ts,
   // converted) reached here by bare name via the bridge.
-  function preBuy(...rest: any[]): any
-  function postBuy(...rest: any[]): void
-  function forceAbandonTrimps(...rest: any[]): any
-  function abandonVoidMap(...rest: any[]): any
+  var preBuy: typeof import('../modules/buystate').preBuy
+  var postBuy: typeof import('../modules/buystate').postBuy
+  var forceAbandonTrimps: typeof import('../modules/breedtimer').forceAbandonTrimps
+  var abandonVoidMap: typeof import('../modules/breedtimer').abandonVoidMap
   // Prestige-raid map-family + misc globals: globalThis-assigned at other.ts load,
   // read cross-module by maps.ts / mapfunctions.ts / Graphs.js. Pragmatic `any`.
   var daily3: any
@@ -455,14 +474,16 @@ declare global {
   var hypoprefragmappy: any
   var hypofragmappybought: any
   // AT helpers defined in sibling converted modules, read by bare name here.
-  function Rgetequips(...args: any[]): any
+  var Rgetequips: typeof import('../modules/equipment').Rgetequips
+  // NOT a typeof-import: real RcalcEnemyHealth returns `number | undefined`, but
+  // mapfunctions.ts divides/compares the result unguarded (~22 sites). Latent bug -> #32.
   function RcalcEnemyHealth(...args: any[]): any
 
   // Settings (de)serialization defined in utils.ts, read by bare name from
   // import-export.ts (export string builders + profile save).
-  function serializeSettings(...args: any[]): any
-  function serializeSettings550(...args: any[]): any
-  function serializeSettings60(...args: any[]): any
+  var serializeSettings: typeof import('../modules/utils').serializeSettings
+  var serializeSettings550: typeof import('../modules/utils').serializeSettings550
+  var serializeSettings60: typeof import('../modules/utils').serializeSettings60
   // Runtime module loader + paths — `var`/functions in AutoTrimps2.js.
   function ATscriptLoad(...args: any[]): any
   function ATscriptUnload(...args: any[]): any
