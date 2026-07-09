@@ -129,7 +129,7 @@ async function readModule(rel) {
   return `\n;\n/* ===== legacy/${rel} ===== */\n${src}\n`
 }
 
-async function bundleSrc() {
+export async function bundleSrc() {
   const res = await esbuild({
     entryPoints: [resolve(ROOT, 'src/main.ts')],
     bundle: true,
