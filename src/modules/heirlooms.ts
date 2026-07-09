@@ -255,7 +255,7 @@ export function calcLoomNu(slot) {
 export function calcLoomNuInfinity(slot) {
 	nuloom();
 	var heirloom = getSelectedHeirloom();
-	if (Math.ceil(getModUpgradeCost(heirloom, slot, 1)) != "Infinity") {
+	if (Math.ceil(getModUpgradeCost(heirloom, slot, 1)) != Infinity) {
 		return true;
 	} else { 
 		return false;
@@ -354,7 +354,7 @@ export function nuRatio() {
     slot3r = (slot3 != 0 && calcLoomNuInfinity(2)) ? ((slot3 / total)*100) : 1;
     slot4r = (slot4 != 0 && calcLoomNuInfinity(3)) ? ((slot4 / total)*100) : 1;
     slot5r = (slot5 != 0 && calcLoomNuInfinity(4)) ? ((slot5 / total)*100) : 1;
-    slot5r = (slot6 != 0 && calcLoomNuInfinity(5)) ? ((slot6 / total)*100) : 1;
+    slot6r = (slot6 != 0 && calcLoomNuInfinity(5)) ? ((slot6 / total)*100) : 1;
 
     //Find Player ratio
     if (getPageSetting('autonu') == true && getPageSetting('rationu') == 0 && getPageSetting('heirloomnu') != undefined) { 
@@ -363,7 +363,7 @@ export function nuRatio() {
 	slot3spend = (getPageSetting('slot3nu') > 0 && calcLoomNuInfinity(2)) ? getPageSetting('slot3nu') : 0;
 	slot4spend = (getPageSetting('slot4nu') > 0 && calcLoomNuInfinity(3)) ? getPageSetting('slot4nu') : 0;
 	slot5spend = (getPageSetting('slot5nu') > 0 && calcLoomNuInfinity(4)) ? getPageSetting('slot5nu') : 0;
-	slot5spend = (getPageSetting('slot6nu') > 0 && calcLoomNuInfinity(5)) ? getPageSetting('slot6nu') : 0;
+	slot6spend = (getPageSetting('slot6nu') > 0 && calcLoomNuInfinity(5)) ? getPageSetting('slot6nu') : 0;
 	}
 	
     if (getPageSetting('autonu') == true && getPageSetting('rationu') == 1 && getPageSetting('heirloomnu') != undefined) { 
@@ -372,7 +372,7 @@ export function nuRatio() {
 	slot3spend = (calcLoomNuInfinity(2)) ? calcAutoNuRatio(2) : 0;
 	slot4spend = (calcLoomNuInfinity(3)) ? calcAutoNuRatio(3) : 0;
 	slot5spend = (calcLoomNuInfinity(4)) ? calcAutoNuRatio(4) : 0;
-	slot5spend = (calcLoomNuInfinity(5)) ? calcAutoNuRatio(5) : 0;
+	slot6spend = (calcLoomNuInfinity(5)) ? calcAutoNuRatio(5) : 0;
 	}
 
     var totalspend = (slot1spend + slot2spend + slot3spend + slot4spend + slot5spend + slot6spend);

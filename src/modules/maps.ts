@@ -766,7 +766,7 @@ export function autoMap() {
                     runMap();
                     lastMapWeWereIn = getCurrentMapObject();
                 } else {
-                    selectedMap == "world";
+                    selectedMap = "world";
                 }
             } else {
                 debug("Buying a Map, level: #" + maplvlpicked, "maps", 'th-large');
