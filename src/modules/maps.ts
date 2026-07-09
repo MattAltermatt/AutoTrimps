@@ -1,6 +1,6 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/maps.js.
+// TRUE TS (Phase 1 · #30): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/maps.js.
+// Free identifiers resolve via the bridge at runtime, typed ambient. Behaviour-preserving: any body edits are TYPE-ONLY.
 // Auto-map decision engine (U1 autoMap + U2 RautoMap), 304 game.* touches. getPageSetting/
 // debug/setPageSetting from converted utils. ALL maps state vars were globals in the original
 // (16 top-level var + ~41 sloppy implicit globals) and MANY are read by other modules
@@ -46,9 +46,9 @@ globalThis.vanillaMapatZone = !1;
 globalThis.farmingWonder = !1;
 globalThis.additionalCritMulti = 2 < getPlayerCritChance() ? 25 : 5;
 
-export function updateAutoMapsStatus(get) {
+export function updateAutoMapsStatus(get?: any) {
 
-    var status;
+    var status: any;
     var minSp = getPageSetting('MinutestoFarmBeforeSpire');
 
     //Fail Safes
@@ -61,7 +61,7 @@ export function updateAutoMapsStatus(get) {
 
     //Spire
     else if (preSpireFarming) {
-        var secs = Math.floor(60 - (spireTime * 60) % 60).toFixed(0);
+        var secs: any = Math.floor(60 - (spireTime * 60) % 60).toFixed(0);
         var mins = Math.floor(minSp - spireTime).toFixed(0);
         var hours = ((minSp - spireTime) / 60).toFixed(2);
         var spiretimeStr = (minSp - spireTime >= 60) ?
@@ -93,8 +93,8 @@ export function updateAutoMapsStatus(get) {
     if (get) {
         return [status, getPercent, lifetime];
     } else {
-        document.getElementById('autoMapStatus').innerHTML = status;
-        document.getElementById('hiderStatus').innerHTML = hiderStatus;
+        document.getElementById('autoMapStatus')!.innerHTML = status;
+        document.getElementById('hiderStatus')!.innerHTML = hiderStatus;
     }
 }
 
@@ -102,12 +102,12 @@ MODULES["maps"].advSpecialMapMod_numZones = 3;
 globalThis.advExtraMapLevels = 0;
 
 export function testMapSpecialModController() {
-    var a = [];
+    var a: any[] = [];
     if (Object.keys(mapSpecialModifierConfig).forEach(function(o) {
             var p = mapSpecialModifierConfig[o];
             game.global.highestLevelCleared + 1 >= p.unlocksAt && a.push(p.abv.toLowerCase());
         }), !(1 > a.length)) {
-        var c = document.getElementById("advSpecialSelect");
+        var c = document.getElementById("advSpecialSelect") as any;
         if (c) {
             if (59 <= game.global.highestLevelCleared) {
                 if (needPrestige && a.includes("p")) {
@@ -130,10 +130,10 @@ export function testMapSpecialModController() {
                 k = getPageSetting("AdvMapSpecialModifier") ? getExtraMapLevels() : 0,
                 l = 209 <= game.global.highestLevelCleared;
             if (l) {
-                var m = document.getElementById("advExtraMapLevelselect");
+                var m = document.getElementById("advExtraMapLevelselect") as any;
                 if (!m)
                     return;
-                var n = document.getElementById("mapLevelInput").value;
+                var n = (document.getElementById("mapLevelInput") as any).value;
                 for (m.selectedIndex = n == game.global.world ? MODULES.maps.advSpecialMapMod_numZones : 0; 0 < m.selectedIndex && updateMapCost(!0) > game.resources.fragments.owned;)
                     m.selectedIndex -= 1;
             }
@@ -347,7 +347,7 @@ export function autoMap() {
     //Prestige
     if (shouldFarm && !needPrestige) {
         var capped = areWeAttackLevelCapped();
-        var prestigeitemsleft;
+        var prestigeitemsleft: any;
         if (game.global.mapsActive) {
             prestigeitemsleft = addSpecials(true, true, getCurrentMapObject());
         } else if (lastMapWeWereIn) {
@@ -355,8 +355,8 @@ export function autoMap() {
         }
         const prestigeList = ['Dagadder', 'Megamace', 'Polierarm', 'Axeidic', 'Greatersword', 'Harmbalest'];
         var numUnbought = 0;
-        for (var i = 0, len = prestigeList.length; i < len; i++) {
-            var p = prestigeList[i];
+        for (var i = 0 as any as string, len = prestigeList.length; (i as any) < len; (i as any)++) {
+            var p = prestigeList[i as any];
             if (game.upgrades[p].allowed - game.upgrades[p].done > 0)
                 numUnbought++;
         }
@@ -408,8 +408,8 @@ export function autoMap() {
             }
         }
     }
-    var obj = {};
-    var siphonMap = -1;
+    var obj: any = {};
+    var siphonMap: any = -1;
     for (var map in game.global.mapsOwnedArray) {
         if (!game.global.mapsOwnedArray[map].noRecycle) {
             obj[map] = game.global.mapsOwnedArray[map].level;
@@ -420,7 +420,7 @@ export function autoMap() {
     var keysSorted = Object.keys(obj).sort(function(a, b) {
         return obj[b] - obj[a];
     });
-    var highestMap;
+    var highestMap: any;
     var lowestMap;
     if (keysSorted[0]) {
         highestMap = keysSorted[0];
@@ -453,7 +453,7 @@ export function autoMap() {
                     selectedMap = theMap.id;
                     break;
                 }
-                if (theMap.name == 'Dimension of Anger' && document.getElementById("portalBtn").style.display == "none" && !game.talents.portal.purchased) {
+                if (theMap.name == 'Dimension of Anger' && document.getElementById("portalBtn")!.style.display == "none" && !game.talents.portal.purchased) {
                     var theMapDifficulty = Math.ceil(theMap.difficulty / 2);
                     if (game.global.world < 20 + theMapDifficulty) continue;
                     selectedMap = theMap.id;
@@ -531,14 +531,14 @@ export function autoMap() {
 
     if (needToVoid) {
         var voidArray = [];
-        var prefixlist = {
+        var prefixlist: any = {
             'Deadly': 10,
             'Heinous': 11,
             'Poisonous': 20,
             'Destructive': 30
         };
         var prefixkeys = Object.keys(prefixlist);
-        var suffixlist = {
+        var suffixlist: any = {
             'Descent': 7.077,
             'Void': 8.822,
             'Nightmare': 9.436,
@@ -589,7 +589,7 @@ export function autoMap() {
             }
             var eAttack = getEnemyMaxAttack(game.global.world, theMap.size, 'Voidsnimp', theMap.difficulty);
             if (game.global.world >= 181 || (game.global.challengeActive == "Corrupted" && game.global.world >= 60))
-                eAttack *= (getCorruptScale("attack") / 2).toFixed(1);
+                eAttack *= (getCorruptScale("attack") / 2).toFixed(1) as any;
             if (challengeActive("Balance")) {
                 eAttack *= 2;
             }
@@ -623,10 +623,10 @@ export function autoMap() {
             if (preSpireFarming) {
                 var spiremaplvl = (game.talents.mapLoot.purchased && MODULES["maps"].SpireFarm199Maps) ? game.global.world - 1 : game.global.world;
                 selectedMap = "create";
-                for (i = 0; i < keysSorted.length; i++) {
-                    if (game.global.mapsOwnedArray[keysSorted[i]].level >= spiremaplvl &&
-                        game.global.mapsOwnedArray[keysSorted[i]].location == ((customVars.preferGardens && game.global.decayDone) ? 'Plentiful' : 'Mountain')) {
-                        selectedMap = game.global.mapsOwnedArray[keysSorted[i]].id;
+                for (i = 0 as any; (i as any) < keysSorted.length; (i as any)++) {
+                    if (game.global.mapsOwnedArray[keysSorted[i as any]].level >= spiremaplvl &&
+                        game.global.mapsOwnedArray[keysSorted[i as any]].location == ((customVars.preferGardens && game.global.decayDone) ? 'Plentiful' : 'Mountain')) {
+                        selectedMap = game.global.mapsOwnedArray[keysSorted[i as any]].id;
                         break;
                     }
                 }
@@ -702,11 +702,11 @@ export function autoMap() {
             mapsClicked();
         } else if (selectedMap == "create") {
             if (game.global.selectedMapPreset > 1) selectAdvMapsPreset(1);
-            var $mapLevelInput = document.getElementById("mapLevelInput");
+            var $mapLevelInput = document.getElementById("mapLevelInput") as any;
             $mapLevelInput.value = needPrestige ? game.global.world : siphlvl;
             if (preSpireFarming && MODULES["maps"].SpireFarm199Maps)
                 $mapLevelInput.value = game.talents.mapLoot.purchased ? game.global.world - 1 : game.global.world;
-            var decrement;
+            var decrement: any;
             var tier;
             if (game.global.world >= customVars.MapTierZone[0]) {
                 tier = customVars.MapTier0Sliders;
@@ -809,16 +809,16 @@ export function autoMap() {
             return pageSetting;
         })();
         var bionics = game.global.mapsOwnedArray
-            .filter((map) => map.location == "Bionic")
-            .sort((a, b) => b.level - a.level)
+            .filter((map: any) => map.location == "Bionic")
+            .sort((a: any, b: any) => b.level - a.level)
         if (game.global.world >= game.challenges.Experience.nextWonder &&
             wondersAmount > game.challenges.Experience.wonders &&
             game.global.world >= wondersFloorZ) {
             farmingWonder = true;
-            if (!game.global.mapsActive && game.global.mapsOwnedArray.filter(function(map) {
+            if (!game.global.mapsActive && game.global.mapsOwnedArray.filter(function(map: any) {
                     return map.level == game.global.world && map.location != 'Bionic';
                 }).length >= 1) {
-                var mapID = game.global.mapsOwnedArray.find(function(map) {
+                var mapID = game.global.mapsOwnedArray.find(function(map: any) {
                     return map.level == game.global.world && map.location != 'Bionic';
                 }).id;
                 selectedMap = mapID;
@@ -851,11 +851,11 @@ export function autoMap() {
             // If we somehow did not raid for it, pick the highest available which will climb if necessary to 605.
             // If at 700, clear the zone to complete instead.
             farmingWonder = true;
-            var finishBw = bionics.find(map => map.level == finishOnBw);
+            var finishBw = bionics.find((map: any) => map.level == finishOnBw);
             if (finishBw) {
                 selectMap(finishBw.id);
             } else {
-                if (bionics.every((map) => map.level > finishOnBw)) {
+                if (bionics.every((map: any) => map.level > finishOnBw)) {
                     selectMap(bionics[bionics.length - 1].id);
                 } else {
                     selectMap(bionics[0].id);
@@ -879,9 +879,9 @@ MODULES.maps.RshouldFarmCell = 59;
 MODULES.maps.RSkipNumUnboughtPrestiges = 2;
 MODULES.maps.RUnearnedPrestigesRequired = 2;
 
-export function RupdateAutoMapsStatus(get) {
+export function RupdateAutoMapsStatus(get?: any) {
 
-    var status;
+    var status: any;
 
     //Fail Safes
     if (getPageSetting('RAutoMaps') == 0) status = 'Off';
@@ -928,8 +928,8 @@ export function RupdateAutoMapsStatus(get) {
     if (get) {
         return [status, getPercent, lifetime];
     } else {
-        document.getElementById('autoMapStatus').innerHTML = status;
-        document.getElementById('hiderStatus').innerHTML = hiderStatus;
+        document.getElementById('autoMapStatus')!.innerHTML = status;
+        document.getElementById('hiderStatus')!.innerHTML = hiderStatus;
     }
 }
 
@@ -1277,7 +1277,7 @@ export function RautoMap() {
     //### Map selection section
 
     //Map Selection
-    var obj = {};
+    var obj: any = {};
     for (var map in game.global.mapsOwnedArray) {
         if (!game.global.mapsOwnedArray[map].noRecycle) {
             obj[map] = game.global.mapsOwnedArray[map].level;
@@ -1286,7 +1286,7 @@ export function RautoMap() {
     var keysSorted = Object.keys(obj).sort(function(a, b) {
         return obj[b] - obj[a];
     });
-    var highestMap;
+    var highestMap: any;
     var lowestMap;
     if (keysSorted[0]) {
         highestMap = keysSorted[0];
@@ -1310,7 +1310,7 @@ export function RautoMap() {
                     selectedMap = theMap.id;
                     break;
                 }
-                if (theMap.name == 'Dimension of Rage' && document.getElementById("portalBtn").style.display == "none" && game.upgrades.Rage.done == 1) {
+                if (theMap.name == 'Dimension of Rage' && document.getElementById("portalBtn")!.style.display == "none" && game.upgrades.Rage.done == 1) {
                     if (game.global.challengeActive != "Unlucky" && (game.global.world < 16 || RcalcHDratio() < 2)) continue;
                     selectedMap = theMap.id;
                     break;
@@ -1348,14 +1348,14 @@ export function RautoMap() {
     //Voids
     if (RneedToVoid) {
         var voidArray = [];
-        var prefixlist = {
+        var prefixlist: any = {
             'Deadly': 10,
             'Heinous': 11,
             'Poisonous': 20,
             'Destructive': 30
         };
         var prefixkeys = Object.keys(prefixlist);
-        var suffixlist = {
+        var suffixlist: any = {
             'Descent': 7.077,
             'Void': 8.822,
             'Nightmare': 9.436,
@@ -1446,8 +1446,8 @@ export function RautoMap() {
         //Everything else
         else if (selectedMap == "create") {
             if (game.global.selectedMapPreset > 1) selectAdvMapsPreset(1);
-            document.getElementById("mapLevelInput").value = game.global.world;
-            var decrement;
+            (document.getElementById("mapLevelInput") as any).value = game.global.world;
+            var decrement: any;
             var tier;
             if (game.global.world >= customVars.RMapTierZone[0]) {
                 tier = customVars.RMapTier0Sliders;
@@ -1542,7 +1542,7 @@ export function RautoMap() {
             }
 
             //Looks like things are too expensive
-            var maplvlpicked = parseInt(document.getElementById("mapLevelInput").value);
+            var maplvlpicked = parseInt((document.getElementById("mapLevelInput") as any).value);
             if (updateMapCost(true) > game.resources.fragments.owned) {
                 selectMap(game.global.mapsOwnedArray[highestMap].id);
                 debug("Can't afford the map we designed, #" + maplvlpicked, "maps", '*crying2');

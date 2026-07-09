@@ -1,12 +1,13 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/ab.js.
-// AutoBattle (U2) preset/dust/farm automation + solver. contractVoid left bare (resolves to the var declared in still-legacy mapfunctions.js, read at runtime). No other implicit globals.
+// TRUE TS (Phase 1 · #30): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/ab.js.
+// AutoBattle (U2) preset/dust/farm automation + solver. contractVoid left bare (resolves to
+// the var declared in still-legacy mapfunctions.js, read at runtime) — typed ambient. autoBattle
+// is the game's U2 combat global (ambient). Behaviour-preserving: any body edits are TYPE-ONLY.
 import { getPageSetting, setPageSetting } from './utils'
 
 //AB
 
-export function getCurrentAB(effect) {
+export function getCurrentAB(effect: boolean) {
 
     if (effect == false) {
       return autoBattle.enemyLevel;
@@ -40,7 +41,7 @@ export function getCurrentAB(effect) {
     }
 };
 
-export function checkPreset(presetSlot) {
+export function checkPreset(presetSlot: number) {
 
     for (var item in autoBattle.items) {
         if (autoBattle.items[item].equipped && autoBattle.presets["p" + presetSlot].indexOf(item) == -1) {
@@ -86,7 +87,7 @@ export function ABcheck() {
 
 export function ABswitch() {
 
-    if (ABcheck() > 0) {
+    if (ABcheck()! > 0) {
         if (ABcheck() == 1) autoBattle.loadPreset('p1');
         else if (ABcheck() == 2) autoBattle.loadPreset('p2');
         else if (ABcheck() == 3) autoBattle.loadPreset('p3');
@@ -187,7 +188,7 @@ export function ABfarmswitch() {
     }
 }
 
-export function ABlevelswitch(level) {
+export function ABlevelswitch(level: number) {
     if (autoBattle.enemyLevel != level) {
         autoBattle.enemyLevel = level;
         autoBattle.resetCombat(true);
@@ -199,8 +200,8 @@ export function ABsolver() {
     if (autoBattle.autoLevel) autoBattle.toggleAutoLevel();
 
     var max = autoBattle.maxEnemyLevel;
-    var items = [];
-    var level = [];
+    var items: string[] = [];
+    var level: number[] = [];
     var contract = '';
 
     //Solver

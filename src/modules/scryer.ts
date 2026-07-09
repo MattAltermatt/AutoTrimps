@@ -1,7 +1,12 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/scryer.js.
-// Scryer-stance automation (scryingCorruption, readyToSwitch, useScryerStance). 25 game.* touches. Module vars wantToScry/transitionRequired are scryer-internal. No implicit globals.
+// TRUE TS (Phase 1 · #30): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/scryer.js.
+// Scryer-stance automation (scryingCorruption, readyToSwitch, useScryerStance). 25 game.*
+// touches. Module vars wantToScry/transitionRequired are scryer-internal (no readers
+// outside this module). Free identifiers (survive/oneShotPower/setFormation/autoStance*/
+// getCurrentEnemy/getCurrentMapObject/getEmpowerment/countRemainingEssenceDrops/etc.)
+// resolve via the bridge at runtime, typed ambient in trimps.d.ts + at-legacy.d.ts.
+// getPageSetting imported from converted utils. Behaviour-preserving: any body edits are
+// TYPE-ONLY; zero logic or numeric-literal changes.
 import { getPageSetting } from './utils'
 
 var wantToScry = false;
@@ -72,7 +77,7 @@ export function useScryerStance() {
     var skipOnMaxZone = getPageSetting('onlyminmaxworld') == 2 && getPageSetting('ScryerSkipCorrupteds2') != 1 && aboveMaxZone;
     if (USS && !MA && (SC || skipOnMaxZone) && isCorrupt) {
         transitionRequired = scryNext;
-        never_scry |= !scryNext;
+        never_scry |= (!scryNext) as any;
     }
     else transitionRequired = false;
 
@@ -90,8 +95,8 @@ export function useScryerStance() {
         use_scryer |= game.global.mapsActive && getCurrentMapObject().location == "Void" && ((getPageSetting('ScryerUseinVoidMaps2') == 1) || (getPageSetting('scryvoidmaps') == true && game.global.challengeActive != "Daily") || (getPageSetting('dscryvoidmaps')== true && game.global.challengeActive == "Daily"));
         use_scryer |= game.global.mapsActive && getCurrentMapObject().location == "Bionic" && getPageSetting('ScryerUseinBW') == 1;
         use_scryer |= game.global.mapsActive && getCurrentMapObject().level > game.global.world && getPageSetting('ScryerUseinPMaps') == 1 && getCurrentMapObject().location != "Bionic";
-        use_scryer |= !game.global.mapsActive && getPageSetting('UseScryerStance') == true && (isActiveSpireAT() || disActiveSpireAT()) && getPageSetting('ScryerUseinSpire2') == 1;
-        use_scryer |= !game.global.mapsActive && getPageSetting('UseScryerStance') == true && ((getEmpowerment() == "Poison" && getPageSetting('ScryUseinPoison') > 0 && game.global.world < getPageSetting('ScryUseinPoison')) || (getEmpowerment() == "Wind" && getPageSetting('ScryUseinWind') > 0 && game.global.world < getPageSetting('ScryUseinWind')) || (getEmpowerment() == "Ice" && getPageSetting('ScryUseinIce') > 0 && game.global.world < getPageSetting('ScryUseinIce')));
+        use_scryer |= (!game.global.mapsActive && getPageSetting('UseScryerStance') == true && (isActiveSpireAT() || disActiveSpireAT()) && getPageSetting('ScryerUseinSpire2') == 1) as any;
+        use_scryer |= (!game.global.mapsActive && getPageSetting('UseScryerStance') == true && ((getEmpowerment() == "Poison" && getPageSetting('ScryUseinPoison') > 0 && game.global.world < getPageSetting('ScryUseinPoison')) || (getEmpowerment() == "Wind" && getPageSetting('ScryUseinWind') > 0 && game.global.world < getPageSetting('ScryUseinWind')) || (getEmpowerment() == "Ice" && getPageSetting('ScryUseinIce') > 0 && game.global.world < getPageSetting('ScryUseinIce')))) as any;
 
     //check Corrupted Force
     if ((isCorrupt && getPageSetting('ScryerSkipCorrupteds2') == 1 && getPageSetting('UseScryerStance') == true) || (use_scryer)) {
@@ -111,7 +116,7 @@ export function useScryerStance() {
 
     //Checks if Overkill is allowed
     var useOverkill = getPageSetting('UseScryerStance') == true && getPageSetting('ScryerUseWhenOverkill');
-        useOverkill &= !(getPageSetting('ScryerUseinSpire2') == 0 && !game.global.mapsActive && (isActiveSpireAT() || disActiveSpireAT()));
+        useOverkill &= (!(getPageSetting('ScryerUseinSpire2') == 0 && !game.global.mapsActive && (isActiveSpireAT() || disActiveSpireAT()))) as any;
 
     //Overkill
     if (useOverkill && getCurrentEnemy()) {

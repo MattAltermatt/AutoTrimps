@@ -98,7 +98,7 @@ export function setPageSetting(setting, value) {
 
 export function saveSettings(){safeSetItems('autoTrimpSettings',serializeSettings())}
 
-export function debug(message, type, lootIcon?) {
+export function debug(message, type?, lootIcon?) {
     var general = getPageSetting('SpamGeneral');
     var upgrades = getPageSetting('SpamUpgrades');
     var equips = getPageSetting('SpamEquipment');

@@ -1,15 +1,15 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/portal.js.
+// TRUE TS (Phase 1 · #30): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/portal.js.
 // Auto-portal / helium-per-hour logic. Registers MODULES["portal"]. getPageSetting/debug from
 // converted utils (portal.js line 4 reads getPageSetting at load — now imported, resolves).
 // zonePostpone -> globalThis (read by AutoTrimps2); challengeSquaredMode declared module-level
 // (was a sloppy implicit global, portal-internal). portalzone/Rportalzone/RzonePostpone stay
-// module vars (internal). AutoPerks.clickAllocate() etc. resolve via the bridge at runtime.
+// module vars (internal). AutoPerks.clickAllocate() etc. resolve via the bridge at runtime,
+// typed ambient. Behaviour-preserving: any body edits are TYPE-ONLY.
 import { getPageSetting, debug } from './utils'
 
 MODULES["portal"] = {};
-var challengeSquaredMode;
+var challengeSquaredMode: any;
 MODULES["portal"].timeout = 5000;
 MODULES["portal"].bufferExceedFactor = 5;
 var portalzone = getPageSetting('CustomAutoPortal');
@@ -118,7 +118,7 @@ export function dailyAutoPortal() {
                             return;
                         if (OKtoPortal) {
                             abandonDaily();
-                            document.getElementById('finishDailyBtnContainer').style.display = 'none';
+                            document.getElementById('finishDailyBtnContainer')!.style.display = 'none';
                         }
                         if (autoTrimpSettings.dHeliumHourChallenge.selected != 'None' && getPageSetting('u1daily') == false)
                             doPortal(autoTrimpSettings.dHeliumHourChallenge.selected);
@@ -135,7 +135,7 @@ export function dailyAutoPortal() {
         var portalzone = getPageSetting('dCustomAutoPortal');
         if (game.global.world > portalzone) {
             abandonDaily();
-            document.getElementById('finishDailyBtnContainer').style.display = 'none';
+            document.getElementById('finishDailyBtnContainer')!.style.display = 'none';
             if (autoTrimpSettings.dHeliumHourChallenge.selected != 'None' && getPageSetting('u1daily') == false)
                 doPortal(autoTrimpSettings.dHeliumHourChallenge.selected);
 	    else if (autoTrimpSettings.RdHeliumHourChallenge.selected != 'None' && getPageSetting('u1daily') == true)
@@ -219,7 +219,7 @@ if (!game.global.portalActive) return;
     }
 }
 
-export function doPortal(challenge) {
+export function doPortal(challenge?: any) {
     var c2done = true;
     if(!game.global.portalActive) return;
     if (getPageSetting('spendmagmite')==1) {
@@ -230,6 +230,7 @@ export function doPortal(challenge) {
     }
     if (game.global.ShieldEquipped.name != getPageSetting('highdmg') || game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {
         if (highdmgshield() != undefined) {
+	    // @ts-expect-error #32 latent: bare 'loom' is undefined here (indexOf arg; likely should be highdmgshield()) — preserved byte-faithfully
 	    selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
 	    equipHeirloom();
 	}
@@ -298,7 +299,7 @@ export function doPortal(challenge) {
 }
 
 export function finishChallengeSquared(){var a=getPageSetting("FinishC2");game.global.world>=a&&(abandonChallenge(),debug("Finished challenge2 because we are on zone "+game.global.world,"other","oil"))}
-export function findOutCurrentPortalLevel(){var a=-1,b=!1,d=getPageSetting("AutoPortal");switch(d){case"Off":break;case"Custom":"Daily"!=game.global.challengeActive&&(a=getPageSetting("CustomAutoPortal")+1),"Daily"==game.global.challengeActive&&(a=getPageSetting("Dailyportal")+1),b=!("Lead"!=getPageSetting("HeliumHourChallenge"));break;default:var e={Balance:41,Decay:56,Electricity:82,Crushed:126,Nom:146,Toxicity:166,Lead:181,Watch:181,Corrupted:191}[d];e&&(a=e);}return{level:a,lead:b}}
+export function findOutCurrentPortalLevel(){var a=-1,b=!1,d=getPageSetting("AutoPortal");switch(d){case"Off":break;case"Custom":"Daily"!=game.global.challengeActive&&(a=getPageSetting("CustomAutoPortal")+1),"Daily"==game.global.challengeActive&&(a=getPageSetting("Dailyportal")+1),b=!("Lead"!=getPageSetting("HeliumHourChallenge"));break;default:var e=({Balance:41,Decay:56,Electricity:82,Crushed:126,Nom:146,Toxicity:166,Lead:181,Watch:181,Corrupted:191} as any)[d];e&&(a=e);}return{level:a,lead:b}}
 
 //Radon
 
@@ -406,7 +407,7 @@ export function RdailyAutoPortal() {
                             return;
                         if (OKtoPortal) {
                             abandonDaily();
-                            document.getElementById('finishDailyBtnContainer').style.display = 'none';
+                            document.getElementById('finishDailyBtnContainer')!.style.display = 'none';
                         }
                         if (autoTrimpSettings.RdHeliumHourChallenge.selected != 'None' && getPageSetting('u2daily') == false)
                             RdoPortal(autoTrimpSettings.RdHeliumHourChallenge.selected);
@@ -423,7 +424,7 @@ export function RdailyAutoPortal() {
         var portalzone = getPageSetting('RdCustomAutoPortal');
         if (game.global.world > portalzone) {
             abandonDaily();
-            document.getElementById('finishDailyBtnContainer').style.display = 'none';
+            document.getElementById('finishDailyBtnContainer')!.style.display = 'none';
             if (autoTrimpSettings.RdHeliumHourChallenge.selected != 'None' && getPageSetting('u2daily') == false)
                 RdoPortal(autoTrimpSettings.RdHeliumHourChallenge.selected);
 	    else if (autoTrimpSettings.dHeliumHourChallenge.selected != 'None' && getPageSetting('u2daily') == true)
@@ -434,13 +435,14 @@ export function RdailyAutoPortal() {
     }
 }
 
-export function RdoPortal(challenge) {
+export function RdoPortal(challenge?: any) {
     if(!game.global.portalActive) return;
     if (getPageSetting('autoheirlooms') == true && getPageSetting('typetokeep') != 'None' && getPageSetting('raretokeep') != 'None') {
 	autoheirlooms3();
     }
     if (game.global.ShieldEquipped.name != getPageSetting('highdmg') || game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {
         if (highdmgshield() != undefined) {
+	    // @ts-expect-error #32 latent: bare 'loom' is undefined here (indexOf arg; likely should be highdmgshield()) — preserved byte-faithfully
 	    selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
 	    equipHeirloom();
 	}

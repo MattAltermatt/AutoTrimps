@@ -1,10 +1,12 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/breedtimer.js.
+// TRUE TS (Phase 1 · #30): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/breedtimer.js.
 // Game-coupled breed-timer logic. Registers into the shared MODULES global (kept
 // verbatim — treated like game/autoTrimpSettings, ambient-typed). getPageSetting is
 // imported from the converted utils module. The top-level addBreedingBoxTimers() runs
 // at load — verified game-DOM + tooltip() only, so safe under the early src slot.
+// Free identifiers (DecimalBreed/Decimal/calcHeirloomBonusDecimal/getNextGeneticistCost/
+// addGeneticist/removeGeneticist/mapsClicked/runMap/isActiveSpireAT/etc.) resolve via the
+// bridge at runtime, typed ambient. Behaviour-preserving: any body edits are TYPE-ONLY.
 import { getPageSetting } from './utils'
 
 MODULES["breedtimer"] = {};
@@ -210,7 +212,7 @@ export function ATGA2() {
 // SEAM: shared global read by still-legacy AutoTrimps2.js (guiLoop) — written to
 // globalThis below (was a module var, invisible to legacy → ReferenceError ×74).
 export function addBreedingBoxTimers() {
-    var breedbarContainer = document.querySelector('#trimps > div.row');
+    var breedbarContainer = document.querySelector('#trimps > div.row')!;
     var addbreedTimerContainer = document.createElement("DIV");
     addbreedTimerContainer.setAttribute('class', "col-xs-11");
     addbreedTimerContainer.setAttribute('style', 'padding-right: 0;');
@@ -229,7 +231,7 @@ export function addBreedingBoxTimers() {
 }
 addBreedingBoxTimers();
 
-export function addToolTipToArmyCount(){var a=document.getElementById("trimpsFighting");"tooltipadded"!=a.className&&(a.setAttribute("onmouseover","tooltip(\"Army Count\", \"customText\", event, \"To Fight now would add: \" + prettify(getArmyTime()) + \" seconds to the breed timer.\")"),a.setAttribute("onmouseout","tooltip(\"hide\")"),a.setAttribute("class","tooltipadded"))}
+export function addToolTipToArmyCount(){var a=document.getElementById("trimpsFighting")!;"tooltipadded"!=a.className&&(a.setAttribute("onmouseover","tooltip(\"Army Count\", \"customText\", event, \"To Fight now would add: \" + prettify(getArmyTime()) + \" seconds to the breed timer.\")"),a.setAttribute("onmouseout","tooltip(\"hide\")"),a.setAttribute("class","tooltipadded"))}
 
 export function abandonVoidMap() {
     var customVars = MODULES["breedtimer"];

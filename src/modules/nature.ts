@@ -1,8 +1,9 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/nature.js.
+// TRUE TS (Phase 1 · #30): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/nature.js.
 // Game-coupled nature-token logic. debug + getPageSetting imported from the converted
 // utils module (converted→converted wiring). No MODULES, no shared vars, no load-time exec.
+// Free identifiers (getNextNatureCost/updateNatureInfoSpans/naturePurchase) resolve via the
+// bridge at runtime, typed ambient. Behaviour-preserving: any body edits are TYPE-ONLY.
 import { debug, getPageSetting } from './utils'
 
 export function autoNatureTokens() {
@@ -50,7 +51,7 @@ export function autoNatureTokens() {
             if (empowerment.tokens < 10+thresh || empowerment.tokens < thresh)
                 continue;
             var match = setting.match(/Convert to (\w+)/);
-            var targetNature = match ? match[1] : null;
+            var targetNature = (match ? match[1] : null) as string;
             if (!targetNature || targetNature === nature || !game.empowerments[targetNature]) continue;
             empowerment.tokens -= 10;
             var convertRate = (game.talents.nature.purchased) ? ((game.talents.nature2.purchased) ? 8 : 6) : 5;
@@ -63,7 +64,7 @@ export function autoNatureTokens() {
         updateNatureInfoSpans();
 }
 
-export function purchaseEnlight(nature) {
+export function purchaseEnlight(nature: string) {
 	if (game.global.uberNature == false && game.empowerments[nature].nextUberCost <= game.empowerments[nature].tokens) {
 	    naturePurchase('uberEmpower', nature);
 	}

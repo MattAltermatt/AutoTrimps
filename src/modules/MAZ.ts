@@ -1,20 +1,21 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/MAZ.js.
+// TRUE TS (Phase 1 · #30): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/MAZ.js.
 // MAZ (Map At Zone) settings-window builder + preset editor. saveSettings imported from
 // converted utils. Two sloppy-mode implicit globals localized to var (write-only, no external
 // reader): world (a local array accumulator) and lastTooltipTitle. No other seam concerns.
+// Free identifiers (game/AT DOM+settings helpers) resolve via the bridge at runtime, typed
+// ambient. Behaviour-preserving: any body edits are TYPE-ONLY.
 import { saveSettings } from './utils'
 
-export function MAZLookalike(titleText, isItIn, event) {
+export function MAZLookalike(titleText: any, isItIn?: any, event?: any) {
 
-    var zone;
-    var cell;
-    var setting;
-    var level;
-    var map;
-    var special;
-    var gather;
+    var zone: any;
+    var cell: any;
+    var setting: any;
+    var level: any;
+    var map: any;
+    var special: any;
+    var gather: any;
 
     zone = [0];
     cell = [0];
@@ -99,15 +100,15 @@ export function MAZLookalike(titleText, isItIn, event) {
     titleText = !titleText ? 'undefined' : titleText;
     if (titleText == 'undefined') return;
 
-    var elem = document.getElementById("tooltipDiv");
+    var elem = document.getElementById("tooltipDiv") as any;
     swapClass("tooltipExtra", "tooltipExtraNone", elem);
-    document.getElementById('tipText').className = "";
+    document.getElementById('tipText')!.className = "";
 
     var tooltipText;
     var costText = "";
     var titleText;
 
-    var ondisplay = null;
+    var ondisplay: any = null;
     var maxSettings = 120;
     var windowHelp = "Welcome to AT\'s version of MaZ! Please read the tooltips of the settings button to get more detailed info on how to use this. However it should be easy enough to figure out!";
 
@@ -165,7 +166,7 @@ export function MAZLookalike(titleText, isItIn, event) {
     var current = autoTrimpSettings[zone].value;
 
     for (var x = 0; x < maxSettings; x++) {
-        var vals = {
+        var vals: any = {
             check: true,
             zone: -1,
             cell: 81,
@@ -297,9 +298,9 @@ export function MAZLookalike(titleText, isItIn, event) {
     // never saw this window's identity and could force-close it on a hotkey. Publish to global.
     globalThis.lastTooltipTitle = titleText;
 
-    document.getElementById("tipTitle").innerHTML = titleText;
-    document.getElementById("tipText").innerHTML = tooltipText;
-    document.getElementById("tipCost").innerHTML = costText;
+    document.getElementById("tipTitle")!.innerHTML = titleText;
+    document.getElementById("tipText")!.innerHTML = tooltipText;
+    document.getElementById("tipCost")!.innerHTML = costText;
     elem.style.display = "block";
     if (ondisplay !== null) {
         ondisplay();
@@ -307,7 +308,7 @@ export function MAZLookalike(titleText, isItIn, event) {
 
 }
 
-export function settingsWindowSave(titleText, reopen) {
+export function settingsWindowSave(titleText: any, reopen?: any) {
 
     var thisSetting = [];
     var error = "";
@@ -315,13 +316,13 @@ export function settingsWindowSave(titleText, reopen) {
 
     for (var x = 0; x < maxSettings; x++) {
 
-        var zone;
-        var cell;
-        var setting;
-        var level;
-        var map;
-        var special;
-        var gather;
+        var zone: any;
+        var cell: any;
+        var setting: any;
+        var level: any;
+        var map: any;
+        var special: any;
+        var gather: any;
 
         var world = [0];
         zone = [0];
@@ -401,59 +402,59 @@ export function settingsWindowSave(titleText, reopen) {
             setting = 'RdAMPraidraid';
         }
 
-        var zone2 = document.getElementById('windowZone' + x);
+        var zone2 = document.getElementById('windowZone' + x) as any;
         if (!zone2 || zone2.value == "-1") {
             continue;
         };
 
-        zone = parseInt(document.getElementById('windowZone' + x).value, 10);
+        zone = parseInt((document.getElementById('windowZone' + x) as any).value, 10);
 
-        var setting = 0;
-        var level = 0;
-        var map = 0;
-        var special = 0;
-        var gather = 0;
+        var setting: any = 0;
+        var level: any = 0;
+        var map: any = 0;
+        var special: any = 0;
+        var gather: any = 0;
 
-        if (!titleText.includes('Quagmire')) var cell = parseInt(document.getElementById('windowCell' + x).value, 10);
+        if (!titleText.includes('Quagmire')) var cell: any = parseInt((document.getElementById('windowCell' + x) as any).value, 10);
 
         if (titleText == 'Time Farm') {
-            setting = document.getElementById('windowSetting' + x).value;
-            level = parseInt(document.getElementById('windowLevel' + x).value, 10);
-            map = document.getElementById('windowMap' + x).value;
-            special = document.getElementById('windowSpecial' + x).value;
-            gather = document.getElementById('windowGather' + x).value;
+            setting = (document.getElementById('windowSetting' + x) as any).value;
+            level = parseInt((document.getElementById('windowLevel' + x) as any).value, 10);
+            map = (document.getElementById('windowMap' + x) as any).value;
+            special = (document.getElementById('windowSpecial' + x) as any).value;
+            gather = (document.getElementById('windowGather' + x) as any).value;
         } else if (titleText == 'dTime Farm') {
-            setting = document.getElementById('windowSetting' + x).value;
-            level = parseInt(document.getElementById('windowLevel' + x).value, 10);
-            map = document.getElementById('windowMap' + x).value;
-            special = document.getElementById('windowSpecial' + x).value;
-            gather = document.getElementById('windowGather' + x).value;
+            setting = (document.getElementById('windowSetting' + x) as any).value;
+            level = parseInt((document.getElementById('windowLevel' + x) as any).value, 10);
+            map = (document.getElementById('windowMap' + x) as any).value;
+            special = (document.getElementById('windowSpecial' + x) as any).value;
+            gather = (document.getElementById('windowGather' + x) as any).value;
         } else if (titleText.includes('Smithy Farm')) {
-            setting = document.getElementById('windowSetting' + x).value;
+            setting = (document.getElementById('windowSetting' + x) as any).value;
         } else if (titleText.includes('Tribute Farm')) {
-            setting = document.getElementById('windowSetting' + x).value;
-            level = parseInt(document.getElementById('windowLevel' + x).value, 10);
-            map = document.getElementById('windowMap' + x).value;
-            special = document.getElementById('windowSpecial' + x).value;
-            gather = document.getElementById('windowGather' + x).value;
+            setting = (document.getElementById('windowSetting' + x) as any).value;
+            level = parseInt((document.getElementById('windowLevel' + x) as any).value, 10);
+            map = (document.getElementById('windowMap' + x) as any).value;
+            special = (document.getElementById('windowSpecial' + x) as any).value;
+            gather = (document.getElementById('windowGather' + x) as any).value;
         } else if (titleText.includes('Shrine')) {
-            setting = document.getElementById('windowSetting' + x).value;
+            setting = (document.getElementById('windowSetting' + x) as any).value;
         } else if (titleText.includes('Quagmire')) {
-            setting = document.getElementById('windowSetting' + x).value;
+            setting = (document.getElementById('windowSetting' + x) as any).value;
         } else if (titleText.includes('Insanity')) {
-            setting = document.getElementById('windowSetting' + x).value;
-            level = parseInt(document.getElementById('windowLevel' + x).value, 10);
+            setting = (document.getElementById('windowSetting' + x) as any).value;
+            level = parseInt((document.getElementById('windowLevel' + x) as any).value, 10);
         } else if (titleText.includes('Alch')) {
-            setting = document.getElementById('windowSetting' + x).value;
-            level = parseInt(document.getElementById('windowLevel' + x).value, 10);
-            map = document.getElementById('windowMap' + x).value;
+            setting = (document.getElementById('windowSetting' + x) as any).value;
+            level = parseInt((document.getElementById('windowLevel' + x) as any).value, 10);
+            map = (document.getElementById('windowMap' + x) as any).value;
         } else if (titleText.includes('Hypo')) {
-            setting = document.getElementById('windowSetting' + x).value;
-            level = parseInt(document.getElementById('windowLevel' + x).value, 10);
+            setting = (document.getElementById('windowSetting' + x) as any).value;
+            level = parseInt((document.getElementById('windowLevel' + x) as any).value, 10);
         } else if (titleText == 'Praid') {
-            setting = document.getElementById('windowSetting' + x).value;
+            setting = (document.getElementById('windowSetting' + x) as any).value;
         } else if (titleText == 'dPraid') {
-            setting = document.getElementById('windowSetting' + x).value;
+            setting = (document.getElementById('windowSetting' + x) as any).value;
         }
 
         if (isNaN(zone) || zone < 6) {
@@ -491,7 +492,7 @@ export function settingsWindowSave(titleText, reopen) {
         return (a.zone > b.zone) ? 1 : -1
     });
 
-    else thisSetting.sort(function(a, b) {
+    else (thisSetting as any).sort(function(a: any, b: any) {
         if (a.zone == b.zone) return (a.zone > b.zone) ? 1 : -1
     });
 
@@ -599,12 +600,12 @@ export function settingsWindowSave(titleText, reopen) {
     if (reopen) MAZLookalike(titleText);
 
     saveSettings();
-    document.getElementById('tooltipDiv').style.overflowY = '';
+    document.getElementById('tooltipDiv')!.style.overflowY = '';
 }
 
 export function addRow() {
     for (var x = 0; x < 30; x++) {
-        var elem = document.getElementById('windowZone' + x);
+        var elem = document.getElementById('windowZone' + x) as any;
         if (!elem) continue;
         if (elem.value == -1) {
             var parent = document.getElementById('windowRow' + x);
@@ -616,9 +617,9 @@ export function addRow() {
             }
         }
     }
-    var btnElem = document.getElementById('windowAddRowBtn');
+    var btnElem = document.getElementById('windowAddRowBtn') as any;
     for (var y = 0; y < 30; y++) {
-        var elem = document.getElementById('windowZone' + y);
+        var elem = document.getElementById('windowZone' + y) as any;
         if (elem && elem.value == "-1") {
             btnElem.style.display = 'inline-block';
             return;
@@ -627,15 +628,15 @@ export function addRow() {
     btnElem.style.display = 'none';
 }
 
-export function removeRow(index) {
+export function removeRow(index: any) {
     var elem = document.getElementById('windowRow' + index);
     if (!elem) return;
-    document.getElementById('windowZone' + index).value = -1;
+    (document.getElementById('windowZone' + index) as any).value = -1;
     elem.style.display = 'none';
-    var btnElem = document.getElementById('windowAddRowBtn');
+    var btnElem = document.getElementById('windowAddRowBtn') as any;
     btnElem.style.display = 'inline-block';
 }
 
-export function updateWindowPreset(index) {
+export function updateWindowPreset(index: any) {
     var special = document.getElementById('windowSpecial' + index);
 }
