@@ -45,6 +45,10 @@ export function RgetEnemyMaxAttack(world, level, name) {
 				amt *= Math.pow(1.5, part1);
 				amt *= Math.pow(1.4, part2);
 				amt *= Math.pow(1.32, part3);
+				// Parity fix (#22): mirror the game's z300 hard-scaling (getEnemyAttack, config.js).
+				var part4 = (world - 300);
+				if (part4 < 0) part4 = 0;
+				amt *= Math.pow(1.15, part4);
 			}
 			return Math.floor(amt);
 }
@@ -75,6 +79,10 @@ export function RgetEnemyMaxHealth(world, level) {
 				if (part2 < 0) part2 = 0;
 				amt *= Math.pow(1.4, part1);
 				amt *= Math.pow(1.32, part2);
+				// Parity fix (#22): mirror the game's z300 hard-scaling (getEnemyHealth, config.js).
+				var part3 = (world - 300);
+				if (part3 < 0) part3 = 0;
+				amt *= Math.pow(1.15, part3);
 			}
 			return Math.floor(amt);
 }

@@ -214,25 +214,29 @@ export function autoheirlooms3() {
 //Loom Swapping
 
 export function lowHeirloom() {
-	if (lowdmgshield() != undefined && game.global.ShieldEquipped.name != getPageSetting('lowdmg')) {
+	var loom = lowdmgshield();
+	if (loom != undefined && game.global.ShieldEquipped.name != getPageSetting('lowdmg')) {
         selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
         equipHeirloom();
 	}
 }
 export function dlowHeirloom() {
-	if (dlowdmgshield() != undefined && game.global.ShieldEquipped.name != getPageSetting('dlowdmg')) {
+	var loom = dlowdmgshield();
+	if (loom != undefined && game.global.ShieldEquipped.name != getPageSetting('dlowdmg')) {
         selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
         equipHeirloom();
 	}
 }
 export function highHeirloom() {
-	if (highdmgshield() != undefined && game.global.ShieldEquipped.name != getPageSetting('highdmg')) {
+	var loom = highdmgshield();
+	if (loom != undefined && game.global.ShieldEquipped.name != getPageSetting('highdmg')) {
         selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
         equipHeirloom();
 	}
 }
 export function dhighHeirloom() {
-	if (dhighdmgshield() != undefined && game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {
+	var loom = dhighdmgshield();
+	if (loom != undefined && game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {
         selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
         equipHeirloom();
 	}

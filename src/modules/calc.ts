@@ -773,7 +773,7 @@ export function calcEnemyHealthCore(type, zone, cell, name, customHealth) {
     var health = calcEnemyBaseHealth(zone, cell, name);
 
     //Spire - Overrides the base health number
-    if (type == "world" && game.global.spireActive) health = calcSpire(99, "Snimp", "healh");
+    if (type == "world" && game.global.spireActive) health = calcSpire(99, "Snimp", "health");
 
     //Map and Void Corruption
     if (type != "world") {

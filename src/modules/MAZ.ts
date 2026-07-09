@@ -292,7 +292,10 @@ export function MAZLookalike(titleText, isItIn, event) {
     swapClass('tooltipExtra', 'tooltipExtraLg', elem);
 
     titleText = (titleText) ? titleText : titleText;
-    var lastTooltipTitle = titleText;
+    // Seam fix (#22): lastTooltipTitle is a game-engine global read by the keydown handlers
+    // (main.js) for lock-tooltip handling. A module-scoped `var` shadowed it, so the engine
+    // never saw this window's identity and could force-close it on a hotkey. Publish to global.
+    globalThis.lastTooltipTitle = titleText;
 
     document.getElementById("tipTitle").innerHTML = titleText;
     document.getElementById("tipText").innerHTML = tooltipText;

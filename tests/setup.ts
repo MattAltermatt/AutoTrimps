@@ -12,5 +12,8 @@ if (typeof document !== 'undefined' && document.body) {
     <div id="logBtnGroup"></div>
     <div id="log"></div>
     <span id="versionNumber"></span>
+    <div id="equippedHeirloomsBtnGroup"></div>
+    <div id="carriedHeirloomsBtnGroup"></div>
+    <div id="extraHeirloomsBtnGroup"></div>
   `
 }
