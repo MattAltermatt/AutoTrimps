@@ -25,6 +25,30 @@ declare global {
   function getRetainModifier(...args: any[]): number
   function checkIfLiquidZone(...args: any[]): boolean
 
+  // Native game job/building buy helpers (main.js).
+  function canAffordJob(...args: any[]): boolean
+  function buyJob(...args: any[]): void
+  function canAffordBuilding(...args: any[]): boolean
+  function calculateMaxAfford(...args: any[]): number
+  function getBuildingItemPrice(...args: any[]): number
+
+  // Native game heirloom management (main.js).
+  function selectHeirloom(...args: any[]): void
+  function carryHeirloom(...args: any[]): void
+  function stopCarryHeirloom(...args: any[]): void
+  function equipHeirloom(...args: any[]): void
+  function getMaxCarriedHeirlooms(...args: any[]): number
+  function getSelectedHeirloom(...args: any[]): any
+  function setupDummyHeirloom(...args: any[]): any
+  function countPriceOfUpgrades(...args: any[]): number
+  function isNumberBad(...args: any[]): boolean
+  function getModUpgradeCost(...args: any[]): number
+  function selectMod(...args: any[]): void
+  function upgradeMod(...args: any[]): void
+  function getHeirloomIcon(...args: any[]): string
+  function getHeirloomBonus(...args: any[]): number
+  var heirloomsShown: any
+
   // Native game state objects.
   const mutations: any
   const Fluffy: any

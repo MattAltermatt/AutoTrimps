@@ -1,6 +1,5 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/heirlooms.js.
+// TRUE TS (Phase 1 · #28): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/heirlooms.js.
 // Heirloom evaluation / auto-swap / nullifium spend (U1 + U2 radon R* family). 72 game.*
 // touches, @ts-nocheck. getPageSetting imported from converted utils. Seam notes:
 //   - 14 for(loom of ...) loops had an undeclared loop var (sloppy-mode implicit global);
@@ -12,15 +11,15 @@
 import { getPageSetting } from './utils'
 
 var animated = (game.options.menu.showHeirloomAnimations.enabled) ? "animated " : "";
-var hrlmProtBtn1=document.createElement('DIV');hrlmProtBtn1.setAttribute('class','noselect heirloomBtnActive heirBtn'),hrlmProtBtn1.setAttribute('onclick','protectHeirloom(this, true)'),hrlmProtBtn1.innerHTML='Protect/Unprotect',hrlmProtBtn1.id='protectHeirloomBTN1';var hrlmProtBtn2=document.createElement('DIV');hrlmProtBtn2.setAttribute('class','noselect heirloomBtnActive heirBtn'),hrlmProtBtn2.setAttribute('onclick','protectHeirloom(this, true)'),hrlmProtBtn2.innerHTML='Protect/Unprotect',hrlmProtBtn2.id='protectHeirloomBTN2';var hrlmProtBtn3=document.createElement('DIV');hrlmProtBtn3.setAttribute('class','noselect heirloomBtnActive heirBtn'),hrlmProtBtn3.setAttribute('onclick','protectHeirloom(this, true)'),hrlmProtBtn3.innerHTML='Protect/Unprotect',hrlmProtBtn3.id='protectHeirloomBTN3',document.getElementById('equippedHeirloomsBtnGroup').appendChild(hrlmProtBtn1),document.getElementById('carriedHeirloomsBtnGroup').appendChild(hrlmProtBtn2),document.getElementById('extraHeirloomsBtnGroup').appendChild(hrlmProtBtn3);
-export function protectHeirloom(a,b){var c=game.global.selectedHeirloom,d=c[1],e=game.global[d];if(-1!=c[0])var e=e[c[0]];b&&(e.protected=!e.protected),a||(d.includes("Equipped")?a=document.getElementById("protectHeirloomBTN1"):"heirloomsCarried"==d?a=document.getElementById("protectHeirloomBTN2"):"heirloomsExtra"==d&&(a=document.getElementById("protectHeirloomBTN3"))),a&&(a.innerHTML=e.protected?"UnProtect":"Protect")}
-export function newSelectHeirloom(a,b,c){selectHeirloom(a,b,c),protectHeirloom()}
+var hrlmProtBtn1=document.createElement('DIV');hrlmProtBtn1.setAttribute('class','noselect heirloomBtnActive heirBtn'),hrlmProtBtn1.setAttribute('onclick','protectHeirloom(this, true)'),hrlmProtBtn1.innerHTML='Protect/Unprotect',hrlmProtBtn1.id='protectHeirloomBTN1';var hrlmProtBtn2=document.createElement('DIV');hrlmProtBtn2.setAttribute('class','noselect heirloomBtnActive heirBtn'),hrlmProtBtn2.setAttribute('onclick','protectHeirloom(this, true)'),hrlmProtBtn2.innerHTML='Protect/Unprotect',hrlmProtBtn2.id='protectHeirloomBTN2';var hrlmProtBtn3=document.createElement('DIV');hrlmProtBtn3.setAttribute('class','noselect heirloomBtnActive heirBtn'),hrlmProtBtn3.setAttribute('onclick','protectHeirloom(this, true)'),hrlmProtBtn3.innerHTML='Protect/Unprotect',hrlmProtBtn3.id='protectHeirloomBTN3',document.getElementById('equippedHeirloomsBtnGroup')!.appendChild(hrlmProtBtn1),document.getElementById('carriedHeirloomsBtnGroup')!.appendChild(hrlmProtBtn2),document.getElementById('extraHeirloomsBtnGroup')!.appendChild(hrlmProtBtn3);
+export function protectHeirloom(a?: any, b?: any){var c=game.global.selectedHeirloom,d=c[1],e=game.global[d];if(-1!=c[0])var e=e[c[0]];b&&(e.protected=!e.protected),a||(d.includes("Equipped")?a=document.getElementById("protectHeirloomBTN1"):"heirloomsCarried"==d?a=document.getElementById("protectHeirloomBTN2"):"heirloomsExtra"==d&&(a=document.getElementById("protectHeirloomBTN3"))),a&&(a.innerHTML=e.protected?"UnProtect":"Protect")}
+export function newSelectHeirloom(a?: any, b?: any, c?: any){selectHeirloom(a,b,c),protectHeirloom()}
 export function highdmgshield(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('highdmg'))return loom;}
 export function lowdmgshield(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('lowdmg'))return loom;}
 export function dhighdmgshield(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('dhighdmg'))return loom;}
 export function dlowdmgshield(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('dlowdmg'))return loom;}
 
-export function getHeirloomEff(name, type) {
+export function getHeirloomEff(name: string, type: string): number | undefined {
   if (type == "staff") {
     if (getPageSetting('slot1modst') == name) return 5;
     else if (getPageSetting('slot2modst') == name) return 5;
@@ -50,7 +49,7 @@ export function getHeirloomEff(name, type) {
   }
 }
 
-export function evaluateHeirloomMods2(loom, location) {
+export function evaluateHeirloomMods2(loom: any, location: string): number {
 
   var index = loom;
   var eff = 0;
@@ -82,13 +81,13 @@ export function evaluateHeirloomMods2(loom, location) {
     type = loom.type;
     rarity = loom.rarity;
     if (type == "Shield") {
-      eff += getHeirloomEff(name, "shield");
+      eff += getHeirloomEff(name, "shield")!;
     }
     if (type == "Staff") {
-      eff += getHeirloomEff(name, "staff");
+      eff += getHeirloomEff(name, "staff")!;
     }
     if (type == "Core") {
-      eff += getHeirloomEff(name, "core");
+      eff += getHeirloomEff(name, "core")!;
     }
     if (rarity >= raretokeep) {
 	eff += 1000;
@@ -112,7 +111,7 @@ export function evaluateHeirloomMods2(loom, location) {
   return eff;
 }
 
-var worth3 = {'Shield': [], 'Staff': [], 'Core': []};
+var worth3: any = {'Shield': [], 'Staff': [], 'Core': []};
 export function worthOfHeirlooms3(){
     worth3 = {'Shield': [], 'Staff': [], 'Core': []};
     for (var index in game.global.heirloomsExtra) {
@@ -120,7 +119,7 @@ export function worthOfHeirlooms3(){
         var data = {'location': 'heirloomsExtra', 'index': index, 'rarity': theLoom.rarity, 'eff': evaluateHeirloomMods2(index, 'heirloomsExtra')};
         worth3[theLoom.type].push(data);
     }
-    var valuesort = function(a, b){return b.eff - a.eff;};
+    var valuesort = function(a: any, b: any){return b.eff - a.eff;};
     worth3['Shield'].sort(valuesort);
     worth3['Staff'].sort(valuesort);
     worth3['Core'].sort(valuesort);
@@ -244,7 +243,7 @@ export function dhighHeirloom() {
 
 //Nu
 
-export function calcLoomNu(slot) {
+export function calcLoomNu(slot: number): number {
 	nuloom();
 	var heirloom = getSelectedHeirloom();
 	var tot = 0;
@@ -256,7 +255,7 @@ export function calcLoomNu(slot) {
 	return result;
 }
 
-export function calcLoomNuInfinity(slot) {
+export function calcLoomNuInfinity(slot: number): boolean {
 	nuloom();
 	var heirloom = getSelectedHeirloom();
 	if (Math.ceil(getModUpgradeCost(heirloom, slot, 1)) != Infinity) {
@@ -266,7 +265,7 @@ export function calcLoomNuInfinity(slot) {
 	}
 }
 
-export function calcAutoNuRatio(slot) {
+export function calcAutoNuRatio(slot: number): number | undefined {
 	nuloom();
 	var heirloom = getSelectedHeirloom();
 	
@@ -339,7 +338,7 @@ export function calcAutoNuRatio(slot) {
 		return 150;
 }
 
-export function nuRatio() {
+export function nuRatio(): number | undefined {
 
     //Find Nu Ratio
     var slot1, slot1r, slot2, slot2r, slot3, slot3r, slot4, slot4r, slot5, slot6, slot5r, slot6r, slot1spend, slot1spendr, slot2spend, slot2spendr, slot3spend, slot3spendr, slot4spend, slot4spendr, slot5spend, slot5spendr, slot6spend, slot6spendr;
@@ -444,7 +443,7 @@ export function spendNu() {
 	}
 }
 
-export function generateHeirloomIcon(heirloom, location, number){
+export function generateHeirloomIcon(heirloom: any, location: string, number?: number): string {
     if (typeof heirloom.name === 'undefined') return "<span class='icomoon icon-sad3'></span>";
     var icon = getHeirloomIcon(heirloom);
     var animated = (game.options.menu.showHeirloomAnimations.enabled) ? "animated " : "";
@@ -594,6 +593,11 @@ export function Rdheirloomswap() {
 }
 
 export function HeirloomShieldSwapped() {
+	// FAITHFUL-PORT LATENT BUG (surfaced by #28 strict conversion, behaviour preserved): precedence
+	// makes this `(!rarity) >= 10` — a boolean compared to 10, ALWAYS false — so the guard never
+	// returns and the body always runs. Intent was likely `if (rarity < 10) return`. Left as-is
+	// (fixing it changes behaviour → user-gated). @ts-expect-error keeps the boolean>=number compare.
+	// @ts-expect-error faithful-port: dead guard preserved verbatim
 	if (!game.global.ShieldEquipped.rarity >= 10) return;
 	gammaBurstPct = (getHeirloomBonus("Shield", "gammaBurst") / 100) > 0 ? (getHeirloomBonus("Shield", "gammaBurst") / 100) : 1;
 	shieldEquipped = game.global.ShieldEquipped.id;
@@ -601,7 +605,7 @@ export function HeirloomShieldSwapped() {
 
 // nuloom: relocated from legacy/SettingsGUI.js (combat/heirloom logic, not UI — it is
 // called only from this module). Faithful move.
-export function nuloom(slot) {
+export function nuloom(slot?: number): any {
     var nuloom = getPageSetting('heirloomnu');
     if (game.global.ShieldEquipped.name == nuloom) {
         selectHeirloom(-1, 'ShieldEquipped', true);

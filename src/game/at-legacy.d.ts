@@ -59,6 +59,29 @@ declare global {
   function disActiveSpireAT(...rest: any[]): boolean
   // gammaBurst % — `var` in AutoTrimps2.js.
   var gammaBurstPct: number
+
+  // Buy-state save/restore (buystate.ts, converted) + affordability/quest helpers still in
+  // @ts-nocheck AT modules (equipment.ts, other.ts, mapfunctions.ts) + AutoTrimps2.js / mods.js.
+  // Pragmatic boundary sigs; move to real imports as those modules convert.
+  function preBuy2(...rest: any[]): any
+  function postBuy2(...rest: any[]): void
+  function getMaxAffordable(...rest: any[]): number
+  function questcheck(...rest: any[]): number
+  function RsmithyCalc(...rest: any[]): any
+  var isSteam: any
+  var scienceNeeded: number
+  var breedFire: any
+  // U2 radon farming-mode flags — AutoTrimps2.js vars.
+  var Rshouldtimefarm: any
+  var Rdshouldtimefarm: any
+  var Rshouldsmithyfarm: any
+  var Rshouldtributefarm: any
+  var Rdshouldtributefarm: any
+  var Rshouldshipfarm: any
+  var Rshouldhypofarm: any
+  // Shield-swap seam var — bare-written by heirlooms.ts HeirloomShieldSwapped, created at
+  // AutoTrimps2.js top level (like gammaBurstPct).
+  var shieldEquipped: any
   // Shield high-damage crit seam vars — calc.ts writes them (via globalThis),
   // legacy equipment.js + maps.js read them.
   var critCC: number

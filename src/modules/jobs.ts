@@ -1,6 +1,5 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/jobs.js.
+// TRUE TS (Phase 1 · #28): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/jobs.js.
 // Job hire/fire, worker ratios, quest jobs (U1 + U2 radon R* family). Deeply game-coupled (174 game.* touches), @ts-nocheck. Module vars tierMagmamancers/reservedJobs are jobs-internal. No shared vars, no implicit globals, no collisions.
 import { getPageSetting, debug, setPageSetting } from './utils'
 
@@ -22,7 +21,7 @@ MODULES["jobs"].autoRatio2 = [3, 3.1, 5];
 MODULES["jobs"].autoRatio1 = [1.1, 1.15, 1.2];
 MODULES["jobs"].customRatio;
 
-export function safeBuyJob(jobTitle, amount) {
+export function safeBuyJob(jobTitle: string, amount: number): boolean {
     if (!Number.isFinite(amount) || amount === 0 || typeof amount === 'undefined' || Number.isNaN(amount)) {
         return false;
     }
@@ -52,7 +51,7 @@ export function safeBuyJob(jobTitle, amount) {
     return true;
 }
 
-export function safeFireJob(job, amount) {
+export function safeFireJob(job: string, amount?: number): number {
     var oldjob = game.jobs[job].owned;
     if (oldjob == 0 || amount == 0)
         return 0;
@@ -146,7 +145,7 @@ export function buyJobs() {
     }
     var subtract = 0;
 
-    function checkFireandHire(job, amount) {
+    function checkFireandHire(job: string, amount?: number) {
         freeWorkers = Math.ceil(game.resources.trimps.realMax() / 2) - game.resources.trimps.employed;
         if (amount == null)
             amount = 1;
@@ -186,7 +185,7 @@ export function buyJobs() {
         checkFireandHire('Explorer');
     }
 
-    function ratiobuy(job, jobratio) {
+    function ratiobuy(job: string, jobratio: number): boolean {
         if (!game.jobs[job].locked && !breedFire) {
             freeWorkers = Math.ceil(game.resources.trimps.realMax() / 2) - game.resources.trimps.employed;
             totalDistributableWorkers = freeWorkers + game.jobs.Farmer.owned + game.jobs.Miner.owned + game.jobs.Lumberjack.owned;
@@ -302,7 +301,7 @@ MODULES["jobs"].RautoRatio2 = [3, 3.1, 5];
 MODULES["jobs"].RautoRatio1 = [1.1, 1.15, 1.2];
 MODULES["jobs"].RcustomRatio;
 
-export function RsafeBuyJob(jobTitle, amount) {
+export function RsafeBuyJob(jobTitle: string, amount: number): boolean {
     if (!Number.isFinite(amount) || amount === 0 || typeof amount === 'undefined' || Number.isNaN(amount)) {
         return false;
     }
@@ -332,7 +331,7 @@ export function RsafeBuyJob(jobTitle, amount) {
     return true;
 }
 
-export function RsafeFireJob(job, amount) {
+export function RsafeFireJob(job: string, amount?: number): number {
     var oldjob = game.jobs[job].owned;
     if (oldjob == 0 || amount == 0)
         return 0;
@@ -481,6 +480,11 @@ export function RbuyJobs() {
 
     if (game.jobs.Farmer.locked || game.resources.trimps.owned == 0) return;
 
+    // FAITHFUL-PORT LATENT BUG (surfaced by #28 strict conversion, behaviour preserved): the
+    // `game.resources.trimps.owned` arg lands on Math.ceil (which ignores extra args), NOT Math.min —
+    // so freeWorkers is never actually capped by `owned`. Left as-is (fixing it changes automation
+    // behaviour → user-gated, like the #24/#25 class). @ts-expect-error keeps the 2-arg Math.ceil.
+    // @ts-expect-error faithful-port: extra arg to Math.ceil is intentional-preservation of a legacy bug
     var freeWorkers = Math.ceil(Math.min(game.resources.trimps.realMax() / 2), game.resources.trimps.owned) - game.resources.trimps.employed;
     if (freeWorkers <= 0) return;
 

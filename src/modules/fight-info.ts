@@ -1,6 +1,5 @@
-/* eslint-disable */
-// @ts-nocheck
-// FAITHFUL PORT (Phase 2): relocated verbatim from legacy/modules/fight-info.js.
+// TRUE TS (Phase 1 · #28): converted from the faithful port under strict.
+// Was: relocated verbatim from legacy/modules/fight-info.js.
 // Self-contained IIFE ;(function(M){...})(MODULES) that registers MODULES.fightinfo.Update()
 // (called by AutoTrimps2 guiLoop when EnhanceGrids is on). No exports, no converted deps —
 // load-time code only touches game DOM (getElementById) + MODULES. Side-effect import.
@@ -101,7 +100,7 @@
 		$rows = $rows.reverse();
 
 		// DOM cells
-		var $cells = [];
+		var $cells: any[] = [];
 
 		// Loop through DOM rows and concat each row's cell-element into $cells
 		$rows.forEach(function(x)
