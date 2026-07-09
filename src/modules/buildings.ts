@@ -488,11 +488,16 @@ export function RbuyStorage(buyFood, buyWood, buyMetal) {
     if (buyMetal) {Resources.metal = "Forge";}
 
     // Check if we're currently running trimple/atlantrimp
-    var isOnTrimple = game.global.currentMapId;
-    for (var Map in game.global.mapsOwnedArray) {
-        if (Map.id == isOnTrimple) {
-            if (Map.name == "Atlantrimp" || Map.name == "Trimple Of Doom"){
-                isOnTrimple = true;;
+    // Fix (#22): mapsOwnedArray is an ARRAY of map objects; `for..in` bound Map to the string
+    // index, so Map.id/Map.name were undefined and isOnTrimple never became a boolean (it kept
+    // currentMapId, truthy inside any map). Iterate elements and default to false.
+    var currentMap = game.global.currentMapId;
+    var isOnTrimple = false;
+    for (var i = 0; i < game.global.mapsOwnedArray.length; i++) {
+        var Map = game.global.mapsOwnedArray[i];
+        if (Map.id == currentMap) {
+            if (Map.name == "Atlantrimp" || Map.name == "Trimple Of Doom") {
+                isOnTrimple = true;
             }
         }
     }

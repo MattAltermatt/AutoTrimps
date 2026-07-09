@@ -60,7 +60,7 @@ export function maxOneShotPower(considerEdges) {
     if (game.talents.overkill.purchased) power++;
 
     //Ice
-    if (game.global.uberNature == "Poison") power += 2;
+    if (game.global.uberNature == "Ice") power += 2; // Fix (#22): uber ICE grants +2 overkill (game getOverkillerCount); was checking "Poison".
     if (getEmpowerment() == "Ice" && game.empowerments.Ice.getLevel() >=  50) power++;
     if (getEmpowerment() == "Ice" && game.empowerments.Ice.getLevel() >= 100) power++;
 
@@ -130,7 +130,7 @@ export function challengeDamage(maxHealth, minDamage, maxDamage, missingHealth, 
 
     //Active Challenges
     var leadChallenge = challengeActive("Lead");
-    var electricityChallenge = challengeActive("Electricty") || game.global.challengeActive == "Mapocalypse";
+    var electricityChallenge = challengeActive("Electricity") || game.global.challengeActive == "Mapocalypse";
     var dailyPlague = game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.plague !== "undefined";
     var dailyBogged = game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.bogged !== "undefined";
     var dailyExplosive = game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.explosive !== "undefined";

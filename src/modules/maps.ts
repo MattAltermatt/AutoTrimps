@@ -273,7 +273,7 @@ export function autoMap() {
     if ((needPrestige || skippedPrestige) && (getPageSetting('PrestigeSkip1_2') == 1 || getPageSetting('PrestigeSkip1_2') == 3)) {
         const prestigeList = ['Dagadder', 'Megamace', 'Polierarm', 'Axeidic', 'Greatersword', 'Harmbalest'];
         const numLeft = prestigeList.filter(prestige => game.mapUnlocks[prestige].last <= (game.global.world + extraMapLevels) - 5);
-        const shouldSkip = numLeft <= customVars.UnearnedPrestigesRequired;
+        const shouldSkip = numLeft.length <= customVars.UnearnedPrestigesRequired;
         if (shouldSkip != skippedPrestige) {
             needPrestige = !needPrestige;
             skippedPrestige = !skippedPrestige;

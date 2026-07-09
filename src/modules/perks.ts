@@ -752,11 +752,12 @@ var Rqueuescript = document.createElement('script');
 queuescript.type = 'text/javascript';
 queuescript.src = 'https://Zorn192.github.io/AutoTrimps/FastPriorityQueue.js';
 head.appendChild(queuescript);
-//[looting,toughness,power,motivation,pheromones,artisanistry,carpentry,prismal,equality,criticality,resilience,tenacity,greed,frenzy]
-var preset_Rspace = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-var preset_RZek059 = [7, 10, 5, 1, 0.5, 2, 12, 9, 0.5, 2, 5, 0, 0, 0];
-var preset_RZekmelt = [10, 0.5, 2, 0.5, 0.3, 1.2, 3, 0.5, 1, 3, 6, 18, 20, 0];
-var preset_RZekquag = [8, 0.7, 1.8, 0.8, 0.2, 1.3, 3.3, 0.6, 0.8, 2.8, 6.2, 18, 27, 12];
+//[looting,toughness,power,motivation,pheromones,artisanistry,carpentry,prismal,equality,criticality,resilience,tenacity,greed,frenzy,championism]
+// #22: appended championism (index 14, default 0 = no ratio allocation) — arrays predated the perk, so index 14 was undefined → NaN efficiency.
+var preset_Rspace = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+var preset_RZek059 = [7, 10, 5, 1, 0.5, 2, 12, 9, 0.5, 2, 5, 0, 0, 0, 0];
+var preset_RZekmelt = [10, 0.5, 2, 0.5, 0.3, 1.2, 3, 0.5, 1, 3, 6, 18, 20, 0, 0];
+var preset_RZekquag = [8, 0.7, 1.8, 0.8, 0.2, 1.3, 3.3, 0.6, 0.8, 2.8, 6.2, 18, 27, 12, 0];
 var RpresetList = [preset_RZek059,preset_RZekmelt,preset_RZekquag,preset_Rspace];
 var RpresetListHtml = "\
 <option id='preset_RZek059'>Zek (z1-59)</option>\

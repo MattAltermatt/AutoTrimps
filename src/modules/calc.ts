@@ -746,7 +746,7 @@ export function calcEnemyHealth(world, map) {
         health *= 2;
     }
     if (game.global.challengeActive == 'Life') {
-        health *= 10;
+        health *= 11; // Parity fix (#22): game gives 1000% extra (11x); sibling at calcEnemyHealthCore agrees.
     }
     if (game.global.challengeActive == "Domination") {
         if (game.global.lastClearedCell == 98) {
@@ -1560,6 +1560,10 @@ export function RcalcEnemyBaseHealth(world, level, name) {
         if (part2 < 0) part2 = 0;
         amt *= Math.pow(1.4, part1);
         amt *= Math.pow(1.32, part2);
+        // Parity fix (#22): mirror the game's z300 hard-scaling (getEnemyHealth, config.js).
+        var part3 = (world - 300);
+        if (part3 < 0) part3 = 0;
+        amt *= Math.pow(1.15, part3);
     }
     return Math.floor(amt);
 }

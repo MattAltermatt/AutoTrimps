@@ -62,6 +62,12 @@ export function potencyMod() {
     if (challengeActive("Toxicity") && game.challenges.Toxicity.stacks > 0)
         potencyMod = potencyMod.mul(Math.pow(game.challenges.Toxicity.stackMult, game.challenges.Toxicity.stacks));
 
+    //Archaeology / Quagmire (parity fix #22): mirror game breed() challenge mults (main.js 5629-5630)
+    if (challengeActive("Archaeology"))
+        potencyMod = potencyMod.mul(game.challenges.Archaeology.getStatMult('breed'));
+    if (challengeActive("Quagmire"))
+        potencyMod = potencyMod.mul(game.challenges.Quagmire.getExhaustMult());
+
     //Void Maps (Slow Breed)
     if (game.global.voidBuff == "slowBreed")
         potencyMod = potencyMod.mul(0.2);
@@ -126,7 +132,10 @@ export function ATGA2() {
 		if (challengeActive("Toxicity") && game.challenges.Toxicity.stacks > 0){
 		potencyMod = potencyMod.mul(Math.pow(game.challenges.Toxicity.stackMult, game.challenges.Toxicity.stacks));
 		}
-		if (game.global.voidBuff == "slowBreed"){
+		//Archaeology / Quagmire (parity fix #22): mirror game breed() challenge mults (main.js 5629-5630)
+			if (challengeActive("Archaeology")) potencyMod = potencyMod.mul(game.challenges.Archaeology.getStatMult('breed'));
+			if (challengeActive("Quagmire")) potencyMod = potencyMod.mul(game.challenges.Quagmire.getExhaustMult());
+			if (game.global.voidBuff == "slowBreed"){
 		potencyMod = potencyMod.mul(0.2);
 		}
 		potencyMod = calcHeirloomBonusDecimal("Shield", "breedSpeed", potencyMod);

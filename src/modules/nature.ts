@@ -40,7 +40,7 @@ export function autoNatureTokens() {
             for (var targetNature in game.empowerments) {
                 if (targetNature == nature) continue;
                 empowerment.tokens -= 10;
-                var convertRate = (game.talents.nature.purchased) ? ((game.talents.nature2.purchased) ? 8 : 6) : 5;
+                var convertRate = (game.talents.nature.purchased) ? 8 : 5; // Parity fix (#22): game uses 8:5, nature2 has no effect on trade ratio.
                 game.empowerments[targetNature].tokens += convertRate;
                 changed = true;
                 debug('Converted ' + nature + ' tokens to ' + targetNature, 'nature');
