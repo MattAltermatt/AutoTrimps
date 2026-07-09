@@ -79,7 +79,7 @@ AutoPerks.removeGUI = function() {
 }
 AutoPerks.displayGUI = function() {
     let apGUI = AutoPerks.GUI;
-    var $buttonbar = document.getElementById("portalBtnContainer") as any;
+    var $buttonbar = byId<HTMLElement>("portalBtnContainer");
     apGUI.$allocatorBtn1 = document.createElement("DIV");
     apGUI.$allocatorBtn1.id = 'allocatorBtn1';
     apGUI.$allocatorBtn1.setAttribute('class', 'btn inPortalBtn settingsBtn settingBtntrue');
@@ -142,14 +142,14 @@ AutoPerks.displayGUI = function() {
     apGUI.$ratiosLine1.appendChild(apGUI.$ratioPresetLabel);
     apGUI.$ratiosLine1.appendChild(apGUI.$ratioPreset);
     apGUI.$customRatios.appendChild(apGUI.$ratiosLine2);
-    var $portalWrapper = document.getElementById("portalWrapper") as any
+    var $portalWrapper = byId<HTMLElement>("portalWrapper")
     $portalWrapper.appendChild(apGUI.$customRatios);
     AutoPerks.initializePerks();
     AutoPerks.populateDumpPerkList();
 }
 
 AutoPerks.populateDumpPerkList = function() {
-    var $dumpDropdown = document.getElementById('dumpPerk') as any;
+    var $dumpDropdown = byId<HTMLSelectElement>('dumpPerk');
     if ($dumpDropdown == null) return;
     var html = "";
     var dumpperks = AutoPerks.getVariablePerks();
@@ -159,19 +159,19 @@ AutoPerks.populateDumpPerkList = function() {
     $dumpDropdown.innerHTML = html;
     var loadLastDump = localStorage.getItem('AutoperkSelectedDumpPresetID');
     if (loadLastDump != null)
-        $dumpDropdown.selectedIndex = loadLastDump;
+        $dumpDropdown.selectedIndex = Number(loadLastDump);
     else
         $dumpDropdown.selectedIndex = $dumpDropdown.length - 2;
 }
 
 AutoPerks.saveDumpPerk = function() {
-    var $dump = document.getElementById("dumpPerk") as any;
+    var $dump = byId<HTMLSelectElement>("dumpPerk");
     safeSetItems('AutoperkSelectedDumpPresetID', $dump.selectedIndex);
     safeSetItems('AutoperkSelectedDumpPresetName', $dump.value);
 }
 
 AutoPerks.saveCustomRatios = function() {
-    if ((document.getElementById("ratioPreset") as any).selectedIndex == (document.getElementById("ratioPreset") as any).length-1) {
+    if (byId<HTMLSelectElement>("ratioPreset").selectedIndex == byId<HTMLSelectElement>("ratioPreset").length-1) {
         var $perkRatioBoxes = document.getElementsByClassName('perkRatios') as any;
         var customRatios = [];
         for(var i: any = 0; i < $perkRatioBoxes.length; i++) {
@@ -182,14 +182,14 @@ AutoPerks.saveCustomRatios = function() {
 }
 
 AutoPerks.switchToCustomRatios = function() {
-    var $rp = document.getElementById("ratioPreset") as any;
+    var $rp = byId<HTMLSelectElement>("ratioPreset");
     if ($rp.selectedIndex != $rp.length-1)
         ($rp.selectedIndex = $rp.length-1);
 }
 
 AutoPerks.setDefaultRatios = function() {
     var $perkRatioBoxes = document.getElementsByClassName("perkRatios") as any;
-    var $rp = document.getElementById("ratioPreset") as any;
+    var $rp = byId<HTMLSelectElement>("ratioPreset");
     if (!$rp || !$perkRatioBoxes || !$rp.selectedOptions[0]) return;
     var ratioSet = $rp.selectedIndex;
     var currentPerk;
@@ -372,7 +372,7 @@ AutoPerks.spendHelium = function(helium: any) {
     }
     debug("AutoPerks1: Pass One Complete. Loops ran: " + i, "perks");
 
-    var $selector = document.getElementById('dumpPerk') as any;
+    var $selector = byId<HTMLSelectElement>('dumpPerk');
     if ($selector != null && $selector.value != "None") {
         var heb4dump = helium;
         var index = $selector.selectedIndex;
@@ -472,7 +472,7 @@ AutoPerks.spendHelium2 = function(helium: any) {
     }
     debug("AutoPerks2: Pass One Complete. Loops ran: " + i, "perks");
 
-    var $selector = document.getElementById('dumpPerk') as any;
+    var $selector = byId<HTMLSelectElement>('dumpPerk');
     if ($selector != null && $selector.value != "None") {
         var heb4dump = helium;
         var index = $selector.selectedIndex;
@@ -801,7 +801,7 @@ RAutoPerks.removeGUI = function() {
 };
 RAutoPerks.displayGUI = function() {
     let apGUI = RAutoPerks.GUI;
-    var $buttonbar = document.getElementById("portalBtnContainer") as any;
+    var $buttonbar = byId<HTMLElement>("portalBtnContainer");
     apGUI.$allocatorBtn1 = document.createElement("DIV");
     apGUI.$allocatorBtn1.id = 'allocatorBtn1';
     apGUI.$allocatorBtn1.setAttribute('class', 'btn inPortalBtn settingsBtn settingBtntrue');
@@ -872,14 +872,14 @@ RAutoPerks.displayGUI = function() {
     apGUI.$ratiosLine1.appendChild(apGUI.$RratioPreset);
     apGUI.$customRatios.appendChild(apGUI.$ratiosLine2);
     apGUI.$customRatios.appendChild(apGUI.$ratiosLine3);
-    var $portalWrapper = document.getElementById("portalWrapper") as any;
+    var $portalWrapper = byId<HTMLElement>("portalWrapper");
     $portalWrapper.appendChild(apGUI.$customRatios);
     RAutoPerks.initializePerks();
     RAutoPerks.populateDumpPerkList();
 };
 
 RAutoPerks.populateDumpPerkList = function() {
-    var $dumpDropdown = document.getElementById('RdumpPerk') as any;
+    var $dumpDropdown = byId<HTMLSelectElement>('RdumpPerk');
     if ($dumpDropdown == null) return;
     var html = "";
     var dumpperks = RAutoPerks.getVariablePerks();
@@ -889,19 +889,19 @@ RAutoPerks.populateDumpPerkList = function() {
     $dumpDropdown.innerHTML = html;
     var loadLastDump = localStorage.getItem('RAutoperkSelectedDumpPresetID');
     if (loadLastDump != null)
-        $dumpDropdown.selectedIndex = loadLastDump;
+        $dumpDropdown.selectedIndex = Number(loadLastDump);
     else
         $dumpDropdown.selectedIndex = $dumpDropdown.length - 2;
 };
 
 RAutoPerks.saveDumpPerk = function() {
-    var $dump = document.getElementById("RdumpPerk") as any;
+    var $dump = byId<HTMLSelectElement>("RdumpPerk");
     safeSetItems('RAutoperkSelectedDumpPresetID', $dump.selectedIndex);
     safeSetItems('RAutoperkSelectedDumpPresetName', $dump.value);
 };
 
 RAutoPerks.saveCustomRatios = function() {
-    if ((document.getElementById("RratioPreset") as any).selectedIndex == (document.getElementById("RratioPreset") as any).length-1) {
+    if (byId<HTMLSelectElement>("RratioPreset").selectedIndex == byId<HTMLSelectElement>("RratioPreset").length-1) {
         var $perkRatioBoxes = document.getElementsByClassName('RperkRatios') as any;
         var customRatios = [];
         for(var i: any = 0; i < $perkRatioBoxes.length; i++) {
@@ -912,14 +912,14 @@ RAutoPerks.saveCustomRatios = function() {
 };
 
 RAutoPerks.switchToCustomRatios = function() {
-    var $rp = document.getElementById("RratioPreset") as any;
+    var $rp = byId<HTMLSelectElement>("RratioPreset");
     if ($rp.selectedIndex != $rp.length-1)
         ($rp.selectedIndex = $rp.length-1);
 };
 
 RAutoPerks.setDefaultRatios = function() {
     var $perkRatioBoxes = document.getElementsByClassName("RperkRatios") as any;
-    var $rp = document.getElementById("RratioPreset") as any;
+    var $rp = byId<HTMLSelectElement>("RratioPreset");
     if (!$rp || !$perkRatioBoxes || !$rp.selectedOptions[0]) return;
     var ratioSet = $rp.selectedIndex;
     var currentPerk;
@@ -1109,7 +1109,7 @@ RAutoPerks.spendRadon = function(radon: any) {
     }
     debug("RAutoPerks1: Pass One Complete. Loops ran: " + i, "perks");
 
-    var $selector = document.getElementById('RdumpPerk') as any;
+    var $selector = byId<HTMLSelectElement>('RdumpPerk');
     if ($selector != null && $selector.value != "None") {
         var heb4dump = radon;
         var index = $selector.selectedIndex;
@@ -1209,7 +1209,7 @@ RAutoPerks.spendRadon2 = function(radon: any) {
     }
     debug("RAutoPerks2: Pass One Complete. Loops ran: " + i, "perks");
 
-    var $selector = document.getElementById('RdumpPerk') as any;
+    var $selector = byId<HTMLSelectElement>('RdumpPerk');
     if ($selector != null && $selector.value != "None") {
         var heb4dump = radon;
         var index = $selector.selectedIndex;

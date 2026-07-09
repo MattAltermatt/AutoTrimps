@@ -11500,7 +11500,7 @@
   }
   function nameAndSaveNewProfile() {
     try {
-      var profname = document.getElementById("setSettingsNameTooltip").value.replace(/[\n\r]/gm, "");
+      var profname = byId("setSettingsNameTooltip").value.replace(/[\n\r]/gm, "");
       if (profname == null) {
         debug2("Error in naming, the string is empty.", "profile");
         return;
@@ -11555,19 +11555,19 @@
       if (document.queryCommandSupported("copy")) {
         costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
         ondisplay = function() {
-          document.getElementById("exportArea").select();
-          document.getElementById("clipBoardBtn").addEventListener("click", function(event3) {
-            document.getElementById("exportArea").select();
+          byId("exportArea").select();
+          byId("clipBoardBtn").addEventListener("click", function(event3) {
+            byId("exportArea").select();
             try {
               document.execCommand("copy");
             } catch (err) {
-              document.getElementById("clipBoardBtn").innerHTML = "Error, not copied";
+              byId("clipBoardBtn").innerHTML = "Error, not copied";
             }
           });
         };
       } else {
         ondisplay = function() {
-          document.getElementById("exportArea").select();
+          byId("exportArea").select();
         };
       }
       costText += "</div>";
@@ -11577,13 +11577,13 @@
       if (document.queryCommandSupported("copy")) {
         costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
         ondisplay = function() {
-          document.getElementById("exportArea").select();
-          document.getElementById("clipBoardBtn").addEventListener("click", function(event3) {
-            document.getElementById("exportArea").select();
+          byId("exportArea").select();
+          byId("clipBoardBtn").addEventListener("click", function(event3) {
+            byId("exportArea").select();
             try {
               document.execCommand("copy");
             } catch (err) {
-              document.getElementById("clipBoardBtn").innerHTML = "Error, not copied";
+              byId("clipBoardBtn").innerHTML = "Error, not copied";
             }
           });
         };
@@ -11594,19 +11594,19 @@
       if (document.queryCommandSupported("copy")) {
         costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
         ondisplay = function() {
-          document.getElementById("exportArea").select();
-          document.getElementById("clipBoardBtn").addEventListener("click", function(event3) {
-            document.getElementById("exportArea").select();
+          byId("exportArea").select();
+          byId("clipBoardBtn").addEventListener("click", function(event3) {
+            byId("exportArea").select();
             try {
               document.execCommand("copy");
             } catch (err) {
-              document.getElementById("clipBoardBtn").innerHTML = "Error, not copied";
+              byId("clipBoardBtn").innerHTML = "Error, not copied";
             }
           });
         };
       } else {
         ondisplay = function() {
-          document.getElementById("exportArea").select();
+          byId("exportArea").select();
         };
       }
       costText += "</div>";
@@ -11614,13 +11614,13 @@
       tooltipText = "Import your AUTOTRIMPS save string! It'll be fine, I promise.<br/><br/><textarea id='importBox' style='width: 100%' rows='5'></textarea>";
       costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip(); loadAutoTrimps();'>Import</div><div class='btn btn-info' onclick='cancelTooltip()'>Cancel</div></div>";
       ondisplay = function() {
-        document.getElementById("importBox").focus();
+        byId("importBox").focus();
       };
     } else if (what == "spireImport") {
       tooltipText = "Import your SPIRE string! <br/><br/><textarea id='importBox' style='width: 100%' rows='5'></textarea>";
       costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip(); tdStringCode2();'>Import</div><div class='btn btn-info' onclick='cancelTooltip()'>Cancel</div></div>";
       ondisplay = function() {
-        document.getElementById("importBox").focus();
+        byId("importBox").focus();
       };
     } else if (what == "CleanupAutoTrimps") {
       cleanupAutoTrimps();
@@ -11632,19 +11632,19 @@
       if (document.queryCommandSupported("copy")) {
         costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
         ondisplay = function() {
-          document.getElementById("exportArea").select();
-          document.getElementById("clipBoardBtn").addEventListener("click", function(event3) {
-            document.getElementById("exportArea").select();
+          byId("exportArea").select();
+          byId("clipBoardBtn").addEventListener("click", function(event3) {
+            byId("exportArea").select();
             try {
               document.execCommand("copy");
             } catch (err) {
-              document.getElementById("clipBoardBtn").innerHTML = "Error, not copied";
+              byId("clipBoardBtn").innerHTML = "Error, not copied";
             }
           });
         };
       } else {
         ondisplay = function() {
-          document.getElementById("exportArea").select();
+          byId("exportArea").select();
         };
       }
       costText += "</div>";
@@ -11652,10 +11652,10 @@
       tooltipText = "Enter your Autotrimps MODULE variable settings to load, and save locally for future use between refreshes:<br/><br/><textarea id='importBox' style='width: 100%' rows='5'></textarea>";
       costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip(); importModuleVars();'>Import</div><div class='btn btn-info' onclick='cancelTooltip()'>Cancel</div></div>";
       ondisplay = function() {
-        document.getElementById("importBox").focus();
+        byId("importBox").focus();
       };
     } else if (what == "ATModuleLoad") {
-      var mods = document.getElementById("ATModuleListDropdown");
+      var mods = byId("ATModuleListDropdown");
       var modnames = "";
       for (script in mods.selectedOptions) {
         var $item = mods.selectedOptions[script];
@@ -11667,7 +11667,7 @@
       tooltipText = "Autotrimps - Loaded the MODULE .JS File(s): " + modnames;
       costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip();'>OK</div></div>";
     } else if (what == "ATModuleUnload") {
-      var mods = document.getElementById("ATModuleListDropdown");
+      var mods = byId("ATModuleListDropdown");
       var modnames = "";
       for (script in mods.selectedOptions) {
         var $item = mods.selectedOptions[script];
@@ -12245,7 +12245,7 @@
       tooltipText = "What would you like the name of the Settings Profile to be?<br/><br/><textarea id='setSettingsNameTooltip' style='width: 100%' rows='1'></textarea>";
       costText = `<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' style='width: 10vw' onclick='cancelTooltip(); nameAndSaveNewProfile();'>Import</div><div class='btn btn-info' style='margin-left: 5vw' onclick='cancelTooltip();document.getElementById("settingsProfiles").selectedIndex=0;'>Cancel</div></div>`;
       ondisplay = function() {
-        document.getElementById("setSettingsNameTooltip").focus();
+        byId("setSettingsNameTooltip").focus();
       };
     } else if (what == "DeleteSettingsProfiles") {
       titleText = "<b>WARNING:</b> Delete Profile???";
@@ -12275,7 +12275,7 @@
   }
   function loadAutoTrimps() {
     try {
-      var a = document.getElementById("importBox").value.replace(/[\n\r]/gm, ""), b = JSON.parse(a);
+      var a = byId("importBox").value.replace(/[\n\r]/gm, ""), b = JSON.parse(a);
       if (null == b) return void debug2("Error importing AT settings, the string is empty.", "profile");
     } catch (c) {
       return void debug2("Error importing AT settings, the string is bad." + c.message, "profile");
@@ -12312,7 +12312,7 @@
   }
   function importModuleVars() {
     try {
-      var thestring = document.getElementById("importBox").value, strarr = thestring.split(/\n/);
+      var thestring = byId("importBox").value, strarr = thestring.split(/\n/);
       for (var line in strarr) {
         var s = strarr[line];
         s = s.substring(0, s.indexOf(";") + 1), s = s.replace(/\s/g, ""), eval(s), strarr[line] = s;
@@ -16872,7 +16872,7 @@
     };
     AutoPerks.displayGUI = function() {
       let apGUI = AutoPerks.GUI;
-      var $buttonbar = document.getElementById("portalBtnContainer");
+      var $buttonbar = byId("portalBtnContainer");
       apGUI.$allocatorBtn1 = document.createElement("DIV");
       apGUI.$allocatorBtn1.id = "allocatorBtn1";
       apGUI.$allocatorBtn1.setAttribute("class", "btn inPortalBtn settingsBtn settingBtntrue");
@@ -16930,13 +16930,13 @@
       apGUI.$ratiosLine1.appendChild(apGUI.$ratioPresetLabel);
       apGUI.$ratiosLine1.appendChild(apGUI.$ratioPreset);
       apGUI.$customRatios.appendChild(apGUI.$ratiosLine2);
-      var $portalWrapper = document.getElementById("portalWrapper");
+      var $portalWrapper = byId("portalWrapper");
       $portalWrapper.appendChild(apGUI.$customRatios);
       AutoPerks.initializePerks();
       AutoPerks.populateDumpPerkList();
     };
     AutoPerks.populateDumpPerkList = function() {
-      var $dumpDropdown = document.getElementById("dumpPerk");
+      var $dumpDropdown = byId("dumpPerk");
       if ($dumpDropdown == null) return;
       var html = "";
       var dumpperks = AutoPerks.getVariablePerks();
@@ -16946,17 +16946,17 @@
       $dumpDropdown.innerHTML = html;
       var loadLastDump = localStorage.getItem("AutoperkSelectedDumpPresetID");
       if (loadLastDump != null)
-        $dumpDropdown.selectedIndex = loadLastDump;
+        $dumpDropdown.selectedIndex = Number(loadLastDump);
       else
         $dumpDropdown.selectedIndex = $dumpDropdown.length - 2;
     };
     AutoPerks.saveDumpPerk = function() {
-      var $dump = document.getElementById("dumpPerk");
+      var $dump = byId("dumpPerk");
       safeSetItems("AutoperkSelectedDumpPresetID", $dump.selectedIndex);
       safeSetItems("AutoperkSelectedDumpPresetName", $dump.value);
     };
     AutoPerks.saveCustomRatios = function() {
-      if (document.getElementById("ratioPreset").selectedIndex == document.getElementById("ratioPreset").length - 1) {
+      if (byId("ratioPreset").selectedIndex == byId("ratioPreset").length - 1) {
         var $perkRatioBoxes = document.getElementsByClassName("perkRatios");
         var customRatios = [];
         for (var i = 0; i < $perkRatioBoxes.length; i++) {
@@ -16966,13 +16966,13 @@
       }
     };
     AutoPerks.switchToCustomRatios = function() {
-      var $rp = document.getElementById("ratioPreset");
+      var $rp = byId("ratioPreset");
       if ($rp.selectedIndex != $rp.length - 1)
         $rp.selectedIndex = $rp.length - 1;
     };
     AutoPerks.setDefaultRatios = function() {
       var $perkRatioBoxes = document.getElementsByClassName("perkRatios");
-      var $rp = document.getElementById("ratioPreset");
+      var $rp = byId("ratioPreset");
       if (!$rp || !$perkRatioBoxes || !$rp.selectedOptions[0]) return;
       var ratioSet = $rp.selectedIndex;
       var currentPerk;
@@ -17135,7 +17135,7 @@
         }
       }
       debug2("AutoPerks1: Pass One Complete. Loops ran: " + i, "perks");
-      var $selector = document.getElementById("dumpPerk");
+      var $selector = byId("dumpPerk");
       if ($selector != null && $selector.value != "None") {
         var heb4dump = helium;
         var index = $selector.selectedIndex;
@@ -17229,7 +17229,7 @@
         }
       }
       debug2("AutoPerks2: Pass One Complete. Loops ran: " + i, "perks");
-      var $selector = document.getElementById("dumpPerk");
+      var $selector = byId("dumpPerk");
       if ($selector != null && $selector.value != "None") {
         var heb4dump = helium;
         var index = $selector.selectedIndex;
@@ -17534,7 +17534,7 @@
   };
   RAutoPerks.displayGUI = function() {
     let apGUI = RAutoPerks.GUI;
-    var $buttonbar = document.getElementById("portalBtnContainer");
+    var $buttonbar = byId("portalBtnContainer");
     apGUI.$allocatorBtn1 = document.createElement("DIV");
     apGUI.$allocatorBtn1.id = "allocatorBtn1";
     apGUI.$allocatorBtn1.setAttribute("class", "btn inPortalBtn settingsBtn settingBtntrue");
@@ -17596,13 +17596,13 @@
     apGUI.$ratiosLine1.appendChild(apGUI.$RratioPreset);
     apGUI.$customRatios.appendChild(apGUI.$ratiosLine2);
     apGUI.$customRatios.appendChild(apGUI.$ratiosLine3);
-    var $portalWrapper = document.getElementById("portalWrapper");
+    var $portalWrapper = byId("portalWrapper");
     $portalWrapper.appendChild(apGUI.$customRatios);
     RAutoPerks.initializePerks();
     RAutoPerks.populateDumpPerkList();
   };
   RAutoPerks.populateDumpPerkList = function() {
-    var $dumpDropdown = document.getElementById("RdumpPerk");
+    var $dumpDropdown = byId("RdumpPerk");
     if ($dumpDropdown == null) return;
     var html = "";
     var dumpperks = RAutoPerks.getVariablePerks();
@@ -17612,17 +17612,17 @@
     $dumpDropdown.innerHTML = html;
     var loadLastDump = localStorage.getItem("RAutoperkSelectedDumpPresetID");
     if (loadLastDump != null)
-      $dumpDropdown.selectedIndex = loadLastDump;
+      $dumpDropdown.selectedIndex = Number(loadLastDump);
     else
       $dumpDropdown.selectedIndex = $dumpDropdown.length - 2;
   };
   RAutoPerks.saveDumpPerk = function() {
-    var $dump = document.getElementById("RdumpPerk");
+    var $dump = byId("RdumpPerk");
     safeSetItems("RAutoperkSelectedDumpPresetID", $dump.selectedIndex);
     safeSetItems("RAutoperkSelectedDumpPresetName", $dump.value);
   };
   RAutoPerks.saveCustomRatios = function() {
-    if (document.getElementById("RratioPreset").selectedIndex == document.getElementById("RratioPreset").length - 1) {
+    if (byId("RratioPreset").selectedIndex == byId("RratioPreset").length - 1) {
       var $perkRatioBoxes = document.getElementsByClassName("RperkRatios");
       var customRatios = [];
       for (var i = 0; i < $perkRatioBoxes.length; i++) {
@@ -17632,13 +17632,13 @@
     }
   };
   RAutoPerks.switchToCustomRatios = function() {
-    var $rp = document.getElementById("RratioPreset");
+    var $rp = byId("RratioPreset");
     if ($rp.selectedIndex != $rp.length - 1)
       $rp.selectedIndex = $rp.length - 1;
   };
   RAutoPerks.setDefaultRatios = function() {
     var $perkRatioBoxes = document.getElementsByClassName("RperkRatios");
-    var $rp = document.getElementById("RratioPreset");
+    var $rp = byId("RratioPreset");
     if (!$rp || !$perkRatioBoxes || !$rp.selectedOptions[0]) return;
     var ratioSet = $rp.selectedIndex;
     var currentPerk;
@@ -17808,7 +17808,7 @@
       }
     }
     debug2("RAutoPerks1: Pass One Complete. Loops ran: " + i, "perks");
-    var $selector = document.getElementById("RdumpPerk");
+    var $selector = byId("RdumpPerk");
     if ($selector != null && $selector.value != "None") {
       var heb4dump = radon;
       var index = $selector.selectedIndex;
@@ -17902,7 +17902,7 @@
       }
     }
     debug2("RAutoPerks2: Pass One Complete. Loops ran: " + i, "perks");
-    var $selector = document.getElementById("RdumpPerk");
+    var $selector = byId("RdumpPerk");
     if ($selector != null && $selector.value != "None") {
       var heb4dump = radon;
       var index = $selector.selectedIndex;
