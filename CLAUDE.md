@@ -58,8 +58,10 @@ still-legacy modules call converted fns at *load* time (e.g. `portal.js` top-lev
 `scripts/build-userscript.mjs` splits `MANIFEST` around this; a build test guards the order.
 
 **Reverse direction** — converted code reads game/legacy globals as free identifiers, typed
-ambient in `src/game/trimps.d.ts` (game API) + `src/game/at-legacy.d.ts` (not-yet-converted AT
-globals; shrinks as modules convert).
+ambient in `src/game/trimps.d.ts` (game API) + `src/game/at-legacy.d.ts` (the **permanent**
+bare-name globalThis seam between converted modules — Phase 1 done, so it no longer "shrinks";
+functions with a single owning module are declared `typeof import('../modules/X').fn` so the
+ambient signature can't drift, per #36).
 
 **Shared top-level vars → `globalThis`** — a converted module's top-level `var X` that
 still-legacy code reads becomes module-scoped and invisible (ReferenceError). Assign
