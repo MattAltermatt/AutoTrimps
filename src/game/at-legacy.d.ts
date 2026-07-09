@@ -47,5 +47,22 @@ declare global {
   var baseHealth: number
   var baseMinDamage: number
   var baseMaxDamage: number
+
+  // Enemy-attack / corruption predictors still in @ts-nocheck AT modules
+  // (query.ts, other.ts) — pragmatic boundary sigs; move to real imports as those
+  // modules convert.
+  function getEnemyMaxAttack(...rest: any[]): number
+  function RgetEnemyMaxAttack(...rest: any[]): number
+  function getCorruptedCellsNum(...rest: any[]): number
+  function getCorruptScale(...rest: any[]): number
+  function isActiveSpireAT(...rest: any[]): boolean
+  function disActiveSpireAT(...rest: any[]): boolean
+  // gammaBurst % — `var` in AutoTrimps2.js.
+  var gammaBurstPct: number
+  // Shield high-damage crit seam vars — calc.ts writes them (via globalThis),
+  // legacy equipment.js + maps.js read them.
+  var critCC: number
+  var critDD: number
+  var trimpAA: number
 }
 export {}
