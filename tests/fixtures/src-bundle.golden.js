@@ -8719,34 +8719,34 @@
     hypofragmappybought = false;
   }
   function RfragMap2() {
-    document.getElementById("biomeAdvMapsSelect").value = "Plentiful";
-    document.getElementById("advExtraLevelSelect").value = 0;
-    document.getElementById("advSpecialSelect").value = "fa";
-    document.getElementById("lootAdvMapsRange").value = 9;
-    document.getElementById("difficultyAdvMapsRange").value = 9;
-    document.getElementById("sizeAdvMapsRange").value = 9;
-    document.getElementById("advPerfectCheckbox").checked = true;
-    document.getElementById("mapLevelInput").value = game.global.world - 1;
+    byId("biomeAdvMapsSelect").value = "Plentiful";
+    byId("advExtraLevelSelect").value = "0";
+    byId("advSpecialSelect").value = "fa";
+    byId("lootAdvMapsRange").value = "9";
+    byId("difficultyAdvMapsRange").value = "9";
+    byId("sizeAdvMapsRange").value = "9";
+    byId("advPerfectCheckbox").checked = true;
+    byId("mapLevelInput").value = String(game.global.world - 1);
     updateMapCost();
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("biomeAdvMapsSelect").value = "Random";
+      byId("biomeAdvMapsSelect").value = "Random";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("advPerfectCheckbox").checked = false;
+      byId("advPerfectCheckbox").checked = false;
       updateMapCost();
     }
     var fragsOwned = game.resources.fragments.owned;
     for (var i = 8; i >= 0; i--) {
       if (updateMapCost(true) > fragsOwned) {
-        document.getElementById("difficultyAdvMapsRange").value = i;
+        byId("difficultyAdvMapsRange").value = String(i);
       } else break;
       if (updateMapCost(true) > fragsOwned) {
-        document.getElementById("sizeAdvMapsRange").value = i;
+        byId("sizeAdvMapsRange").value = String(i);
       } else break;
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("advSpecialSelect").value = "0";
+      byId("advSpecialSelect").value = "0";
       updateMapCost();
     }
   }
@@ -8769,20 +8769,20 @@
     return selectedMap2;
   }
   function RminFragMap(selection, number, special) {
-    document.getElementById("biomeAdvMapsSelect").value = selection;
-    document.getElementById("advExtraLevelSelect").value = number;
-    document.getElementById("advSpecialSelect").value = special;
-    document.getElementById("lootAdvMapsRange").value = 9;
-    document.getElementById("difficultyAdvMapsRange").value = 9;
-    document.getElementById("sizeAdvMapsRange").value = 9;
-    document.getElementById("advPerfectCheckbox").checked = true;
-    document.getElementById("mapLevelInput").value = game.global.world;
+    byId("biomeAdvMapsSelect").value = selection;
+    byId("advExtraLevelSelect").value = number;
+    byId("advSpecialSelect").value = special;
+    byId("lootAdvMapsRange").value = "9";
+    byId("difficultyAdvMapsRange").value = "9";
+    byId("sizeAdvMapsRange").value = "9";
+    byId("advPerfectCheckbox").checked = true;
+    byId("mapLevelInput").value = game.global.world;
     updateMapCost();
     if (updateMapCost(true) <= game.resources.fragments.owned) {
       return updateMapCost(true);
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("advPerfectCheckbox").checked = false;
+      byId("advPerfectCheckbox").checked = false;
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
@@ -8790,7 +8790,7 @@
     }
     for (var i = 8; i >= 0; i--) {
       if (updateMapCost(true) > game.resources.fragments.owned) {
-        document.getElementById("lootAdvMapsRange").value = i;
+        byId("lootAdvMapsRange").value = String(i);
         updateMapCost();
         if (updateMapCost(true) <= game.resources.fragments.owned) {
           return updateMapCost(true);
@@ -8799,7 +8799,7 @@
     }
     for (var i = 8; i >= 0; i--) {
       if (updateMapCost(true) > game.resources.fragments.owned) {
-        document.getElementById("sizeAdvMapsRange").value = i;
+        byId("sizeAdvMapsRange").value = String(i);
         updateMapCost();
         if (updateMapCost(true) <= game.resources.fragments.owned) {
           return updateMapCost(true);
@@ -8808,14 +8808,14 @@
     }
     for (var i = 8; i >= 0; i--) {
       if (updateMapCost(true) > game.resources.fragments.owned) {
-        document.getElementById("difficultyAdvMapsRange").value = i;
+        byId("difficultyAdvMapsRange").value = String(i);
         updateMapCost();
         if (updateMapCost(true) <= game.resources.fragments.owned) {
           return updateMapCost(true);
         }
       }
     }
-    if (document.getElementById("difficultyAdvMapsRange").value == 0) {
+    if (Number(byId("difficultyAdvMapsRange").value) === 0) {
       return updateMapCost(true);
     }
   }
@@ -8878,270 +8878,270 @@
     return go;
   }
   function RAMPplusPres(daily, number) {
-    document.getElementById("biomeAdvMapsSelect").value = "Plentiful";
-    document.getElementById("advExtraLevelSelect").value = daily ? RAMPplusMapToRun(true, number) : RAMPplusMapToRun(false, number);
-    document.getElementById("advSpecialSelect").value = "p";
-    document.getElementById("lootAdvMapsRange").value = 0;
-    document.getElementById("difficultyAdvMapsRange").value = 9;
-    document.getElementById("sizeAdvMapsRange").value = 9;
-    document.getElementById("advPerfectCheckbox").checked = false;
-    document.getElementById("mapLevelInput").value = game.global.world;
+    byId("biomeAdvMapsSelect").value = "Plentiful";
+    byId("advExtraLevelSelect").value = String(daily ? RAMPplusMapToRun(true, number) : RAMPplusMapToRun(false, number));
+    byId("advSpecialSelect").value = "p";
+    byId("lootAdvMapsRange").value = "0";
+    byId("difficultyAdvMapsRange").value = "9";
+    byId("sizeAdvMapsRange").value = "9";
+    byId("advPerfectCheckbox").checked = false;
+    byId("mapLevelInput").value = game.global.world;
     updateMapCost();
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("biomeAdvMapsSelect").value = "Random";
+      byId("biomeAdvMapsSelect").value = "Random";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 8;
+      byId("difficultyAdvMapsRange").value = "8";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 8;
+      byId("sizeAdvMapsRange").value = "8";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 7;
+      byId("difficultyAdvMapsRange").value = "7";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 7;
+      byId("sizeAdvMapsRange").value = "7";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 6;
+      byId("difficultyAdvMapsRange").value = "6";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 6;
+      byId("sizeAdvMapsRange").value = "6";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 5;
+      byId("difficultyAdvMapsRange").value = "5";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 5;
+      byId("sizeAdvMapsRange").value = "5";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 4;
+      byId("difficultyAdvMapsRange").value = "4";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 4;
+      byId("sizeAdvMapsRange").value = "4";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 3;
+      byId("difficultyAdvMapsRange").value = "3";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 3;
+      byId("sizeAdvMapsRange").value = "3";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 2;
+      byId("difficultyAdvMapsRange").value = "2";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 2;
+      byId("sizeAdvMapsRange").value = "2";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 1;
+      byId("difficultyAdvMapsRange").value = "1";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 1;
+      byId("sizeAdvMapsRange").value = "1";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 0;
+      byId("difficultyAdvMapsRange").value = "0";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 0;
+      byId("sizeAdvMapsRange").value = "0";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("advSpecialSelect").value = "fa";
+      byId("advSpecialSelect").value = "fa";
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("advSpecialSelect").value = "0";
+      byId("advSpecialSelect").value = "0";
       updateMapCost();
     }
   }
   function RAMPplusPresfragmax(daily, number) {
-    document.getElementById("biomeAdvMapsSelect").value = "Plentiful";
-    document.getElementById("advExtraLevelSelect").value = daily ? RAMPplusMapToRun(true, number) : RAMPplusMapToRun(false, number);
-    document.getElementById("advSpecialSelect").value = "p";
-    document.getElementById("lootAdvMapsRange").value = 0;
-    document.getElementById("difficultyAdvMapsRange").value = 9;
-    document.getElementById("sizeAdvMapsRange").value = 9;
-    document.getElementById("advPerfectCheckbox").checked = false;
-    document.getElementById("mapLevelInput").value = game.global.world;
+    byId("biomeAdvMapsSelect").value = "Plentiful";
+    byId("advExtraLevelSelect").value = String(daily ? RAMPplusMapToRun(true, number) : RAMPplusMapToRun(false, number));
+    byId("advSpecialSelect").value = "p";
+    byId("lootAdvMapsRange").value = "0";
+    byId("difficultyAdvMapsRange").value = "9";
+    byId("sizeAdvMapsRange").value = "9";
+    byId("advPerfectCheckbox").checked = false;
+    byId("mapLevelInput").value = game.global.world;
     updateMapCost();
     return updateMapCost(true);
   }
   function RAMPplusPresfragmin(daily, number) {
-    document.getElementById("biomeAdvMapsSelect").value = "Plentiful";
-    document.getElementById("advExtraLevelSelect").value = daily ? RAMPplusMapToRun(true, number) : RAMPplusMapToRun(false, number);
-    document.getElementById("advSpecialSelect").value = "p";
-    document.getElementById("lootAdvMapsRange").value = 0;
-    document.getElementById("difficultyAdvMapsRange").value = 9;
-    document.getElementById("sizeAdvMapsRange").value = 9;
-    document.getElementById("advPerfectCheckbox").checked = false;
-    document.getElementById("mapLevelInput").value = game.global.world;
+    byId("biomeAdvMapsSelect").value = "Plentiful";
+    byId("advExtraLevelSelect").value = String(daily ? RAMPplusMapToRun(true, number) : RAMPplusMapToRun(false, number));
+    byId("advSpecialSelect").value = "p";
+    byId("lootAdvMapsRange").value = "0";
+    byId("difficultyAdvMapsRange").value = "9";
+    byId("sizeAdvMapsRange").value = "9";
+    byId("advPerfectCheckbox").checked = false;
+    byId("mapLevelInput").value = game.global.world;
     updateMapCost();
     if (updateMapCost(true) <= game.resources.fragments.owned) {
       return updateMapCost(true);
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("biomeAdvMapsSelect").value = "Random";
+      byId("biomeAdvMapsSelect").value = "Random";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 8;
+      byId("difficultyAdvMapsRange").value = "8";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 8;
+      byId("sizeAdvMapsRange").value = "8";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 7;
+      byId("difficultyAdvMapsRange").value = "7";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 7;
+      byId("sizeAdvMapsRange").value = "7";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 6;
+      byId("difficultyAdvMapsRange").value = "6";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 6;
+      byId("sizeAdvMapsRange").value = "6";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 5;
+      byId("difficultyAdvMapsRange").value = "5";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 5;
+      byId("sizeAdvMapsRange").value = "5";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 4;
+      byId("difficultyAdvMapsRange").value = "4";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 4;
+      byId("sizeAdvMapsRange").value = "4";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 3;
+      byId("difficultyAdvMapsRange").value = "3";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 3;
+      byId("sizeAdvMapsRange").value = "3";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 2;
+      byId("difficultyAdvMapsRange").value = "2";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 2;
+      byId("sizeAdvMapsRange").value = "2";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 1;
+      byId("difficultyAdvMapsRange").value = "1";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 1;
+      byId("sizeAdvMapsRange").value = "1";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("difficultyAdvMapsRange").value = 0;
+      byId("difficultyAdvMapsRange").value = "0";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("sizeAdvMapsRange").value = 0;
+      byId("sizeAdvMapsRange").value = "0";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("advSpecialSelect").value = "fa";
+      byId("advSpecialSelect").value = "fa";
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
       }
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      document.getElementById("advSpecialSelect").value = "0";
+      byId("advSpecialSelect").value = "0";
       updateMapCost();
     }
-    if (document.getElementById("advSpecialSelect").value == "0") {
+    if (byId("advSpecialSelect").value == "0") {
       return updateMapCost(true);
     }
   }
@@ -9203,14 +9203,14 @@
     if (getPageSetting2("Rtimefarmlevel") != 0 || daily && getPageSetting2("Rdtimefarmlevel") != 0) {
       levelzones = daily ? RtimeFarm2(false, true, false, false, true) : RtimeFarm2(false, true, false, false, false);
       if (levelzones > 0) {
-        document.getElementById("mapLevelInput").value = game.global.world;
-        document.getElementById("advExtraLevelSelect").value = levelzones;
+        byId("mapLevelInput").value = game.global.world;
+        byId("advExtraLevelSelect").value = levelzones;
       } else if (levelzones < 0) {
-        document.getElementById("mapLevelInput").value = game.global.world + levelzones;
+        byId("mapLevelInput").value = game.global.world + levelzones;
       }
     }
     biomeAdvMapsSelect.value = daily ? RtimeFarm2(false, false, true, false, true) : RtimeFarm2(false, false, true, false, false);
-    document.getElementById("advSpecialSelect").value = daily ? RtimeFarm2(false, false, false, true, true) : RtimeFarm2(false, false, false, true, false);
+    byId("advSpecialSelect").value = daily ? RtimeFarm2(false, false, false, true, true) : RtimeFarm2(false, false, false, true, false);
     updateMapCost();
   }
   function RsmithyFarm2(amount) {
@@ -9280,13 +9280,13 @@
   function RsmithyFarmMap2() {
     var levelzones2 = RsmithyCalc2(true, false, false, false);
     if (levelzones2 > 0) {
-      document.getElementById("mapLevelInput").value = game.global.world;
-      document.getElementById("advExtraLevelSelect").value = levelzones2;
+      byId("mapLevelInput").value = game.global.world;
+      byId("advExtraLevelSelect").value = levelzones2;
     } else if (levelzones2 < 0) {
-      document.getElementById("mapLevelInput").value = game.global.world + levelzones2;
+      byId("mapLevelInput").value = game.global.world + levelzones2;
     }
     biomeAdvMapsSelect.value = RsmithyCalc2(false, true, false, false);
-    document.getElementById("advSpecialSelect").value = RsmithyCalc2(false, false, true, false);
+    byId("advSpecialSelect").value = String(RsmithyCalc2(false, false, true, false));
     updateMapCost();
     if (updateMapCost(true) > game.resources.fragments.owned) {
       RfragCalc(updateMapCost(true));
@@ -9315,14 +9315,14 @@
     if (getPageSetting2("Rtributefarmlevel") != 0) {
       levelzones = RtributeFarm2(false, true, false, false);
       if (levelzones > 0) {
-        document.getElementById("mapLevelInput").value = game.global.world;
-        document.getElementById("advExtraLevelSelect").value = levelzones;
+        byId("mapLevelInput").value = game.global.world;
+        byId("advExtraLevelSelect").value = levelzones;
       } else if (levelzones < 0) {
-        document.getElementById("mapLevelInput").value = game.global.world + levelzones;
+        byId("mapLevelInput").value = game.global.world + levelzones;
       }
     }
     biomeAdvMapsSelect.value = RtributeFarm2(false, false, true, false);
-    document.getElementById("advSpecialSelect").value = RtributeFarm2(false, false, false, true);
+    byId("advSpecialSelect").value = RtributeFarm2(false, false, false, true);
     updateMapCost();
   }
   function Rbogs2() {
@@ -9998,12 +9998,12 @@
       var insanitylevelzones = Rinsanity2(false, true, false);
       if (insanitylevelzones > 0) {
         RminFragMap("Plentiful", insanitylevelzones, "fa");
-        document.getElementById("mapLevelInput").value = game.global.world;
-        document.getElementById("advExtraLevelSelect").value = insanitylevelzones;
+        byId("mapLevelInput").value = game.global.world;
+        byId("advExtraLevelSelect").value = insanitylevelzones;
       } else if (insanitylevelzones < 0) {
         RminFragMap("Plentiful", insanitylevelzones, "fa");
-        document.getElementById("mapLevelInput").value = game.global.world + insanitylevelzones;
-        document.getElementById("advExtraLevelSelect").value = 0;
+        byId("mapLevelInput").value = game.global.world + insanitylevelzones;
+        byId("advExtraLevelSelect").value = "0";
       }
     }
     updateMapCost();
@@ -10159,15 +10159,15 @@
         var selection = game.global.farmlandsUnlocked ? "Farmlands" : "Plentiful";
         if (shiplevelzones > 0) {
           RminFragMap(selection, shiplevelzones, special);
-          document.getElementById("mapLevelInput").value = game.global.world;
-          document.getElementById("advExtraLevelSelect").value = shiplevelzones;
+          byId("mapLevelInput").value = game.global.world;
+          byId("advExtraLevelSelect").value = shiplevelzones;
         } else if (shiplevelzones == 0) {
           RminFragMap(selection, shiplevelzones, special);
-          document.getElementById("mapLevelInput").value = game.global.world;
-          document.getElementById("advExtraLevelSelect").value = 0;
+          byId("mapLevelInput").value = game.global.world;
+          byId("advExtraLevelSelect").value = "0";
         } else if (shiplevelzones < 0) {
-          document.getElementById("mapLevelInput").value = game.global.world + shiplevelzones;
-          document.getElementById("advExtraLevelSelect").value = 0;
+          byId("mapLevelInput").value = game.global.world + shiplevelzones;
+          byId("advExtraLevelSelect").value = "0";
         }
       }
     }
@@ -10378,16 +10378,16 @@
       var hypolevelzones = Rhypo2(false, true, false);
       if (hypolevelzones > 0) {
         RminFragMap("Farmlands", hypolevelzones, "lwc");
-        document.getElementById("mapLevelInput").value = game.global.world;
-        document.getElementById("advExtraLevelSelect").value = hypolevelzones;
+        byId("mapLevelInput").value = game.global.world;
+        byId("advExtraLevelSelect").value = hypolevelzones;
       } else if (hypolevelzones == 0) {
         RminFragMap("Farmlands", hypolevelzones, "lwc");
-        document.getElementById("mapLevelInput").value = game.global.world;
-        document.getElementById("advExtraLevelSelect").value = 0;
+        byId("mapLevelInput").value = game.global.world;
+        byId("advExtraLevelSelect").value = "0";
       } else if (hypolevelzones < 0) {
         RminFragMap("Farmlands", hypolevelzones, "lwc");
-        document.getElementById("mapLevelInput").value = game.global.world + hypolevelzones;
-        document.getElementById("advExtraLevelSelect").value = 0;
+        byId("mapLevelInput").value = game.global.world + hypolevelzones;
+        byId("advExtraLevelSelect").value = "0";
       }
     }
     updateMapCost();
@@ -10743,94 +10743,94 @@
   function RquestMap2(quest) {
     biomeAdvMapsSelect.value = "Plentiful";
     if (quest == 4) {
-      document.getElementById("advSpecialSelect").value = "hc";
+      byId("advSpecialSelect").value = "hc";
       updateMapCost();
       if (updateMapCost(true) > game.resources.fragments.owned) {
-        document.getElementById("advSpecialSelect").value = "fa";
+        byId("advSpecialSelect").value = "fa";
         updateMapCost();
         if (updateMapCost(true) > game.resources.fragments.owned) {
-          document.getElementById("advSpecialSelect").value = 0;
+          byId("advSpecialSelect").value = "0";
           updateMapCost();
         }
       }
     }
     if (quest == 7) {
-      document.getElementById("advSpecialSelect").value = "hc";
+      byId("advSpecialSelect").value = "hc";
       updateMapCost();
       if (updateMapCost(true) > game.resources.fragments.owned) {
-        document.getElementById("advSpecialSelect").value = "lc";
+        byId("advSpecialSelect").value = "lc";
         updateMapCost();
         if (updateMapCost(true) > game.resources.fragments.owned) {
-          document.getElementById("advSpecialSelect").value = "fa";
+          byId("advSpecialSelect").value = "fa";
           updateMapCost();
           if (updateMapCost(true) > game.resources.fragments.owned) {
-            document.getElementById("advSpecialSelect").value = 0;
+            byId("advSpecialSelect").value = "0";
             updateMapCost();
           }
         }
       }
     }
     if (quest == 10) {
-      document.getElementById("advSpecialSelect").value = "lsc";
+      byId("advSpecialSelect").value = "lsc";
       updateMapCost();
       if (updateMapCost(true) > game.resources.fragments.owned) {
-        document.getElementById("advSpecialSelect").value = "ssc";
+        byId("advSpecialSelect").value = "ssc";
         updateMapCost();
         if (updateMapCost(true) > game.resources.fragments.owned) {
-          document.getElementById("advSpecialSelect").value = "fa";
+          byId("advSpecialSelect").value = "fa";
           updateMapCost();
           if (updateMapCost(true) > game.resources.fragments.owned) {
-            document.getElementById("advSpecialSelect").value = 0;
+            byId("advSpecialSelect").value = "0";
             updateMapCost();
           }
         }
       }
     }
     if (quest == 11) {
-      document.getElementById("advSpecialSelect").value = "lwc";
+      byId("advSpecialSelect").value = "lwc";
       updateMapCost();
       if (updateMapCost(true) > game.resources.fragments.owned) {
-        document.getElementById("advSpecialSelect").value = "swc";
+        byId("advSpecialSelect").value = "swc";
         updateMapCost();
         if (updateMapCost(true) > game.resources.fragments.owned) {
-          document.getElementById("advSpecialSelect").value = "fa";
+          byId("advSpecialSelect").value = "fa";
           updateMapCost();
           if (updateMapCost(true) > game.resources.fragments.owned) {
-            document.getElementById("advSpecialSelect").value = 0;
+            byId("advSpecialSelect").value = "0";
             updateMapCost();
           }
         }
       }
     }
     if (quest == 12) {
-      document.getElementById("advSpecialSelect").value = "lmc";
+      byId("advSpecialSelect").value = "lmc";
       updateMapCost();
       if (updateMapCost(true) > game.resources.fragments.owned) {
-        document.getElementById("advSpecialSelect").value = "smc";
+        byId("advSpecialSelect").value = "smc";
         updateMapCost();
         if (updateMapCost(true) > game.resources.fragments.owned) {
-          document.getElementById("advSpecialSelect").value = "fa";
+          byId("advSpecialSelect").value = "fa";
           updateMapCost();
           if (updateMapCost(true) > game.resources.fragments.owned) {
-            document.getElementById("advSpecialSelect").value = 0;
+            byId("advSpecialSelect").value = "0";
             updateMapCost();
           }
         }
       }
     }
     if (quest == 13) {
-      document.getElementById("advSpecialSelect").value = "fa";
+      byId("advSpecialSelect").value = "fa";
       updateMapCost();
       if (updateMapCost(true) > game.resources.fragments.owned) {
-        document.getElementById("advSpecialSelect").value = 0;
+        byId("advSpecialSelect").value = "0";
         updateMapCost();
       }
     }
     if (quest == 14) {
-      document.getElementById("advSpecialSelect").value = "fa";
+      byId("advSpecialSelect").value = "fa";
       updateMapCost();
       if (updateMapCost(true) > game.resources.fragments.owned) {
-        document.getElementById("advSpecialSelect").value = 0;
+        byId("advSpecialSelect").value = "0";
         updateMapCost();
       }
     }
@@ -10853,8 +10853,8 @@
     }
     mapLevelInput.value = game.global.world + globalextra;
     biomeAdvMapsSelect.value = "Random";
-    document.getElementById("advSpecialSelect").value = what == "equip" ? "lmc" : "fa";
-    document.getElementById("advExtraLevelSelect").value = extra;
+    byId("advSpecialSelect").value = what == "equip" ? "lmc" : "fa";
+    byId("advExtraLevelSelect").value = String(extra);
     updateMapCost();
   }
 
