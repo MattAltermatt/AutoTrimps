@@ -210,10 +210,10 @@ export function settingChanged(id: any) {
         document.getElementById(id)!.textContent = btn.name[btn.value];
     }
     if (btn.type == 'dropdown') {
-        btn.selected = (document.getElementById(id) as any).value;
+        btn.selected = byId(id).value;
         if (id == "Prestige") {
             autoTrimpSettings["PrestigeBackup"] = {
-                selected: (document.getElementById(id) as any).value,
+                selected: byId(id).value,
                 name: "PrestigeBackup",
                 id: "PrestigeBackup"
             };

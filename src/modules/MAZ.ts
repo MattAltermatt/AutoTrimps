@@ -100,7 +100,7 @@ export function MAZLookalike(titleText: any, isItIn?: any, event?: any) {
     titleText = !titleText ? 'undefined' : titleText;
     if (titleText == 'undefined') return;
 
-    var elem = document.getElementById("tooltipDiv") as any;
+    var elem = byId("tooltipDiv");
     swapClass("tooltipExtra", "tooltipExtraNone", elem);
     document.getElementById('tipText')!.className = "";
 
@@ -402,12 +402,12 @@ export function settingsWindowSave(titleText: any, reopen?: any) {
             setting = 'RdAMPraidraid';
         }
 
-        var zone2 = document.getElementById('windowZone' + x) as any;
+        var zone2 = byId('windowZone' + x);
         if (!zone2 || zone2.value == "-1") {
             continue;
         };
 
-        zone = parseInt((document.getElementById('windowZone' + x) as any).value, 10);
+        zone = parseInt(byId('windowZone' + x).value, 10);
 
         var setting: any = 0;
         var level: any = 0;
@@ -415,46 +415,46 @@ export function settingsWindowSave(titleText: any, reopen?: any) {
         var special: any = 0;
         var gather: any = 0;
 
-        if (!titleText.includes('Quagmire')) var cell: any = parseInt((document.getElementById('windowCell' + x) as any).value, 10);
+        if (!titleText.includes('Quagmire')) var cell: any = parseInt(byId('windowCell' + x).value, 10);
 
         if (titleText == 'Time Farm') {
-            setting = (document.getElementById('windowSetting' + x) as any).value;
-            level = parseInt((document.getElementById('windowLevel' + x) as any).value, 10);
-            map = (document.getElementById('windowMap' + x) as any).value;
-            special = (document.getElementById('windowSpecial' + x) as any).value;
-            gather = (document.getElementById('windowGather' + x) as any).value;
+            setting = byId('windowSetting' + x).value;
+            level = parseInt(byId('windowLevel' + x).value, 10);
+            map = byId('windowMap' + x).value;
+            special = byId('windowSpecial' + x).value;
+            gather = byId('windowGather' + x).value;
         } else if (titleText == 'dTime Farm') {
-            setting = (document.getElementById('windowSetting' + x) as any).value;
-            level = parseInt((document.getElementById('windowLevel' + x) as any).value, 10);
-            map = (document.getElementById('windowMap' + x) as any).value;
-            special = (document.getElementById('windowSpecial' + x) as any).value;
-            gather = (document.getElementById('windowGather' + x) as any).value;
+            setting = byId('windowSetting' + x).value;
+            level = parseInt(byId('windowLevel' + x).value, 10);
+            map = byId('windowMap' + x).value;
+            special = byId('windowSpecial' + x).value;
+            gather = byId('windowGather' + x).value;
         } else if (titleText.includes('Smithy Farm')) {
-            setting = (document.getElementById('windowSetting' + x) as any).value;
+            setting = byId('windowSetting' + x).value;
         } else if (titleText.includes('Tribute Farm')) {
-            setting = (document.getElementById('windowSetting' + x) as any).value;
-            level = parseInt((document.getElementById('windowLevel' + x) as any).value, 10);
-            map = (document.getElementById('windowMap' + x) as any).value;
-            special = (document.getElementById('windowSpecial' + x) as any).value;
-            gather = (document.getElementById('windowGather' + x) as any).value;
+            setting = byId('windowSetting' + x).value;
+            level = parseInt(byId('windowLevel' + x).value, 10);
+            map = byId('windowMap' + x).value;
+            special = byId('windowSpecial' + x).value;
+            gather = byId('windowGather' + x).value;
         } else if (titleText.includes('Shrine')) {
-            setting = (document.getElementById('windowSetting' + x) as any).value;
+            setting = byId('windowSetting' + x).value;
         } else if (titleText.includes('Quagmire')) {
-            setting = (document.getElementById('windowSetting' + x) as any).value;
+            setting = byId('windowSetting' + x).value;
         } else if (titleText.includes('Insanity')) {
-            setting = (document.getElementById('windowSetting' + x) as any).value;
-            level = parseInt((document.getElementById('windowLevel' + x) as any).value, 10);
+            setting = byId('windowSetting' + x).value;
+            level = parseInt(byId('windowLevel' + x).value, 10);
         } else if (titleText.includes('Alch')) {
-            setting = (document.getElementById('windowSetting' + x) as any).value;
-            level = parseInt((document.getElementById('windowLevel' + x) as any).value, 10);
-            map = (document.getElementById('windowMap' + x) as any).value;
+            setting = byId('windowSetting' + x).value;
+            level = parseInt(byId('windowLevel' + x).value, 10);
+            map = byId('windowMap' + x).value;
         } else if (titleText.includes('Hypo')) {
-            setting = (document.getElementById('windowSetting' + x) as any).value;
-            level = parseInt((document.getElementById('windowLevel' + x) as any).value, 10);
+            setting = byId('windowSetting' + x).value;
+            level = parseInt(byId('windowLevel' + x).value, 10);
         } else if (titleText == 'Praid') {
-            setting = (document.getElementById('windowSetting' + x) as any).value;
+            setting = byId('windowSetting' + x).value;
         } else if (titleText == 'dPraid') {
-            setting = (document.getElementById('windowSetting' + x) as any).value;
+            setting = byId('windowSetting' + x).value;
         }
 
         if (isNaN(zone) || zone < 6) {
@@ -605,9 +605,9 @@ export function settingsWindowSave(titleText: any, reopen?: any) {
 
 export function addRow() {
     for (var x = 0; x < 30; x++) {
-        var elem = document.getElementById('windowZone' + x) as any;
+        var elem = byId('windowZone' + x);
         if (!elem) continue;
-        if (elem.value == -1) {
+        if (Number(elem.value) === -1) {
             var parent = document.getElementById('windowRow' + x);
             if (parent) {
                 parent.style.display = 'block';
@@ -617,9 +617,9 @@ export function addRow() {
             }
         }
     }
-    var btnElem = document.getElementById('windowAddRowBtn') as any;
+    var btnElem = byId('windowAddRowBtn');
     for (var y = 0; y < 30; y++) {
-        var elem = document.getElementById('windowZone' + y) as any;
+        var elem = byId('windowZone' + y);
         if (elem && elem.value == "-1") {
             btnElem.style.display = 'inline-block';
             return;
@@ -631,9 +631,9 @@ export function addRow() {
 export function removeRow(index: any) {
     var elem = document.getElementById('windowRow' + index);
     if (!elem) return;
-    (document.getElementById('windowZone' + index) as any).value = -1;
+    byId('windowZone' + index).value = "-1";
     elem.style.display = 'none';
-    var btnElem = document.getElementById('windowAddRowBtn') as any;
+    var btnElem = byId('windowAddRowBtn');
     btnElem.style.display = 'inline-block';
 }
 

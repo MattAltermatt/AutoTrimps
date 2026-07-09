@@ -66,6 +66,7 @@ declare global {
   // free-ids by settings-menu.ts (#31), resolved via the bridge / still-legacy Graphs.js.
   function getPageSetting(...rest: any[]): any    // utils.ts
   function setPageSetting(...rest: any[]): any    // utils.ts
+  function byId<T extends HTMLElement = HTMLInputElement>(id: string): T  // utils.ts (typed DOM helper)
   var GRAPHSETTINGS: any                          // Graphs.js
   // Settings-UI boot fns bridged; read bare by settings-boot.ts.
   function automationMenuInit(...rest: any[]): any        // settings-menu.ts

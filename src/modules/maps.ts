@@ -107,7 +107,7 @@ export function testMapSpecialModController() {
             var p = mapSpecialModifierConfig[o];
             game.global.highestLevelCleared + 1 >= p.unlocksAt && a.push(p.abv.toLowerCase());
         }), !(1 > a.length)) {
-        var c = document.getElementById("advSpecialSelect") as any;
+        var c = byId<HTMLSelectElement>("advSpecialSelect");
         if (c) {
             if (59 <= game.global.highestLevelCleared) {
                 if (needPrestige && a.includes("p")) {
@@ -130,10 +130,10 @@ export function testMapSpecialModController() {
                 k = getPageSetting("AdvMapSpecialModifier") ? getExtraMapLevels() : 0,
                 l = 209 <= game.global.highestLevelCleared;
             if (l) {
-                var m = document.getElementById("advExtraMapLevelselect") as any;
+                var m = byId<HTMLSelectElement>("advExtraMapLevelselect");
                 if (!m)
                     return;
-                var n = (document.getElementById("mapLevelInput") as any).value;
+                var n = byId("mapLevelInput").value;
                 for (m.selectedIndex = n == game.global.world ? MODULES.maps.advSpecialMapMod_numZones : 0; 0 < m.selectedIndex && updateMapCost(!0) > game.resources.fragments.owned;)
                     m.selectedIndex -= 1;
             }
@@ -702,7 +702,7 @@ export function autoMap() {
             mapsClicked();
         } else if (selectedMap == "create") {
             if (game.global.selectedMapPreset > 1) selectAdvMapsPreset(1);
-            var $mapLevelInput = document.getElementById("mapLevelInput") as any;
+            var $mapLevelInput = byId("mapLevelInput");
             $mapLevelInput.value = needPrestige ? game.global.world : siphlvl;
             if (preSpireFarming && MODULES["maps"].SpireFarm199Maps)
                 $mapLevelInput.value = game.talents.mapLoot.purchased ? game.global.world - 1 : game.global.world;
@@ -1446,7 +1446,7 @@ export function RautoMap() {
         //Everything else
         else if (selectedMap == "create") {
             if (game.global.selectedMapPreset > 1) selectAdvMapsPreset(1);
-            (document.getElementById("mapLevelInput") as any).value = game.global.world;
+            byId("mapLevelInput").value = game.global.world;
             var decrement: any;
             var tier;
             if (game.global.world >= customVars.RMapTierZone[0]) {
@@ -1542,7 +1542,7 @@ export function RautoMap() {
             }
 
             //Looks like things are too expensive
-            var maplvlpicked = parseInt((document.getElementById("mapLevelInput") as any).value);
+            var maplvlpicked = parseInt(byId("mapLevelInput").value);
             if (updateMapCost(true) > game.resources.fragments.owned) {
                 selectMap(game.global.mapsOwnedArray[highestMap].id);
                 debug("Can't afford the map we designed, #" + maplvlpicked, "maps", '*crying2');

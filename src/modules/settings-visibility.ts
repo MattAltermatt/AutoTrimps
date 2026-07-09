@@ -889,45 +889,45 @@ export function updateCustomButtons() {
 
 
     //Dropdowns
-    (document.getElementById('AutoPortal') as any).value = autoTrimpSettings.AutoPortal.selected;
-    (document.getElementById('HeliumHourChallenge') as any).value = autoTrimpSettings.HeliumHourChallenge.selected;
-    (document.getElementById('RAutoPortal') as any).value = autoTrimpSettings.RAutoPortal.selected;
-    (document.getElementById('RadonHourChallenge') as any).value = autoTrimpSettings.RadonHourChallenge.selected;
-    (document.getElementById('dHeliumHourChallenge') as any).value = autoTrimpSettings.dHeliumHourChallenge.selected;
-    (document.getElementById('RdHeliumHourChallenge') as any).value = autoTrimpSettings.RdHeliumHourChallenge.selected;
-    (document.getElementById('mapselection') as any).value = autoTrimpSettings.mapselection.selected;
-    (document.getElementById('Rmapselection') as any).value = autoTrimpSettings.Rmapselection.selected;
-    (document.getElementById('Prestige') as any).value = autoTrimpSettings.Prestige.selected;
-    (document.getElementById('AutoGoldenUpgrades') as any).value = autoTrimpSettings.AutoGoldenUpgrades.selected;
-    (document.getElementById('dAutoGoldenUpgrades') as any).value = autoTrimpSettings.dAutoGoldenUpgrades.selected;
-    (document.getElementById('cAutoGoldenUpgrades') as any).value = autoTrimpSettings.cAutoGoldenUpgrades.selected;
-    (document.getElementById('RAutoGoldenUpgrades') as any).value = autoTrimpSettings.RAutoGoldenUpgrades.selected;
-    (document.getElementById('RdAutoGoldenUpgrades') as any).value = autoTrimpSettings.RdAutoGoldenUpgrades.selected;
-    (document.getElementById('RcAutoGoldenUpgrades') as any).value = autoTrimpSettings.RcAutoGoldenUpgrades.selected;
-    (document.getElementById('AutoPoison') as any).value = autoTrimpSettings.AutoPoison.selected;
-    (document.getElementById('AutoWind') as any).value = autoTrimpSettings.AutoWind.selected;
-    (document.getElementById('AutoIce') as any).value = autoTrimpSettings.AutoIce.selected;
+    byId('AutoPortal').value = autoTrimpSettings.AutoPortal.selected;
+    byId('HeliumHourChallenge').value = autoTrimpSettings.HeliumHourChallenge.selected;
+    byId('RAutoPortal').value = autoTrimpSettings.RAutoPortal.selected;
+    byId('RadonHourChallenge').value = autoTrimpSettings.RadonHourChallenge.selected;
+    byId('dHeliumHourChallenge').value = autoTrimpSettings.dHeliumHourChallenge.selected;
+    byId('RdHeliumHourChallenge').value = autoTrimpSettings.RdHeliumHourChallenge.selected;
+    byId('mapselection').value = autoTrimpSettings.mapselection.selected;
+    byId('Rmapselection').value = autoTrimpSettings.Rmapselection.selected;
+    byId<HTMLSelectElement>('Prestige').value = autoTrimpSettings.Prestige.selected;
+    byId('AutoGoldenUpgrades').value = autoTrimpSettings.AutoGoldenUpgrades.selected;
+    byId('dAutoGoldenUpgrades').value = autoTrimpSettings.dAutoGoldenUpgrades.selected;
+    byId('cAutoGoldenUpgrades').value = autoTrimpSettings.cAutoGoldenUpgrades.selected;
+    byId('RAutoGoldenUpgrades').value = autoTrimpSettings.RAutoGoldenUpgrades.selected;
+    byId('RdAutoGoldenUpgrades').value = autoTrimpSettings.RdAutoGoldenUpgrades.selected;
+    byId('RcAutoGoldenUpgrades').value = autoTrimpSettings.RcAutoGoldenUpgrades.selected;
+    byId('AutoPoison').value = autoTrimpSettings.AutoPoison.selected;
+    byId('AutoWind').value = autoTrimpSettings.AutoWind.selected;
+    byId('AutoIce').value = autoTrimpSettings.AutoIce.selected;
 
     //Heirloom dropdowns
-    (document.getElementById('raretokeep') as any).value = autoTrimpSettings.raretokeep.selected;
-    (document.getElementById('slot1modsh') as any).value = autoTrimpSettings.slot1modsh.selected;
-    (document.getElementById('slot2modsh') as any).value = autoTrimpSettings.slot2modsh.selected;
-    (document.getElementById('slot3modsh') as any).value = autoTrimpSettings.slot3modsh.selected;
-    (document.getElementById('slot4modsh') as any).value = autoTrimpSettings.slot4modsh.selected;
-    (document.getElementById('slot5modsh') as any).value = autoTrimpSettings.slot5modsh.selected;
-    (document.getElementById('slot6modsh') as any).value = autoTrimpSettings.slot6modsh.selected;
-    (document.getElementById('slot7modsh') as any).value = autoTrimpSettings.slot7modsh.selected;
-    (document.getElementById('slot1modst') as any).value = autoTrimpSettings.slot1modst.selected;
-    (document.getElementById('slot2modst') as any).value = autoTrimpSettings.slot2modst.selected;
-    (document.getElementById('slot3modst') as any).value = autoTrimpSettings.slot3modst.selected;
-    (document.getElementById('slot4modst') as any).value = autoTrimpSettings.slot4modst.selected;
-    (document.getElementById('slot5modst') as any).value = autoTrimpSettings.slot5modst.selected;
-    (document.getElementById('slot6modst') as any).value = autoTrimpSettings.slot6modst.selected;
-    (document.getElementById('slot7modst') as any).value = autoTrimpSettings.slot7modst.selected;
-    (document.getElementById('slot1modcr') as any).value = autoTrimpSettings.slot1modcr.selected;
-    (document.getElementById('slot2modcr') as any).value = autoTrimpSettings.slot2modcr.selected;
-    (document.getElementById('slot3modcr') as any).value = autoTrimpSettings.slot3modcr.selected;
-    (document.getElementById('slot4modcr') as any).value = autoTrimpSettings.slot4modcr.selected;
+    byId('raretokeep').value = autoTrimpSettings.raretokeep.selected;
+    byId('slot1modsh').value = autoTrimpSettings.slot1modsh.selected;
+    byId('slot2modsh').value = autoTrimpSettings.slot2modsh.selected;
+    byId('slot3modsh').value = autoTrimpSettings.slot3modsh.selected;
+    byId('slot4modsh').value = autoTrimpSettings.slot4modsh.selected;
+    byId('slot5modsh').value = autoTrimpSettings.slot5modsh.selected;
+    byId('slot6modsh').value = autoTrimpSettings.slot6modsh.selected;
+    byId('slot7modsh').value = autoTrimpSettings.slot7modsh.selected;
+    byId('slot1modst').value = autoTrimpSettings.slot1modst.selected;
+    byId('slot2modst').value = autoTrimpSettings.slot2modst.selected;
+    byId('slot3modst').value = autoTrimpSettings.slot3modst.selected;
+    byId('slot4modst').value = autoTrimpSettings.slot4modst.selected;
+    byId('slot5modst').value = autoTrimpSettings.slot5modst.selected;
+    byId('slot6modst').value = autoTrimpSettings.slot6modst.selected;
+    byId('slot7modst').value = autoTrimpSettings.slot7modst.selected;
+    byId('slot1modcr').value = autoTrimpSettings.slot1modcr.selected;
+    byId('slot2modcr').value = autoTrimpSettings.slot2modcr.selected;
+    byId('slot3modcr').value = autoTrimpSettings.slot3modcr.selected;
+    byId('slot4modcr').value = autoTrimpSettings.slot4modcr.selected;
 
     if (game.global.universe == 1)
         document.getElementById('autoMapBtn')!.setAttribute('class', 'noselect settingsBtn settingBtn' + autoTrimpSettings.AutoMaps.value);
@@ -941,8 +941,8 @@ export function updateCustomButtons() {
         RshouldFarm = false;
 
     MODULES["maps"] && (MODULES["maps"].preferGardens = !getPageSetting('PreferMetal'));
-    if ((document.getElementById('Prestige') as any).selectedIndex > 11 && game.global.slowDone == false) {
-        (document.getElementById('Prestige') as any).selectedIndex = 11;
+    if (byId<HTMLSelectElement>('Prestige').selectedIndex > 11 && game.global.slowDone == false) {
+        byId<HTMLSelectElement>('Prestige').selectedIndex = 11;
         autoTrimpSettings.Prestige.selected = "Bestplate";
     }
 
