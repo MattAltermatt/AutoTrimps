@@ -166,11 +166,10 @@ describe('jobs.buyJobs — L1b actuator spy-log (cold-on-corpus branches)', () =
 })
 
 // RbuyJobs (radon/U2 actuator) is ENTIRELY cold on the U1 corpus — L0 cannot reach it, so this L1
-// spy-log is its only net. It carries the live #32 marker (jobs.ts:488): the misplaced paren makes
-// freeWorkers = ceil(realMax/2) - employed, never capped by `owned`. This fixture deliberately sets
-// owned (100) < realMax/2 (500) so the bug is LIVE — pinning the CURRENT (buggy) buy amounts.
-// Task 4 flips these with `// fix: #32` when the paren is corrected.
-describe('jobs.RbuyJobs — L1b actuator spy-log (radon; hosts the #32 freeWorkers marker)', () => {
+// spy-log is its only net. It hosts the #32 fix (jobs.ts:493): the corrected paren caps freeWorkers
+// by `owned`, so when owned (100) < realMax/2 (500) the distribution shrinks. This fixture pins the
+// FIXED behaviour (user-approved 2026-07-09) — see `// fix: #32` below.
+describe('jobs.RbuyJobs — L1b actuator spy-log (radon; hosts the #32 freeWorkers fix)', () => {
   beforeEach(() => {
     ;(globalThis as any).autoTrimpSettings = {
       RFarmerRatio: { type: 'value', value: 1 },
@@ -184,7 +183,7 @@ describe('jobs.RbuyJobs — L1b actuator spy-log (radon; hosts the #32 freeWorke
     }
   })
 
-  it('#32 LIVE: owned(100) < realMax/2(500) → freeWorkers uses the uncapped 500 (buggy)', () => {
+  it('fix: #32 — owned(100) < realMax/2(500) caps freeWorkers at owned, shrinking the distribution', () => {
     ;(globalThis as any).game = makeMinimalGame({
       global: { world: 10, firing: false, buyAmt: 1, maxSplit: 1 },
       resources: {
@@ -202,13 +201,15 @@ describe('jobs.RbuyJobs — L1b actuator spy-log (radon; hosts the #32 freeWorke
       },
     })
     jobs.RbuyJobs()
-    // freeWorkers(488, buggy) = 500; +sum(currentworkers=40) = 540; scientistMod=4 (Farmer<100, world<50);
-    // desiredRatios=[4,4,4,1] totalFraction=13; desiredWorkers = floor(540*r/13 - current).
+    // freeWorkers(493, fixed) = min(500, owned 100) = 100; +sum(currentworkers=40) = 140;
+    // scientistMod=4 (Farmer<100, world<50); desiredRatios=[4,4,4,1] totalFraction=13;
+    // desiredWorkers = floor(140*r/13 - current) = [33, 33, 33, 0]. Scientist's 0 routes through the
+    // fire loop (buyAmt 0) BEFORE the buy loop hires the three ratio workers.
     expect(buyJobCalls).toEqual([
-      { title: 'Farmer', buyAmt: 156, firing: false },
-      { title: 'Lumberjack', buyAmt: 156, firing: false },
-      { title: 'Miner', buyAmt: 156, firing: false },
-      { title: 'Scientist', buyAmt: 31, firing: false },
+      { title: 'Scientist', buyAmt: 0, firing: false },
+      { title: 'Farmer', buyAmt: 33, firing: false },
+      { title: 'Lumberjack', buyAmt: 33, firing: false },
+      { title: 'Miner', buyAmt: 33, firing: false },
     ])
   })
 })

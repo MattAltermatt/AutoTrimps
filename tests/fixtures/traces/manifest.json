@@ -1,1 +1,11 @@
-{ "waivers": [] }
+{
+  "waivers": [],
+  "notes": [
+    {
+      "issue": "#32",
+      "location": "jobs.ts:493 (RbuyJobs freeWorkers paren)",
+      "status": "fixed 2026-07-09 (user-approved mechanism fix)",
+      "coverage": "radon-only; the U1 trace corpus (01/02/03) cannot reach RbuyJobs, so this fix produces ZERO L0 delta here — it is gated by the jobs.RbuyJobs L1 regression instead. When a U2/radon save is added (#47), this fix will surface an L0 divergence that must be waived in this file."
+    }
+  ]
+}

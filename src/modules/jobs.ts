@@ -485,12 +485,11 @@ export function RbuyJobs() {
 
     if (game.jobs.Farmer.locked || game.resources.trimps.owned === 0) return;
 
-    // FAITHFUL-PORT LATENT BUG (surfaced by #28 strict conversion, behaviour preserved): the
-    // `game.resources.trimps.owned` arg lands on Math.ceil (which ignores extra args), NOT Math.min —
-    // so freeWorkers is never actually capped by `owned`. Left as-is (fixing it changes automation
-    // behaviour → user-gated, like the #24/#25 class). @ts-expect-error keeps the 2-arg Math.ceil.
-    // @ts-expect-error faithful-port: extra arg to Math.ceil is intentional-preservation of a legacy bug
-    let freeWorkers = Math.ceil(Math.min(game.resources.trimps.realMax() / 2), game.resources.trimps.owned) - game.resources.trimps.employed;
+    // fix: #32 — the misplaced paren put `owned` on Math.ceil (which ignores extra args) instead of
+    // Math.min, so freeWorkers was never capped by `owned`. Corrected: when the colony holds fewer
+    // trimps than half its max, distribute only what actually exists. Radon-only (RbuyJobs) → the U1
+    // trace corpus can't reach it; gated by the jobs.RbuyJobs L1 regression (user-approved 2026-07-09).
+    let freeWorkers = Math.ceil(Math.min(game.resources.trimps.realMax() / 2, game.resources.trimps.owned)) - game.resources.trimps.employed;
     if (freeWorkers <= 0) return;
 
     // Do non-ratio/limited jobs first

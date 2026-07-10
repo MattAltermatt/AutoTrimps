@@ -4327,7 +4327,7 @@
   var reservedJobs = 100;
   function RbuyJobs() {
     if (game.jobs.Farmer.locked || game.resources.trimps.owned === 0) return;
-    let freeWorkers = Math.ceil(Math.min(game.resources.trimps.realMax() / 2), game.resources.trimps.owned) - game.resources.trimps.employed;
+    let freeWorkers = Math.ceil(Math.min(game.resources.trimps.realMax() / 2, game.resources.trimps.owned)) - game.resources.trimps.employed;
     if (freeWorkers <= 0) return;
     let maxExplorers = getPageSetting2("RMaxExplorers") === -1 ? Infinity : getPageSetting2("RMaxExplorers");
     if (maxExplorers > game.jobs.Explorer.owned && !game.jobs.Explorer.locked) {
