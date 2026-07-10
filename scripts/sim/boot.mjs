@@ -10,6 +10,11 @@ export const DEFAULT_GAME_DIR =
 // Order matters: cross-file bare-identifier refs only resolve in one shared scope.
 const GAME_FILES = ['lz-string.js', 'decimal.min.js', 'config.js', 'updates.js', 'playerSpire.js', 'objects.js', 'main.js']
 
+/**
+ * Boot the Trimps clone (and optionally the AutoTrimps bundle) into jsdom.
+ * @param {{ gameDir?: string, withAutoTrimps?: boolean, atBundlePath?: string, saveString?: string }} [opts]
+ * @returns {{ window: any, game: any, dom: any }}
+ */
 export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, atBundlePath, saveString } = {}) {
   const html = readFileSync(resolve(gameDir, 'index.html'), 'utf8')
   const dom = new JSDOM(html, { runScripts: 'outside-only', pretendToBeVisual: true, url: 'http://localhost/' })
