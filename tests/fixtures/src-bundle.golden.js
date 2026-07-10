@@ -3369,7 +3369,7 @@
       return false;
     if (game.buildings[building].locked)
       return false;
-    var oldBuy = preBuy2();
+    const oldBuy = preBuy2();
     if (bwRewardUnlocked("DecaBuild")) {
       game.global.buyAmt = 10;
       if (!canAffordBuilding(building)) {
@@ -3387,10 +3387,10 @@
       return false;
     }
     game.global.firing = false;
-    if (building == "Gym" && getPageSetting2("GymWall")) {
+    if (building === "Gym" && getPageSetting2("GymWall")) {
       game.global.buyAmt = 1;
     }
-    if (building == "Warpstation" && !game.buildings[building].locked && canAffordBuilding(building)) {
+    if (building === "Warpstation" && !game.buildings[building].locked && canAffordBuilding(building)) {
       if (game.buildings.Warpstation.owned < 2) {
         game.global.buyAmt = "Max";
         game.global.maxSplit = 1;
@@ -3402,7 +3402,7 @@
       postBuy2(oldBuy);
       return;
     }
-    if (building != "Trap") debug2("Building " + building, "buildings", "*hammer2");
+    if (building !== "Trap") debug2("Building " + building, "buildings", "*hammer2");
     if (!game.buildings[building].locked && canAffordBuilding(building)) {
       buyBuilding(building, true, true);
     }
@@ -3410,8 +3410,8 @@
     return true;
   }
   function buyFoodEfficientHousing() {
-    var ignoresLimit = getPageSetting2("FoodEfficiencyIgnoresMax");
-    var unlockedHousing = ["Hut", "House", "Mansion", "Hotel", "Resort"].filter((b) => !game.buildings[b].locked);
+    const ignoresLimit = getPageSetting2("FoodEfficiencyIgnoresMax");
+    let unlockedHousing = ["Hut", "House", "Mansion", "Hotel", "Resort"].filter((b) => !game.buildings[b].locked);
     unlockedHousing.forEach((b) => document.getElementById(b).style.border = "1px solid #FFFFFF");
     if (!ignoresLimit) {
       unlockedHousing = unlockedHousing.filter((b) => {
@@ -3421,76 +3421,76 @@
         return false;
       });
     }
-    var buildOrder = unlockedHousing.map((b) => ({
+    const buildOrder = unlockedHousing.map((b) => ({
       "name": b,
       "ratio": getBuildingItemPrice(game.buildings[b], "food", false, 1) / game.buildings[b].increase.by
     }));
-    if (buildOrder.length == 0) return;
-    var bestFoodBuilding = buildOrder.reduce((best, current) => current.ratio < best.ratio ? current : best);
+    if (buildOrder.length === 0) return;
+    const bestFoodBuilding = buildOrder.reduce((best, current) => current.ratio < best.ratio ? current : best);
     if (!ignoresLimit || ["Hut", "House"].includes(bestFoodBuilding.name)) {
       document.getElementById(bestFoodBuilding.name).style.border = "1px solid #00CC01";
       safeBuyBuilding2(bestFoodBuilding.name);
     }
   }
   function buyGemEfficientHousing() {
-    var gemHousing = ["Mansion", "Hotel", "Resort", "Gateway", "Collector", "Warpstation"];
-    var unlockedHousing = [];
-    for (var house in gemHousing) {
+    const gemHousing = ["Mansion", "Hotel", "Resort", "Gateway", "Collector", "Warpstation"];
+    const unlockedHousing = [];
+    for (const house in gemHousing) {
       if (game.buildings[gemHousing[house]].locked === 0) {
         unlockedHousing.push(gemHousing[house]);
       }
     }
-    var obj = {};
-    for (var house in unlockedHousing) {
-      var building = game.buildings[unlockedHousing[house]];
-      var cost = getBuildingItemPrice(building, "gems", false, 1);
-      var ratio = cost / building.increase.by;
+    const obj = {};
+    for (const house in unlockedHousing) {
+      const building = game.buildings[unlockedHousing[house]];
+      const cost = getBuildingItemPrice(building, "gems", false, 1);
+      const ratio = cost / building.increase.by;
       obj[unlockedHousing[house]] = ratio;
       document.getElementById(unlockedHousing[house]).style.border = "1px solid #FFFFFF";
     }
-    var keysSorted = Object.keys(obj).sort(function(a, b) {
+    const keysSorted = Object.keys(obj).sort(function(a, b) {
       return obj[a] - obj[b];
     });
-    var bestGemBuilding = null;
-    for (var best in keysSorted) {
-      var max = getPageSetting2("Max" + keysSorted[best]);
+    let bestGemBuilding = null;
+    for (const best in keysSorted) {
+      let max = getPageSetting2("Max" + keysSorted[best]);
       if (max === false) max = -1;
-      if (game.buildings[keysSorted[best]].owned < max || max == -1 || getPageSetting2("GemEfficiencyIgnoresMax") && keysSorted[best] != "Gateway") {
+      if (game.buildings[keysSorted[best]].owned < max || max == -1 || getPageSetting2("GemEfficiencyIgnoresMax") && keysSorted[best] !== "Gateway") {
         bestGemBuilding = keysSorted[best];
         document.getElementById(bestGemBuilding).style.border = "1px solid #00CC00";
-        if (bestGemBuilding == "Gateway" && getPageSetting2("GatewayWall") > 1) {
+        if (bestGemBuilding === "Gateway" && getPageSetting2("GatewayWall") > 1) {
           if (getBuildingItemPrice(game.buildings.Gateway, "fragments", false, 1) > game.resources.fragments.owned / getPageSetting2("GatewayWall")) {
             document.getElementById(bestGemBuilding).style.border = "1px solid orange";
             bestGemBuilding = null;
             continue;
           }
         }
-        var skipWarp = false;
-        if (getPageSetting2("WarpstationCap") && bestGemBuilding == "Warpstation") {
-          var firstGigaOK = MODULES["upgrades"].autoGigas == false || game.upgrades.Gigastation.done > 0;
-          var gigaCapped = game.buildings.Warpstation.owned >= Math.floor(game.upgrades.Gigastation.done * getPageSetting2("DeltaGigastation")) + getPageSetting2("FirstGigastation");
+        let skipWarp = false;
+        if (getPageSetting2("WarpstationCap") && bestGemBuilding === "Warpstation") {
+          const firstGigaOK = MODULES["upgrades"].autoGigas == false || game.upgrades.Gigastation.done > 0;
+          const gigaCapped = game.buildings.Warpstation.owned >= Math.floor(game.upgrades.Gigastation.done * getPageSetting2("DeltaGigastation")) + getPageSetting2("FirstGigastation");
           if (firstGigaOK && gigaCapped) skipWarp = true;
         }
-        var warpwallpct = getPageSetting2("WarpstationWall3");
-        if (warpwallpct > 1 && bestGemBuilding == "Warpstation") {
+        const warpwallpct = getPageSetting2("WarpstationWall3");
+        if (warpwallpct > 1 && bestGemBuilding === "Warpstation") {
           if (getBuildingItemPrice(game.buildings.Warpstation, "metal", false, 1) * Math.pow(1 - game.portal.Resourceful.modifier, game.portal.Resourceful.level) > game.resources.metal.owned / warpwallpct)
             skipWarp = true;
         }
         if (skipWarp)
           bestGemBuilding = null;
-        var getcoord = getPageSetting2("WarpstationCoordBuy");
+        const getcoord = getPageSetting2("WarpstationCoordBuy");
         if (getcoord && skipWarp) {
-          var toTip = game.buildings.Warpstation;
+          const toTip = game.buildings.Warpstation;
           if (canAffordBuilding("Warpstation")) {
-            var howMany = calculateMaxAfford(game.buildings["Warpstation"], true);
-            var needCoord = game.upgrades.Coordination.allowed - game.upgrades.Coordination.done > 0;
-            var coordReplace = game.portal.Coordinated.level ? (25 * Math.pow(game.portal.Coordinated.modifier, game.portal.Coordinated.level)).toFixed(3) : 25;
+            const howMany = calculateMaxAfford(game.buildings["Warpstation"], true);
+            const needCoord = game.upgrades.Coordination.allowed - game.upgrades.Coordination.done > 0;
+            const coordReplace = game.portal.Coordinated.level ? (25 * Math.pow(game.portal.Coordinated.modifier, game.portal.Coordinated.level)).toFixed(3) : 25;
             if (!canAffordCoordinationTrimps()) {
-              var nextCount = game.portal.Coordinated.level ? game.portal.Coordinated.currentSend : game.resources.trimps.maxSoldiers;
-              var amtToGo = nextCount * 3 - game.resources.trimps.realMax();
-              var increase = toTip.increase.by;
-              if (game.portal.Carpentry.level && toTip.increase.what == "trimps.max") increase *= Math.pow(1.1, game.portal.Carpentry.level);
-              if (game.portal.Carpentry_II.level && toTip.increase.what == "trimps.max") increase *= 1 + game.portal.Carpentry_II.modifier * game.portal.Carpentry_II.level;
+              const nextCount = game.portal.Coordinated.level ? game.portal.Coordinated.currentSend : game.resources.trimps.maxSoldiers;
+              const amtToGo = nextCount * 3 - game.resources.trimps.realMax();
+              let increase = toTip.increase.by;
+              if (game.portal.Carpentry.level && toTip.increase.what === "trimps.max") increase *= Math.pow(1.1, game.portal.Carpentry.level);
+              if (game.portal.Carpentry_II.level && toTip.increase.what === "trimps.max") increase *= 1 + game.portal.Carpentry_II.modifier * game.portal.Carpentry_II.level;
               if (amtToGo < increase * howMany)
                 bestGemBuilding = "Warpstation";
             }
@@ -3505,9 +3505,9 @@
     }
   }
   function buyBuildings() {
-    var customVars = MODULES["buildings"];
-    var oldBuy = preBuy2();
-    var hidebuild = getPageSetting2("BuyBuildingsNew") === 0 && getPageSetting2("hidebuildings") == true;
+    const customVars = MODULES["buildings"];
+    const oldBuy = preBuy2();
+    const hidebuild = getPageSetting2("BuyBuildingsNew") === 0 && getPageSetting2("hidebuildings") == true;
     game.global.buyAmt = 1;
     if (!hidebuild) {
       buyFoodEfficientHousing();
@@ -3517,28 +3517,28 @@
       safeBuyBuilding2("Wormhole");
     }
     if (!game.buildings.Gym.locked && (getPageSetting2("MaxGym") > game.buildings.Gym.owned || getPageSetting2("MaxGym") == -1)) {
-      var skipGym = false;
+      let skipGym = false;
       if (getPageSetting2("DynamicGyms")) {
-        var targetZone = game.global.world;
-        var block = calcOurBlock() / (game.global.brokenPlanet ? 2 : 1);
-        var pierce = game.global.brokenPlanet ? getPierceAmt() * (game.global.formation == 3 ? 2 : 1) : 0;
-        var nextGym = game.upgrades.Gymystic.modifier + Math.max(0, game.upgrades.Gymystic.done - 1) / 100;
-        var currentEnemyDamageOK = block > nextGym * calcSpecificEnemyAttack();
-        var zoneEnemyDamageOK = block > calcBadGuyDmg(null, getEnemyMaxAttack(game.global.world, 90, "Snimp", 1), true, true) * (1 - pierce);
-        var moreBlockThanHealth = block >= nextGym * calcOurHealth(false);
-        var crushedOK = game.global.challengeActive != "Crushed";
-        var explosiveOK = game.global.challengeActive != "Daily" || typeof game.global.dailyChallenge.explosive == "undefined";
-        var challengeOK = moreBlockThanHealth || crushedOK && explosiveOK;
+        const targetZone = game.global.world;
+        const block = calcOurBlock() / (game.global.brokenPlanet ? 2 : 1);
+        const pierce = game.global.brokenPlanet ? getPierceAmt() * (game.global.formation === 3 ? 2 : 1) : 0;
+        const nextGym = game.upgrades.Gymystic.modifier + Math.max(0, game.upgrades.Gymystic.done - 1) / 100;
+        const currentEnemyDamageOK = block > nextGym * calcSpecificEnemyAttack();
+        const zoneEnemyDamageOK = block > calcBadGuyDmg(null, getEnemyMaxAttack(game.global.world, 90, "Snimp", 1), true, true) * (1 - pierce);
+        const moreBlockThanHealth = block >= nextGym * calcOurHealth(false);
+        const crushedOK = game.global.challengeActive !== "Crushed";
+        const explosiveOK = game.global.challengeActive !== "Daily" || typeof game.global.dailyChallenge.explosive === "undefined";
+        const challengeOK = moreBlockThanHealth || crushedOK && explosiveOK;
         if (currentEnemyDamageOK && zoneEnemyDamageOK && challengeOK) skipGym = true;
       }
-      var gymwallpct = getPageSetting2("GymWall");
+      const gymwallpct = getPageSetting2("GymWall");
       if (gymwallpct > 1) {
         if (getBuildingItemPrice(game.buildings.Gym, "wood", false, 1) * Math.pow(1 - game.portal.Resourceful.modifier, game.portal.Resourceful.level) > game.resources.wood.owned / gymwallpct)
           skipGym = true;
       }
       if (game.equipment["Shield"].blockNow) {
-        var gymEff = evaluateEquipmentEfficiency("Gym");
-        var shieldEff = evaluateEquipmentEfficiency("Shield");
+        const gymEff = evaluateEquipmentEfficiency("Gym");
+        const shieldEff = evaluateEquipmentEfficiency("Shield");
         if (gymEff.Wall || gymEff.Factor <= shieldEff.Factor && !gymEff.Wall)
           skipGym = true;
       }
@@ -3546,18 +3546,18 @@
     }
     if (!game.buildings.Tribute.locked && !hidebuild && (getPageSetting2("MaxTribute") > game.buildings.Tribute.owned || getPageSetting2("MaxTribute") == -1))
       safeBuyBuilding2("Tribute");
-    var nurseryZoneOk = game.global.world >= getPageSetting2("NoNurseriesUntil");
-    var maxNurseryOk = getPageSetting2("MaxNursery") < 0 || game.buildings.Nursery.owned < getPageSetting2("MaxNursery");
-    var spireNurseryActive = game.global.challengeActive != "Daily" && (game.global.world > 200 && isActiveSpireAT() || game.global.world <= 200 && getPageSetting2("IgnoreSpiresUntil") <= 200);
-    var nurseryPreSpire = spireNurseryActive && game.buildings.Nursery.owned < getPageSetting2("PreSpireNurseries");
-    var dailySpireNurseryActive = game.global.challengeActive == "Daily" && (disActiveSpireAT() || game.global.world <= 200 && getPageSetting2("dIgnoreSpiresUntil") <= 200);
-    var dailyNurseryPreSpire = dailySpireNurseryActive && game.buildings.Nursery.owned < getPageSetting2("dPreSpireNurseries");
-    var skipNursery = false;
-    var nurserywall = getPageSetting2("NurseryWall");
+    const nurseryZoneOk = game.global.world >= getPageSetting2("NoNurseriesUntil");
+    const maxNurseryOk = getPageSetting2("MaxNursery") < 0 || game.buildings.Nursery.owned < getPageSetting2("MaxNursery");
+    const spireNurseryActive = game.global.challengeActive !== "Daily" && (game.global.world > 200 && isActiveSpireAT() || game.global.world <= 200 && getPageSetting2("IgnoreSpiresUntil") <= 200);
+    const nurseryPreSpire = spireNurseryActive && game.buildings.Nursery.owned < getPageSetting2("PreSpireNurseries");
+    const dailySpireNurseryActive = game.global.challengeActive === "Daily" && (disActiveSpireAT() || game.global.world <= 200 && getPageSetting2("dIgnoreSpiresUntil") <= 200);
+    const dailyNurseryPreSpire = dailySpireNurseryActive && game.buildings.Nursery.owned < getPageSetting2("dPreSpireNurseries");
+    let skipNursery = false;
+    const nurserywall = getPageSetting2("NurseryWall");
     if (nurserywall > 0) {
-      var nurserywood = getBuildingItemPrice(game.buildings.Nursery, "wood", false, 1) * Math.pow(1 - game.portal.Resourceful.modifier, game.portal.Resourceful.level);
-      var nurserygem = getBuildingItemPrice(game.buildings.Nursery, "gems", false, 1) * Math.pow(1 - game.portal.Resourceful.modifier, game.portal.Resourceful.level);
-      var nurserymetal = getBuildingItemPrice(game.buildings.Nursery, "metal", false, 1) * Math.pow(1 - game.portal.Resourceful.modifier, game.portal.Resourceful.level);
+      const nurserywood = getBuildingItemPrice(game.buildings.Nursery, "wood", false, 1) * Math.pow(1 - game.portal.Resourceful.modifier, game.portal.Resourceful.level);
+      const nurserygem = getBuildingItemPrice(game.buildings.Nursery, "gems", false, 1) * Math.pow(1 - game.portal.Resourceful.modifier, game.portal.Resourceful.level);
+      const nurserymetal = getBuildingItemPrice(game.buildings.Nursery, "metal", false, 1) * Math.pow(1 - game.portal.Resourceful.modifier, game.portal.Resourceful.level);
       if (nurserywood > game.resources.wood.owned * (nurserywall / 100)) {
         skipNursery = true;
       } else if (nurserygem > game.resources.gems.owned * (nurserywall / 100)) {
@@ -3566,29 +3566,29 @@
         skipNursery = true;
       }
     }
-    if (game.buildings.Nursery.locked == 0 && !hidebuild && !skipNursery && (nurseryZoneOk && maxNurseryOk || nurseryPreSpire || dailyNurseryPreSpire)) {
+    if (game.buildings.Nursery.locked === 0 && !hidebuild && !skipNursery && (nurseryZoneOk && maxNurseryOk || nurseryPreSpire || dailyNurseryPreSpire)) {
       safeBuyBuilding2("Nursery");
     }
     postBuy2(oldBuy);
   }
   function buyStorage() {
-    var customVars = MODULES["buildings"];
-    var packMod = 1 + game.portal.Packrat.level * game.portal.Packrat.modifier;
-    var Bs = {
+    const customVars = MODULES["buildings"];
+    const packMod = 1 + game.portal.Packrat.level * game.portal.Packrat.modifier;
+    const Bs = {
       "Barn": "food",
       "Shed": "wood",
       "Forge": "metal"
     };
-    for (var B in Bs) {
-      var jest = 0;
-      var owned = game.resources[Bs[B]].owned;
-      var max = game.resources[Bs[B]].max * packMod;
+    for (const B in Bs) {
+      let jest = 0;
+      const owned = game.resources[Bs[B]].owned;
+      let max = game.resources[Bs[B]].max * packMod;
       max = calcHeirloomBonus("Shield", "storageSize", max);
       if (game.global.mapsActive && game.unlocks.imps.Jestimp) {
         jest = simpleSeconds(Bs[B], 45);
         jest = scaleToCurrentMap(jest);
       }
-      if (game.global.world == 1 && owned > max * customVars.storageLowlvlCutoff1 || game.global.world >= 2 && game.global.world < 10 && owned > max * customVars.storageLowlvlCutoff2 || owned + jest > max * customVars.storageMainCutoff) {
+      if (game.global.world === 1 && owned > max * customVars.storageLowlvlCutoff1 || game.global.world >= 2 && game.global.world < 10 && owned > max * customVars.storageLowlvlCutoff2 || owned + jest > max * customVars.storageMainCutoff) {
         if (canAffordBuilding(B) && game.triggers[B].done) {
           safeBuyBuilding2(B);
         }
@@ -3600,7 +3600,7 @@
       return false;
     if (game.buildings[building].locked)
       return false;
-    var oldBuy = preBuy2();
+    const oldBuy = preBuy2();
     if (bwRewardUnlocked("DecaBuild")) {
       game.global.buyAmt = 10;
       if (!canAffordBuilding(building)) {
@@ -3626,19 +3626,19 @@
     return true;
   }
   function RbuyFoodEfficientHousing() {
-    var foodHousing = ["Hut", "House", "Mansion", "Hotel", "Resort"];
-    var unlockedHousing = [];
-    for (var house in foodHousing) {
+    const foodHousing = ["Hut", "House", "Mansion", "Hotel", "Resort"];
+    const unlockedHousing = [];
+    for (const house in foodHousing) {
       if (game.buildings[foodHousing[house]].locked === 0) {
         unlockedHousing.push(foodHousing[house]);
       }
     }
-    var buildorder = [];
+    const buildorder = [];
     if (unlockedHousing.length > 0) {
-      for (var house in unlockedHousing) {
-        var building = game.buildings[unlockedHousing[house]];
-        var cost = getBuildingItemPrice(building, "food", false, 1);
-        var ratio = cost / building.increase.by;
+      for (const house in unlockedHousing) {
+        const building = game.buildings[unlockedHousing[house]];
+        const cost = getBuildingItemPrice(building, "food", false, 1);
+        const ratio = cost / building.increase.by;
         buildorder.push({
           "name": unlockedHousing[house],
           "ratio": ratio
@@ -3648,9 +3648,9 @@
       buildorder.sort(function(a, b) {
         return a.ratio - b.ratio;
       });
-      var bestfoodBuilding = null;
-      var bb = buildorder[0];
-      var max = getPageSetting2("RMax" + bb.name);
+      let bestfoodBuilding = null;
+      const bb = buildorder[0];
+      const max = getPageSetting2("RMax" + bb.name);
       if (game.buildings[bb.name].owned < max || max == -1) {
         bestfoodBuilding = bb.name;
       }
@@ -3661,27 +3661,27 @@
     }
   }
   function RbuyGemEfficientHousing() {
-    var gemHousing = ["Mansion", "Hotel", "Resort", "Gateway", "Collector"];
-    var unlockedHousing = [];
-    for (var house in gemHousing) {
+    const gemHousing = ["Mansion", "Hotel", "Resort", "Gateway", "Collector"];
+    const unlockedHousing = [];
+    for (const house in gemHousing) {
       if (game.buildings[gemHousing[house]].locked === 0) {
         unlockedHousing.push(gemHousing[house]);
       }
     }
-    var obj = {};
-    for (var house in unlockedHousing) {
-      var building = game.buildings[unlockedHousing[house]];
-      var cost = getBuildingItemPrice(building, "gems", false, 1);
-      var ratio = cost / building.increase.by;
+    const obj = {};
+    for (const house in unlockedHousing) {
+      const building = game.buildings[unlockedHousing[house]];
+      const cost = getBuildingItemPrice(building, "gems", false, 1);
+      const ratio = cost / building.increase.by;
       obj[unlockedHousing[house]] = ratio;
       document.getElementById(unlockedHousing[house]).style.border = "1px solid #FFFFFF";
     }
-    var keysSorted = Object.keys(obj).sort(function(a, b) {
+    const keysSorted = Object.keys(obj).sort(function(a, b) {
       return obj[a] - obj[b];
     });
     bestBuilding = null;
-    for (var best in keysSorted) {
-      var max = getPageSetting2("RMax" + keysSorted[best]);
+    for (const best in keysSorted) {
+      let max = getPageSetting2("RMax" + keysSorted[best]);
       if (max === false) max = -1;
       if (game.buildings[keysSorted[best]].owned < max || max == -1) {
         bestBuilding = keysSorted[best];
@@ -3695,43 +3695,43 @@
   }
   var smithybought = 0;
   function mostEfficientHousing() {
-    var HousingTypes = ["Hut", "House", "Mansion", "Hotel", "Resort", "Gateway", "Collector"];
-    var housingTargets = [];
-    for (var house of HousingTypes) {
-      var maxHousing = getPageSetting2("RMax" + house) === -1 ? Infinity : getPageSetting2("RMax" + house);
+    const HousingTypes = ["Hut", "House", "Mansion", "Hotel", "Resort", "Gateway", "Collector"];
+    const housingTargets = [];
+    for (const house of HousingTypes) {
+      const maxHousing = getPageSetting2("RMax" + house) === -1 ? Infinity : getPageSetting2("RMax" + house);
       if (!game.buildings[house].locked && game.buildings[house].owned < maxHousing) {
         housingTargets.push(house);
       }
     }
-    var mostEfficient = {
+    const mostEfficient = {
       name: "",
       time: Infinity
     };
-    for (var housing of housingTargets) {
-      var worstTime = -Infinity;
-      var currentOwned = game.buildings[housing].owned;
-      for (var resource in game.buildings[housing].cost) {
-        var baseCost = game.buildings[housing].cost[resource][0];
-        var costScaling = game.buildings[housing].cost[resource][1];
-        var avgProduction = getPsString(resource, true);
+    for (const housing of housingTargets) {
+      let worstTime = -Infinity;
+      const currentOwned = game.buildings[housing].owned;
+      for (const resource in game.buildings[housing].cost) {
+        const baseCost = game.buildings[housing].cost[resource][0];
+        const costScaling = game.buildings[housing].cost[resource][1];
+        let avgProduction = getPsString(resource, true);
         if (avgProduction <= 0) avgProduction = 1;
-        var housingBonus = game.buildings.Hut.increase.by;
+        let housingBonus = game.buildings.Hut.increase.by;
         if (!game.buildings.Hub.locked) {
           housingBonus += 500;
         }
         worstTime = Math.max(baseCost * Math.pow(costScaling, currentOwned - 1) / (avgProduction * housingBonus), worstTime);
-        if (resource == "wood" && !Rhyposhouldwood) worstTime = Infinity;
+        if (resource === "wood" && !Rhyposhouldwood) worstTime = Infinity;
       }
       if (mostEfficient.time > worstTime) {
         mostEfficient.name = housing;
         mostEfficient.time = worstTime;
       }
     }
-    if (mostEfficient.name == "") mostEfficient.name = null;
+    if (mostEfficient.name === "") mostEfficient.name = null;
     return mostEfficient.name;
   }
   function RbuyStorage(buyFood, buyWood, buyMetal) {
-    var Resources = {};
+    const Resources = {};
     if (buyFood) {
       Resources.food = "Barn";
     }
@@ -3741,26 +3741,26 @@
     if (buyMetal) {
       Resources.metal = "Forge";
     }
-    var currentMap = game.global.currentMapId;
-    var isOnTrimple = false;
-    for (var i = 0; i < game.global.mapsOwnedArray.length; i++) {
-      var Map = game.global.mapsOwnedArray[i];
-      if (Map.id == currentMap) {
-        if (Map.name == "Atlantrimp" || Map.name == "Trimple Of Doom") {
+    const currentMap = game.global.currentMapId;
+    let isOnTrimple = false;
+    for (let i = 0; i < game.global.mapsOwnedArray.length; i++) {
+      const Map = game.global.mapsOwnedArray[i];
+      if (Map.id === currentMap) {
+        if (Map.name === "Atlantrimp" || Map.name === "Trimple Of Doom") {
           isOnTrimple = true;
         }
       }
     }
-    var jestImps = {};
-    for (var Res in Resources) {
-      var resMax = game.resources[Res].max;
-      if (game.global.universe == 1) {
+    const jestImps = {};
+    for (const Res in Resources) {
+      let resMax = game.resources[Res].max;
+      if (game.global.universe === 1) {
         resMax *= 1 + game.portal.Packrat.level * game.portal.Packrat.modifier;
       } else {
         resMax *= 1 + game.portal.Packrat.radLevel * game.portal.Packrat.modifier;
       }
       resMax = calcHeirloomBonus("Shield", "storageSize", resMax, false);
-      var curRes = game.resources[Res].owned;
+      const curRes = game.resources[Res].owned;
       if (game.global.mapsActive) {
         if (isOnTrimple) {
           jestImps[Res] = curRes * 2;
@@ -3778,19 +3778,19 @@
     }
   }
   function RbuyBuildings() {
-    if (game.global.challengeActive == "Hypothermia" && getPageSetting2("Rhypostorage")) {
-      var hypofarmzone;
-      var hypofarmamount;
-      var bonfire = game.challenges.Hypothermia.totalBonfires;
-      var wood = game.resources.wood.max;
-      var woodmax = wood * (1 + game.portal.Packrat.radLevel * game.portal.Packrat.modifier);
+    if (game.global.challengeActive === "Hypothermia" && getPageSetting2("Rhypostorage")) {
+      let hypofarmzone;
+      let hypofarmamount;
+      const bonfire = game.challenges.Hypothermia.totalBonfires;
+      const wood = game.resources.wood.max;
+      let woodmax = wood * (1 + game.portal.Packrat.radLevel * game.portal.Packrat.modifier);
       woodmax = calcHeirloomBonus("Shield", "storageSize", woodmax, false);
       hypofarmzone = getPageSetting2("Rhypofarmzone");
       hypofarmamount = getPageSetting2("Rhypofarmstack");
-      var hypoamountfarmindex = hypofarmzone.indexOf(game.global.world);
-      var hypoamountzones = hypofarmamount[hypoamountfarmindex];
-      var currentprice = 1e10 * Math.pow(100, game.challenges.Hypothermia.totalBonfires);
-      var targetprice = currentprice * Math.pow(100, hypoamountzones - bonfire - 1) * 1.05;
+      const hypoamountfarmindex = hypofarmzone.indexOf(game.global.world);
+      const hypoamountzones = hypofarmamount[hypoamountfarmindex];
+      const currentprice = 1e10 * Math.pow(100, game.challenges.Hypothermia.totalBonfires);
+      let targetprice = currentprice * Math.pow(100, hypoamountzones - bonfire - 1) * 1.05;
       targetprice += targetprice / 1e3;
       if (game.global.world > getPageSetting2("Rhypofarmzone")[getPageSetting2("Rhypofarmzone").length - 1]) {
         if (!game.global.autoStorage) {
@@ -3811,11 +3811,11 @@
       }
     }
     if (!game.buildings.Smithy.locked && canAffordBuilding("Smithy", false, false, false, false, 1) && Rhyposhouldwood) {
-      if (game.global.challengeActive == "Quest") {
+      if (game.global.challengeActive === "Quest") {
         if (smithybought > game.global.world) {
           smithybought = 0;
         }
-        if (smithybought < game.global.world && (questcheck() == 7 || RcalcHDratio() * 10 >= getPageSetting2("Rmapcuntoff"))) {
+        if (smithybought < game.global.world && (questcheck() === 7 || RcalcHDratio() * 10 >= getPageSetting2("Rmapcuntoff"))) {
           buyBuilding("Smithy", true, true, 1);
           smithybought = game.global.world;
         }
@@ -3826,25 +3826,25 @@
     if (!game.buildings.Microchip.locked && canAffordBuilding("Microchip")) {
       buyBuilding("Microchip", true, true, 1);
     }
-    var HousingTypes = ["Hut", "House", "Mansion", "Hotel", "Resort", "Gateway", "Collector"];
-    var housingTargets = [];
-    for (var house in HousingTypes) {
-      var maxHousing = getPageSetting2("RMax" + house) === -1 ? Infinity : getPageSetting2("RMax" + house);
+    const HousingTypes = ["Hut", "House", "Mansion", "Hotel", "Resort", "Gateway", "Collector"];
+    const housingTargets = [];
+    for (const house in HousingTypes) {
+      const maxHousing = getPageSetting2("RMax" + house) === -1 ? Infinity : getPageSetting2("RMax" + house);
       if (!game.buildings[HousingTypes[house]].locked && game.buildings[HousingTypes[house]].owned < maxHousing) {
         housingTargets.push(house);
       }
     }
-    var boughtHousing = false;
+    let boughtHousing = false;
     do {
       boughtHousing = false;
-      var housing = mostEfficientHousing();
+      const housing = mostEfficientHousing();
       if (housing != null && canAffordBuilding(housing) && game.buildings[housing].purchased < (getPageSetting2("RMax" + housing) === -1 ? Infinity : getPageSetting2("RMax" + housing))) {
         buyBuilding(housing, true, true, 1);
         boughtHousing = true;
       }
     } while (boughtHousing);
     if (!game.buildings.Tribute.locked) {
-      var buyTributeCount = getMaxAffordable(Math.pow(1.05, game.buildings.Tribute.owned) * 1e4, game.resources.food.owned, 1.05, true);
+      let buyTributeCount = getMaxAffordable(Math.pow(1.05, game.buildings.Tribute.owned) * 1e4, game.resources.food.owned, 1.05, true);
       if (getPageSetting2("RMaxTribute") > game.buildings.Tribute.owned) {
         buyTributeCount = Math.min(buyTributeCount, getPageSetting2("RMaxTribute") - game.buildings.Tribute.owned);
       }
