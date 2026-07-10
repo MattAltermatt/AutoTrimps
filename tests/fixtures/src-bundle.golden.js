@@ -913,7 +913,6 @@
     badGuyChallengeMult: () => badGuyChallengeMult,
     badGuyCritMult: () => badGuyCritMult,
     calcBadGuyDmg: () => calcBadGuyDmg2,
-    calcBaseDamageInX: () => calcBaseDamageInX2,
     calcCorruptionScale: () => calcCorruptionScale,
     calcCurrentStance: () => calcCurrentStance2,
     calcDailyAttackMod: () => calcDailyAttackMod,
@@ -1700,13 +1699,6 @@
         }
       }
     }
-  }
-  function calcBaseDamageInX2() {
-    baseMinDamage = calcOurDmg2("min", false, false);
-    baseMaxDamage = calcOurDmg2("max", false, false);
-    baseDamage = calcOurDmg2("avg", false, false);
-    baseHealth = calcOurHealth2(false);
-    baseBlock = calcOurBlock2(false);
   }
   function rMutationAttack(cell) {
     let baseAttack;
@@ -6784,7 +6776,7 @@
     autoStance: () => autoStance3,
     autoStance2: () => autoStance22,
     autoStanceNew: () => autoStanceNew,
-    calcBaseDamageInX: () => calcBaseDamageInX3,
+    calcBaseDamageInX: () => calcBaseDamageInX2,
     calcBaseDamageinX: () => calcBaseDamageinX,
     calcBaseDamageinX2: () => calcBaseDamageinX2,
     challengeDamage: () => challengeDamage,
@@ -6808,7 +6800,7 @@
   }
   globalThis.baseMinDamage = 0;
   globalThis.baseMaxDamage = 0;
-  function calcBaseDamageInX3() {
+  function calcBaseDamageInX2() {
     baseMinDamage = calcOurDmg("min", false, true);
     baseMaxDamage = calcOurDmg("max", false, true);
     baseDamage = calcOurDmg("avg", false, true);
@@ -6979,7 +6971,7 @@
     return newSquadRdy && notSpire && healthier > harm2 || health - missingHealth > harm;
   }
   function autoStance3() {
-    calcBaseDamageInX3();
+    calcBaseDamageInX2();
     if (game.global.soldierHealth <= 0) return;
     if (game.global.gridArray.length === 0) return true;
     if (!getPageSetting2("AutoStance")) return true;

@@ -6,8 +6,9 @@
 //   corruption scaling, HD ratio, stance, the U2 radon R* mirrors) BEFORE the refactor; L0 backstop ∅.
 //   `==` kept deliberately LOOSE at every getPageSetting(...) comparison (its return is polymorphic:
 //   boolean / string / number / NaN / int[]) and at the two `world == false` falsy-catch guards
-//   (RcalcEnemyHealth/Mod). No numeric literal or formula shape changed. calcBaseDamageInX (capital I)
-//   stays intentionally duplicated with stance.ts:17 — the Phase-3 dedupe, NOT touched here.
+//   (RcalcEnemyHealth/Mod). No numeric literal or formula shape changed.
+// PHASE 3 (#51) dedupe: calc's dead calcBaseDamageInX copy (3rd arg `false`) was removed — stance.ts's
+//   copy (3rd arg `true`) is spread after calc and won at global scope, so calc's was unreachable.
 // Was: relocated verbatim from legacy/modules/calc.js.
 // Core combat math — our/enemy attack, health, block, crit, HD ratio, stance, and the parallel
 // Universe-2 (radon) R* family. Deeply game-coupled (526 game.* touches across ~40 fns). game.*
@@ -15,9 +16,7 @@
 // predictors, mutations/Fluffy/autoBattle state) resolve via the bridge at runtime, typed ambient in
 // trimps.d.ts (game API) + at-legacy.d.ts (not-yet-converted AT modules). getPageSetting imported
 // from converted utils. Shared top-level vars critCC/critDD/trimpAA are read by legacy equipment.js +
-// maps.js, so they publish to globalThis (shared-var seam) rather than module-scoped. NOTE:
-// calcBaseDamageInX is intentionally also defined in stance.js, which loads after this bundle and wins
-// at global scope — same as the original load order (calc.js before stance.js), so behavior is preserved.
+// maps.js, so they publish to globalThis (shared-var seam) rather than module-scoped.
 import { getPageSetting } from './utils'
 
 globalThis.critCC = 1;
@@ -1013,13 +1012,9 @@ export function calcCurrentStance(): number | undefined {
     }
 }
 
-export function calcBaseDamageInX() {
-    baseMinDamage = calcOurDmg("min", false, false)!;
-    baseMaxDamage = calcOurDmg("max", false, false)!;
-    baseDamage = calcOurDmg("avg", false, false)!;
-    baseHealth = calcOurHealth(false);
-    baseBlock  = calcOurBlock(false);
-}
+// calcBaseDamageInX: the dead copy that lived here was removed in Phase 3 (#51). It passed `false`
+// as calcOurDmg's 3rd arg, but stance.ts's copy (3rd arg `true`) is spread after calc and won at
+// global scope, so this copy was unreachable. stance.ts:31 is now the sole definition.
 
 //Radon
 

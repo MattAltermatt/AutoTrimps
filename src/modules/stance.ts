@@ -3,8 +3,8 @@
 //   proof-net (tests/stance.characterization.test.ts + tests/stance.test.ts pin every branch;
 //   L0 backstop ∅). var→const/let throughout; == → === where type-safe. Behavior-preserving —
 //   loose guards kept deliberately: the `getPageSetting('AutoStance') == 0` guard (autoStance2)
-//   stays loose to catch a boolean-false setting. calcBaseDamageInX (capital I) stays intentionally
-//   duplicated with calc.ts:1011 — the Phase-3 dedupe, NOT touched here.
+//   stays loose to catch a boolean-false setting. PHASE 3 (#51): calc.ts's dead calcBaseDamageInX
+//   copy was removed; stance.ts:31 (capital I) is now the SOLE definition.
 // Was: relocated verbatim from legacy/modules/stance.js.
 // Auto-stance / one-shot / survival combat math (65 game.* touches). getPageSetting from
 // converted utils; calc functions (calcOurDmg/calcOurBlock/calcOurHealth/etc.) resolve via

@@ -21,12 +21,17 @@ import * as fight from './modules/fight'
 import * as scryer from './modules/scryer'
 import * as ab from './modules/ab'
 import * as MAZ from './modules/MAZ'
-// stance MUST be spread after calc: both define calcBaseDamageInX, and stance's copy won at
-// global scope in the original load order (calc loaded before stance). Spread order preserves it.
+// COLLISION MECHANISM (1) — FUNCTION-EXPORT collision → decided by SPREAD order (below): the last
+// module spread onto globalThis wins. stance & calc both export calcBaseDamageInX; `...calc` is
+// spread before `...stance`, so stance's copy wins, matching the original load order (calc before
+// stance). NOTE: Phase 3 removed calc's copy as dead code (see calc.ts), so this specific collision
+// no longer exists — but the rule stands for any future duplicated export name.
 import * as stance from './modules/stance'
 import * as maps from './modules/maps'
-// mapfunctions imported after maps: it owns the R-map-state var inits, which must run after
-// maps' undefined placeholders so mapfunctions' real values win (matches original load order).
+// COLLISION MECHANISM (2) — TOP-LEVEL `globalThis.X = …` SIDE-EFFECT collision → decided by IMPORT
+// (module-eval) order, NOT spread order (the spread below only re-publishes named exports). mapfunctions
+// owns the R-map-state inits (`globalThis.RshouldFarm = false`, …) which must eval AFTER maps' `= undefined`
+// placeholders, so maps is imported before mapfunctions. Guarded by tests/build-userscript.test.ts.
 import * as mapfunctions from './modules/mapfunctions'
 import * as portal from './modules/portal'
 import * as importExport from './modules/import-export'

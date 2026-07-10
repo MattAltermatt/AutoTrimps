@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { buildUserscript, resolveVersion, landingHtml } from '../scripts/build-userscript.mjs'
 
 describe('resolveVersion', () => {
@@ -105,6 +107,18 @@ describe('buildUserscript', () => {
     const graphsIdx = out.indexOf('/* ===== legacy/Graphs.js')
     expect(bootIdx).toBeGreaterThan(at2Idx)
     expect(bootIdx).toBeLessThan(graphsIdx)
+  })
+
+  it('bridge imports maps before mapfunctions (R-map-state top-level inits must eval after maps placeholders)', () => {
+    const bridge = readFileSync(resolve(__dirname, '../src/legacy-bridge.ts'), 'utf8')
+    const mapsIdx = bridge.indexOf("from './modules/maps'")
+    const mapfnIdx = bridge.indexOf("from './modules/mapfunctions'")
+    expect(mapsIdx).toBeGreaterThan(-1)
+    expect(mapfnIdx).toBeGreaterThan(-1)
+    // Top-level `globalThis.RshouldFarm = false` (mapfunctions) must eval AFTER `maps`'s
+    // `= undefined` placeholder — governed by import (module-eval) order, NOT spread order.
+    // A Phase-3 split must keep whichever module owns those inits imported after maps.
+    expect(mapfnIdx).toBeGreaterThan(mapsIdx)
   })
 
   it('initializeAutoTrimps() boots the settings UI AFTER loadPageVariables() (#22 save-reload)', async () => {

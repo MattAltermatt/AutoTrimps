@@ -15,7 +15,6 @@ import {
   calcSpecificEnemyHealth,
   calcHDratio,
   calcCurrentStance,
-  calcBaseDamageInX,
   getTotalHealthMod,
   stormdynamicHD,
   desodynamicHD,
@@ -463,26 +462,9 @@ describe('calc.calcCurrentStance', () => {
   })
 })
 
-describe('calc.calcBaseDamageInX — 5-field setter (calc.ts copy)', () => {
-  beforeEach(() => neutralCombat())
-  it('sets base* globals from calcOurDmg / calcOurHealth / calcOurBlock', () => {
-    // The setter writes bare-global base* (ambient AutoTrimps2 seam); seed them so the strict-mode
-    // assignment targets existing globalThis props instead of throwing.
-    for (const k of ['baseMinDamage', 'baseMaxDamage', 'baseDamage', 'baseHealth', 'baseBlock']) G[k] = -1
-    G.game = u1CombatGame({
-      buildings: { Gym: { owned: 0, increase: { by: 0 } } },
-      jobs: {
-        Amalgamator: { owned: 0, getDamageMult: () => 1, getHealthMult: () => 1 }, Geneticist: { owned: 0 },
-        Trainer: { owned: 0, modifier: 0 }, Magmamancer: { getBonusPercent: () => 1 },
-      },
-    })
-    calcBaseDamageInX()
-    // no equipment, 6 base × 10 soldiers = 60 dmg; health 50 × 10 = 500; block 0
-    expect(G.baseDamage).toBe(60)
-    expect(G.baseHealth).toBe(500)
-    expect(G.baseBlock).toBe(0)
-  })
-})
+// calc.calcBaseDamageInX test removed in Phase 3 (#51): calc's copy was dead (stance's wins at
+// global scope) and has been deleted from calc.ts. The live copy is pinned by
+// tests/stance.characterization.test.ts ('stance.calcBaseDamageInX (capital I) — the 5-field setter').
 
 describe('calc.getTotalHealthMod', () => {
   beforeEach(() => neutralCombat())
