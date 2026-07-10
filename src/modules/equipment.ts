@@ -841,12 +841,8 @@ export function RareWeAttackLevelCapped() {
 export function Rgetequips(map: any, special: any) { //(level, p b or false)
     let specialCount = 0;
     const prestigeArray = [];
-    let hasPrestigious = false;
     const unlocksObj = game.mapUnlocks;
     // The `special` param is polymorphic ('p' | 'b' | false) → KEEP these compares LOOSE.
-    if (special == 'p' || (special == 'b' && game.talents.bionic2.purchased)) {
-        hasPrestigious = true;
-    }
     let Rlocation;
     if (special == 'p' || special == false) {
         Rlocation = "Plentiful";
@@ -887,13 +883,6 @@ export function Rgetequips(map: any, special: any) { //(level, p b or false)
             if (special.startAt > world) continue;
             specialCount++;
             continue;
-            // NOTE (faithful port): the block below is dead — unreachable after the unconditional
-            // `continue` above. Operators left AS-IS (never executed → cannot be net-exercised).
-            if (hasPrestigious && canLast == 1 && item == "roboTrimp")
-                canLast = 3;
-            else
-                canLast = 0;
-            continue;
         }
 
         if (special.world !== world && special.world > 0) continue;
@@ -920,22 +909,6 @@ export function Rgetequips(map: any, special: any) { //(level, p b or false)
     }
     return specialCount;
 }
-
-//barakatx2
-// NOTE (faithful port): prestigeZones + attainablePrestiges are DEAD — attainablePrestiges is never
-// called anywhere in src/. Kept verbatim (module-private) for parity.
-const prestigeZones = [["Supershield","Dagadder","Bootboost"], ["Megamace", "Hellishmet"], ["Polierarm", "Pantastic"], ["Axeidic", "Smoldershoulder"], ["Greatersword", "Harmbalest", "Bestplate", "GambesOP"]]
-    function attainablePrestiges(zone: any) {
-        const baseExpectedPrestigesAvailable = Math.floor(zone / 10) * 2 - 1
-        const prestigeZoneOffset = Math.floor(Math.min(zone % 10, 5))
-        let attainablePrestiges = 0
-        for (let i = 1; i <= prestigeZoneOffset; i++) {
-            prestigeZones[i-1].forEach(prestige => {
-                attainablePrestiges += baseExpectedPrestigesAvailable + 2 - game.upgrades[prestige].allowed
-            })
-        }
-        return attainablePrestiges / 2
-    }
 
 //Shol Territory
 

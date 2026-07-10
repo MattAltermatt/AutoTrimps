@@ -3064,11 +3064,7 @@
   function Rgetequips2(map, special) {
     let specialCount = 0;
     const prestigeArray = [];
-    let hasPrestigious = false;
     const unlocksObj = game.mapUnlocks;
-    if (special == "p" || special == "b" && game.talents.bionic2.purchased) {
-      hasPrestigious = true;
-    }
     let Rlocation;
     if (special == "p" || special == false) {
       Rlocation = "Plentiful";
@@ -3107,11 +3103,6 @@
         }
         if (special2.startAt > world) continue;
         specialCount++;
-        continue;
-        if (hasPrestigious && canLast == 1 && item == "roboTrimp")
-          canLast = 3;
-        else
-          canLast = 0;
         continue;
       }
       if (special2.world !== world && special2.world > 0) continue;

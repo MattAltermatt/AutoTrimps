@@ -937,6 +937,9 @@ describe('equipment — hard-gate branch coverage', () => {
     expect(equipment.Rgetequips(100, false)).toBe(0)
   })
 
+  // Also the #56/#3 regression guard: the level==="last" block does specialCount++ then an
+  // unconditional continue; result 1 confirms the removed dead post-continue (canLast=3/0) block
+  // never affected the count.
   it('Rgetequips level==="last" block drives `canLast === 2` + `level === "last"` (871)', () => {
     ;(globalThis as any).game = makeMinimalGame({
       global: { world: 100, universe: 1, brokenPlanet: false },
