@@ -4511,16 +4511,16 @@
   MODULES["upgrades"].targetFuelZone = true;
   MODULES["upgrades"].customMetalRatio = 0.5;
   function gigaTargetZone() {
-    var targetZone = 59;
-    var daily = game.global.challengeActive == "Daily";
-    var runningC2 = game.global.runningChallengeSquared;
-    var heliumChallengeActive = game.global.challengeActive && game.challenges[game.global.challengeActive].heliumThrough;
-    var voidZone = daily ? getPageSetting2("DailyVoidMod") : getPageSetting2("VoidMaps");
-    var challengeZone = heliumChallengeActive ? game.challenges[game.global.challengeActive].heliumThrough : 0;
-    var portalZone = 0;
-    if (autoTrimpSettings.AutoPortal.selected == "Helium Per Hour") portalZone = daily ? getPageSetting2("dHeHrDontPortalBefore") : getPageSetting2("HeHrDontPortalBefore");
-    else if (autoTrimpSettings.AutoPortal.selected == "Custom") portalZone = daily ? getPageSetting2("dCustomAutoPortal") : getPageSetting2("CustomAutoPortal");
-    var c2zone = 0;
+    let targetZone = 59;
+    const daily = game.global.challengeActive === "Daily";
+    const runningC2 = game.global.runningChallengeSquared;
+    const heliumChallengeActive = game.global.challengeActive && game.challenges[game.global.challengeActive].heliumThrough;
+    const voidZone = daily ? getPageSetting2("DailyVoidMod") : getPageSetting2("VoidMaps");
+    const challengeZone = heliumChallengeActive ? game.challenges[game.global.challengeActive].heliumThrough : 0;
+    let portalZone = 0;
+    if (autoTrimpSettings.AutoPortal.selected === "Helium Per Hour") portalZone = daily ? getPageSetting2("dHeHrDontPortalBefore") : getPageSetting2("HeHrDontPortalBefore");
+    else if (autoTrimpSettings.AutoPortal.selected === "Custom") portalZone = daily ? getPageSetting2("dCustomAutoPortal") : getPageSetting2("CustomAutoPortal");
+    let c2zone = 0;
     if (getPageSetting2("c2runnerstart") == true && getPageSetting2("c2runnerportal") > 0) c2zone = getPageSetting2("c2runnerportal");
     else if (getPageSetting2("FinishC2") > 0) c2zone = getPageSetting2("FinishC2");
     if (!runningC2) targetZone = Math.max(targetZone, voidZone, challengeZone, portalZone - 1);
@@ -4536,17 +4536,17 @@
   }
   function autoGiga(targetZone, metalRatio = 0.5, slowDown = 10, customBase) {
     if (!targetZone || targetZone < 60) targetZone = gigaTargetZone();
-    var base = customBase ? customBase : getPageSetting2("FirstGigastation");
-    var baseZone = game.global.world;
-    var rawPop = game.resources.trimps.max - game.unlocks.impCount.TauntimpAdded;
-    var gemsPS = getPerSecBeforeManual("Dragimp");
-    var metalPS = getPerSecBeforeManual("Miner");
-    var megabook = game.global.frugalDone ? 1.6 : 1.5;
-    var nGigas = Math.min(Math.floor(targetZone - 60), Math.floor(targetZone / 2 - 25), Math.floor(targetZone / 3 - 12), Math.floor(targetZone / 5), Math.floor(targetZone / 10 + 17), 39);
-    var metalDiff = Math.max(0.1 * metalRatio * metalPS / gemsPS, 1);
-    var delta = 3;
-    for (var i = 0; i < 10; i++) {
-      var pop = 6 * Math.pow(1.2, nGigas) * 1e4;
+    const base = customBase ? customBase : getPageSetting2("FirstGigastation");
+    const baseZone = game.global.world;
+    const rawPop = game.resources.trimps.max - game.unlocks.impCount.TauntimpAdded;
+    const gemsPS = getPerSecBeforeManual("Dragimp");
+    const metalPS = getPerSecBeforeManual("Miner");
+    const megabook = game.global.frugalDone ? 1.6 : 1.5;
+    const nGigas = Math.min(Math.floor(targetZone - 60), Math.floor(targetZone / 2 - 25), Math.floor(targetZone / 3 - 12), Math.floor(targetZone / 5), Math.floor(targetZone / 10 + 17), 39);
+    const metalDiff = Math.max(0.1 * metalRatio * metalPS / gemsPS, 1);
+    let delta = 3;
+    for (let i = 0; i < 10; i++) {
+      let pop = 6 * Math.pow(1.2, nGigas) * 1e4;
       pop *= base * (1 - Math.pow(5 / 6, nGigas + 1)) + delta * (nGigas + 1 - 5 * (1 - Math.pow(5 / 6, nGigas + 1)));
       pop += rawPop - base * 1e4;
       pop /= rawPop;
@@ -4578,66 +4578,64 @@
     return true;
   }
   function buyUpgrades() {
-    for (var upgrade in upgradeList) {
-      upgrade = upgradeList[upgrade];
-      var gameUpgrade = game.upgrades[upgrade];
-      var available = gameUpgrade.allowed > gameUpgrade.done && canAffordTwoLevel(gameUpgrade);
-      var fuckbuildinggiga = bwRewardUnlocked("AutoStructure") == true && bwRewardUnlocked("DecaBuild") && getPageSetting2("hidebuildings") == true && getPageSetting2("BuyBuildingsNew") == 0;
-      if (upgrade == "Coordination" && (getPageSetting2("BuyUpgradesNew") == 2 || !canAffordCoordinationTrimps())) continue;
-      if (upgrade == "Coordination" && getPageSetting2("amalcoord") == true && getPageSetting2("amalcoordhd") > 0 && calcHDratio() < getPageSetting2("amalcoordhd") && (getPageSetting2("amalcoordt") < 0 && (game.global.world < getPageSetting2("amalcoordz") || getPageSetting2("amalcoordz") < 0) || getPageSetting2("amalcoordt") > 0 && getPageSetting2("amalcoordt") > game.jobs.Amalgamator.owned && game.resources.trimps.realMax() / game.resources.trimps.getCurrentSend() > 2e3)) continue;
-      if (upgrade == "Coordination" && getEmpowerment() == "Wind" && (getPageSetting2("AutoStance") == 3 && game.global.challengeActive != "Daily" && getPageSetting2("WindStackingMin") > 0 && game.global.world >= getPageSetting2("WindStackingMin") && calcHDratio() < 5 || getPageSetting2("use3daily") == true && game.global.challengeActive == "Daily" && getPageSetting2("dWindStackingMin") > 0 && game.global.world >= getPageSetting2("dWindStackingMin") && calcHDratio() < 5)) continue;
-      if (upgrade == "Coordination" && (getPageSetting2("AutoStance") == 3 && game.global.challengeActive != "Daily" && getPageSetting2("wsmax") > 0 && getPageSetting2("wsmaxhd") > 0 && game.global.world >= getPageSetting2("wsmax") && calcHDratio() < getPageSetting2("wsmaxhd") || getPageSetting2("use3daily") == true && game.global.challengeActive == "Daily" && getPageSetting2("dwsmax") > 0 && getPageSetting2("dwsmaxhd") > 0 && game.global.world >= getPageSetting2("dwsmax") && calcHDratio() < getPageSetting2("dwsmaxhd"))) continue;
-      if (upgrade == "Gigastation" && !fuckbuildinggiga) {
-        if (getPageSetting2("AutoGigas") && game.upgrades.Gigastation.done == 0 && !firstGiga()) continue;
+    for (const upgrade of upgradeList) {
+      const gameUpgrade = game.upgrades[upgrade];
+      const available = gameUpgrade.allowed > gameUpgrade.done && canAffordTwoLevel(gameUpgrade);
+      const fuckbuildinggiga = bwRewardUnlocked("AutoStructure") === true && bwRewardUnlocked("DecaBuild") && getPageSetting2("hidebuildings") == true && getPageSetting2("BuyBuildingsNew") == 0;
+      if (upgrade === "Coordination" && (getPageSetting2("BuyUpgradesNew") == 2 || !canAffordCoordinationTrimps())) continue;
+      if (upgrade === "Coordination" && getPageSetting2("amalcoord") == true && getPageSetting2("amalcoordhd") > 0 && calcHDratio() < getPageSetting2("amalcoordhd") && (getPageSetting2("amalcoordt") < 0 && (game.global.world < getPageSetting2("amalcoordz") || getPageSetting2("amalcoordz") < 0) || getPageSetting2("amalcoordt") > 0 && getPageSetting2("amalcoordt") > game.jobs.Amalgamator.owned && game.resources.trimps.realMax() / game.resources.trimps.getCurrentSend() > 2e3)) continue;
+      if (upgrade === "Coordination" && getEmpowerment() == "Wind" && (getPageSetting2("AutoStance") == 3 && game.global.challengeActive !== "Daily" && getPageSetting2("WindStackingMin") > 0 && game.global.world >= getPageSetting2("WindStackingMin") && calcHDratio() < 5 || getPageSetting2("use3daily") == true && game.global.challengeActive === "Daily" && getPageSetting2("dWindStackingMin") > 0 && game.global.world >= getPageSetting2("dWindStackingMin") && calcHDratio() < 5)) continue;
+      if (upgrade === "Coordination" && (getPageSetting2("AutoStance") == 3 && game.global.challengeActive !== "Daily" && getPageSetting2("wsmax") > 0 && getPageSetting2("wsmaxhd") > 0 && game.global.world >= getPageSetting2("wsmax") && calcHDratio() < getPageSetting2("wsmaxhd") || getPageSetting2("use3daily") == true && game.global.challengeActive === "Daily" && getPageSetting2("dwsmax") > 0 && getPageSetting2("dwsmaxhd") > 0 && game.global.world >= getPageSetting2("dwsmax") && calcHDratio() < getPageSetting2("dwsmaxhd"))) continue;
+      if (upgrade === "Gigastation" && !fuckbuildinggiga) {
+        if (getPageSetting2("AutoGigas") && game.upgrades.Gigastation.done === 0 && !firstGiga()) continue;
         else if (game.buildings.Warpstation.owned < Math.floor(game.upgrades.Gigastation.done * getPageSetting2("DeltaGigastation")) + getPageSetting2("FirstGigastation")) continue;
       }
-      if (upgrade == "Shieldblock" && !getPageSetting2("BuyShieldblock")) continue;
-      if (upgrade == "Gigastation" && !fuckbuildinggiga && (game.global.lastWarp ? game.buildings.Warpstation.owned < Math.floor(game.upgrades.Gigastation.done * getPageSetting2("DeltaGigastation")) + getPageSetting2("FirstGigastation") : game.buildings.Warpstation.owned < getPageSetting2("FirstGigastation"))) continue;
-      if (upgrade == "Bloodlust" && game.global.challengeActive == "Scientist" && getPageSetting2("BetterAutoFight")) continue;
+      if (upgrade === "Shieldblock" && !getPageSetting2("BuyShieldblock")) continue;
+      if (upgrade === "Gigastation" && !fuckbuildinggiga && (game.global.lastWarp ? game.buildings.Warpstation.owned < Math.floor(game.upgrades.Gigastation.done * getPageSetting2("DeltaGigastation")) + getPageSetting2("FirstGigastation") : game.buildings.Warpstation.owned < getPageSetting2("FirstGigastation"))) continue;
+      if (upgrade === "Bloodlust" && game.global.challengeActive === "Scientist" && getPageSetting2("BetterAutoFight")) continue;
       if (!available) continue;
-      if (game.upgrades.Scientists.done < game.upgrades.Scientists.allowed && upgrade != "Scientists") continue;
+      if (game.upgrades.Scientists.done < game.upgrades.Scientists.allowed && upgrade !== "Scientists") continue;
       buyUpgrade(upgrade, true, true);
       debug2("Upgraded " + upgrade, "upgrades", "*upload2");
     }
   }
   globalThis.RupgradeList = ["Miners", "Scientists", "Coordination", "Speedminer", "Speedlumber", "Speedfarming", "Speedscience", "Speedexplorer", "Megaminer", "Megalumber", "Megafarming", "Megascience", "Efficiency", "Explorers", "Battle", "Bloodlust", "Bounty", "Egg", "Rage", "Prismatic", "Prismalicious", "Formations", "Dominance", "UberHut", "UberHouse", "UberMansion", "UberHotel", "UberResort", "Trapstorm", "Potency"];
   function RbuyUpgrades() {
-    for (var upgrade in RupgradeList) {
-      upgrade = RupgradeList[upgrade];
-      var gameUpgrade = game.upgrades[upgrade];
-      var available = gameUpgrade.allowed > gameUpgrade.done && canAffordTwoLevel(gameUpgrade);
-      if (upgrade == "Coordination" && (getPageSetting2("RBuyUpgradesNew") == 2 || !canAffordCoordinationTrimps())) continue;
-      if (upgrade == "Supershield" && !Rhyposhouldwood) continue;
+    for (const upgrade of RupgradeList) {
+      const gameUpgrade = game.upgrades[upgrade];
+      const available = gameUpgrade.allowed > gameUpgrade.done && canAffordTwoLevel(gameUpgrade);
+      if (upgrade === "Coordination" && (getPageSetting2("RBuyUpgradesNew") == 2 || !canAffordCoordinationTrimps())) continue;
+      if (upgrade === "Supershield" && !Rhyposhouldwood) continue;
       if (!available) continue;
-      if (game.upgrades.Scientists.done < game.upgrades.Scientists.allowed && upgrade != "Scientists") continue;
+      if (game.upgrades.Scientists.done < game.upgrades.Scientists.allowed && upgrade !== "Scientists") continue;
       buyUpgrade(upgrade, true, true);
       debug2("Upgraded " + upgrade, "upgrades", "*upload2");
     }
   }
   function RautoGoldenUpgradesAT(setting) {
-    var num = getAvailableGoldenUpgrades();
-    var setting2;
-    if (num == 0) return;
-    if (setting == "Radon")
+    let num = getAvailableGoldenUpgrades();
+    let setting2;
+    if (num === 0) return;
+    if (setting === "Radon")
       setting2 = "Helium";
-    if (!game.global.dailyChallenge.seed && !game.global.runningChallengeSquared && autoTrimpSettings.RAutoGoldenUpgrades.selected == "Radon" && getPageSetting2("Rradonbattle") > 0 && game.goldenUpgrades.Helium.purchasedAt.length >= getPageSetting2("Rradonbattle") || game.global.dailyChallenge.seed && autoTrimpSettings.RdAutoGoldenUpgrades.selected == "Radon" && getPageSetting2("Rdradonbattle") > 0 && game.goldenUpgrades.Helium.purchasedAt.length >= getPageSetting2("Rdradonbattle"))
+    if (!game.global.dailyChallenge.seed && !game.global.runningChallengeSquared && autoTrimpSettings.RAutoGoldenUpgrades.selected === "Radon" && getPageSetting2("Rradonbattle") > 0 && game.goldenUpgrades.Helium.purchasedAt.length >= getPageSetting2("Rradonbattle") || game.global.dailyChallenge.seed && autoTrimpSettings.RdAutoGoldenUpgrades.selected === "Radon" && getPageSetting2("Rdradonbattle") > 0 && game.goldenUpgrades.Helium.purchasedAt.length >= getPageSetting2("Rdradonbattle"))
       setting2 = "Battle";
-    if (setting == "Battle")
+    if (setting === "Battle")
       setting2 = "Battle";
-    if (!game.global.dailyChallenge.seed && !game.global.runningChallengeSquared && autoTrimpSettings.RAutoGoldenUpgrades.selected == "Battle" && getPageSetting2("Rbattleradon") > 0 && game.goldenUpgrades.Battle.purchasedAt.length >= getPageSetting2("Rbattleradon") || game.global.dailyChallenge.seed && autoTrimpSettings.RdAutoGoldenUpgrades.selected == "Battle" && getPageSetting2("Rdbattleradon") > 0 && game.goldenUpgrades.Battle.purchasedAt.length >= getPageSetting2("Rdbattleradon"))
+    if (!game.global.dailyChallenge.seed && !game.global.runningChallengeSquared && autoTrimpSettings.RAutoGoldenUpgrades.selected === "Battle" && getPageSetting2("Rbattleradon") > 0 && game.goldenUpgrades.Battle.purchasedAt.length >= getPageSetting2("Rbattleradon") || game.global.dailyChallenge.seed && autoTrimpSettings.RdAutoGoldenUpgrades.selected === "Battle" && getPageSetting2("Rdbattleradon") > 0 && game.goldenUpgrades.Battle.purchasedAt.length >= getPageSetting2("Rdbattleradon"))
       setting2 = "Helium";
-    if (setting == "Void" || setting == "Void + Battle")
+    if (setting === "Void" || setting === "Void + Battle")
       setting2 = "Void";
-    if (game.global.challengeActive == "Mayhem" || game.global.challengeActive == "Pandemonium" || game.global.challengeActive == "Desolation") {
+    if (game.global.challengeActive === "Mayhem" || game.global.challengeActive === "Pandemonium" || game.global.challengeActive === "Desolation") {
       setting2 = "Battle";
     }
-    var success = buyGoldenUpgrade(setting2);
-    if (!success && setting2 == "Void") {
+    const success = buyGoldenUpgrade(setting2);
+    if (!success && setting2 === "Void") {
       num = getAvailableGoldenUpgrades();
-      if (num == 0) return;
-      if (autoTrimpSettings.RAutoGoldenUpgrades.selected == "Void" && !game.global.dailyChallenge.seed && !game.global.runningChallengeSquared || autoTrimpSettings.RdAutoGoldenUpgrades.selected == "Void" && game.global.dailyChallenge.seed)
+      if (num === 0) return;
+      if (autoTrimpSettings.RAutoGoldenUpgrades.selected === "Void" && !game.global.dailyChallenge.seed && !game.global.runningChallengeSquared || autoTrimpSettings.RdAutoGoldenUpgrades.selected === "Void" && game.global.dailyChallenge.seed)
         setting2 = "Helium";
-      if (autoTrimpSettings.RAutoGoldenUpgrades.selected == "Void" && getPageSetting2("Rvoidheliumbattle") > 0 && game.global.world >= getPageSetting2("Rvoidheliumbattle") || autoTrimpSettings.RdAutoGoldenUpgrades.selected == "Void" && getPageSetting2("Rdvoidheliumbattle") > 0 && game.global.world >= getPageSetting2("Rdvoidheliumbattle") || (autoTrimpSettings.RAutoGoldenUpgrades.selected == "Void + Battle" && !game.global.dailyChallenge.seed && !game.global.runningChallengeSquared || autoTrimpSettings.RdAutoGoldenUpgrades.selected == "Void + Battle" && game.global.dailyChallenge.seed || autoTrimpSettings.RcAutoGoldenUpgrades.selected == "Void + Battle" && game.global.runningChallengeSquared))
+      if (autoTrimpSettings.RAutoGoldenUpgrades.selected === "Void" && getPageSetting2("Rvoidheliumbattle") > 0 && game.global.world >= getPageSetting2("Rvoidheliumbattle") || autoTrimpSettings.RdAutoGoldenUpgrades.selected === "Void" && getPageSetting2("Rdvoidheliumbattle") > 0 && game.global.world >= getPageSetting2("Rdvoidheliumbattle") || (autoTrimpSettings.RAutoGoldenUpgrades.selected === "Void + Battle" && !game.global.dailyChallenge.seed && !game.global.runningChallengeSquared || autoTrimpSettings.RdAutoGoldenUpgrades.selected === "Void + Battle" && game.global.dailyChallenge.seed || autoTrimpSettings.RcAutoGoldenUpgrades.selected === "Void + Battle" && game.global.runningChallengeSquared))
         setting2 = "Battle";
       buyGoldenUpgrade(setting2);
     }
