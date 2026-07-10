@@ -83,9 +83,10 @@ Each fix ships **one commit** with three coupled artifacts:
 
 **Gate:** `actualDiff = T_working ⊖ T_oracle`; PASS iff `(actualDiff \ manifest) == ∅`. Every *other* divergence fails. This is a strict-superset test, not the naive `diff==0`.
 
-- A **behavior-neutral** fix (e.g. `jobs.ts:486-487` — the 2-arg `Math.ceil` whose 2nd arg is a no-op) passes with an **empty manifest** (zero trace delta) — the trivial case.
+- A **truly behavior-neutral** fix passes with an **empty manifest** (zero trace delta) — the trivial case.
 - A **behavior-changing** fix (`mapfunctions` `recyle` typo, portal `loom`, maps `=`-vs-`==`) carries a manifest entry.
 - An **unfired** manifest entry (declared delta absent from the actual trace) raises a **coverage warning** — the corpus doesn't reach the fix; add a targeting save.
+- **CORPUS-UNREACHED ≠ behavior-neutral** (learned at the jobs.ts beachhead — the earlier draft mis-labeled `jobs.ts` #32 as "the 2-arg `Math.ceil` 2nd-arg is a no-op / zero-delta trivial case"; it is **not**). The #32 paren fix (`Math.ceil(Math.min(realMax/2, owned))`) genuinely **changes** RbuyJobs' worker distribution — the L1 regression flips `156/156/156/31 → 33/33/33`. It shows **zero L0 delta only because RbuyJobs is Radon-only and the U1 save corpus never runs it** — a coverage gap, not a no-op. Such a fix is gated by an **L1 regression** (not L0), user-approved as a behavior change, and its manifest entry stays **unfired** (a documented coverage warning) until a U2/radon save is added (#47). Don't conflate "the differential shows ∅" with "the change does nothing."
 - **A naked golden/trace regeneration with no manifest entry + regression test + issue ref IS the accidental-drift alarm** — this closes the exact laundering vector #39 exhibited (a wholesale 1 MB golden regen that co-mingled an incidental `settings-visibility.ts` edit).
 
 ---
@@ -145,7 +146,7 @@ The smallest true decision module that exercises **every layer** end-to-end in o
 - **L1a** pure-predicate golden — `workerRatios` (partial net already exists, `jobs.workerRatios.test.ts`);
 - **L0** — `buyJob` is one of the ~220 recorded call-sites, proving the differential end-to-end;
 - **branch-fixture discipline + the coverage-gap argument** — its Watch/Metal challenge overrides (`jobs.ts:118`) are cold on a seeded early-window run, forcing L1 depth to cover what L0 breadth cannot;
-- **bug-fix reconciliation** — carries a live #32 marker (`jobs.ts:486-487`, 2-arg `Math.ceil`) that exercises the **zero-delta** manifest case, and its worker-count logic sits near the balance bright line, proving the STOP check.
+- **bug-fix reconciliation** — carries a live #32 marker (the RbuyJobs `Math.ceil(Math.min(realMax/2), owned)` misplaced paren) whose fix is **behavior-changing but corpus-unreached** (Radon-only; the U1 corpus can't run RbuyJobs → zero L0 delta, gated by an **L1 regression** flipping `156→33`, user-approved), proving both the STOP check AND that "L0 shows ∅" must not be read as "no-op" (see §6).
 
 Small enough to finish the full recipe (tag + trace + spy-log + semantic-invariant + manifest + coverage-gate) inline and **lock the idioms** before fanning out. The giants are too big for a first proof; the pure leaves (`query` 132, `stance`) skip the actuator archetype and carry no live #32 bug.
 
