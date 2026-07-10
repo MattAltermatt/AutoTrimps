@@ -1149,9 +1149,12 @@ export function equipfarmdynamicHD() {
     let equipfarmmult = 0;
     let equipfarmHDzone = 0;
     let equipfarmHDmult = RcalcHDratio() - 1;
-    // getPageSetting('Requipfarmon') == true stays LOOSE (polymorphic); the `>= (…&&…)` boolean-vs-number
-    // guard is a preserved faithful-port oddity. equipfarmHDzone is a number → strict compare.
-    if (getPageSetting('Requipfarmon') == true && game.global.world > 5 && game.global.world >= (getPageSetting('Requipfarmzone') && getPageSetting('RequipfarmHD') > 0 && getPageSetting('Requipfarmmult') > 0)) {
+    // getPageSetting('Requipfarmon') == true stays LOOSE (polymorphic). #56.2: dropped the stray parens
+    // that grouped the whole chain under `>=` (collapsing it to an always-true `world >= <bool>`); now
+    // `world >= zone` gates on its own (matches the sibling Rshouldequipfarm guard at maps.ts + this
+    // function's own `world - equipfarmzone` math). Behavior-preserving — the divergent value only
+    // arose at world<zone, which every consumer discards. equipfarmHDzone is a number → strict compare.
+    if (getPageSetting('Requipfarmon') == true && game.global.world > 5 && game.global.world >= getPageSetting('Requipfarmzone') && getPageSetting('RequipfarmHD') > 0 && getPageSetting('Requipfarmmult') > 0) {
         equipfarmzone = getPageSetting('Requipfarmzone');
         equipfarmHD = getPageSetting('RequipfarmHD');
         equipfarmmult = getPageSetting('Requipfarmmult');

@@ -309,6 +309,31 @@ describe('equipment.equipfarmdynamicHD — L1a', () => {
     ;(globalThis as any).game = makeMinimalGame({ global: { world: 100 } })
     expect(equipment.equipfarmdynamicHD()).toBe(7)
   })
+
+  // #56.2 — the fixed `world >= zone` gate. Fixtures: on, zone 50, HD 3, mult 2, RcalcHDratio 8.
+  const farmSettings = {
+    Requipfarmon: { type: 'boolean', enabled: true },
+    Requipfarmzone: { type: 'value', value: '50' },
+    RequipfarmHD: { type: 'value', value: '3' },
+    Requipfarmmult: { type: 'value', value: '2' },
+  }
+
+  it('#56.2 world >= zone: computes the farm multiplier (unchanged — the observable case)', () => {
+    ;(globalThis as any).RcalcHDratio = () => 8
+    ;(globalThis as any).autoTrimpSettings = farmSettings
+    ;(globalThis as any).game = makeMinimalGame({ global: { world: 60 } })
+    // HDzone = 60-50 = 10 → mult^10 * HD = 2^10 * 3 = 3072
+    expect(equipment.equipfarmdynamicHD()).toBe(3072)
+  })
+
+  it('#56.2 world < zone: now returns the default, not a negative-exponent value (the fix)', () => {
+    ;(globalThis as any).RcalcHDratio = () => 8
+    ;(globalThis as any).autoTrimpSettings = farmSettings
+    ;(globalThis as any).game = makeMinimalGame({ global: { world: 30 } })
+    // world 30 < zone 50 → fixed guard false → default RcalcHDratio()-1 = 7
+    // (BEFORE the fix the always-true guard gave 2^(30-50)*3 ≈ 2.9e-6)
+    expect(equipment.equipfarmdynamicHD()).toBe(7)
+  })
 })
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════

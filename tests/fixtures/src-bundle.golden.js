@@ -3289,7 +3289,7 @@
     let equipfarmmult = 0;
     let equipfarmHDzone = 0;
     let equipfarmHDmult = RcalcHDratio() - 1;
-    if (getPageSetting2("Requipfarmon") == true && game.global.world > 5 && game.global.world >= (getPageSetting2("Requipfarmzone") && getPageSetting2("RequipfarmHD") > 0 && getPageSetting2("Requipfarmmult") > 0)) {
+    if (getPageSetting2("Requipfarmon") == true && game.global.world > 5 && game.global.world >= getPageSetting2("Requipfarmzone") && getPageSetting2("RequipfarmHD") > 0 && getPageSetting2("Requipfarmmult") > 0) {
       equipfarmzone = getPageSetting2("Requipfarmzone");
       equipfarmHD = getPageSetting2("RequipfarmHD");
       equipfarmmult = getPageSetting2("Requipfarmmult");
