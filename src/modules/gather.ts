@@ -3,6 +3,14 @@
 // family). 61 game.* touches; native/AT globals typed ambient in src/game/*.d.ts and read by
 // bare name (no imports → esbuild byte-identical to the @ts-nocheck original, the conversion
 // gate). Module vars trapBuffering/maxTrapBuffering/maxZoneDuration are gather-internal.
+//
+// IDIOMATIC (Phase 2 · #51): un-minified behind the proof-net (tests/gather.characterization.test.ts
+//   pins every branch first; L0 backstop ∅). var→const/let, for-in→for-of, ==→=== where operands
+//   are provably the same runtime type. Kept LOOSE deliberately: every getPageSetting(...) comparison
+//   (getPageSetting is polymorphic — boolean/string/number/int[]/undefined, see utils.ts) and every
+//   autoTrimpSettings.<farm>.value[index] comparison (a per-setting multi-value array read at a
+//   possibly-out-of-range index → undefined element; same polymorphism rationale as getPageSetting).
+//   Every numeric literal + formula shape is preserved exactly (balance is sacrosanct).
 import { getPageSetting, debug } from './utils'
 
 //updated
@@ -23,8 +31,8 @@ export function calcTPS() {
 
 export function calcMaxTraps() {
 	//Tries to keep in mind the longest duration any zone has lasted in this portal
-	var time = getZoneSeconds();
-	if (game.global.world == 1) maxZoneDuration = time;
+	const time = getZoneSeconds();
+	if (game.global.world === 1) maxZoneDuration = time;
 	if (time > maxZoneDuration) maxZoneDuration = time;
 
 	//Return enough traps to last 1/4 of the longest duration zone we've seen so far
@@ -37,46 +45,45 @@ export function manualLabor2() {
 	if (getPageSetting('ManualGather2') == 0) return;
 
 	//Init - Traps config
-	var notFullPop = game.resources.trimps.owned < game.resources.trimps.realMax();
-	var trapperTrapUntilFull = game.global.challengeActive == "Trapper" && notFullPop;
-	var trapTrimpsOK = getPageSetting('TrapTrimps') && (trapperTrapUntilFull || game.jobs.Geneticist.owned == 0);
-	var minTraps = Math.ceil(calcTPS());
-	var trapsBufferSize = Math.ceil(5 * calcTPS());
-	var maxTraps = calcMaxTraps();
+	const notFullPop = game.resources.trimps.owned < game.resources.trimps.realMax();
+	const trapperTrapUntilFull = game.global.challengeActive === "Trapper" && notFullPop;
+	const trapTrimpsOK = getPageSetting('TrapTrimps') && (trapperTrapUntilFull || game.jobs.Geneticist.owned === 0);
+	const minTraps = Math.ceil(calcTPS());
+	const trapsBufferSize = Math.ceil(5 * calcTPS());
+	const maxTraps = calcMaxTraps();
 
 	//Init - Traps control
-	var lowOnTraps = game.buildings.Trap.owned < minTraps;
-	var trapsReady = game.buildings.Trap.owned >= minTraps + trapsBufferSize;
-	var fullOfTraps = game.buildings.Trap.owned >= maxTraps;
-	var maxTrapsReady = game.buildings.Trap.owned >= maxTraps + trapsBufferSize;
+	const lowOnTraps = game.buildings.Trap.owned < minTraps;
+	const trapsReady = game.buildings.Trap.owned >= minTraps + trapsBufferSize;
+	const fullOfTraps = game.buildings.Trap.owned >= maxTraps;
+	const maxTrapsReady = game.buildings.Trap.owned >= maxTraps + trapsBufferSize;
 	if (lowOnTraps) trapBuffering = true;
 	if (trapsReady) trapBuffering = false;
 	if (maxTrapsReady) maxTrapBuffering = false;
 
 	// Init - Science
-	var firstFightOK = game.global.world > 1 || game.global.lastClearedCell >= 0;
-	var researchAvailable = document.getElementById('scienceCollectBtn')!.style.display != 'none' && document.getElementById('science')!.style.visibility != 'hidden';
-	var scienceAvailable = document.getElementById('science')!.style.visibility != 'hidden';
-	var needBattle = !game.upgrades.Battle.done && game.resources.science.owned < 10;
-	var needScience = game.resources.science.owned < scienceNeeded;
-	var needScientists = firstFightOK && game.global.challengeActive != 'Scientist' && !game.upgrades.Scientists.done && game.resources.science.owned < 100 && scienceAvailable;
-
+	const firstFightOK = game.global.world > 1 || game.global.lastClearedCell >= 0;
+	const researchAvailable = document.getElementById('scienceCollectBtn')!.style.display !== 'none' && document.getElementById('science')!.style.visibility !== 'hidden';
+	const scienceAvailable = document.getElementById('science')!.style.visibility !== 'hidden';
+	const needBattle = !game.upgrades.Battle.done && game.resources.science.owned < 10;
+	const needScience = game.resources.science.owned < scienceNeeded;
+	const needScientists = firstFightOK && game.global.challengeActive !== 'Scientist' && !game.upgrades.Scientists.done && game.resources.science.owned < 100 && scienceAvailable;
 
 	//Init - Others
-	var needMiner = firstFightOK && challengeActive("Metal") == false && !game.upgrades.Miners.done;
-	var breedingTrimps = game.resources.trimps.owned - trimpsEffectivelyEmployed();
-	var hasTurkimp = game.talents.turkimp2.purchased || game.global.turkimpTimer > 0;
+	const needMiner = firstFightOK && challengeActive("Metal") === false && !game.upgrades.Miners.done;
+	const breedingTrimps = game.resources.trimps.owned - trimpsEffectivelyEmployed();
+	const hasTurkimp = game.talents.turkimp2.purchased || game.global.turkimpTimer > 0;
 
 	//Verifies if trapping is still relevant
 	//Relevant means we gain at least 10% more trimps per sec while trapping (which basically stops trapping during later zones)
 	//And there is enough breed time remaining to open an entire trap (prevents wasting time and traps during early zones)
-	var trappingIsRelevant = trapperTrapUntilFull || breedingPS().div(10).lt(calcTPS() * (game.portal.Bait.level + 1));
-	var trapWontBeWasted = breedTimeRemaining().gte(1 / calcTPS()) || game.global.playerGathering == "trimps" && breedTimeRemaining().lte(DecimalBreed(0.1));
+	const trappingIsRelevant = trapperTrapUntilFull || breedingPS().div(10).lt(calcTPS() * (game.portal.Bait.level + 1));
+	const trapWontBeWasted = breedTimeRemaining().gte(1 / calcTPS()) || game.global.playerGathering === "trimps" && breedTimeRemaining().lte(DecimalBreed(0.1));
 
 	//Highest Priority Food/Wood for traps (Early Game, when trapping is mandatory)
 	if (game.global.world <= 3 && game.global.totalHeliumEarned <= 500000) {
 		//If not building and not trapping
-		if (!trapsReady && game.global.buildingsQueue.length == 0 && (game.global.playerGathering != 'trimps' || game.buildings.Trap.owned == 0)) {
+		if (!trapsReady && game.global.buildingsQueue.length === 0 && (game.global.playerGathering !== 'trimps' || game.buildings.Trap.owned === 0)) {
 			//Gather food or wood
 			if (game.resources.food.owned < 10) { setGather('food'); return; }
 			if (game.triggers.wood.done && game.resources.wood.owned < 10) { setGather('wood'); return; }
@@ -97,13 +104,13 @@ export function manualLabor2() {
 	}
 
 	//Build if we don't have foremany, there are 2+ buildings in the queue, or if we can speed up something other than a trap
-	if (!bwRewardUnlocked("Foremany") && game.global.buildingsQueue.length && (game.global.buildingsQueue.length > 1 || game.global.autoCraftModifier == 0 || (getPlayerModifier() > 100 && game.global.buildingsQueue[0] != 'Trap.1'))) {
+	if (!bwRewardUnlocked("Foremany") && game.global.buildingsQueue.length && (game.global.buildingsQueue.length > 1 || game.global.autoCraftModifier === 0 || (getPlayerModifier() > 100 && game.global.buildingsQueue[0] !== 'Trap.1'))) {
 		setGather('buildings');
 		return;
 	}
 
 	//Also Build if we have storage buildings on top of the queue
-	if (!bwRewardUnlocked("Foremany") && game.global.buildingsQueue.length && (game.global.buildingsQueue[0] == 'Barn.1' || game.global.buildingsQueue[0] == 'Shed.1' || game.global.buildingsQueue[0] == 'Forge.1')) {
+	if (!bwRewardUnlocked("Foremany") && game.global.buildingsQueue.length && (game.global.buildingsQueue[0] === 'Barn.1' || game.global.buildingsQueue[0] === 'Shed.1' || game.global.buildingsQueue[0] === 'Forge.1')) {
 		setGather('buildings');
 		return;
 	}
@@ -159,19 +166,19 @@ export function manualLabor2() {
 	}
 
 	//Untouched mess
-	var manualResourceList: Record<string, string> = {
+	const manualResourceList: Record<string, string> = {
 		'food': 'Farmer',
 		'wood': 'Lumberjack',
 		'metal': 'Miner',
 	};
-	var lowestResource = 'food';
-	var lowestResourceRate = -1;
-	var haveWorkers = true;
-	for (var resource in manualResourceList) {
-		var job = manualResourceList[resource];
-		var currentRate = game.jobs[job].owned * game.jobs[job].modifier;
+	let lowestResource = 'food';
+	let lowestResourceRate = -1;
+	let haveWorkers = true;
+	for (const resource of Object.keys(manualResourceList)) {
+		const job = manualResourceList[resource];
+		let currentRate = game.jobs[job].owned * game.jobs[job].modifier;
 		// debug('Current rate for ' + resource + ' is ' + currentRate + ' is hidden? ' + (document.getElementById(resource)!.style.visibility == 'hidden'));
-		if (document.getElementById(resource)!.style.visibility != 'hidden') {
+		if (document.getElementById(resource)!.style.visibility !== 'hidden') {
 			//find the lowest resource rate
 			if (currentRate === 0) {
 				currentRate = game.resources[resource].owned;
@@ -183,7 +190,7 @@ export function manualLabor2() {
 					lowestResourceRate = currentRate;
 				}
 			}
-			if ((currentRate < lowestResourceRate || lowestResourceRate == -1) && haveWorkers) {
+			if ((currentRate < lowestResourceRate || lowestResourceRate === -1) && haveWorkers) {
 				// debug('New Lowest2 ' + resource + ' is ' + currentRate + ' lowest ' + lowestResource + lowestResourceRate);
 				lowestResource = resource;
 				lowestResourceRate = currentRate;
@@ -192,7 +199,7 @@ export function manualLabor2() {
 	}
 
 	//High Priority Gathering - No workers for this resource
-	if (game.global.playerGathering != lowestResource && !haveWorkers && !breedFire) {setGather(lowestResource); return;}
+	if (game.global.playerGathering !== lowestResource && !haveWorkers && !breedFire) {setGather(lowestResource); return;}
 
 	//Low Priority Research
 	if (getPageSetting('ManualGather2') != 2 && researchAvailable && haveWorkers) {
@@ -216,14 +223,16 @@ export function autogather3() {
 MODULES["gather"].RminScienceAmount = 200;
 
 export function RmanualLabor2() {
-	
+
     //Vars
-    var lowOnTraps = game.buildings.Trap.owned < 5;
-    var trapTrimpsOK = getPageSetting('RTrapTrimps');
-    var hasTurkimp = game.talents.turkimp2.purchased || game.global.turkimpTimer > 0;
-    var needToTrap = (game.resources.trimps.max - game.resources.trimps.owned >= game.resources.trimps.max * 0.05) || (game.resources.trimps.getCurrentSend() > game.resources.trimps.owned - trimpsEffectivelyEmployed());
-    var fresh = false;
-	
+    // NOTE: lowOnTraps is computed but never read anywhere in this function (pre-existing dead
+    // assignment, preserved faithfully).
+    const lowOnTraps = game.buildings.Trap.owned < 5;
+    const trapTrimpsOK = getPageSetting('RTrapTrimps');
+    const hasTurkimp = game.talents.turkimp2.purchased || game.global.turkimpTimer > 0;
+    const needToTrap = (game.resources.trimps.max - game.resources.trimps.owned >= game.resources.trimps.max * 0.05) || (game.resources.trimps.getCurrentSend() > game.resources.trimps.owned - trimpsEffectivelyEmployed());
+    let fresh = false;
+
     //ULTRA FRESH
     if (!game.upgrades.Battle.done) {
         fresh = true;
@@ -257,7 +266,7 @@ export function RmanualLabor2() {
 
     //FRESH GAME NO RADON CODE
     if (!fresh && game.global.world <= 3 && game.global.totalRadonEarned <= 5000) {
-        if (game.global.buildingsQueue.length == 0 && (game.global.playerGathering != 'trimps' || game.buildings.Trap.owned == 0)) {
+        if (game.global.buildingsQueue.length === 0 && (game.global.playerGathering !== 'trimps' || game.buildings.Trap.owned === 0)) {
             if (!game.triggers.wood.done || game.resources.food.owned < 10 || Math.floor(game.resources.food.owned) < Math.floor(game.resources.wood.owned))
                 setGather('food');
             else
@@ -265,21 +274,21 @@ export function RmanualLabor2() {
         }
         return;
     }
-	
+
     //QUEST
-    if (game.global.challengeActive == "Quest") {
-        if (questcheck() == 10 || questcheck() == 20) {
+    if (game.global.challengeActive === "Quest") {
+        if (questcheck() === 10 || questcheck() === 20) {
             setGather('food');
-	}
-	if (questcheck() == 11 || questcheck() == 21) {
+        }
+        if (questcheck() === 11 || questcheck() === 21) {
             setGather('wood');
-	}
-	if (questcheck() == 12 || questcheck() == 22) {
+        }
+        if (questcheck() === 12 || questcheck() === 22) {
             setGather('metal');
-	}
-	if (questcheck() == 14 || questcheck() == 24) {
+        }
+        if (questcheck() === 14 || questcheck() === 24) {
             setGather('science');
-	}
+        }
     }
 	
     //HYPO
@@ -294,8 +303,8 @@ export function RmanualLabor2() {
 	
     //TIMEFARM
     else if (Rshouldtimefarm) {
-        var timefarmzone = getPageSetting('Rtimefarmzone');
-        var timefarmlevelindex = timefarmzone.indexOf(game.global.world);
+        const timefarmzone = getPageSetting('Rtimefarmzone');
+        const timefarmlevelindex = timefarmzone.indexOf(game.global.world);
         if (autoTrimpSettings.Rtimefarmgather.value[timefarmlevelindex] == "food") {
             setGather('food');
         }
@@ -316,6 +325,12 @@ export function RmanualLabor2() {
     }
 	
     //SHIP
+    // DEAD CODE (preserved as-is): this `else if (Rshouldshipfarm)` is unreachable — the earlier
+    // HYPO/SHIP ladder already handles Rshouldshipfarm above. It also has a latent bug (reads the
+    // hoisted `tributefarmzone` var declared in the TRIBUTE block below, undefined here) and
+    // declares `shipfarmzone` but never uses it. These `var`s stay `var` deliberately: `tributefarmzone`
+    // + `tributefarmlevelindex` are function-hoisted and shared with the TRIBUTE block, so converting
+    // either to const/let would introduce a TDZ / redeclaration error. Reported to #32, not fixed here.
     else if (Rshouldshipfarm) {
         var shipfarmzone = getPageSetting('Rtributefarmzone');
         var tributefarmlevelindex = tributefarmzone.indexOf(game.global.world);
@@ -352,13 +367,13 @@ export function RmanualLabor2() {
     }
 	
     //MISC.
-    else if (getPageSetting('RManualGather2') != 2 && game.resources.science.owned < MODULES["gather"].RminScienceAmount && document.getElementById('scienceCollectBtn')!.style.display != 'none' && document.getElementById('science')!.style.visibility != 'hidden') {
+    else if (getPageSetting('RManualGather2') != 2 && game.resources.science.owned < MODULES["gather"].RminScienceAmount && document.getElementById('scienceCollectBtn')!.style.display !== 'none' && document.getElementById('science')!.style.visibility !== 'hidden') {
         setGather('science');
     }
-    else if (game.resources.science.owned < (RscienceNeeded * 0.8) && document.getElementById('scienceCollectBtn')!.style.display != 'none' && document.getElementById('science')!.style.visibility != 'hidden') {
+    else if (game.resources.science.owned < (RscienceNeeded * 0.8) && document.getElementById('scienceCollectBtn')!.style.display !== 'none' && document.getElementById('science')!.style.visibility !== 'hidden') {
         setGather('science');
     }
-    else if (trapTrimpsOK && needToTrap && game.buildings.Trap.owned == 0 && canAffordBuilding('Trap')) {
+    else if (trapTrimpsOK && needToTrap && game.buildings.Trap.owned === 0 && canAffordBuilding('Trap')) {
         if (!safeBuyBuilding('Trap'))
             setGather('buildings');
     }
@@ -368,11 +383,11 @@ export function RmanualLabor2() {
     else if (game.global.buildingsQueue.length > 2) {
         setGather('buildings');
     }
-    else if (!game.global.trapBuildToggled && (game.global.buildingsQueue[0] == 'Barn.1' || game.global.buildingsQueue[0] == 'Shed.1' || game.global.buildingsQueue[0] == 'Forge.1')) {
+    else if (!game.global.trapBuildToggled && (game.global.buildingsQueue[0] === 'Barn.1' || game.global.buildingsQueue[0] === 'Shed.1' || game.global.buildingsQueue[0] === 'Forge.1')) {
         setGather('buildings');
     }
-    else if (game.resources.science.owned >= RscienceNeeded && document.getElementById('scienceCollectBtn')!.style.display != 'none' && document.getElementById('science')!.style.visibility != 'hidden') {
-        if (game.global.challengeActive != "Transmute" && (getPlayerModifier() < getPerSecBeforeManual('Scientist') && hasTurkimp) || getPageSetting('RManualGather2') == 2) {
+    else if (game.resources.science.owned >= RscienceNeeded && document.getElementById('scienceCollectBtn')!.style.display !== 'none' && document.getElementById('science')!.style.visibility !== 'hidden') {
+        if (game.global.challengeActive !== "Transmute" && (getPlayerModifier() < getPerSecBeforeManual('Scientist') && hasTurkimp) || getPageSetting('RManualGather2') == 2) {
             setGather('metal');
         } else if (getPageSetting('RManualGather2') != 2) {
             setGather('science');
