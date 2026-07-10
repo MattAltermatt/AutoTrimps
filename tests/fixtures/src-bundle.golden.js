@@ -725,106 +725,90 @@
     Overclocker: 32
   };
   function calcMiSpent(upgrade) {
-    var total = 0;
-    if (game.generatorUpgrades[upgrade].cost() <= game.generatorUpgrades[upgrade].baseCost || game.generatorUpgrades[upgrade].upgrades <= 0) return 0;
-    else {
-      total = game.generatorUpgrades[upgrade].upgrades * (game.generatorUpgrades[upgrade].baseCost + priceIncreases[upgrade] / 2 * (game.generatorUpgrades[upgrade].upgrades - 1));
-      return total;
-    }
+    const gen = game.generatorUpgrades[upgrade];
+    if (gen.cost() <= gen.baseCost || gen.upgrades <= 0) return 0;
+    return gen.upgrades * (gen.baseCost + priceIncreases[upgrade] / 2 * (gen.upgrades - 1));
   }
   function miRatio() {
-    var eff, cap, sup, oc, effr, capr, supr, ocr, effspend, effspendr, capspend, capspendr, supspend, supspendr, ocspend, ocspendr;
-    eff = calcMiSpent("Efficiency");
-    cap = calcMiSpent("Capacity");
-    sup = calcMiSpent("Supply");
-    oc = calcMiSpent("Overclocker");
-    var total = eff + cap + sup + oc;
-    effr = eff > 0 ? eff / total * 100 : 1;
-    capr = cap > 0 ? cap / total * 100 : 1;
-    supr = sup > 0 ? sup / total * 100 : 1;
-    ocr = oc > 0 ? oc / total * 100 : 1;
-    effspend = getPageSetting2("effratio") > 0 ? getPageSetting2("effratio") : 0;
-    capspend = getPageSetting2("capratio") > 0 ? getPageSetting2("capratio") : 0;
-    supspend = getPageSetting2("supratio") > 0 ? getPageSetting2("supratio") : 0;
-    ocspend = getPageSetting2("ocratio") > 0 ? getPageSetting2("ocratio") : 0;
-    var totalspend = effspend + capspend + supspend + ocspend;
-    effspendr = effspend > 0 ? totalspend / effspend * 100 : 0;
-    capspendr = capspend > 0 ? totalspend / capspend * 100 : 0;
-    supspendr = supspend > 0 ? totalspend / supspend * 100 : 0;
-    ocspendr = ocspend > 0 ? totalspend / ocspend * 100 : 0;
-    var efffinal = effspendr - effr;
-    var capfinal = capspendr - capr;
-    var supfinal = supspendr - supr;
-    var ocfinal = ocspendr - ocr;
-    var ratios = [];
-    if (efffinal != -1)
-      ratios.push(efffinal);
-    if (capfinal != -1)
-      ratios.push(capfinal);
-    if (supfinal != -1)
-      ratios.push(supfinal);
-    if (ocfinal != -1)
-      ratios.push(ocfinal);
+    const eff = calcMiSpent("Efficiency");
+    const cap = calcMiSpent("Capacity");
+    const sup = calcMiSpent("Supply");
+    const oc = calcMiSpent("Overclocker");
+    const total = eff + cap + sup + oc;
+    const effr = eff > 0 ? eff / total * 100 : 1;
+    const capr = cap > 0 ? cap / total * 100 : 1;
+    const supr = sup > 0 ? sup / total * 100 : 1;
+    const ocr = oc > 0 ? oc / total * 100 : 1;
+    const effspend = getPageSetting2("effratio") > 0 ? getPageSetting2("effratio") : 0;
+    const capspend = getPageSetting2("capratio") > 0 ? getPageSetting2("capratio") : 0;
+    const supspend = getPageSetting2("supratio") > 0 ? getPageSetting2("supratio") : 0;
+    const ocspend = getPageSetting2("ocratio") > 0 ? getPageSetting2("ocratio") : 0;
+    const totalspend = effspend + capspend + supspend + ocspend;
+    const effspendr = effspend > 0 ? totalspend / effspend * 100 : 0;
+    const capspendr = capspend > 0 ? totalspend / capspend * 100 : 0;
+    const supspendr = supspend > 0 ? totalspend / supspend * 100 : 0;
+    const ocspendr = ocspend > 0 ? totalspend / ocspend * 100 : 0;
+    const efffinal = effspendr - effr;
+    const capfinal = capspendr - capr;
+    const supfinal = supspendr - supr;
+    const ocfinal = ocspendr - ocr;
+    const ratios = [];
+    if (efffinal !== -1) ratios.push(efffinal);
+    if (capfinal !== -1) ratios.push(capfinal);
+    if (supfinal !== -1) ratios.push(supfinal);
+    if (ocfinal !== -1) ratios.push(ocfinal);
     ratios.sort(function(a, b) {
       return b - a;
     });
-    if (ratios[0] == efffinal)
-      return "Efficiency";
-    if (ratios[0] == capfinal)
-      return "Capacity";
-    if (ratios[0] == supfinal)
-      return "Supply";
-    if (ratios[0] == ocfinal)
-      return "Overclocker";
+    if (ratios[0] === efffinal) return "Efficiency";
+    if (ratios[0] === capfinal) return "Capacity";
+    if (ratios[0] === supfinal) return "Supply";
+    if (ratios[0] === ocfinal) return "Overclocker";
   }
   function autoMagmiteSpender2() {
     if (getPageSetting2("ratiospend") == true) {
-      var tospend = miRatio();
-      var upgrader = game.generatorUpgrades[tospend];
+      const tospend = miRatio();
+      const upgrader = game.generatorUpgrades[tospend];
       if (game.global.magmite >= upgrader.cost()) {
         debug2("Auto Spending " + upgrader.cost() + " Magmite on: " + tospend + " #" + (game.generatorUpgrades[tospend].upgrades + 1), "magmite");
         buyGeneratorUpgrade(tospend);
       }
     } else {
+      let didSpend = false;
       try {
-        var didSpend = false;
-        var permanames = ["Slowburn", "Shielding", "Storage", "Hybridization", "Supervision", "Simulacrum"];
-        for (var i = 0; i < permanames.length; i++) {
-          var item = permanames[i];
-          var upgrade = game.permanentGeneratorUpgrades[item];
-          if (typeof upgrade === "undefined")
-            return;
-          if (upgrade.owned)
-            continue;
-          var cost = upgrade.cost;
+        const permanames = ["Slowburn", "Shielding", "Storage", "Hybridization", "Supervision", "Simulacrum"];
+        for (const item of permanames) {
+          const upgrade = game.permanentGeneratorUpgrades[item];
+          if (typeof upgrade === "undefined") return;
+          if (upgrade.owned) continue;
+          const cost = upgrade.cost;
           if (game.global.magmite >= cost) {
             buyPermanentGeneratorUpgrade(item);
             debug2("Auto Spending " + cost + " Magmite on: " + item, "magmite");
             didSpend = true;
           }
         }
-        var hasOv = game.permanentGeneratorUpgrades.Hybridization.owned && game.permanentGeneratorUpgrades.Storage.owned;
-        var ovclock = game.generatorUpgrades.Overclocker;
+        const hasOv = game.permanentGeneratorUpgrades.Hybridization.owned && game.permanentGeneratorUpgrades.Storage.owned;
+        const ovclock = game.generatorUpgrades.Overclocker;
         if (hasOv && (getPageSetting2("spendmagmitesetting") == 0 || getPageSetting2("spendmagmitesetting") == 3 || !ovclock.upgrades) && game.global.magmite >= ovclock.cost()) {
           debug2("Auto Spending " + ovclock.cost() + " Magmite on: Overclocker" + (ovclock.upgrades ? " #" + (ovclock.upgrades + 1) : ""), "magmite");
           buyGeneratorUpgrade("Overclocker");
         }
-        var repeat = getPageSetting2("spendmagmitesetting") == 0 || getPageSetting2("spendmagmitesetting") == 1;
+        let repeat = getPageSetting2("spendmagmitesetting") == 0 || getPageSetting2("spendmagmitesetting") == 1;
         while (repeat) {
-          if (MODULES["magmite"].algorithm == 2) {
-            var eff = game.generatorUpgrades["Efficiency"];
-            var cap = game.generatorUpgrades["Capacity"];
-            var sup = game.generatorUpgrades["Supply"];
-            if (typeof eff === "undefined" || typeof cap === "undefined" || typeof sup === "undefined")
-              return;
-            var EffObj = {};
+          if (MODULES["magmite"].algorithm === 2) {
+            const eff = game.generatorUpgrades["Efficiency"];
+            const cap = game.generatorUpgrades["Capacity"];
+            const sup = game.generatorUpgrades["Supply"];
+            if (typeof eff === "undefined" || typeof cap === "undefined" || typeof sup === "undefined") return;
+            const EffObj = {};
             EffObj.name = "Efficiency";
             EffObj.lvl = eff.upgrades + 1;
             EffObj.cost = eff.cost();
             EffObj.benefit = EffObj.lvl * 0.1;
             EffObj.effInc = ((1 + EffObj.benefit) / (1 + (EffObj.lvl - 1) * 0.1) - 1) * 100;
             EffObj.miCostPerPct = EffObj.cost / EffObj.effInc;
-            var CapObj = {};
+            const CapObj = {};
             CapObj.name = "Capacity";
             CapObj.lvl = cap.upgrades + 1;
             CapObj.cost = cap.cost();
@@ -832,12 +816,12 @@
             CapObj.benefit = Math.sqrt(CapObj.totalCap);
             CapObj.effInc = (CapObj.benefit / Math.sqrt(3 + 0.4 * (CapObj.lvl - 1)) - 1) * 100;
             CapObj.miCostPerPct = CapObj.cost / CapObj.effInc;
-            var upgrade, item;
-            if (EffObj.miCostPerPct <= CapObj.miCostPerPct)
+            let item;
+            if (EffObj.miCostPerPct <= CapObj.miCostPerPct) {
               item = EffObj.name;
-            else {
+            } else {
               const supCost = sup.cost();
-              var wall = getPageSetting2("SupplyWall");
+              const wall = getPageSetting2("SupplyWall");
               if (!wall)
                 item = CapObj.cost <= supCost ? CapObj.name : "Supply";
               else if (wall == 1)
@@ -847,26 +831,26 @@
               else
                 item = CapObj.cost <= supCost * wall ? "Capacity" : "Supply";
             }
-            upgrade = game.generatorUpgrades[item];
+            const upgrade = game.generatorUpgrades[item];
             if (game.global.magmite >= upgrade.cost()) {
               debug2("Auto Spending " + upgrade.cost() + " Magmite on: " + item + " #" + (game.generatorUpgrades[item].upgrades + 1), "magmite");
               buyGeneratorUpgrade(item);
               didSpend = true;
-            } else
+            } else {
               repeat = false;
+            }
           }
         }
       } catch (err) {
         debug2("AutoSpendMagmite Error encountered: " + err.message, "magmite");
       }
-      if (didSpend)
-        debug2("Leftover magmite: " + game.global.magmite, "magmite");
+      if (didSpend) debug2("Leftover magmite: " + game.global.magmite, "magmite");
     }
   }
   function autoGenerator() {
-    var defaultgenstate = getPageSetting2("defaultgen");
-    var beforefuelstate = getPageSetting2("beforegen");
-    var hybrid = game.permanentGeneratorUpgrades.Hybridization.owned;
+    let defaultgenstate = getPageSetting2("defaultgen");
+    let beforefuelstate = getPageSetting2("beforegen");
+    const hybrid = game.permanentGeneratorUpgrades.Hybridization.owned;
     if (!hybrid && defaultgenstate == 2) {
       defaultgenstate = 0;
     }
@@ -874,21 +858,21 @@
       beforefuelstate = 0;
     }
     if (game.global.world < 230) return;
-    if (game.global.dailyChallenge.seed && getPageSetting2("AutoGenDC") == 1 && game.global.generatorMode != 1)
+    if (game.global.dailyChallenge.seed && getPageSetting2("AutoGenDC") == 1 && game.global.generatorMode !== 1)
       changeGeneratorState(1);
-    if (game.global.dailyChallenge.seed && getPageSetting2("AutoGenDC") == 1 && game.global.generatorMode == 1)
+    if (game.global.dailyChallenge.seed && getPageSetting2("AutoGenDC") == 1 && game.global.generatorMode === 1)
       return;
-    if (hybrid && game.global.dailyChallenge.seed && getPageSetting2("AutoGenDC") == 2 && game.global.generatorMode != 2)
+    if (hybrid && game.global.dailyChallenge.seed && getPageSetting2("AutoGenDC") == 2 && game.global.generatorMode !== 2)
       changeGeneratorState(2);
-    if (game.global.dailyChallenge.seed && getPageSetting2("AutoGenDC") == 2 && game.global.generatorMode == 2)
+    if (game.global.dailyChallenge.seed && getPageSetting2("AutoGenDC") == 2 && game.global.generatorMode === 2)
       return;
-    if (game.global.runningChallengeSquared && getPageSetting2("AutoGenC2") == 1 && game.global.generatorMode != 1)
+    if (game.global.runningChallengeSquared && getPageSetting2("AutoGenC2") == 1 && game.global.generatorMode !== 1)
       changeGeneratorState(1);
-    if (game.global.runningChallengeSquared && getPageSetting2("AutoGenC2") == 1 && game.global.generatorMode == 1)
+    if (game.global.runningChallengeSquared && getPageSetting2("AutoGenC2") == 1 && game.global.generatorMode === 1)
       return;
-    if (hybrid && game.global.runningChallengeSquared && getPageSetting2("AutoGenC2") == 2 && game.global.generatorMode != 2)
+    if (hybrid && game.global.runningChallengeSquared && getPageSetting2("AutoGenC2") == 2 && game.global.generatorMode !== 2)
       changeGeneratorState(2);
-    if (game.global.runningChallengeSquared && getPageSetting2("AutoGenC2") == 2 && game.global.generatorMode == 2)
+    if (game.global.runningChallengeSquared && getPageSetting2("AutoGenC2") == 2 && game.global.generatorMode === 2)
       return;
     if (getPageSetting2("fuellater") < 1 && game.global.generatorMode != beforefuelstate)
       changeGeneratorState(beforefuelstate);
@@ -898,13 +882,13 @@
       changeGeneratorState(beforefuelstate);
     if (getPageSetting2("fuellater") >= 1 && game.global.world < getPageSetting2("fuellater") && game.global.generatorMode == beforefuelstate)
       return;
-    if (getPageSetting2("fuellater") >= 1 && game.global.world >= getPageSetting2("fuellater") && game.global.world < getPageSetting2("fuelend") && game.global.generatorMode != 1)
+    if (getPageSetting2("fuellater") >= 1 && game.global.world >= getPageSetting2("fuellater") && game.global.world < getPageSetting2("fuelend") && game.global.generatorMode !== 1)
       changeGeneratorState(1);
-    if (getPageSetting2("fuellater") >= 1 && game.global.world >= getPageSetting2("fuellater") && game.global.world < getPageSetting2("fuelend") && game.global.generatorMode == 1)
+    if (getPageSetting2("fuellater") >= 1 && game.global.world >= getPageSetting2("fuellater") && game.global.world < getPageSetting2("fuelend") && game.global.generatorMode === 1)
       return;
-    if (getPageSetting2("fuelend") < 1 && game.global.world >= getPageSetting2("fuellater") && game.global.generatorMode != 1)
+    if (getPageSetting2("fuelend") < 1 && game.global.world >= getPageSetting2("fuellater") && game.global.generatorMode !== 1)
       changeGeneratorState(1);
-    if (getPageSetting2("fuelend") < 1 && game.global.world >= getPageSetting2("fuellater") && game.global.generatorMode == 1)
+    if (getPageSetting2("fuelend") < 1 && game.global.world >= getPageSetting2("fuellater") && game.global.generatorMode === 1)
       return;
     if (getPageSetting2("fuelend") >= 1 && game.global.world >= getPageSetting2("fuelend") && game.global.generatorMode != defaultgenstate)
       changeGeneratorState(defaultgenstate);
