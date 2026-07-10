@@ -389,27 +389,6 @@ declare global {
   var mapbought: any
   var dmapbought: any
   var presteps: any
-  // Radon-universe (R-prefixed) mirrors of the prestige-raid globals above.
-  var Rprestraid: any
-  var Rdprestraid: any
-  var Rfailpraid: any
-  var Rdfailpraid: any
-  var Rbwraided: any
-  var Rdbwraided: any
-  var Rfailbwraid: any
-  var Rdfailbwraid: any
-  var Rprestraidon: any
-  var Rdprestraidon: any
-  var Rmapbought: any
-  var Rdmapbought: any
-  var Rbwraidon: any
-  var Rdbwraidon: any
-  var Rpresteps: any
-  var RminMaxMapCost: any
-  var RfMap: any
-  var RpMap: any
-  var RshouldFarmFrags: any
-  var RpraidDone: any
   // R-map-state globals OWNED by mapfunctions.ts (published via globalThis, read
   // cross-module by maps.ts/equipment.ts and still-legacy code) — Wave 3 #30.
   var sepcial: any
