@@ -1,4 +1,4 @@
-var ATversion = 'Zek v5.1.0',
+var ATversion = (typeof __AT_BUILD_VERSION__ !== 'undefined' ? 'v' + __AT_BUILD_VERSION__ : 'Zek v5.1.0'),
     atscript = document.getElementById('AutoTrimps-script'),
     basepath = 'https://Zorn192.github.io/AutoTrimps/', //Link to your own Github here if you forked!
     modulepath = 'modules/';

@@ -34,6 +34,20 @@ describe('buildUserscript version wiring', () => {
       else process.env.GITHUB_RUN_NUMBER = prev
     }
   })
+
+  it('exposes the same version on-screen via __AT_BUILD_VERSION__ → ATversion → the load message', async () => {
+    const prev = process.env.GITHUB_RUN_NUMBER
+    process.env.GITHUB_RUN_NUMBER = '777'
+    try {
+      const out = await buildUserscript()
+      // the on-screen version equals the @version header value (single source of truth)
+      expect(out).toMatch(/var __AT_BUILD_VERSION__ = "\d+\.\d+\.\d+.*\.777";/)
+      expect(out).toContain("'AutoTrimps ' + ATversion + ' Loaded!'") // top message-log line
+    } finally {
+      if (prev === undefined) delete process.env.GITHUB_RUN_NUMBER
+      else process.env.GITHUB_RUN_NUMBER = prev
+    }
+  })
 })
 
 describe('buildUserscript', () => {

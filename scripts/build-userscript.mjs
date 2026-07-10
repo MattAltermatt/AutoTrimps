@@ -114,7 +114,7 @@ function deLoaderize(src) {
   // the same boot). bootSettingsUI is published globally by src/legacy-bridge.ts.
   src = src.replace(
     /function initializeAutoTrimps\(\) \{[\s\S]*?debug\('AutoTrimps - Zek Fork Loaded!', '\*spinner3'\);\s*\}/,
-    "function initializeAutoTrimps() {\n    loadPageVariables();\n    bootSettingsUI();\n    debug('AutoTrimps - Zek Fork Loaded!', '*spinner3');\n}"
+    "function initializeAutoTrimps() {\n    loadPageVariables();\n    bootSettingsUI();\n    debug('AutoTrimps ' + ATversion + ' Loaded!', '*spinner3');\n}"
   )
   return src
 }
@@ -152,7 +152,12 @@ export async function buildUserscript() {
   const firstJs = await readModule(first)
   const restJs = (await Promise.all(rest.map(readModule))).join('')
   const srcIife = await bundleSrc()
-  return `${header(resolveVersion(pkg.version, process.env.GITHUB_RUN_NUMBER))}${firstJs}\n;\n/* ===== src/main.ts (bundled — seam: converted modules published before remaining legacy) ===== */\n${srcIife}\n;\n${restJs}\n`
+  const version = resolveVersion(pkg.version, process.env.GITHUB_RUN_NUMBER)
+  // Expose the monotonic build version to the bundle so AutoTrimps2.js stamps it into ATversion —
+  // it then shows in the on-load message log ("AutoTrimps v<x> Loaded!") and the update-notice title,
+  // giving the user a single incrementing on-screen version to confirm they're on the latest.
+  const versionGlobal = `var __AT_BUILD_VERSION__ = ${JSON.stringify(version)};\n`
+  return `${header(version)}${versionGlobal}${firstJs}\n;\n/* ===== src/main.ts (bundled — seam: converted modules published before remaining legacy) ===== */\n${srcIife}\n;\n${restJs}\n`
 }
 
 async function writeBuild() {
