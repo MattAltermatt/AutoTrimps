@@ -21,7 +21,6 @@ import {
   desodynamicHD,
   rMutationAttack,
   rCalcMutationAttack,
-  rMutationHealth,
   rCalcMutationHealth,
   RgetCritMulti,
   RcalcOurDmg,

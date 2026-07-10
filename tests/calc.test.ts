@@ -177,6 +177,16 @@ describe('calc.calcEnemyBaseHealth / calcEnemyBaseAttack — Layer-1 golden mast
     // signature is (type, zone, cell, name) — distinct from calcEnemyBaseHealth(zone, level, name)
     expect(calcEnemyBaseAttack('world', 5, 50, 'Snimp')).toBe(1326)
   })
+
+  // zone 1/2 boundary arms (#51 net-depth follow-up — the zone===1 / zone===2 literal branches
+  // the general suite skipped; guards a future edit to those exact early-game coefficients).
+  it('base attack at zone 1 (zone===1 arm: ×0.35 then 0.2/0.75 split)', () => {
+    expect(calcEnemyBaseAttack('world', 1, 50, 'Snimp')).toBe(16)
+  })
+
+  it('base attack at zone 2 (zone===2 arm: ×0.5 then 0.32/0.68 split)', () => {
+    expect(calcEnemyBaseAttack('world', 2, 50, 'Snimp')).toBe(73)
+  })
 })
 
 describe('calc.RcalcEnemyBaseHealth — Layer-1 golden master (U2 radon scaling)', () => {
