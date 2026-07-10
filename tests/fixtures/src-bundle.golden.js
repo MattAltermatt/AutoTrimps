@@ -2868,8 +2868,6 @@
     let Factor = Effect / Cost;
     let StatusBorder = "white";
     let Wall = false;
-    const BuyWeaponUpgrades = getPageSetting2("RBuyWeaponsNew") == 1 || getPageSetting2("RBuyWeaponsNew") == 2;
-    const BuyArmorUpgrades = getPageSetting2("RBuyArmorNew") == 1 || getPageSetting2("RBuyArmorNew") == 2;
     let NextEffect;
     let NextCost;
     if (!game.upgrades[equip.Upgrade].locked) {

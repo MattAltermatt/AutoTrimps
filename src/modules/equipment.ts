@@ -617,9 +617,11 @@ export function RevaluateEquipmentEfficiency(equipName: string) {
     let StatusBorder = 'white';
     let Wall = false;
 
-    // getPageSetting is polymorphic → KEEP == loose.
-    const BuyWeaponUpgrades = ((getPageSetting('RBuyWeaponsNew') == 1) || (getPageSetting('RBuyWeaponsNew') == 2));
-    const BuyArmorUpgrades = ((getPageSetting('RBuyArmorNew') == 1) || (getPageSetting('RBuyArmorNew') == 2));
+    // #56.5: removed the dead BuyWeaponUpgrades/BuyArmorUpgrades reads. They mirrored the U1 twin's
+    // NextCost=Infinity gate, but that gate was never ported here and — crucially — RBuyWeaponsNew/
+    // RBuyArmorNew are phantom settings (never createSetting'd), so getPageSetting returns false. The
+    // gate would therefore always fire (NextCost=Infinity → Wall always false), disabling U2 prestige-
+    // wall detection. The phantom-setting cluster (other.ts + this file) is tracked separately.
     let NextEffect: number | undefined;
     let NextCost: number | undefined;
     if (!game.upgrades[equip.Upgrade].locked) {
@@ -649,8 +651,7 @@ export function RevaluateEquipmentEfficiency(equipName: string) {
             }
         }
     }
-    // challengeActive string + gridArray name are string-typed → strict compare; BuyWeaponUpgrades
-    // unused here (faithful-port dead read, mirrors the U1 twin).
+    // challengeActive string + gridArray name are string-typed → strict compare.
     if (game.jobs[Rmapresourcetojob[equip.Resource]].locked && (game.global.challengeActive !== 'Transmute')) {
         Factor = 0;
         Wall = true;
