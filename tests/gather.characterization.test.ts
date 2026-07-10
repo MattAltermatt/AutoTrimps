@@ -695,4 +695,28 @@ describe('gather.RmanualLabor2 — L1b actuator spy-log (U2 gather)', () => {
     gather.RmanualLabor2()
     expect(gatherCalls).toEqual(['metal'])
   })
+
+  // ── #54 regression: dead SHIP-farm block removed ───────────────────────────────────────────────
+  // The removed block was an unreachable botched copy of TRIBUTE. These two pin the *reachable*
+  // behaviour that made it dead: SHIP-farm's live arm is a hardcoded 'food' (line 300), and TRIBUTE
+  // still resolves via the shared function-hoisted `var tributefarmzone` binding after the sibling
+  // dead block that also declared it was deleted.
+  it('#54 SHIP farm (Rshouldshipfarm) → setGather("food") [live arm, hardcoded — not the deleted block]', () => {
+    ;(globalThis as any).Rshouldshipfarm = true
+    ;(globalThis as any).autoTrimpSettings = {}
+    ;(globalThis as any).game = baseGame()
+    gather.RmanualLabor2()
+    expect(gatherCalls).toEqual(['food'])
+  })
+
+  it('#54 TRIBUTE farm (Rshouldtributefarm) still resolves per Rtributegatherselection → setGather("metal")', () => {
+    ;(globalThis as any).Rshouldtributefarm = true
+    ;(globalThis as any).autoTrimpSettings = {
+      Rtributefarmzone: { type: 'multiValue', value: [50] }, // getPageSetting → [50]; indexOf(world 50)=0
+      Rtributegatherselection: { value: ['metal'] },         // read directly [.value[0]]
+    }
+    ;(globalThis as any).game = baseGame()
+    gather.RmanualLabor2()
+    expect(gatherCalls).toEqual(['metal'])
+  })
 })

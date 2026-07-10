@@ -4610,7 +4610,6 @@
       const gameUpgrade = game.upgrades[upgrade];
       const available = gameUpgrade.allowed > gameUpgrade.done && canAffordTwoLevel(gameUpgrade);
       if (upgrade === "Coordination" && (getPageSetting2("RBuyUpgradesNew") == 2 || !canAffordCoordinationTrimps())) continue;
-      if (upgrade === "Supershield" && !Rhyposhouldwood) continue;
       if (!available) continue;
       if (game.upgrades.Scientists.done < game.upgrades.Scientists.allowed && upgrade !== "Scientists") continue;
       buyUpgrade(upgrade, true, true);
@@ -4889,21 +4888,6 @@
       }
     } else if (Rshouldsmithyfarm) {
       setGather(RsmithyCalc(false, false, false, true));
-    } else if (Rshouldshipfarm) {
-      var shipfarmzone = getPageSetting2("Rtributefarmzone");
-      var tributefarmlevelindex = tributefarmzone.indexOf(game.global.world);
-      if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "food") {
-        setGather("food");
-      }
-      if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "wood") {
-        setGather("wood");
-      }
-      if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "metal") {
-        setGather("metal");
-      }
-      if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "science") {
-        setGather("science");
-      }
     } else if (Rshouldtributefarm) {
       var tributefarmzone = getPageSetting2("Rtributefarmzone");
       var tributefarmlevelindex = tributefarmzone.indexOf(game.global.world);
@@ -7922,7 +7906,6 @@
     else if (Rshoulddobogs) status = "Black Bogs";
     else if (RdoMaxMapBonus) status = "Max Map Bonus After Zone";
     else if (RvanillaMAZ) status = "Vanilla MAZing";
-    else if (!game.global.mapsUnlocked) status = "&nbsp;";
     else if (RneedPrestige && !RdoVoids) status = "Prestige";
     else if (RdoVoids) {
       const stackedMaps = Fluffy.isRewardActive("void") ? countStackedVoidMaps() : 0;

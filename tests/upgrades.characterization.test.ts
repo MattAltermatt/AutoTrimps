@@ -426,6 +426,22 @@ describe('upgrades.RbuyUpgrades — L1b actuator spy-log (radon upgrade loop)', 
     upgrades.RbuyUpgrades()
     expect(buyUpgradeCalls).toEqual([['Scientists', true, true]])
   })
+
+  // #53 regression: 'Supershield' (a Shield equipment prestige) is not a member of RupgradeList, so
+  // the loop never visits it — the deleted `upgrade === 'Supershield' && !Rhyposhouldwood` guard was
+  // unreachable. Even armed & affordable, with Rhyposhouldwood false (the guard's trigger), it is
+  // never bought here; the real Hypothermia/wood gating lives in equipment.ts.
+  it('#53 never buys Supershield (∉ RupgradeList) even with Rhyposhouldwood false — deleted guard was dead', () => {
+    ;(globalThis as any).Rhyposhouldwood = false
+    ;(globalThis as any).autoTrimpSettings = {}
+    ;(globalThis as any).game = baseGame({
+      Supershield: { allowed: 1, done: 0 }, // armed & affordable, yet never iterated
+      Battle: { allowed: 1, done: 0 },
+    })
+    upgrades.RbuyUpgrades()
+    expect(buyUpgradeCalls).toEqual([['Battle', true, true]])
+    expect(buyUpgradeCalls.some(c => c[0] === 'Supershield')).toBe(false)
+  })
 })
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════

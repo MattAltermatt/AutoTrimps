@@ -323,31 +323,7 @@ export function RmanualLabor2() {
     else if (Rshouldsmithyfarm) {
         setGather(RsmithyCalc(false, false, false, true));
     }
-	
-    //SHIP
-    // DEAD CODE (preserved as-is): this `else if (Rshouldshipfarm)` is unreachable — the earlier
-    // HYPO/SHIP ladder already handles Rshouldshipfarm above. It also has a latent bug (reads the
-    // hoisted `tributefarmzone` var declared in the TRIBUTE block below, undefined here) and
-    // declares `shipfarmzone` but never uses it. These `var`s stay `var` deliberately: `tributefarmzone`
-    // + `tributefarmlevelindex` are function-hoisted and shared with the TRIBUTE block, so converting
-    // either to const/let would introduce a TDZ / redeclaration error. Reported to #32, not fixed here.
-    else if (Rshouldshipfarm) {
-        var shipfarmzone = getPageSetting('Rtributefarmzone');
-        var tributefarmlevelindex = tributefarmzone.indexOf(game.global.world);
-        if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "food") {
-            setGather('food');
-        }
-        if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "wood") {
-            setGather('wood');
-        }
-        if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "metal") {
-            setGather('metal');
-        }
-        if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "science") {
-            setGather('science');
-        }
-    }
-	
+
     //TRIBUTE
     else if (Rshouldtributefarm) {
         var tributefarmzone = getPageSetting('Rtributefarmzone');

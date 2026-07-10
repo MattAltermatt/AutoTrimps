@@ -278,6 +278,9 @@ describe('maps.RupdateAutoMapsStatus — L1a golden master (U2 status selector)'
     expect(maps.RupdateAutoMapsStatus(true)![0]).toBe('Off')
   })
 
+  // #55 regression guard: the early `!mapsUnlocked → 'Maps Locked'` arm (line 897) always wins, so
+  // the removed U1-inherited duplicate `!mapsUnlocked → '&nbsp;'` arm was unreachable. Asserting
+  // 'Maps Locked' (not '&nbsp;') pins that the deletion is behaviour-preserving.
   it('Maps Locked when maps not unlocked', () => {
     ;(globalThis as any).autoTrimpSettings = { RAutoMaps: { type: 'value', value: 1 } }
     ;(globalThis as any).game = rStatusGame({ global: { world: 100, mapsUnlocked: false, challengeActive: '', totalVoidMaps: 0, totalRadonEarned: 200, radonLeftover: 0 } })

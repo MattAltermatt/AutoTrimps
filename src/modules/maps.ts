@@ -919,7 +919,6 @@ export function RupdateAutoMapsStatus(get?: any) {
     else if (Rshoulddobogs) status = 'Black Bogs';
     else if (RdoMaxMapBonus) status = 'Max Map Bonus After Zone';
     else if (RvanillaMAZ) status = 'Vanilla MAZing';
-    else if (!game.global.mapsUnlocked) status = '&nbsp;';
     else if (RneedPrestige && !RdoVoids) status = 'Prestige';
     else if (RdoVoids) {
         const stackedMaps = Fluffy.isRewardActive('void') ? countStackedVoidMaps() : 0;
