@@ -115,6 +115,16 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **Proof-net Phase 3 giant-splits shipped** (2026-07-10) — the two biggest modules split behind the
+  proof net as pure byte-faithful moves: `mapfunctions.ts` 2799→1963 (extracted `mapfunctions-amp.ts`,
+  the 9-fn Radon AMP engine) and `other.ts` 2378→621 (extracted `other-praiding.ts`, the 30-fn U1
+  Prestige/BW-Raid state machine). Also: removed the dead `calcBaseDamageInX` calc.ts copy (stance's
+  wins at global scope), the dead `dailyBWraiding` + 20-name `Rprestraid` block, and added a
+  bridge import-order guard test. Rejected the `RcalcOurHealth↔calcOurHealth` "dedupe" (distinct
+  U1/U2 models = tuning). Method (see spec `docs/superpowers/specs/2026-07-10-proof-net-phase-3-giant-splits.md`):
+  **split-first** (a move is verified by golden pure-relocation + the src-bundle-parity net — no
+  behavioral net needed), refactor of the moved code deferred to a later per-module pass. Filed #57
+  (purchase-coordinator idea).
 - **Planning is 100% GitHub-native** (2026-07-08) — ROADMAP/CHANGELOG/HISTORY deleted; Issues +
   Milestones + issue #23 (frozen Phases 0–2) are canonical. In-repo docs point at GitHub, never
   duplicate it.

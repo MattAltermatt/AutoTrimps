@@ -1,5 +1,10 @@
 # 🪓 Proof-net Phase 3 — cross-module giant-splits (execution design)
 
+> ✅ **SHIPPED 2026-07-10.** All units landed on `main`: seam guard + `calcBaseDamageInX` dedupe (3a),
+> `other-praiding.ts` split + dead-code removal (3c), `mapfunctions-amp.ts` split (3d). 3b (RcalcOurHealth
+> "dedupe") rejected as designed. Result: `mapfunctions.ts` 2799→1963 (+amp 849), `other.ts` 2378→621
+> (+praiding 1686). 531 tests green, L0 ∅, three fresh-reviewer passes clean, Chrome-verified per branch.
+
 **Date:** 2026-07-10 · **Parent spec:** [`2026-07-09-proof-net-modernization-design.md`](2026-07-09-proof-net-modernization-design.md) §12 row 3 · **Tracker:** proof-net milestone (Phase 3)
 
 This refines the parent spec's one-line Phase 3 row into a concrete, gated execution plan, informed by a three-agent duel (two decomposition architects + one adversary). It **supersedes** the parent §12 Phase 3 wording where they differ, and records the reasoning so a future session doesn't re-litigate it.
