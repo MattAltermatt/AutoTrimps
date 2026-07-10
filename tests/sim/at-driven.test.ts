@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest'
+import { it, expect } from 'vitest'
+import { describeSim } from './guard'
 import { bootGame } from '../../scripts/sim/boot.mjs'
 import { stepWithAT } from '../../scripts/sim/driver.mjs'
 
@@ -6,7 +7,7 @@ import { stepWithAT } from '../../scripts/sim/driver.mjs'
 // drives the active-play tick without throwing. NOTE: this does NOT assert full-run
 // progression — a bare newGame() is inert (trimps are player-trapped in the opening, and
 // AT only takes over once trimps flow). Realistic-run seeding is tracked separately.
-describe('sim/at-driven', () => {
+describeSim('sim/at-driven', () => {
   it('AutoTrimps initializes its settings when booted', () => {
     const { window } = bootGame({ withAutoTrimps: true })
     expect(typeof window.mainLoop).toBe('function')
