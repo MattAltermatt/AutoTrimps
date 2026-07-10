@@ -1,0 +1,1 @@
+[{"tick":263,"fn":"buyUpgrade","args":["Efficiency",true,true]},{"tick":767,"fn":"buyJob","args":["Farmer",true,true]},{"tick":767,"fn":"buyJob","args":["Miner",true,true]},{"tick":767,"fn":"buyJob","args":["Lumberjack",true,true]},{"tick":1066,"fn":"buyUpgrade","args":["Speedminer",true,true]},{"tick":1418,"fn":"buyJob","args":["Trainer",true,true]}]
