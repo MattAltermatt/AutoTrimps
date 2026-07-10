@@ -524,3 +524,15 @@ git commit -m "feat(proof-net): baseline-zero validation + assertHydrated wiring
 - [ ] `npm run typecheck` + `npm run lint` + `npm test` (CI path) all green.
 
 Then squash → FF-merge `feature/proof-net-modernization` → `main` → delete branch. Phase 1 (beachhead `jobs.ts`) plans next, against the now-working harness.
+
+---
+
+## ✅ Shipped 2026-07-09
+
+All 8 tasks landed on `feature/proof-net-modernization`; **119/119 tests green locally, 96 pass / 23 skip / 0 fail in the CI path** (sim tests skip via `describeSim`); typecheck + lint clean. **Baseline-zero is GREEN** — the current HEAD build reproduces the oracle's native-mutator traces exactly, which both validates the harness end-to-end and **confirms #33–#39 were behavior-preserving on the decision path** (they changed the DOM render, not what the bot buys/fights/maps).
+
+**Key finding folded in:** the naive frozen clock still drifted run-to-run because `load()` stamps `game.global.start = realDate.now()` before the shim installs → fixed by pinning the game-time origin (`clock.mjs`). This resolves the adversary's P2 determinism concern.
+
+**Honest deltas from the spec (follow-ups, not blockers):**
+- **Corpus is 3 saves × 1 seed**, not the spec's 5 × 3. Shipped: `01-early-u1` (z4 base, 12 trace events), `02-mid-u1` (played-forward, 1 event — thin/quiet), `03-challenge-watch` (6 events, arms `jobs.ts:118`). **Deferred:** `04-u2-radon` + `05-deepzone` (need portal/long-progression research; the design already treats deep/U2 as L0 gaps covered by L1 depth); multi-seed averaging.
+- **Differential coverage meter (c8/v8 over `src/` during the run) deferred** — it needs bundle-sourcemap v8 instrumentation (the differential runs the built bundle, not instrumented `src/`). The manifest/adequacy machinery is in place; the automated coverage gate is a follow-up.
