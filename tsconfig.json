@@ -12,5 +12,6 @@
     "types": ["node"],
     "lib": ["ES2020", "DOM", "DOM.Iterable"]
   },
-  "include": ["src", "tests", "scripts"]
+  "include": ["src", "tests", "scripts"],
+  "exclude": ["tests/fixtures"]
 }

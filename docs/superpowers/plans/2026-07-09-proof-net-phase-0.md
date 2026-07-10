@@ -72,6 +72,8 @@ node scripts/sim/build-oracle.mjs
 git add tests/fixtures/oracle/autotrimps.oracle.user.js
 ```
 
+- [ ] **Step 3b — Exclude committed bundle fixtures from tsc (REQUIRED).** `tsconfig.json` has `allowJs:true` + `include:["src","tests","scripts"]`; a committed userscript bundle is a global-scope script whose top-level `var MODULES = {}` + bare global assignments collide with the ambient `declare` globals in `at-legacy.d.ts` and collapse them to `{}`, breaking every `src/modules` typecheck. Add `"exclude": ["tests/fixtures"]` to `tsconfig.json` (fixtures are string-loaded via `readFileSync`, never imported as modules; vitest uses its own esbuild transform, so tests are unaffected). Verify `npm run typecheck` is clean.
+
 - [ ] **Step 4 — Write `tests/sim/oracle.test.ts`** asserting the pin is correct: the oracle bundle exists, is non-trivial, and **predates #39** (contains no `renderControlFace`) — a positive proof we pinned before the settings-render drift.
 ```ts
 import { describeSim } from './guard'
