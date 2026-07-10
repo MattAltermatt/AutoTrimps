@@ -8,5 +8,8 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['tests/setup.ts'],
     include: ['tests/**/*.{test,spec}.ts', 'src/**/*.{test,spec}.ts'],
+    // The sim/differential tests boot the game in jsdom and self-play 1000+ ticks (~5–8s each);
+    // under parallel workers they can exceed vitest's 5s default. Give all tests generous headroom.
+    testTimeout: 30_000,
   },
 })
