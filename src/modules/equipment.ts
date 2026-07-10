@@ -607,8 +607,12 @@ export function RPrestigeValue(what: any) {
 export function RevaluateEquipmentEfficiency(equipName: string) {
     const equip = RequipmentList[equipName];
     const gameResource = equip.Equip ? game.equipment[equipName] : game.buildings[equipName];
-    const Effect = equipEffect(gameResource, equip);
-    const Cost = equipCost(gameResource, equip);
+    // #56.1: the U2 evaluator must use the U2 cost/effect mirrors. RequipCost applies the game's
+    // U2 getEquipPriceMult (Artisanistry .radLevel + Artisan one-timer + Pandemonium), matching the
+    // NextCost calc below; the U1 equipCost used the wrong universe's Artisanistry level and omitted
+    // the Artisan/Pandemonium multipliers. RequipEffect ≡ equipEffect for all-Equip:true entries.
+    const Effect = RequipEffect(gameResource, equip);
+    const Cost = RequipCost(gameResource, equip);
     let Factor = Effect / Cost;
     let StatusBorder = 'white';
     let Wall = false;

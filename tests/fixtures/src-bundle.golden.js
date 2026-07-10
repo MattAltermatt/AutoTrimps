@@ -2863,8 +2863,8 @@
   function RevaluateEquipmentEfficiency(equipName) {
     const equip = RequipmentList[equipName];
     const gameResource = equip.Equip ? game.equipment[equipName] : game.buildings[equipName];
-    const Effect = equipEffect(gameResource, equip);
-    const Cost = equipCost(gameResource, equip);
+    const Effect = RequipEffect(gameResource, equip);
+    const Cost = RequipCost(gameResource, equip);
     let Factor = Effect / Cost;
     let StatusBorder = "white";
     let Wall = false;

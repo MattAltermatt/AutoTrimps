@@ -417,6 +417,21 @@ describe('equipment.RevaluateEquipmentEfficiency — L1a eval object (radon)', (
     const r = equipment.RevaluateEquipmentEfficiency('Dagger')
     expect(r.Factor).not.toBe(0) // Transmute exempts the resource-locked wall
   })
+
+  it('#56.1: Cost uses the U2 RequipCost (Artisanistry .radLevel), not U1 equipCost (.level)', () => {
+    // The U2 evaluator now computes Cost via RequipCost (matches the game's U2 getEquipPriceMult).
+    // Fixture: Artisanistry modifier 0.5, level 0, radLevel 2; getBuildingItemPrice 100; Effect 300.
+    //   BEFORE (U1 equipCost, .level=0):    Cost = ceil(100 * 0.5^0) = 100 → Factor 300/100 = 3
+    //   AFTER  (U2 RequipCost, .radLevel=2): Cost = ceil(100 * 0.5^2) = 25  → Factor 300/25  = 12
+    ;(globalThis as any).getBuildingItemPrice = () => 100
+    ;(globalThis as any).autoBattle = { oneTimers: { Artisan: { owned: false, getMult: () => 1 } } }
+    ;(globalThis as any).game = fullGame()
+    ;(globalThis as any).game.portal.Artisanistry = { modifier: 0.5, level: 0, radLevel: 2 }
+    ;(globalThis as any).game.upgrades.Dagadder.locked = 1
+    ;(globalThis as any).game.equipment.Dagger.attackCalculated = 300
+    const r = equipment.RevaluateEquipmentEfficiency('Dagger')
+    expect(r.Factor).toBe(12)
+  })
 })
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
