@@ -14752,9 +14752,41 @@
     createSetting: () => createSetting2,
     onKeyPressSetting: () => onKeyPressSetting,
     parseNum: () => parseNum,
+    renderControlFace: () => renderControlFace2,
     settingChanged: () => settingChanged2
   });
   var ranstring = "";
+  function renderControlFace2(el, rec) {
+    let glyph = el.querySelector(":scope > .settingGlyph");
+    if (!glyph) {
+      el.textContent = "";
+      glyph = document.createElement("span");
+      glyph.className = "settingGlyph icomoon";
+      el.appendChild(glyph);
+      el.appendChild(document.createTextNode(""));
+    }
+    var label = el.childNodes[1];
+    if (rec.type == "boolean") {
+      glyph.className = "settingGlyph icomoon " + (rec.enabled ? "icon-checkmark" : "icon-cross");
+      label.textContent = " " + rec.name;
+    } else if (rec.type == "multitoggle") {
+      glyph.className = "settingGlyph icomoon icon-cycle";
+      label.textContent = " " + rec.name[rec.value] + " ";
+      let cnt = el.querySelector(":scope > .settingCount");
+      if (!cnt) {
+        cnt = document.createElement("span");
+        cnt.className = "settingCount";
+        el.appendChild(cnt);
+      }
+      cnt.textContent = "(" + (rec.value + 1) + "/" + rec.name.length + ")";
+    } else if (rec.type == "action") {
+      glyph.className = "settingGlyph icomoon icon-play3";
+      label.textContent = " " + rec.name;
+    } else if (rec.type == "infoclick") {
+      glyph.className = "settingGlyph icomoon icon-switch";
+      label.textContent = " " + rec.name;
+    }
+  }
   function createSetting2(id, name, description, type, defaultValue, list, container) {
     var btnParent = document.createElement("DIV");
     btnParent.setAttribute("style", "display: inline-block; vertical-align: top; margin-left: 1vw; margin-bottom: 1vw; width: 13.142vw;");
@@ -14771,11 +14803,11 @@
           enabled: loaded === void 0 ? defaultValue || false : loaded
         };
       btn.setAttribute("style", "font-size: 1.1vw;");
-      btn.setAttribute("class", "noselect settingsBtn settingBtn" + autoTrimpSettings[id].enabled);
+      btn.setAttribute("class", "noselect settingsBtn settingKind-toggle settingBtn" + autoTrimpSettings[id].enabled);
       btn.setAttribute("onclick", 'settingChanged("' + id + '")');
       btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
       btn.setAttribute("onmouseout", 'tooltip("hide")');
-      btn.textContent = name;
+      renderControlFace2(btn, autoTrimpSettings[id]);
       btnParent.appendChild(btn);
       if (container) document.getElementById(container).appendChild(btnParent);
       else document.getElementById("autoSettings").appendChild(btnParent);
@@ -14789,7 +14821,7 @@
           value: loaded === void 0 ? defaultValue : loaded
         };
       btn.setAttribute("style", "font-size: 1.1vw;");
-      btn.setAttribute("class", "noselect settingsBtn btn-info");
+      btn.setAttribute("class", "noselect settingsBtn btn-info settingKind-input");
       btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == "valueNegative"}, ${type == "multiValue"})`);
       btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
       btn.setAttribute("onmouseout", 'tooltip("hide")');
@@ -14807,7 +14839,7 @@
           value: loaded === void 0 ? defaultValue : loaded
         };
       btn.setAttribute("style", "font-size: 1.1vw;");
-      btn.setAttribute("class", "noselect settingsBtn btn-info");
+      btn.setAttribute("class", "noselect settingsBtn btn-info settingKind-input");
       btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == "valueNegative"}, ${type == "multiValue"})`);
       btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
       btn.setAttribute("onmouseout", 'tooltip("hide")');
@@ -14825,7 +14857,7 @@
           value: loaded === void 0 ? defaultValue : loaded
         };
       btn.setAttribute("style", "font-size: 1.1vw;");
-      btn.setAttribute("class", "noselect settingsBtn btn-info");
+      btn.setAttribute("class", "noselect settingsBtn btn-info settingKind-input");
       btn.setAttribute("onclick", `autoSetTextToolTip("${id}", "${name}", ${type == "textValue"})`);
       btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
       btn.setAttribute("onmouseout", 'tooltip("hide")');
@@ -14847,7 +14879,7 @@
       btn.id = id;
       if (game.options.menu.darkTheme.enabled == 2) btn.setAttribute("style", "color: #C8C8C8; font-size: 1.0vw;");
       else btn.setAttribute("style", "color:black; font-size: 1.0vw;");
-      btn.setAttribute("class", "noselect");
+      btn.setAttribute("class", "noselect settingKind-select");
       btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
       btn.setAttribute("onmouseout", 'tooltip("hide")');
       btn.setAttribute("onchange", 'settingChanged("' + id + '")');
@@ -14867,12 +14899,12 @@
       if (container) document.getElementById(container).appendChild(btnParent);
       else document.getElementById("autoSettings").appendChild(btnParent);
     } else if (type == "infoclick") {
-      btn.setAttribute("class", "noselect settingsBtn settingBtn3");
+      btn.setAttribute("class", "noselect settingsBtn settingKind-action settingKind-info");
       btn.setAttribute("onclick", "ImportExportTooltip('" + defaultValue + "', 'update')");
       btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
       btn.setAttribute("onmouseout", 'tooltip("hide")');
-      btn.setAttribute("style", "background-color: #d88839; color: black; font-size: 1.1vw;");
-      btn.textContent = name;
+      btn.setAttribute("style", "font-size: 1.1vw;");
+      renderControlFace2(btn, { type: "infoclick", name });
       btnParent.appendChild(btn);
       if (container) document.getElementById(container).appendChild(btnParent);
       else document.getElementById("autoSettings").appendChild(btnParent);
@@ -14887,21 +14919,21 @@
           value: loaded === void 0 ? defaultValue || 0 : loaded
         };
       btn.setAttribute("style", "font-size: 1.1vw;");
-      btn.setAttribute("class", "noselect settingsBtn settingBtn" + autoTrimpSettings[id].value);
+      btn.setAttribute("class", "noselect settingsBtn settingKind-cycle settingBtn" + autoTrimpSettings[id].value);
       btn.setAttribute("onclick", 'settingChanged("' + id + '")');
       btn.setAttribute("onmouseover", 'tooltip("' + name.join(" / ") + '", "customText", event, "' + description + '")');
       btn.setAttribute("onmouseout", 'tooltip("hide")');
-      btn.textContent = autoTrimpSettings[id]["name"][autoTrimpSettings[id]["value"]];
+      renderControlFace2(btn, autoTrimpSettings[id]);
       btnParent.appendChild(btn);
       if (container) document.getElementById(container).appendChild(btnParent);
       else document.getElementById("autoSettings").appendChild(btnParent);
     } else if (type === "action") {
       btn.setAttribute("style", "font-size: 1.1vw;");
-      btn.setAttribute("class", "noselect settingsBtn settingBtn3");
+      btn.setAttribute("class", "noselect settingsBtn settingKind-action settingBtn3");
       btn.setAttribute("onclick", defaultValue);
       btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
       btn.setAttribute("onmouseout", 'tooltip("hide")');
-      btn.textContent = name;
+      renderControlFace2(btn, { type: "action", name });
       btnParent.appendChild(btn);
       if (container) document.getElementById(container).appendChild(btnParent);
       else document.getElementById("autoSettings").appendChild(btnParent);
@@ -14933,7 +14965,9 @@
     var btn = autoTrimpSettings[id];
     if (btn.type == "boolean") {
       btn.enabled = !btn.enabled;
-      document.getElementById(id).setAttribute("class", "noselect settingsBtn settingBtn" + btn.enabled);
+      var elB = document.getElementById(id);
+      elB.setAttribute("class", "noselect settingsBtn settingKind-toggle settingBtn" + btn.enabled);
+      renderControlFace2(elB, btn);
     }
     if (btn.type == "multitoggle") {
       if (id == "AutoMagmiteSpender2" && btn.value == 1) {
@@ -14945,8 +14979,9 @@
       btn.value++;
       if (btn.value > btn.name.length - 1)
         btn.value = 0;
-      document.getElementById(id).setAttribute("class", "noselect settingsBtn settingBtn" + btn.value);
-      document.getElementById(id).textContent = btn.name[btn.value];
+      var elC = document.getElementById(id);
+      elC.setAttribute("class", "noselect settingsBtn settingKind-cycle settingBtn" + btn.value);
+      renderControlFace2(elC, btn);
     }
     if (btn.type == "dropdown") {
       btn.selected = byId(id).value;
@@ -16081,7 +16116,7 @@
         if (elem.parentNode.style.display === "none") continue;
         if (elem != null) {
           if (item.type == "multitoggle")
-            elem.textContent = item.name[item.value];
+            renderControlFace(elem, item);
           else if (item.type == "multiValue") {
             if (Array.isArray(item.value) && item.value.length == 1 && item.value[0] == -1)
               elem.innerHTML = item.name + ": <span class='icomoon icon-infinity'></span>";

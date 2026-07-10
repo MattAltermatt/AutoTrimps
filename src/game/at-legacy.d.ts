@@ -62,6 +62,7 @@ declare global {
   var contractVoid: any
   // AT-fork functions read as free-ids by portal.ts (Wave 3 #30), resolved via the bridge.
   var settingChanged: typeof import('../modules/settings-engine').settingChanged
+  var renderControlFace: typeof import('../modules/settings-engine').renderControlFace // #39, read by settings-visibility every tick
   // Settings-engine free-id reads (settings-engine.ts #31), resolved via the bridge.
   var ATversion: any                                 // AutoTrimps2.js var
   var magmiteSpenderChanged: any                     // AutoTrimps2.js var

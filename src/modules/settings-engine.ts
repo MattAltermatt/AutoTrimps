@@ -14,6 +14,44 @@
 // behavior-identical (verified: no other legacy/src code references it).
 let ranstring = '';
 
+// #39 taxonomy: single source of truth for a control's visible face (leading glyph + label
+// [+ cycle counter]). Called at mount (createSetting) AND on state change (settingChanged) so the
+// two paths can never drift. Cached-child mutation only — never innerHTML on the click path
+// (CLAUDE.md replaceChildren+click gotcha): the glyph/count spans are built once and mutated.
+// Exported (republished on the bridge) because updateCustomButtons (settings-visibility) also
+// refreshes multitoggle faces every tick — it must go through here or it wipes the glyph/counter.
+export function renderControlFace(el: any, rec: any) {
+    let glyph = el.querySelector(':scope > .settingGlyph');
+    if (!glyph) {
+        el.textContent = '';
+        glyph = document.createElement('span');
+        glyph.className = 'settingGlyph icomoon';
+        el.appendChild(glyph);
+        el.appendChild(document.createTextNode('')); // label text node = childNodes[1]
+    }
+    var label = el.childNodes[1];
+    if (rec.type == 'boolean') {
+        glyph.className = 'settingGlyph icomoon ' + (rec.enabled ? 'icon-checkmark' : 'icon-cross');
+        label.textContent = ' ' + rec.name;
+    } else if (rec.type == 'multitoggle') {
+        glyph.className = 'settingGlyph icomoon icon-cycle';
+        label.textContent = ' ' + rec.name[rec.value] + ' ';
+        let cnt = el.querySelector(':scope > .settingCount');
+        if (!cnt) {
+            cnt = document.createElement('span');
+            cnt.className = 'settingCount';
+            el.appendChild(cnt);
+        }
+        cnt.textContent = '(' + (rec.value + 1) + '/' + rec.name.length + ')';
+    } else if (rec.type == 'action') {
+        glyph.className = 'settingGlyph icomoon icon-play3';
+        label.textContent = ' ' + rec.name;
+    } else if (rec.type == 'infoclick') {
+        glyph.className = 'settingGlyph icomoon icon-switch';
+        label.textContent = ' ' + rec.name;
+    }
+}
+
 export function createSetting(id: any, name: any, description: any, type: any, defaultValue: any, list: any, container: any) {
     var btnParent = document.createElement("DIV");
     btnParent.setAttribute('style', 'display: inline-block; vertical-align: top; margin-left: 1vw; margin-bottom: 1vw; width: 13.142vw;');
@@ -30,11 +68,11 @@ export function createSetting(id: any, name: any, description: any, type: any, d
                 enabled: loaded === undefined ? (defaultValue || false) : loaded
             };
         btn.setAttribute("style", "font-size: 1.1vw;");
-        btn.setAttribute('class', 'noselect settingsBtn settingBtn' + autoTrimpSettings[id].enabled);
+        btn.setAttribute('class', 'noselect settingsBtn settingKind-toggle settingBtn' + autoTrimpSettings[id].enabled);
         btn.setAttribute("onclick", 'settingChanged("' + id + '")');
         btn.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
-        btn.textContent = name;
+        renderControlFace(btn, autoTrimpSettings[id]);
         btnParent.appendChild(btn);
         if (container) document.getElementById(container)!.appendChild(btnParent);
         else document.getElementById("autoSettings")!.appendChild(btnParent);
@@ -48,7 +86,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
                 value: loaded === undefined ? defaultValue : loaded
             };
         btn.setAttribute("style", "font-size: 1.1vw;");
-        btn.setAttribute('class', 'noselect settingsBtn btn-info');
+        btn.setAttribute('class', 'noselect settingsBtn btn-info settingKind-input');
         btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == 'valueNegative'}, ${type == 'multiValue'})`);
         btn.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
@@ -66,7 +104,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
                 value: loaded === undefined ? defaultValue : loaded
             };
         btn.setAttribute("style", "font-size: 1.1vw;");
-        btn.setAttribute('class', 'noselect settingsBtn btn-info');
+        btn.setAttribute('class', 'noselect settingsBtn btn-info settingKind-input');
         btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == 'valueNegative'}, ${type == 'multiValue'})`);
         btn.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
@@ -84,7 +122,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
                 value: loaded === undefined ? defaultValue : loaded
             };
         btn.setAttribute("style", "font-size: 1.1vw;");
-        btn.setAttribute('class', 'noselect settingsBtn btn-info');
+        btn.setAttribute('class', 'noselect settingsBtn btn-info settingKind-input');
         btn.setAttribute("onclick", `autoSetTextToolTip("${id}", "${name}", ${type == 'textValue'})`);
         btn.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
@@ -106,7 +144,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.id = id;
         if (game.options.menu.darkTheme.enabled == 2) btn.setAttribute("style", "color: #C8C8C8; font-size: 1.0vw;");
         else btn.setAttribute("style", "color:black; font-size: 1.0vw;");
-        btn.setAttribute("class", "noselect");
+        btn.setAttribute("class", "noselect settingKind-select");
         btn.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.setAttribute("onchange", 'settingChanged("' + id + '")');
@@ -126,12 +164,12 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         if (container) document.getElementById(container)!.appendChild(btnParent);
         else document.getElementById("autoSettings")!.appendChild(btnParent);
     } else if (type == 'infoclick') {
-        btn.setAttribute('class', 'noselect settingsBtn settingBtn3');
+        btn.setAttribute('class', 'noselect settingsBtn settingKind-action settingKind-info');
         btn.setAttribute("onclick", 'ImportExportTooltip(\'' + defaultValue + '\', \'update\')');
         btn.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
-        btn.setAttribute("style", "background-color: #d88839; color: black; font-size: 1.1vw;");
-        btn.textContent = name;
+        btn.setAttribute("style", "font-size: 1.1vw;");
+        renderControlFace(btn, { type: 'infoclick', name: name });
         btnParent.appendChild(btn);
         if (container) document.getElementById(container)!.appendChild(btnParent);
         else document.getElementById("autoSettings")!.appendChild(btnParent);
@@ -146,21 +184,21 @@ export function createSetting(id: any, name: any, description: any, type: any, d
                 value: loaded === undefined ? defaultValue || 0 : loaded
             };
         btn.setAttribute("style", "font-size: 1.1vw;");
-        btn.setAttribute('class', 'noselect settingsBtn settingBtn' + autoTrimpSettings[id].value);
+        btn.setAttribute('class', 'noselect settingsBtn settingKind-cycle settingBtn' + autoTrimpSettings[id].value);
         btn.setAttribute("onclick", 'settingChanged("' + id + '")');
         btn.setAttribute("onmouseover", 'tooltip(\"' + name.join(' / ') + '\", \"customText\", event, \"' + description + '\")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
-        btn.textContent = autoTrimpSettings[id]["name"][autoTrimpSettings[id]["value"]];
+        renderControlFace(btn, autoTrimpSettings[id]);
         btnParent.appendChild(btn);
         if (container) document.getElementById(container)!.appendChild(btnParent);
         else document.getElementById("autoSettings")!.appendChild(btnParent);
     } else if (type === 'action') {
         btn.setAttribute("style", "font-size: 1.1vw;");
-        btn.setAttribute('class', 'noselect settingsBtn settingBtn3');
+        btn.setAttribute('class', 'noselect settingsBtn settingKind-action settingBtn3'); // keep native teal (additive)
         btn.setAttribute('onclick', defaultValue);
         btn.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
-        btn.textContent = name;
+        renderControlFace(btn, { type: 'action', name: name });
         btnParent.appendChild(btn);
         if (container) document.getElementById(container)!.appendChild(btnParent);
         else document.getElementById("autoSettings")!.appendChild(btnParent);
@@ -194,7 +232,9 @@ export function settingChanged(id: any) {
     var btn = autoTrimpSettings[id];
     if (btn.type == 'boolean') {
         btn.enabled = !btn.enabled;
-        document.getElementById(id)!.setAttribute('class', 'noselect settingsBtn settingBtn' + btn.enabled);
+        var elB = document.getElementById(id)!;
+        elB.setAttribute('class', 'noselect settingsBtn settingKind-toggle settingBtn' + btn.enabled);
+        renderControlFace(elB, btn);
     }
     if (btn.type == 'multitoggle') {
         if (id == 'AutoMagmiteSpender2' && btn.value == 1) {
@@ -206,8 +246,9 @@ export function settingChanged(id: any) {
         btn.value++;
         if (btn.value > btn.name.length - 1)
             btn.value = 0;
-        document.getElementById(id)!.setAttribute('class', 'noselect settingsBtn settingBtn' + btn.value);
-        document.getElementById(id)!.textContent = btn.name[btn.value];
+        var elC = document.getElementById(id)!;
+        elC.setAttribute('class', 'noselect settingsBtn settingKind-cycle settingBtn' + btn.value);
+        renderControlFace(elC, btn);
     }
     if (btn.type == 'dropdown') {
         btn.selected = byId(id).value;

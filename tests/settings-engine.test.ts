@@ -67,20 +67,26 @@ describe('settings-engine · settingChanged (click semantics)', () => {
     document.body.innerHTML = `<div id="${id}"></div>`
   }
 
-  it('boolean: flips enabled and rewrites the class (quirky settingBtntrue/false string)', () => {
-    ;(globalThis as any).autoTrimpSettings['Foo'] = { id: 'Foo', type: 'boolean', enabled: false }
+  it('boolean: flips enabled, swaps the glyph (✓/✗), preserves the kind class', () => {
+    ;(globalThis as any).autoTrimpSettings['Foo'] = { id: 'Foo', name: 'Foo', type: 'boolean', enabled: false }
     mountButton('Foo')
 
     settingChanged('Foo')
     expect((globalThis as any).autoTrimpSettings['Foo'].enabled).toBe(true)
     expect(document.getElementById('Foo')!.getAttribute('class')).toBe(
-      'noselect settingsBtn settingBtntrue',
+      'noselect settingsBtn settingKind-toggle settingBtntrue',
+    )
+    expect(document.getElementById('Foo')!.querySelector('.settingGlyph')!.className).toBe(
+      'settingGlyph icomoon icon-checkmark',
     )
 
     settingChanged('Foo')
     expect((globalThis as any).autoTrimpSettings['Foo'].enabled).toBe(false)
     expect(document.getElementById('Foo')!.getAttribute('class')).toBe(
-      'noselect settingsBtn settingBtnfalse',
+      'noselect settingsBtn settingKind-toggle settingBtnfalse',
+    )
+    expect(document.getElementById('Foo')!.querySelector('.settingGlyph')!.className).toBe(
+      'settingGlyph icomoon icon-cross',
     )
   })
 
@@ -95,18 +101,21 @@ describe('settings-engine · settingChanged (click semantics)', () => {
 
     settingChanged('Bar') // 0 → 1
     expect((globalThis as any).autoTrimpSettings['Bar'].value).toBe(1)
-    expect(document.getElementById('Bar')!.textContent).toBe('Some')
+    expect(document.getElementById('Bar')!.textContent).toBe(' Some (2/3)')
     expect(document.getElementById('Bar')!.getAttribute('class')).toBe(
-      'noselect settingsBtn settingBtn1',
+      'noselect settingsBtn settingKind-cycle settingBtn1',
+    )
+    expect(document.getElementById('Bar')!.querySelector('.settingGlyph')!.className).toBe(
+      'settingGlyph icomoon icon-cycle',
     )
 
     settingChanged('Bar') // 1 → 2 (last index, no wrap yet)
     expect((globalThis as any).autoTrimpSettings['Bar'].value).toBe(2)
-    expect(document.getElementById('Bar')!.textContent).toBe('All')
+    expect(document.getElementById('Bar')!.textContent).toBe(' All (3/3)')
 
     settingChanged('Bar') // 2 → 0 (wraps: 3 > length-1)
     expect((globalThis as any).autoTrimpSettings['Bar'].value).toBe(0)
-    expect(document.getElementById('Bar')!.textContent).toBe('Off')
+    expect(document.getElementById('Bar')!.textContent).toBe(' Off (1/3)')
   })
 
   it('dropdown: reads the selected <option> back into btn.selected', () => {
@@ -208,23 +217,30 @@ describe('settings-engine · createSetting (per-type stored shape)', () => {
     })
     const btn = document.getElementById('B1')!
     expect(btn.getAttribute('onclick')).toBe('settingChanged("B1")')
-    expect(btn.getAttribute('class')).toBe('noselect settingsBtn settingBtntrue')
-    expect(btn.textContent).toBe('Toggle Me')
+    expect(btn.getAttribute('class')).toBe('noselect settingsBtn settingKind-toggle settingBtntrue')
+    expect(btn.querySelector('.settingGlyph')!.className).toBe('settingGlyph icomoon icon-checkmark')
+    expect(btn.textContent).toBe(' Toggle Me') // leading space after the text-less glyph span
   })
 
   it('value: stores {value: defaultValue} with the btn-info class', () => {
     createSetting('V1', 'Amount', 'desc', 'value', 42, undefined, undefined)
     expect((globalThis as any).autoTrimpSettings['V1']).toMatchObject({ type: 'value', value: 42 })
-    expect(document.getElementById('V1')!.getAttribute('class')).toBe('noselect settingsBtn btn-info')
+    expect(document.getElementById('V1')!.getAttribute('class')).toBe(
+      'noselect settingsBtn btn-info settingKind-input',
+    )
   })
 
   it('multitoggle: stores {value: defaultValue||0} and labels the button from name[value]', () => {
     createSetting('M1', ['Off', 'On'], 'desc', 'multitoggle', 1, undefined, undefined)
     expect((globalThis as any).autoTrimpSettings['M1']).toMatchObject({ type: 'multitoggle', value: 1 })
-    expect(document.getElementById('M1')!.textContent).toBe('On')
+    expect(document.getElementById('M1')!.textContent).toBe(' On (2/2)')
     expect(document.getElementById('M1')!.getAttribute('class')).toBe(
-      'noselect settingsBtn settingBtn1',
+      'noselect settingsBtn settingKind-cycle settingBtn1',
     )
+    expect(document.getElementById('M1')!.querySelector('.settingGlyph')!.className).toBe(
+      'settingGlyph icomoon icon-cycle',
+    )
+    expect(document.getElementById('M1')!.querySelector('.settingCount')!.textContent).toBe('(2/2)')
   })
 
   it('dropdown: stores {selected, list} and builds an <option> per list entry', () => {
@@ -240,18 +256,25 @@ describe('settings-engine · createSetting (per-type stored shape)', () => {
     expect(sel.value).toBe('b')
   })
 
-  it('action: fires raw defaultValue JS on click and creates NO stored setting (early return)', () => {
+  it('action: play glyph, settingKind-action class, fires raw JS, NO stored setting (early return)', () => {
     createSetting('A1', 'Do It', 'desc', 'action', 'doThing()', undefined, undefined)
     expect((globalThis as any).autoTrimpSettings['A1']).toBeUndefined()
-    expect(document.getElementById('A1')!.getAttribute('onclick')).toBe('doThing()')
+    const a = document.getElementById('A1')!
+    expect(a.getAttribute('onclick')).toBe('doThing()')
+    // keeps native teal settingBtn3 alongside the kind marker (additive, not a repaint)
+    expect(a.getAttribute('class')).toBe('noselect settingsBtn settingKind-action settingBtn3')
+    expect(a.querySelector('.settingGlyph')!.className).toBe('settingGlyph icomoon icon-play3')
+    expect(a.textContent).toBe(' Do It')
   })
 
-  it('infoclick: wires an ImportExportTooltip onclick and creates NO stored setting (early return)', () => {
+  it('infoclick: switch glyph, info class, declarative color (no inline d88839), NO stored setting', () => {
     createSetting('I1', 'Info', 'desc', 'infoclick', 'payload', undefined, undefined)
     expect((globalThis as any).autoTrimpSettings['I1']).toBeUndefined()
-    expect(document.getElementById('I1')!.getAttribute('onclick')).toBe(
-      "ImportExportTooltip('payload', 'update')",
-    )
+    const i = document.getElementById('I1')!
+    expect(i.getAttribute('onclick')).toBe("ImportExportTooltip('payload', 'update')")
+    expect(i.getAttribute('class')).toBe('noselect settingsBtn settingKind-action settingKind-info')
+    expect(i.querySelector('.settingGlyph')!.className).toBe('settingGlyph icomoon icon-switch')
+    expect(i.getAttribute('style') || '').not.toContain('d88839')
   })
 
   it('stamps autoTrimpSettings.ATversion after a stateful control is created', () => {

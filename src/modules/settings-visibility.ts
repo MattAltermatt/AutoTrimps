@@ -953,7 +953,7 @@ export function updateCustomButtons() {
             if ((elem as any).parentNode.style.display === 'none') continue;
             if (elem != null) {
                 if (item.type == 'multitoggle')
-                    elem.textContent = item.name[item.value];
+                    renderControlFace(elem, item); // #39: preserve the glyph/counter (was elem.textContent = ...)
                 else if (item.type == 'multiValue') {
                     if (Array.isArray(item.value) && item.value.length == 1 && item.value[0] == -1)
                         elem.innerHTML = item.name + ': ' + "<span class='icomoon icon-infinity'></span>";
