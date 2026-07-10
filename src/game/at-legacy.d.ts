@@ -284,9 +284,10 @@ declare global {
   var equipfarmdynamicHD: typeof import('../modules/equipment').equipfarmdynamicHD
   var estimateEquipsForZone: typeof import('../modules/equipment').estimateEquipsForZone
   var getEnemyMaxHealth: typeof import('../modules/query').getEnemyMaxHealth
-  var dRAMP: typeof import('../modules/mapfunctions').dRAMP
-  var RAMP: typeof import('../modules/mapfunctions').RAMP
-  var RAMPreset: typeof import('../modules/mapfunctions').RAMPreset
+  var dRAMP: typeof import('../modules/mapfunctions-amp').dRAMP
+  var RAMP: typeof import('../modules/mapfunctions-amp').RAMP
+  var RAMPreset: typeof import('../modules/mapfunctions-amp').RAMPreset
+  var RAMPfrag: typeof import('../modules/mapfunctions-amp').RAMPfrag
   var Rbogs: typeof import('../modules/mapfunctions').Rbogs
   var RfragMap: typeof import('../modules/mapfunctions').RfragMap
   var Rhypo: typeof import('../modules/mapfunctions').Rhypo

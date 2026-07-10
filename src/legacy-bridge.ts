@@ -33,6 +33,9 @@ import * as maps from './modules/maps'
 // owns the R-map-state inits (`globalThis.RshouldFarm = false`, …) which must eval AFTER maps' `= undefined`
 // placeholders, so maps is imported before mapfunctions. Guarded by tests/build-userscript.test.ts.
 import * as mapfunctions from './modules/mapfunctions'
+// mapfunctions-amp: Phase 3 (#51) byte-faithful extraction of the Radon AMP engine. Its RAMP*/RdAMP*
+// globals have no placeholder-race, so import position is unconstrained; kept adjacent for readability.
+import * as mapfunctionsAmp from './modules/mapfunctions-amp'
 import * as portal from './modules/portal'
 import * as importExport from './modules/import-export'
 import * as query from './modules/query'
@@ -50,4 +53,4 @@ import * as settingsDefs from './modules/settings-defs'
 // call resolves. Its module body only DEFINES the function, so bridge-eval order is irrelevant.
 import * as settingsBoot from './modules/settings-boot'
 
-Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...portal, ...importExport, ...query, ...other, ...otherPraiding, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs, ...settingsBoot })
+Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...mapfunctionsAmp, ...portal, ...importExport, ...query, ...other, ...otherPraiding, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs, ...settingsBoot })
