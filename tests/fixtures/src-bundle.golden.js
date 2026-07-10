@@ -12353,168 +12353,259 @@
     setScienceNeeded: () => setScienceNeeded
   });
   function getPerSecBeforeManual2(a) {
-    var b = 0, c = game.jobs[a].increase;
-    if ("custom" == c) return 0;
-    if (0 < game.jobs[a].owned) {
-      if (b = game.jobs[a].owned * game.jobs[a].modifier, 0 < game.portal.Motivation.level && (b += b * game.portal.Motivation.level * game.portal.Motivation.modifier), 0 < game.portal.Motivation_II.level && (b *= 1 + game.portal.Motivation_II.level * game.portal.Motivation_II.modifier), 0 < game.portal.Meditation.level && (b *= (1 + 0.01 * game.portal.Meditation.getBonusPercent()).toFixed(2)), 0 < game.jobs.Magmamancer.owned && "metal" == c && (b *= game.jobs.Magmamancer.getBonusPercent()), "Meditate" == game.global.challengeActive ? b *= 1.25 : "Size" == game.global.challengeActive && (b *= 1.5), "Toxicity" == game.global.challengeActive) {
-        var d = game.challenges.Toxicity.lootMult * game.challenges.Toxicity.stacks / 100;
+    let b = 0;
+    const c = game.jobs[a].increase;
+    if (c === "custom") return 0;
+    if (game.jobs[a].owned > 0) {
+      b = game.jobs[a].owned * game.jobs[a].modifier;
+      if (game.portal.Motivation.level > 0)
+        b += b * game.portal.Motivation.level * game.portal.Motivation.modifier;
+      if (game.portal.Motivation_II.level > 0)
+        b *= 1 + game.portal.Motivation_II.level * game.portal.Motivation_II.modifier;
+      if (game.portal.Meditation.level > 0)
+        b *= (1 + 0.01 * game.portal.Meditation.getBonusPercent()).toFixed(2);
+      if (game.jobs.Magmamancer.owned > 0 && c === "metal")
+        b *= game.jobs.Magmamancer.getBonusPercent();
+      if (game.global.challengeActive === "Meditate") b *= 1.25;
+      else if (game.global.challengeActive === "Size") b *= 1.5;
+      if (game.global.challengeActive === "Toxicity") {
+        const d = game.challenges.Toxicity.lootMult * game.challenges.Toxicity.stacks / 100;
         b *= 1 + d;
       }
-      "Balance" == game.global.challengeActive && (b *= game.challenges.Balance.getGatherMult()), "Decay" == game.global.challengeActive && (b *= 10, b *= Math.pow(0.995, game.challenges.Decay.stacks)), "Daily" == game.global.challengeActive && ("undefined" != typeof game.global.dailyChallenge.dedication && (b *= dailyModifiers.dedication.getMult(game.global.dailyChallenge.dedication.strength)), "undefined" != typeof game.global.dailyChallenge.famine && "fragments" != c && "science" != c && (b *= dailyModifiers.famine.getMult(game.global.dailyChallenge.famine.strength))), "Watch" == game.global.challengeActive && (b /= 2), "Lead" == game.global.challengeActive && 1 == game.global.world % 2 && (b *= 2), b = calcHeirloomBonus("Staff", a + "Speed", b);
+      if (game.global.challengeActive === "Balance") b *= game.challenges.Balance.getGatherMult();
+      if (game.global.challengeActive === "Decay") {
+        b *= 10;
+        b *= Math.pow(0.995, game.challenges.Decay.stacks);
+      }
+      if (game.global.challengeActive === "Daily") {
+        if (typeof game.global.dailyChallenge.dedication !== "undefined")
+          b *= dailyModifiers.dedication.getMult(game.global.dailyChallenge.dedication.strength);
+        if (typeof game.global.dailyChallenge.famine !== "undefined" && c !== "fragments" && c !== "science")
+          b *= dailyModifiers.famine.getMult(game.global.dailyChallenge.famine.strength);
+      }
+      if (game.global.challengeActive === "Watch") b /= 2;
+      if (game.global.challengeActive === "Lead" && game.global.world % 2 === 1) b *= 2;
+      b = calcHeirloomBonus("Staff", a + "Speed", b);
     }
     return b;
   }
   function checkJobPercentageCost(a, b) {
-    var c = "food", d = game.jobs[a], e = d.cost[c], f = 0;
-    b || (b = game.global.buyAmt), f = "undefined" == typeof e[1] ? e * b : Math.floor(e[0] * Math.pow(e[1], d.owned) * ((Math.pow(e[1], b) - 1) / (e[1] - 1)));
-    var g;
+    const c = "food";
+    const d = game.jobs[a];
+    const e = d.cost[c];
+    let f = 0;
+    if (!b) b = game.global.buyAmt;
+    f = typeof e[1] === "undefined" ? e * b : Math.floor(e[0] * Math.pow(e[1], d.owned) * ((Math.pow(e[1], b) - 1) / (e[1] - 1)));
+    let g;
     if (game.resources[c].owned < f) {
-      var h = getPsString(c, true);
-      return 0 < h && (g = calculateTimeToMax(null, h, f - game.resources[c].owned)), [false, g];
+      const h = getPsString(c, true);
+      if (h > 0) g = calculateTimeToMax(null, h, f - game.resources[c].owned);
+      return [false, g];
     }
-    return g = 0 < game.resources[c].owned ? (100 * (f / game.resources[c].owned)).toFixed(1) : 0, [true, g];
+    g = game.resources[c].owned > 0 ? (100 * (f / game.resources[c].owned)).toFixed(1) : 0;
+    return [true, g];
   }
   function getScienceCostToUpgrade(a) {
-    var b = game.upgrades[a];
-    return void 0 !== b.cost.resources.science && void 0 !== b.cost.resources.science[0] ? Math.floor(b.cost.resources.science[0] * Math.pow(b.cost.resources.science[1], b.done)) : void 0 !== b.cost.resources.science && void 0 == b.cost.resources.science[0] ? b.cost.resources.science : 0;
+    const science = game.upgrades[a].cost.resources.science;
+    if (science !== void 0 && science[0] !== void 0)
+      return Math.floor(science[0] * Math.pow(science[1], game.upgrades[a].done));
+    if (science !== void 0 && science[0] == void 0) return science;
+    return 0;
   }
   function getEnemyMaxAttack2(a, b, c, d, e) {
-    var f = 0;
-    return f += 50 * Math.sqrt(a) * Math.pow(3.27, a / 2), f -= 10, 1 == a ? (f *= 0.35, f = 0.2 * f + 0.75 * f * (b / 100)) : 2 == a ? (f *= 0.5, f = 0.32 * f + 0.68 * f * (b / 100)) : 60 > a ? f = 0.375 * f + 0.7 * f * (b / 100) : (f = 0.4 * f + 0.9 * f * (b / 100), f *= Math.pow(1.15, a - 59)), 60 > a && (f *= 0.85), d && (f *= d), f *= e ? getCorruptScale2("attack") : game.badGuys[c].attack, Math.floor(f);
+    let f = 0;
+    f += 50 * Math.sqrt(a) * Math.pow(3.27, a / 2);
+    f -= 10;
+    if (a === 1) {
+      f *= 0.35;
+      f = 0.2 * f + 0.75 * f * (b / 100);
+    } else if (a === 2) {
+      f *= 0.5;
+      f = 0.32 * f + 0.68 * f * (b / 100);
+    } else if (a < 60) {
+      f = 0.375 * f + 0.7 * f * (b / 100);
+    } else {
+      f = 0.4 * f + 0.9 * f * (b / 100);
+      f *= Math.pow(1.15, a - 59);
+    }
+    if (a < 60) f *= 0.85;
+    if (d) f *= d;
+    f *= e ? getCorruptScale2("attack") : game.badGuys[c].attack;
+    return Math.floor(f);
   }
   function getEnemyMaxHealth2(a, b, c) {
-    b || (b = 30);
-    var d = 0;
-    return d += 130 * Math.sqrt(a) * Math.pow(3.265, a / 2), d -= 110, 1 == a || 2 == a && 10 > b ? (d *= 0.6, d = 0.25 * d + 0.72 * d * (b / 100)) : 60 > a ? d = 0.4 * d + 0.4 * d * (b / 110) : (d = 0.5 * d + 0.8 * d * (b / 100), d *= Math.pow(1.1, a - 59)), 60 > a && (d *= 0.75), d *= c ? getCorruptScale2("health") : game.badGuys.Grimp.health, Math.floor(d);
+    if (!b) b = 30;
+    let d = 0;
+    d += 130 * Math.sqrt(a) * Math.pow(3.265, a / 2);
+    d -= 110;
+    if (a === 1 || a === 2 && b < 10) {
+      d *= 0.6;
+      d = 0.25 * d + 0.72 * d * (b / 100);
+    } else if (a < 60) {
+      d = 0.4 * d + 0.4 * d * (b / 110);
+    } else {
+      d = 0.5 * d + 0.8 * d * (b / 100);
+      d *= Math.pow(1.1, a - 59);
+    }
+    if (a < 60) d *= 0.75;
+    d *= c ? getCorruptScale2("health") : game.badGuys.Grimp.health;
+    return Math.floor(d);
   }
   function getCurrentEnemy2(a) {
-    a || (a = 1);
-    var b;
-    return game.global.mapsActive || game.global.preMapsActive ? game.global.mapsActive && !game.global.preMapsActive && ("undefined" == typeof game.global.mapGridArray[game.global.lastClearedMapCell + a] ? b = game.global.mapGridArray[game.global.gridArray.length - 1] : b = game.global.mapGridArray[game.global.lastClearedMapCell + a]) : "undefined" == typeof game.global.gridArray[game.global.lastClearedCell + a] ? b = game.global.gridArray[game.global.gridArray.length - 1] : b = game.global.gridArray[game.global.lastClearedCell + a], b;
+    if (!a) a = 1;
+    let b;
+    if (game.global.mapsActive || game.global.preMapsActive) {
+      if (game.global.mapsActive && !game.global.preMapsActive) {
+        b = typeof game.global.mapGridArray[game.global.lastClearedMapCell + a] === "undefined" ? game.global.mapGridArray[game.global.gridArray.length - 1] : game.global.mapGridArray[game.global.lastClearedMapCell + a];
+      }
+    } else {
+      b = typeof game.global.gridArray[game.global.lastClearedCell + a] === "undefined" ? game.global.gridArray[game.global.gridArray.length - 1] : game.global.gridArray[game.global.lastClearedCell + a];
+    }
+    return b;
   }
   function getCorruptedCellsNum2() {
-    for (var a, b = 0, c = 0; c < game.global.gridArray.length - 1; c++) a = game.global.gridArray[c], "Corruption" == a.mutation && b++;
+    let b = 0;
+    for (let c = 0; c < game.global.gridArray.length - 1; c++) {
+      const a = game.global.gridArray[c];
+      if (a.mutation === "Corruption") b++;
+    }
     return b;
   }
   function getCorruptScale2(a) {
-    return "attack" === a ? mutations.Corruption.statScale(3) : "health" === a ? mutations.Corruption.statScale(10) : void 0;
+    if (a === "attack") return mutations.Corruption.statScale(3);
+    if (a === "health") return mutations.Corruption.statScale(10);
+    return void 0;
   }
   function isBuildingInQueue2(a) {
-    for (var c in game.global.buildingsQueue) if (game.global.buildingsQueue[c].includes(a)) return true;
+    for (const c in game.global.buildingsQueue)
+      if (game.global.buildingsQueue[c].includes(a)) return true;
+    return void 0;
   }
   function setScienceNeeded() {
-    for (var a in scienceNeeded = 0, upgradeList) if (a = upgradeList[a], game.upgrades[a].allowed > game.upgrades[a].done) {
-      if (1 == game.global.world && 1e3 >= game.global.totalHeliumEarned && a.startsWith("Speed")) continue;
-      scienceNeeded += getScienceCostToUpgrade(a);
+    scienceNeeded = 0;
+    for (let a in upgradeList) {
+      a = upgradeList[a];
+      if (game.upgrades[a].allowed > game.upgrades[a].done) {
+        if (game.global.world === 1 && game.global.totalHeliumEarned <= 1e3 && a.startsWith("Speed"))
+          continue;
+        scienceNeeded += getScienceCostToUpgrade(a);
+      }
     }
-    needGymystic && (scienceNeeded += getScienceCostToUpgrade("Gymystic"));
+    if (needGymystic) scienceNeeded += getScienceCostToUpgrade("Gymystic");
   }
   function RsetScienceNeeded() {
-    for (var a in RscienceNeeded = 0, RupgradeList) if (a = RupgradeList[a], game.upgrades[a].allowed > game.upgrades[a].done) {
-      if (1 == game.global.world && 1e3 >= game.global.totalRadonEarned && a.startsWith("Speed")) continue;
-      RscienceNeeded += getScienceCostToUpgrade(a);
+    RscienceNeeded = 0;
+    for (let a in RupgradeList) {
+      a = RupgradeList[a];
+      if (game.upgrades[a].allowed > game.upgrades[a].done) {
+        if (game.global.world === 1 && game.global.totalRadonEarned <= 1e3 && a.startsWith("Speed"))
+          continue;
+        RscienceNeeded += getScienceCostToUpgrade(a);
+      }
     }
   }
   function RgetEnemyMaxAttack2(world, level, name) {
-    var amt = 0;
-    var attackBase = game.global.universe == 2 ? 750 : 50;
+    const attackBase = game.global.universe === 2 ? 750 : 50;
+    let amt = 0;
     amt += attackBase * Math.sqrt(world) * Math.pow(3.27, world / 2);
     amt -= 10;
-    if (world == 1) {
+    if (world === 1) {
       amt *= 0.35;
       amt = amt * 0.2 + amt * 0.75 * (level / 100);
-    } else if (world == 2) {
+    } else if (world === 2) {
       amt *= 0.5;
       amt = amt * 0.32 + amt * 0.68 * (level / 100);
-    } else if (world < 60)
+    } else if (world < 60) {
       amt = amt * 0.375 + amt * 0.7 * (level / 100);
-    else {
+    } else {
       amt = amt * 0.4 + amt * 0.9 * (level / 100);
       amt *= Math.pow(1.15, world - 59);
     }
     if (world < 60) amt *= 0.85;
     if (world > 6 && game.global.mapsActive) amt *= 1.1;
     amt *= game.badGuys[name].attack;
-    if (game.global.universe == 2) {
-      var part1 = world > 40 ? 40 : world;
-      var part2 = world > 60 ? 20 : world - 40;
-      var part3 = world - 60;
+    if (game.global.universe === 2) {
+      const part1 = world > 40 ? 40 : world;
+      let part2 = world > 60 ? 20 : world - 40;
+      let part3 = world - 60;
       if (part2 < 0) part2 = 0;
       if (part3 < 0) part3 = 0;
       amt *= Math.pow(1.5, part1);
       amt *= Math.pow(1.4, part2);
       amt *= Math.pow(1.32, part3);
-      var part4 = world - 300;
+      let part4 = world - 300;
       if (part4 < 0) part4 = 0;
       amt *= Math.pow(1.15, part4);
     }
     return Math.floor(amt);
   }
   function RgetEnemyMaxHealth2(world, level) {
-    if (!level)
-      level = 30;
-    var amt = 0;
-    var healthBase = game.global.universe == 2 ? 1e8 : 130;
+    if (!level) level = 30;
+    const healthBase = game.global.universe === 2 ? 1e8 : 130;
+    let amt = 0;
     amt += healthBase * Math.sqrt(world) * Math.pow(3.265, world / 2);
     amt -= 110;
-    if (world == 1 || world == 2 && level < 10) {
+    if (world === 1 || world === 2 && level < 10) {
       amt *= 0.6;
       amt = amt * 0.25 + amt * 0.72 * (level / 100);
-    } else if (world < 60)
+    } else if (world < 60) {
       amt = amt * 0.4 + amt * 0.4 * (level / 110);
-    else {
+    } else {
       amt = amt * 0.5 + amt * 0.8 * (level / 100);
       amt *= Math.pow(1.1, world - 59);
     }
     if (world < 60) amt *= 0.75;
     if (world > 5 && game.global.mapsActive) amt *= 1.1;
     amt *= game.badGuys["Grimp"].health;
-    if (game.global.universe == 2) {
-      var part1 = world > 60 ? 60 : world;
-      var part2 = world - 60;
+    if (game.global.universe === 2) {
+      const part1 = world > 60 ? 60 : world;
+      let part2 = world - 60;
       if (part2 < 0) part2 = 0;
       amt *= Math.pow(1.4, part1);
       amt *= Math.pow(1.32, part2);
-      var part3 = world - 300;
+      let part3 = world - 300;
       if (part3 < 0) part3 = 0;
       amt *= Math.pow(1.15, part3);
     }
     return Math.floor(amt);
   }
   function getPotencyMod(howManyMoreGenes) {
-    var potencyMod2 = game.resources.trimps.potency;
+    let potencyMod2 = game.resources.trimps.potency;
     if (game.upgrades.Potency.done > 0) potencyMod2 *= Math.pow(1.1, game.upgrades.Potency.done);
     if (game.buildings.Nursery.owned > 0) potencyMod2 *= Math.pow(1.01, game.buildings.Nursery.owned);
     if (game.unlocks.impCount.Venimp > 0) potencyMod2 *= Math.pow(1.003, game.unlocks.impCount.Venimp);
     if (game.global.brokenPlanet) potencyMod2 /= 10;
     potencyMod2 *= 1 + game.portal.Pheromones.level * game.portal.Pheromones.modifier;
     if (!howManyMoreGenes) howManyMoreGenes = 0;
-    if (game.jobs.Geneticist.owned > 0) potencyMod2 *= Math.pow(0.98, game.jobs.Geneticist.owned + howManyMoreGenes);
+    if (game.jobs.Geneticist.owned > 0)
+      potencyMod2 *= Math.pow(0.98, game.jobs.Geneticist.owned + howManyMoreGenes);
     if (game.unlocks.quickTrimps) potencyMod2 *= 2;
-    if (game.global.challengeActive == "Daily") {
+    if (game.global.challengeActive === "Daily") {
       if (typeof game.global.dailyChallenge.dysfunctional !== "undefined") {
         potencyMod2 *= dailyModifiers.dysfunctional.getMult(game.global.dailyChallenge.dysfunctional.strength);
       }
       if (typeof game.global.dailyChallenge.toxic !== "undefined") {
-        potencyMod2 *= dailyModifiers.toxic.getMult(game.global.dailyChallenge.toxic.strength, game.global.dailyChallenge.toxic.stacks);
+        potencyMod2 *= dailyModifiers.toxic.getMult(
+          game.global.dailyChallenge.toxic.strength,
+          game.global.dailyChallenge.toxic.stacks
+        );
       }
     }
-    if (game.global.challengeActive == "Toxicity" && game.challenges.Toxicity.stacks > 0) {
+    if (game.global.challengeActive === "Toxicity" && game.challenges.Toxicity.stacks > 0) {
       potencyMod2 *= Math.pow(game.challenges.Toxicity.stackMult, game.challenges.Toxicity.stacks);
     }
-    if (game.global.voidBuff == "slowBreed") {
+    if (game.global.voidBuff === "slowBreed") {
       potencyMod2 *= 0.2;
     }
     potencyMod2 = calcHeirloomBonus("Shield", "breedSpeed", potencyMod2);
     return potencyMod2;
   }
   function getArmyTime() {
-    var breeding = game.resources.trimps.owned - trimpsEffectivelyEmployed();
-    var newSquadRdy = game.resources.trimps.realMax() <= game.resources.trimps.owned + 1;
-    var adjustedMax = game.portal.Coordinated.level ? game.portal.Coordinated.currentSend : game.resources.trimps.maxSoldiers;
-    var potencyMod2 = getPotencyMod();
-    var tps = breeding * potencyMod2;
-    var addTime = adjustedMax / tps;
+    const breeding = game.resources.trimps.owned - trimpsEffectivelyEmployed();
+    const adjustedMax = game.portal.Coordinated.level ? game.portal.Coordinated.currentSend : game.resources.trimps.maxSoldiers;
+    const potencyMod2 = getPotencyMod();
+    const tps = breeding * potencyMod2;
+    const addTime = adjustedMax / tps;
     return addTime;
   }
 
