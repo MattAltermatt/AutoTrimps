@@ -49,5 +49,11 @@ export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, a
     window.bootSettingsUI?.()
   }
 
+  // Anti-false-green tripwire (mirrors tests/harness/gameFixture.ts:44): a hydrated game keeps its
+  // methods. If this fails, the game object was replaced by method-less data and any trace is a lie.
+  if (typeof window.game?.buildings?.Shed?.cost?.wood !== 'function') {
+    throw new Error('boot: game not hydrated — buildings.Shed.cost.wood is not a function')
+  }
+
   return { window, game: window.game, dom }
 }
