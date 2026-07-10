@@ -1,4 +1,10 @@
 // TRUE TS (Phase 1 · #26): converted from the faithful port under strict.
+// IDIOMATIC (Phase 2 · #51): the two minified base-damage setters were un-minified behind the
+//   proof-net (tests/stance.characterization.test.ts + tests/stance.test.ts pin every branch;
+//   L0 backstop ∅). var→const/let throughout; == → === where type-safe. Behavior-preserving —
+//   loose guards kept deliberately: the `getPageSetting('AutoStance') == 0` guard (autoStance2)
+//   stays loose to catch a boolean-false setting. calcBaseDamageInX (capital I) stays intentionally
+//   duplicated with calc.ts:1011 — the Phase-3 dedupe, NOT touched here.
 // Was: relocated verbatim from legacy/modules/stance.js.
 // Auto-stance / one-shot / survival combat math (65 game.* touches). getPageSetting from
 // converted utils; calc functions (calcOurDmg/calcOurBlock/calcOurHealth/etc.) resolve via
@@ -8,8 +14,16 @@
 // load order (calc before stance). baseDamage/baseBlock/baseHealth stay bare (AutoTrimps2 vars).
 import { getPageSetting } from './utils'
 
-export function calcBaseDamageinX(){baseDamage=calcOurDmg("avg",!1,!0),baseBlock=game.global.soldierCurrentBlock,baseHealth=game.global.soldierHealthMax}
-export function calcBaseDamageinX2(){baseDamage=calcOurDmg("avg",!1,!0),baseBlock=calcOurBlock(),baseHealth=calcOurHealth()}
+export function calcBaseDamageinX() {
+    baseDamage = calcOurDmg('avg', false, true);
+    baseBlock = game.global.soldierCurrentBlock;
+    baseHealth = game.global.soldierHealthMax;
+}
+export function calcBaseDamageinX2() {
+    baseDamage = calcOurDmg('avg', false, true);
+    baseBlock = calcOurBlock();
+    baseHealth = calcOurHealth();
+}
 
 globalThis.baseMinDamage = 0;
 globalThis.baseMaxDamage = 0;
@@ -27,14 +41,14 @@ export function autoStanceNew() {
     if (game.global.soldierHealth <= 0) return;
     if (!game.upgrades.Formations.done) return;
 	
-    if (game.global.formation == 2 && game.global.soldierHealth <= game.global.soldierHealthMax * 0.25)     setFormation('0');
-    else if(game.global.formation == 0 && game.global.soldierHealth <= game.global.soldierHealthMax * 0.25) setFormation('1')
-    else if(game.global.formation == 1 && game.global.soldierHealth == game.global.soldierHealthMax)        setFormation('2');
+    if (game.global.formation === 2 && game.global.soldierHealth <= game.global.soldierHealthMax * 0.25)      setFormation('0');
+    else if (game.global.formation === 0 && game.global.soldierHealth <= game.global.soldierHealthMax * 0.25) setFormation('1');
+    else if (game.global.formation === 1 && game.global.soldierHealth === game.global.soldierHealthMax)       setFormation('2');
 }
 
 export function debugStance(maxPower?: boolean, ignoreArmy?: boolean): string | false {
     //Returns what stance we should be using right now, or false if none grants survival
-    for (var critPower=2; critPower >= -2; critPower--) {
+    for (let critPower=2; critPower >= -2; critPower--) {
         if      (survive("D",  critPower, ignoreArmy)) {return "D"  + critPower}
         else if (survive("XB", critPower, ignoreArmy)) {return "XB" + critPower}
         else if (survive("B",  critPower, ignoreArmy)) {return "B"  + critPower}
@@ -47,35 +61,36 @@ export function debugStance(maxPower?: boolean, ignoreArmy?: boolean): string | 
 }
 
 export function maxOneShotPower(considerEdges?: boolean): number {
-    var power = 2;
+    let power = 2;
 
     //No enemy to kill
     if (considerEdges && !getCurrentEnemy()) return 0;
 
     //No overkill perk
-    if (game.portal.Overkill.level == 0) return 1;
+    if (game.portal.Overkill.level === 0) return 1;
 
     //Mastery
     if (game.talents.overkill.purchased) power++;
 
     //Ice
-    if (game.global.uberNature == "Ice") power += 2; // Fix (#22): uber ICE grants +2 overkill (game getOverkillerCount); was checking "Poison".
-    if (getEmpowerment() == "Ice" && game.empowerments.Ice.getLevel() >=  50) power++;
-    if (getEmpowerment() == "Ice" && game.empowerments.Ice.getLevel() >= 100) power++;
+    if (game.global.uberNature === "Ice") power += 2; // Fix (#22): uber ICE grants +2 overkill (game getOverkillerCount); was checking "Poison".
+    if (getEmpowerment() === "Ice" && game.empowerments.Ice.getLevel() >=  50) power++;
+    if (getEmpowerment() === "Ice" && game.empowerments.Ice.getLevel() >= 100) power++;
 
     //No enemy to attack
-    if (considerEdges) for (var i=power; i > 1 && !getCurrentEnemy(i); i--);
+    if (considerEdges) for (let i=power; i > 1 && !getCurrentEnemy(i); i--);
 
     return power;
 }
 
 export function oneShotZone(zone: number, type?: string, specificStance?: unknown, maxOrMin?: boolean): number {
     //Calculates our minimum damage
-    var baseDamage = calcOurDmg(maxOrMin ? "max" : "min", false, true);
-    var damageLeft = baseDamage + addPoison(false, (type == "world") ? zone : game.global.world);
+    const baseDamage = calcOurDmg(maxOrMin ? "max" : "min", false, true);
+    let damageLeft = baseDamage + addPoison(false, (type === "world") ? zone : game.global.world);
 
     //Calculates how many enemies we can one shot + overkill
-    for (var power=1; power <= maxOneShotPower(); power++) {
+    let power = 1;
+    for (; power <= maxOneShotPower(); power++) {
         //Enemy Health: A C99 Dragimp (worstCase)
         damageLeft -= calcEnemyHealth();
 
@@ -91,25 +106,26 @@ export function oneShotZone(zone: number, type?: string, specificStance?: unknow
 
 export function oneShotPower(specificStance?: unknown, offset: number = 0, maxOrMin?: boolean): number {
     //Calculates our minimum damage
-    var baseDamage = calcOurDmg(maxOrMin ? "max" : "min", false, true);
-    var damageLeft = baseDamage + addPoison(true);
+    const baseDamage = calcOurDmg(maxOrMin ? "max" : "min", false, true);
+    let damageLeft = baseDamage + addPoison(true);
 
     //Calculates how many enemies we can one shot + overkill
-    for (var power=1; power <= maxOneShotPower(); power++) {
+    let power = 1;
+    for (; power <= maxOneShotPower(); power++) {
         //No enemy to overkill (usually this happens at the last cell)
         if (!getCurrentEnemy(power+offset)) return power+offset-1;
-        
+
         //Enemy Health: current enemy or his neighbours
         if (power+offset > 1) damageLeft -= calcSpecificEnemyHealth(undefined, undefined, getCurrentEnemy(power+offset).level);
         else damageLeft -= getCurrentEnemy().health;
-        
+
         //Check if we can one shot the next enemy
         if (damageLeft < 0) return power-1;
-        
+
         //Calculates our minimum "left over" damage, which will be used by the Overkill
         damageLeft *= 0.005 * game.portal.Overkill.level;
     }
-    
+
     return power-1;
 }
 
@@ -123,19 +139,19 @@ export function challengeDamage(maxHealth?: number, minDamage?: number, maxDamag
     if (!block) block = calcOurBlock(false);
 
     //Enemy
-    var enemy = getCurrentEnemy();
-    var enemyHealth = enemy.health;
-    var enemyDamage = calcSpecificEnemyAttack(critPower);
+    const enemy = getCurrentEnemy();
+    const enemyHealth = enemy.health;
+    const enemyDamage = calcSpecificEnemyAttack(critPower);
 
     //Active Challenges
-    var leadChallenge = challengeActive("Lead");
-    var electricityChallenge = challengeActive("Electricity") || game.global.challengeActive == "Mapocalypse";
-    var dailyPlague = game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.plague !== "undefined";
-    var dailyBogged = game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.bogged !== "undefined";
-    var dailyExplosive = game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.explosive !== "undefined";
-    var dailyMirrored = game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.mirrored !== "undefined";
-    var drainChallenge = challengeActive("Nom") || challengeActive("Toxicity") || dailyPlague || dailyBogged;
-    var challengeDamage = 0, harm = 0;
+    const leadChallenge = challengeActive("Lead");
+    const electricityChallenge = challengeActive("Electricity") || game.global.challengeActive === "Mapocalypse";
+    const dailyPlague = game.global.challengeActive === "Daily" && typeof game.global.dailyChallenge.plague !== "undefined";
+    const dailyBogged = game.global.challengeActive === "Daily" && typeof game.global.dailyChallenge.bogged !== "undefined";
+    const dailyExplosive = game.global.challengeActive === "Daily" && typeof game.global.dailyChallenge.explosive !== "undefined";
+    const dailyMirrored = game.global.challengeActive === "Daily" && typeof game.global.dailyChallenge.mirrored !== "undefined";
+    const drainChallenge = challengeActive("Nom") || challengeActive("Toxicity") || dailyPlague || dailyBogged;
+    let challengeDamage = 0, harm = 0;
 
     //Electricity Lead - Tox/Nom
     if (electricityChallenge) challengeDamage = game.challenges.Electricity.stacks * 0.1;
@@ -152,14 +168,14 @@ export function challengeDamage(maxHealth?: number, minDamage?: number, maxDamag
     harm += maxHealth * challengeDamage;
 
     //Adds Bleed Damage -- % of current health
-    if (game.global.voidBuff == "bleed" || (enemy.corrupted == 'corruptBleed') || enemy.corrupted == 'healthyBleed') {
-        challengeDamage = (enemy.corrupted == 'healthyBleed') ? 0.30 : 0.20;
+    if (game.global.voidBuff === "bleed" || (enemy.corrupted === 'corruptBleed') || enemy.corrupted === 'healthyBleed') {
+        challengeDamage = (enemy.corrupted === 'healthyBleed') ? 0.30 : 0.20;
         harm += (maxHealth - missingHealth) * challengeDamage;
     }
 
     //Explosive Daily
     if (dailyExplosive && critPower >= 0) {
-        var explosionDmg = enemyDamage * dailyModifiers.explosive.getMult(game.global.dailyChallenge.explosive.strength);
+        const explosionDmg = enemyDamage * dailyModifiers.explosive.getMult(game.global.dailyChallenge.explosive.strength);
         if (maxDamage >= enemyHealth && maxHealth > block) harm += Math.max(explosionDmg - block, explosionDmg * pierce);
     }
 
@@ -178,24 +194,24 @@ export function directDamage(block?: number, pierce?: number, currentHealth?: nu
     if (!minDamage) minDamage = calcOurDmg("min", false, true) + addPoison(true);
     
     //Enemy
-    var enemy = getCurrentEnemy();
-    var enemyHealth = enemy.health;
-    var enemyDamage = calcSpecificEnemyAttack(critPower, block, currentHealth);
+    const enemy = getCurrentEnemy();
+    const enemyHealth = enemy.health;
+    const enemyDamage = calcSpecificEnemyAttack(critPower, block, currentHealth);
 
     //Applies pierce
-    var harm = Math.max(enemyDamage - block, pierce * enemyDamage, 0);
+    let harm = Math.max(enemyDamage - block, pierce * enemyDamage, 0);
 
     //Fast Enemies
-    var isDoubleAttack = game.global.voidBuff == "doubleAttack" || (enemy.corrupted == "corruptDbl") || enemy.corrupted == "healthyDbl";
-    var enemyFast = isDoubleAttack || challengeActive("Slow") || ((game.badGuys[enemy.name].fast || enemy.mutation == "Corruption") && game.global.challengeActive != "Coordinate" && challengeActive("Nom") == false);
-    
+    const isDoubleAttack = game.global.voidBuff === "doubleAttack" || (enemy.corrupted === "corruptDbl") || enemy.corrupted === "healthyDbl";
+    const enemyFast = isDoubleAttack || challengeActive("Slow") || ((game.badGuys[enemy.name].fast || enemy.mutation === "Corruption") && game.global.challengeActive !== "Coordinate" && challengeActive("Nom") === false);
+
     //Dodge Dailies
     // Hoisted to function scope for strict TS: faithful `var dodgeDaily` was function-hoisted and
     // stays `undefined` when the block doesn't run (`!undefined` === true, matching the original).
     let dodgeDaily: boolean | undefined;
-    if (game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.slippery !== "undefined") {
-        var slipStr = game.global.dailyChallenge.slippery.strength;
-        dodgeDaily = (slipStr > 15 && game.global.world % 2 == 0) || (slipStr <= 15 && game.global.world % 2 == 1);
+    if (game.global.challengeActive === "Daily" && typeof game.global.dailyChallenge.slippery !== "undefined") {
+        const slipStr = game.global.dailyChallenge.slippery.strength;
+        dodgeDaily = (slipStr > 15 && game.global.world % 2 === 0) || (slipStr <= 15 && game.global.world % 2 === 1);
     }
 
     //Double Attack and One Shot situations
@@ -207,49 +223,49 @@ export function directDamage(block?: number, pierce?: number, currentHealth?: nu
 
 export function survive(formation: string = "S", critPower: number = 2, ignoreArmy?: boolean): boolean {
     //Check if the formation is valid
-    if (formation == "D"  && !game.upgrades.Dominance.done) return false;
-    if (formation == "XB" && !game.upgrades.Barrier.done) return false;
-    if (formation == "B"  && !game.upgrades.Barrier.done) return false;
-    if (formation == "H"  && !game.upgrades.Formations.done) return false;
-    if (formation == "S"  && (game.global.world < 60 || game.global.highestLevelCleared < 180)) return false;
+    if (formation === "D"  && !game.upgrades.Dominance.done) return false;
+    if (formation === "XB" && !game.upgrades.Barrier.done) return false;
+    if (formation === "B"  && !game.upgrades.Barrier.done) return false;
+    if (formation === "H"  && !game.upgrades.Formations.done) return false;
+    if (formation === "S"  && (game.global.world < 60 || game.global.highestLevelCleared < 180)) return false;
 
     //Base stats
-    var health = baseHealth;
-    var block  = baseBlock;
-    var missingHealth = game.global.soldierHealthMax - game.global.soldierHealth;
+    let health = baseHealth;
+    let block  = baseBlock;
+    const missingHealth = game.global.soldierHealthMax - game.global.soldierHealth;
 
     //More stats
-    var minDamage = baseMinDamage;
-    var maxDamage = baseMaxDamage;
-    var newSquadRdy = !ignoreArmy && game.resources.trimps.realMax() <= game.resources.trimps.owned + 1;
+    let minDamage = baseMinDamage;
+    let maxDamage = baseMaxDamage;
+    const newSquadRdy = !ignoreArmy && game.resources.trimps.realMax() <= game.resources.trimps.owned + 1;
 
     //Applies the formation modifiers
-    if      (formation == "XB") {health /= 2;}
-    else if (formation == "D") {minDamage *= 4; maxDamage *= 4; health /= 2; block  /= 2;}
-    else if (formation == "B") {minDamage /= 2; maxDamage /= 2; health /= 2; block  *= 4;}
-    else if (formation == "H") {minDamage /= 2; maxDamage /= 2; health *= 4; block  /= 2;}
-    else if (formation == "S") {minDamage /= 2; maxDamage /= 2; health /= 2; block  /= 2;}
-    
+    if      (formation === "XB") {health /= 2;}
+    else if (formation === "D") {minDamage *= 4; maxDamage *= 4; health /= 2; block  /= 2;}
+    else if (formation === "B") {minDamage /= 2; maxDamage /= 2; health /= 2; block  *= 4;}
+    else if (formation === "H") {minDamage /= 2; maxDamage /= 2; health *= 4; block  /= 2;}
+    else if (formation === "S") {minDamage /= 2; maxDamage /= 2; health /= 2; block  /= 2;}
+
     //Max health for XB formation
-    var maxHealth = health * (formation == "XB" ? 2 : 1);
+    const maxHealth = health * (formation === "XB" ? 2 : 1);
 
     //Empowerments - Poison
-    minDamage += addPoison(true)
-    maxDamage += addPoison(true)
+    minDamage += addPoison(true);
+    maxDamage += addPoison(true);
 
     //Pierce
-    var pierce = (game.global.brokenPlanet && !game.global.mapsActive) ? getPierceAmt() : 0;
-    if (formation != "B" && game.global.formation == 3) pierce *= 2;
+    let pierce = (game.global.brokenPlanet && !game.global.mapsActive) ? getPierceAmt() : 0;
+    if (formation !== "B" && game.global.formation === 3) pierce *= 2;
 
     //Decides if the trimps can survive in this formation
-    var notSpire = game.global.mapsActive || !game.global.spireActive;
-    var harm = directDamage(block, pierce, health - missingHealth, minDamage, critPower) + challengeDamage(maxHealth, minDamage, maxDamage, missingHealth, block, pierce, critPower);
+    const notSpire = game.global.mapsActive || !game.global.spireActive;
+    const harm = directDamage(block, pierce, health - missingHealth, minDamage, critPower) + challengeDamage(maxHealth, minDamage, maxDamage, missingHealth, block, pierce, critPower);
 
     //Updated Genes and Block
-    var blockier = calcOurBlock(false);
-    var healthier = health * Math.pow(1.01, game.jobs.Geneticist.owned - game.global.lastLowGen);
-    var maxHealthier = maxHealth * Math.pow(1.01, game.jobs.Geneticist.owned - game.global.lastLowGen);
-    var harm2 = directDamage(blockier, pierce, healthier, minDamage, critPower) + challengeDamage(maxHealthier, minDamage, maxDamage, 0, blockier, pierce, critPower);
+    const blockier = calcOurBlock(false);
+    const healthier = health * Math.pow(1.01, game.jobs.Geneticist.owned - game.global.lastLowGen);
+    const maxHealthier = maxHealth * Math.pow(1.01, game.jobs.Geneticist.owned - game.global.lastLowGen);
+    const harm2 = directDamage(blockier, pierce, healthier, minDamage, critPower) + challengeDamage(maxHealthier, minDamage, maxDamage, 0, blockier, pierce, critPower);
 
     return (newSquadRdy && notSpire && healthier > harm2) || (health - missingHealth > harm);
 }
@@ -265,7 +281,7 @@ export function autoStance() {
     if (typeof getCurrentEnemy() === 'undefined') return true;
 
     //Keep on D vs the Domination bosses
-    if (game.global.challengeActive == "Domination" && (game.global.lastClearedCell == 98 || getCurrentEnemy() && getCurrentEnemy().name == "Cthulimp")) {
+    if (game.global.challengeActive === "Domination" && (game.global.lastClearedCell === 98 || getCurrentEnemy() && getCurrentEnemy().name === "Cthulimp")) {
         autoStance2();
         return;
     }
@@ -274,7 +290,7 @@ export function autoStance() {
     if (!game.global.preMapsActive && game.global.soldierHealth > 0) {
         //If no formation can survive a mega crit, it ignores it, and recalculates for a regular crit, then no crit
         //If even that is not enough, then it ignore Explosive Daily, and finally it ignores Reflect Daily
-        var critPower;
+        let critPower;
         for (critPower=2; critPower >= -2; critPower--) {
             if      (survive("D", critPower))  {setFormation(2);   break;}
             else if (survive("XB", critPower)) {setFormation("0"); break;}
@@ -296,11 +312,11 @@ export function autoStance() {
 export function autoStance2() {
       if (game.global.gridArray.length === 0) return;
       if (game.global.soldierHealth <= 0) return;
-      if (getPageSetting('AutoStance') == 0) return;
+      if (getPageSetting('AutoStance') == 0) return; // loose == kept: catches a boolean-false setting, not just numeric 0
       if (!game.upgrades.Formations.done) return;
       if (game.global.world <= 70) return;
-           if (game.global.formation != 2)
-               setFormation(2);
+      if (game.global.formation !== 2)
+          setFormation(2);
 }
 
 export function windStance() {
@@ -309,71 +325,71 @@ export function windStance() {
     if (game.global.soldierHealth <= 0) return;
     if (!game.upgrades.Formations.done) return;
     if (game.global.world <= 70) return;
-    var stancey = 2;
-    if (game.global.challengeActive != "Daily") {
-	if (calcCurrentStance() == 5) {
+    let stancey = 2;
+    if (game.global.challengeActive !== "Daily") {
+        if (calcCurrentStance() === 5) {
             stancey = 5;
             lowHeirloom();
         }
-        if (calcCurrentStance() == 2) {
+        if (calcCurrentStance() === 2) {
             stancey = 2;
             lowHeirloom();
         }
-        if (calcCurrentStance() == 0) {
+        if (calcCurrentStance() === 0) {
             stancey = 0;
             lowHeirloom();
         }
-        if (calcCurrentStance() == 1) {
+        if (calcCurrentStance() === 1) {
             stancey = 1;
             lowHeirloom();
         }
-        if (calcCurrentStance() == 15) {
+        if (calcCurrentStance() === 15) {
             stancey = 5;
             highHeirloom();
         }
-        if (calcCurrentStance() == 12) {
+        if (calcCurrentStance() === 12) {
             stancey = 2;
             highHeirloom();
         }
-        if (calcCurrentStance() == 10) {
+        if (calcCurrentStance() === 10) {
             stancey = 0;
             highHeirloom();
         }
-        if (calcCurrentStance() == 11) {
+        if (calcCurrentStance() === 11) {
             stancey = 1;
             highHeirloom();
         }
     }
-    if (game.global.challengeActive == "Daily") {
-	if (calcCurrentStance() == 5) {
+    if (game.global.challengeActive === "Daily") {
+        if (calcCurrentStance() === 5) {
             stancey = 5;
             dlowHeirloom();
         }
-        if (calcCurrentStance() == 2) {
+        if (calcCurrentStance() === 2) {
             stancey = 2;
             dlowHeirloom();
         }
-        if (calcCurrentStance() == 0) {
+        if (calcCurrentStance() === 0) {
             stancey = 0;
             dlowHeirloom();
         }
-        if (calcCurrentStance() == 1) {
+        if (calcCurrentStance() === 1) {
             stancey = 1;
             dlowHeirloom();
         }
-        if (calcCurrentStance() == 15) {
+        if (calcCurrentStance() === 15) {
             stancey = 5;
             dhighHeirloom();
         }
-        if (calcCurrentStance() == 12) {
+        if (calcCurrentStance() === 12) {
             stancey = 2;
             dhighHeirloom();
         }
-        if (calcCurrentStance() == 10) {
+        if (calcCurrentStance() === 10) {
             stancey = 0;
             dhighHeirloom();
         }
-        if (calcCurrentStance() == 11) {
+        if (calcCurrentStance() === 11) {
             stancey = 1;
             dhighHeirloom();
         }
