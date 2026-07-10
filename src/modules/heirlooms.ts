@@ -593,12 +593,10 @@ export function Rdheirloomswap() {
 }
 
 export function HeirloomShieldSwapped() {
-	// FAITHFUL-PORT LATENT BUG (surfaced by #28 strict conversion, behaviour preserved): precedence
-	// makes this `(!rarity) >= 10` — a boolean compared to 10, ALWAYS false — so the guard never
-	// returns and the body always runs. Intent was likely `if (rarity < 10) return`. Left as-is
-	// (fixing it changes behaviour → user-gated). @ts-expect-error keeps the boolean>=number compare.
-	// @ts-expect-error faithful-port: dead guard preserved verbatim
-	if (!game.global.ShieldEquipped.rarity >= 10) return;
+	// #49: only credit gammaBurst for rarity >= 10 shields, matching the game's gate
+	// (trimps-game main.js:6612 / main.js:6836). The original `if (!…rarity >= 10) return`
+	// precedence-parsed as `(!rarity) >= 10` (always false), so the guard never fired.
+	if (game.global.ShieldEquipped.rarity < 10) return;
 	gammaBurstPct = (getHeirloomBonus("Shield", "gammaBurst") / 100) > 0 ? (getHeirloomBonus("Shield", "gammaBurst") / 100) : 1;
 	shieldEquipped = game.global.ShieldEquipped.id;
 }

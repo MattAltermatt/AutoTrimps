@@ -5523,7 +5523,7 @@
     }
   }
   function HeirloomShieldSwapped() {
-    if (!game.global.ShieldEquipped.rarity >= 10) return;
+    if (game.global.ShieldEquipped.rarity < 10) return;
     gammaBurstPct = getHeirloomBonus("Shield", "gammaBurst") / 100 > 0 ? getHeirloomBonus("Shield", "gammaBurst") / 100 : 1;
     shieldEquipped = game.global.ShieldEquipped.id;
   }
