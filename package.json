@@ -8,6 +8,8 @@
     "build": "node scripts/build-userscript.mjs",
     "build:watch": "node scripts/build-userscript.mjs --watch",
     "serve": "node scripts/serve-game.mjs",
+    "sim:coverage": "node scripts/sim/coverage.mjs",
+    "sim:record": "node scripts/sim/record-oracle.mjs",
     "lint": "oxlint src tests scripts",
     "test": "vitest run",
     "test:watch": "vitest",
