@@ -77,17 +77,21 @@ describe('breedtimer — pure breed-timing math (golden masters)', () => {
 
   it('potencyMod: Potency upgrade (×1.1^done)', () => {
     neutralBreed({ upgrades: { Potency: { done: 5 } } })
-    expect(str(breedtimer.potencyMod())).toBe('1.00136893350000000051')
+    // 1.1^done uses native Math.pow (breedtimer.ts:41); its last ULP is libm/platform-dependent,
+    // so the full Decimal toString tail is not portable. Pin 15 sig figs (see Geneticist below).
+    expect(breedtimer.potencyMod().toPrecision(15)).toBe('1.00136893350000')
   })
 
   it('potencyMod: Nursery (×1.01^owned)', () => {
     neutralBreed({ buildings: { Nursery: { owned: 10 } } })
-    expect(str(breedtimer.potencyMod())).toBe('1.000938928806599523825')
+    // 1.01^owned uses native Math.pow (breedtimer.ts:42) — pin 15 sig figs (see Geneticist below).
+    expect(breedtimer.potencyMod().toPrecision(15)).toBe('1.00093892880660')
   })
 
   it('potencyMod: Venimp imp count (×1.003^count)', () => {
     neutralBreed({ unlocks: { impCount: { Venimp: 20 } } })
-    expect(str(breedtimer.potencyMod())).toBe('1.000902479999804761685')
+    // 1.003^count uses native Math.pow (breedtimer.ts:43) — pin 15 sig figs (see Geneticist below).
+    expect(breedtimer.potencyMod().toPrecision(15)).toBe('1.00090247999980')
   })
 
   it('potencyMod: brokenPlanet divides potency by 10', () => {
@@ -121,7 +125,8 @@ describe('breedtimer — pure breed-timing math (golden masters)', () => {
   it('potencyMod: Toxicity challenge (×stackMult^stacks)', () => {
     neutralBreed({ challenges: { Toxicity: { stacks: 5, stackMult: 1.05 } } })
     G.challengeActive = (c: string) => c === 'Toxicity'
-    expect(str(breedtimer.potencyMod())).toBe('1.00108483932812500034')
+    // stackMult^stacks uses native Math.pow (breedtimer.ts:65) — pin 15 sig figs (see Geneticist above).
+    expect(breedtimer.potencyMod().toPrecision(15)).toBe('1.00108483932813')
   })
 
   it('potencyMod: Archaeology challenge (×getStatMult("breed"))', () => {
