@@ -69,6 +69,19 @@ export function safeBuyBuilding(building: string) {
         postBuy2(oldBuy);
         return false;
     }
+    // #57 coordinator: defer a lesser building that would spend metal reserved for a higher-priority
+    // target (e.g. saving up for Coordination). The whole block is gated on `active` so that when the
+    // setting is OFF nothing extra runs at all — the OFF path is byte-identical (the proof-net L0
+    // traces reproduce). Phase 1 reserves the metal pool only.
+    // Only metal-costed buildings can dip into a metal reserve; skip the rest (and never ask
+    // getBuildingItemPrice for a resource a building doesn't cost — native throws on a missing key).
+    if (MODULES["coordinator"]?.active && game.buildings[building].cost?.metal !== undefined) {
+        const coordMetalCost = getBuildingItemPrice(game.buildings[building], "metal", false, game.global.buyAmt === 'Max' ? 1 : game.global.buyAmt);
+        if (!coordinatorAllows(building, "metal", coordMetalCost)) {
+            postBuy2(oldBuy);
+            return false;
+        }
+    }
 
     game.global.firing = false;
 

@@ -3278,6 +3278,13 @@
       postBuy2(oldBuy);
       return false;
     }
+    if (MODULES["coordinator"]?.active && game.buildings[building].cost?.metal !== void 0) {
+      const coordMetalCost = getBuildingItemPrice(game.buildings[building], "metal", false, game.global.buyAmt === "Max" ? 1 : game.global.buyAmt);
+      if (!coordinatorAllows(building, "metal", coordMetalCost)) {
+        postBuy2(oldBuy);
+        return false;
+      }
+    }
     game.global.firing = false;
     if (building === "Gym" && getPageSetting2("GymWall")) {
       game.global.buyAmt = 1;
@@ -14612,6 +14619,42 @@
     }
   }
 
+  // src/modules/coordinator.ts
+  var coordinator_exports = {};
+  __export(coordinator_exports, {
+    computeTopTarget: () => computeTopTarget,
+    coordinatorAllows: () => coordinatorAllows2
+  });
+  MODULES["coordinator"] = {
+    active: false,
+    topTarget: null,
+    reserved: {}
+  };
+  function coordinatorAllows2(name, costResource, cost) {
+    const co = MODULES["coordinator"];
+    if (!co.active || co.topTarget == null) return true;
+    if (name === co.topTarget.name) return true;
+    const keep = co.reserved[costResource] ?? 0;
+    return game.resources[costResource].owned - cost >= keep;
+  }
+  function computeTopTarget() {
+    const co = MODULES["coordinator"];
+    co.active = getPageSetting2("PurchaseCoordinator") === true;
+    co.topTarget = null;
+    co.reserved = {};
+    if (!co.active) return;
+    const needCoord = game.upgrades.Coordination.allowed - game.upgrades.Coordination.done > 0;
+    if (!needCoord || game.buildings.Warpstation.locked || canAffordCoordinationTrimps()) return;
+    const toTip = game.buildings.Warpstation;
+    if (toTip.increase.what !== "trimps.max") return;
+    const nextCount = game.portal.Coordinated.level ? game.portal.Coordinated.currentSend : game.resources.trimps.maxSoldiers;
+    const amtToGo = nextCount * 3 - game.resources.trimps.realMax();
+    if (amtToGo <= 0) return;
+    co.topTarget = { kind: "building", name: "Warpstation" };
+    co.reserved = { metal: getBuildingItemPrice(toTip, "metal", false, 1) };
+    safeBuyBuilding("Warpstation");
+  }
+
   // src/modules/settings-engine.ts
   var settings_engine_exports = {};
   __export(settings_engine_exports, {
@@ -16208,6 +16251,7 @@
     createSetting("c2table", "C2 Table", "Display your C2s and C3s in a convenient table which is colour coded. <br><b>Green</b> = Not worth updating. <br><b>Yellow</b> = Consider updating. <br><b>Red</b> = Updating this C2/C3 is worth doing. <br><b>Blue</b> = You have not yet done/unlocked this C2/C3 challenge. ", "infoclick", "c2table", null, "C2");
     createSetting("hidebuildings", "Hide Buildings", "If you have unlocked Autostructure and Decabuild, this setting will appear and enable you to hide the now obsolete building settings, so please use AutoStructure instead. The settings will only disappear if you disable the buy buildings button and turn this on. It will not hide the Gym settings as Autostructure does not allow you to customize how you buy them. ", "boolean", false, null, "Buildings");
     createSetting("BuyBuildingsNew", ["Buy Neither", "Buy Buildings & Storage", "Buy Buildings", "Buy Storage"], "AutoBuys Storage when it is almost full (it even anticipates Jestimp) and Non-Storage Buildings (As soon as they are available). Takes cost efficiency into account before buying Non-Storage Buildings.", "multitoggle", 1, null, "Buildings");
+    createSetting("PurchaseCoordinator", "Purchase Coordinator", "EXPERIMENTAL (#57). When ON, AutoTrimps spends by computed priority instead of buying whatever it can afford \u2014 it will SAVE UP for the highest-value purchase (e.g. Coordination) instead of spending that metal on lesser buildings. Faithful-by-default: OFF = exactly the current behavior. Verify live before trusting it.", "boolean", false, null, "Buildings");
     createSetting("WarpstationCap", "Warpstation Cap", "Do not level Warpstations past Basewarp+DeltaGiga **. Without this, if a Giga wasnt available, it would level infinitely (wastes metal better spent on prestiges instead.) **The script bypasses this cap each time a new giga is bought, when it insta-buys as many as it can afford (since AT keeps available metal/gems to a low, overbuying beyond the cap to what is affordable at that first moment is not a bad thing). ", "boolean", true, null, "Buildings");
     createSetting("WarpstationCoordBuy", "Buy Warp to Hit Coord", "If we are very close to hitting the next coordination, and we can afford the warpstations it takes to do it, Do it! (even if we are over the Cap/Wall). Recommended with WarpCap/WarpWall. (has no point otherwise) ", "boolean", true, null, "Buildings");
     createSetting("MaxHut", "Max Huts", "Huts", "value", "100", null, "Buildings");
@@ -16722,7 +16766,7 @@
   }
 
   // src/legacy-bridge.ts
-  Object.assign(globalThis, { ...utils_exports, ...time_exports, ...buystate_exports, ...dynprestige_exports, ...breedtimer_exports, ...nature_exports, ...magmite_exports, ...calc_exports, ...equipment_exports, ...buildings_exports, ...jobs_exports, ...upgrades_exports, ...gather_exports, ...heirlooms_exports, ...fight_exports, ...scryer_exports, ...ab_exports, ...MAZ_exports, ...stance_exports, ...maps_exports, ...mapfunctions_exports, ...mapfunctions_amp_exports, ...portal_exports, ...import_export_exports, ...query_exports, ...other_exports, ...other_praiding_exports, ...settings_engine_exports, ...settings_menu_exports, ...settings_visibility_exports, ...settings_defs_exports, ...settings_boot_exports });
+  Object.assign(globalThis, { ...utils_exports, ...time_exports, ...buystate_exports, ...dynprestige_exports, ...breedtimer_exports, ...nature_exports, ...magmite_exports, ...calc_exports, ...equipment_exports, ...buildings_exports, ...jobs_exports, ...upgrades_exports, ...gather_exports, ...heirlooms_exports, ...fight_exports, ...scryer_exports, ...ab_exports, ...MAZ_exports, ...stance_exports, ...maps_exports, ...mapfunctions_exports, ...mapfunctions_amp_exports, ...portal_exports, ...import_export_exports, ...query_exports, ...other_exports, ...other_praiding_exports, ...coordinator_exports, ...settings_engine_exports, ...settings_menu_exports, ...settings_visibility_exports, ...settings_defs_exports, ...settings_boot_exports });
 
   // src/modules/perks.ts
   globalThis.AutoPerks = {};

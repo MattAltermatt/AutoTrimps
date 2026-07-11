@@ -201,6 +201,10 @@ function mainLoop() {
         if (getPageSetting('BuyUpgradesNew') != 0) buyUpgrades();
         if ((getPageSetting('Hshrine') == true) || (getPageSetting('Hdshrine') == 1) || (getPageSetting('Hdshrine') == 2)) autoshrine();
 
+        //#57 purchase coordinator: compute the current top-priority target + metal reserve before
+        //the buyers run (no-op unless the PurchaseCoordinator setting is on).
+        computeTopTarget();
+
         //Buildings
         if (!usingRealTimeOffline) {
         if (getPageSetting('BuyBuildingsNew') === 0 && getPageSetting('hidebuildings') == true) buyBuildings();
