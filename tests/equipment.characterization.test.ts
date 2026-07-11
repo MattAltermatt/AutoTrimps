@@ -8,10 +8,10 @@ import { makeMinimalGame } from './harness/gameFixture'
 //   L1a pure-predicate golden masters — equipEffect / equipCost / PrestigeValue (+ R* twins),
 //     getMaxAffordable / getTotalMultiCost (closed-form math), mostEfficientEquipment (selector),
 //     equipfarmdynamicHD, evaluateEquipmentEfficiency / RevaluateEquipmentEfficiency (eval object),
-//     buyPrestigeMaybe (bool), Rgetequips (count), areWeAttackLevelCapped / R* (bool),
+//     buyPrestigeMaybe (bool), Rgetequips (count), areWeAttackLevelCapped (bool),
 //     estimateEquipsForZone (cost array), windstackingprestige (bool).
 //   L1b actuator spy-logs — orangewindstack / dorangewindstack / autoLevelEquipment /
-//     RautoLevelEquipment / RautoEquip / Requipcalc. Their RETURN is (mostly) meaningless; the
+//     RautoEquip / Requipcalc. Their RETURN is (mostly) meaningless; the
 //     CONTRACT is the ordered native-mutator call log: buyUpgrade(name,true,true) /
 //     buyEquipment(name,null,true[,amt]) captured in order, plus preBuy/postBuy state save/restore.
 // Every exported decision fn has >=1 assertion; every ==/!= the idiomatic pass converts to ===/!==
@@ -539,7 +539,6 @@ describe('equipment.areWeAttackLevelCapped / R — L1a bool', () => {
       ;(globalThis as any).game.equipment[w].level = 5
     }
     expect(equipment.areWeAttackLevelCapped()).toBe(true)
-    expect(equipment.RareWeAttackLevelCapped()).toBe(true)
   })
 
   it('false when an attack piece is not capped', () => {
@@ -627,46 +626,6 @@ describe('equipment.autoLevelEquipment — L1b spy-log', () => {
       ['Shield', null, true], ['Shield', null, true],
       ['Boots', null, true], ['Boots', null, true],
     ])
-  })
-})
-
-// ════════════════════════════════════════════════════════════════════════════════════════════════
-// L1b — RautoLevelEquipment (radon auto-level actuator)
-// ════════════════════════════════════════════════════════════════════════════════════════════════
-describe('equipment.RautoLevelEquipment — L1b spy-log', () => {
-  it('early-out when RcalcOurDmg <= 0', () => {
-    ;(globalThis as any).RcalcOurDmg = () => 0
-    ;(globalThis as any).game = fullGame()
-    equipment.RautoLevelEquipment()
-    expect(buyUpgradeCalls).toEqual([])
-    expect(buyEquipmentCalls).toEqual([])
-  })
-
-  it('single unlocked weapon: prestige buyUpgrade + smithylogic-gated level buyEquipment', () => {
-    ;(globalThis as any).getBuildingItemPrice = () => 100
-    ;(globalThis as any).getNextPrestigeCost = () => 1e9
-    ;(globalThis as any).RcalcHDratio = () => 100 // enoughDamageE = (100 <= cutoff 0) false → weapon path
-    ;(globalThis as any).autoTrimpSettings = { RBuyWeaponsNew: { type: 'multitoggle', value: 1 } }
-    ;(globalThis as any).game = fullGame()
-    for (const u of UPGRADE_NAMES) if (u !== 'Dagadder') (globalThis as any).game.upgrades[u].locked = 1
-    ;(globalThis as any).game.equipment.Dagger.attackCalculated = 1000
-    equipment.RautoLevelEquipment()
-    expect(buyUpgradeCalls).toEqual([['Dagadder', true, true]])
-    expect(buyEquipmentCalls).toEqual([['Dagger', null, true]])
-  })
-
-  it('smithylogic false blocks the level buyEquipment (upgrade still fires)', () => {
-    ;(globalThis as any).getBuildingItemPrice = () => 100
-    ;(globalThis as any).getNextPrestigeCost = () => 1e9
-    ;(globalThis as any).RcalcHDratio = () => 100
-    ;(globalThis as any).smithylogic = () => false
-    ;(globalThis as any).autoTrimpSettings = { RBuyWeaponsNew: { type: 'multitoggle', value: 1 } }
-    ;(globalThis as any).game = fullGame()
-    for (const u of UPGRADE_NAMES) if (u !== 'Dagadder') (globalThis as any).game.upgrades[u].locked = 1
-    ;(globalThis as any).game.equipment.Dagger.attackCalculated = 1000
-    equipment.RautoLevelEquipment()
-    expect(buyUpgradeCalls).toEqual([['Dagadder', true, true]])
-    expect(buyEquipmentCalls).toEqual([])
   })
 })
 
@@ -886,22 +845,6 @@ describe('equipment — hard-gate branch coverage', () => {
     // only Supershield unlocked → Shield (health, wood) is the sole red piece
     for (const u of UPGRADE_NAMES) if (u !== 'Supershield') (globalThis as any).game.upgrades[u].locked = 1
     equipment.autoLevelEquipment()
-    expect(buyUpgradeCalls).toEqual([['Supershield', true, true]])
-  })
-
-  it('radon armor-upgrade wood arm drives RautoLevel `Stat===\'health\'` + `Resource===\'wood\'`', () => {
-    ;(globalThis as any).getBuildingItemPrice = () => 100
-    ;(globalThis as any).getNextPrestigeCost = () => 1e9
-    ;(globalThis as any).shouldFarm = true
-    ;(globalThis as any).RcalcOurHealth = () => 1e12 // enoughHealthE true
-    ;(globalThis as any).RcalcHDratio = () => 1e9 // enoughDamageE = (1e9 <= cutoff 0) false
-    ;(globalThis as any).autoTrimpSettings = {
-      RBuyArmorNew: { type: 'multitoggle', value: 1 },
-      RDelayArmorWhenNeeded: { type: 'boolean', enabled: true },
-    }
-    ;(globalThis as any).game = fullGame()
-    for (const u of UPGRADE_NAMES) if (u !== 'Supershield') (globalThis as any).game.upgrades[u].locked = 1
-    equipment.RautoLevelEquipment()
     expect(buyUpgradeCalls).toEqual([['Supershield', true, true]])
   })
 

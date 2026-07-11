@@ -218,14 +218,6 @@ playerSpire.drawInfo = function(drawArgs: any) {
 }
 
 //Radon
-export function RbuyWeps() {
-    // #58: the RBuyWeaponsNew gate was removed — RBuyWeaponsNew is a phantom setting (never
-    // createSetting'd → getPageSetting returns false, utils.ts:58), so this always early-returned.
-    // It mirrored U1 buyWeps's real BuyWeaponsNew gate, but U2 has no such setting. (RbuyWeps is
-    // currently unreferenced dead code; the gate removal keeps it consistent with the RbuyArms fix.)
-    preBuy(), game.global.buyAmt = getPageSetting('Rgearamounttobuy'), game.equipment.Dagger.level < getPageSetting('RCapEquip2') && canAffordBuilding('Dagger', null, null, !0) && buyEquipment('Dagger', !0, !0), game.equipment.Mace.level < getPageSetting('RCapEquip2') && canAffordBuilding('Mace', null, null, !0) && buyEquipment('Mace', !0, !0), game.equipment.Polearm.level < getPageSetting('RCapEquip2') && canAffordBuilding('Polearm', null, null, !0) && buyEquipment('Polearm', !0, !0), game.equipment.Battleaxe.level < getPageSetting('RCapEquip2') && canAffordBuilding('Battleaxe', null, null, !0) && buyEquipment('Battleaxe', !0, !0), game.equipment.Greatsword.level < getPageSetting('RCapEquip2') && canAffordBuilding('Greatsword', null, null, !0) && buyEquipment('Greatsword', !0, !0), !game.equipment.Arbalest.locked && game.equipment.Arbalest.level < getPageSetting('RCapEquip2') && canAffordBuilding('Arbalest', null, null, !0) && buyEquipment('Arbalest', !0, !0), postBuy()
-}
-
 export function RbuyArms() {
     // #58: the RBuyArmorNew gate was removed — RBuyArmorNew is a phantom setting (never createSetting'd
     // → getPageSetting returns false), so this ALWAYS early-returned, silently killing U2 armor-magic.
@@ -233,10 +225,6 @@ export function RbuyArms() {
     // Rcarmormagic/Rdarmormagic, so the phantom re-gate was a bad copy-paste of U1 buyArms (whose
     // BuyArmorNew gate IS real AND drives the U1 main buy loop — U2 has neither). See regression test.
     preBuy(), game.global.buyAmt = 10, game.equipment.Shield.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Shield', null, null, !0) && buyEquipment('Shield', !0, !0), game.equipment.Boots.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Boots', null, null, !0) && buyEquipment('Boots', !0, !0), game.equipment.Helmet.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Helmet', null, null, !0) && buyEquipment('Helmet', !0, !0), game.equipment.Pants.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Pants', null, null, !0) && buyEquipment('Pants', !0, !0), game.equipment.Shoulderguards.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Shoulderguards', null, null, !0) && buyEquipment('Shoulderguards', !0, !0), game.equipment.Breastplate.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Breastplate', null, null, !0) && buyEquipment('Breastplate', !0, !0), !game.equipment.Gambeson.locked && game.equipment.Gambeson.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Gambeson', null, null, !0) && buyEquipment('Gambeson', !0, !0), postBuy()
-}
-
-export function Rhelptrimpsnotdie() {
-    if (!game.global.preMapsActive && !game.global.fighting) RbuyArms();
 }
 
 export function Rfightalways() {

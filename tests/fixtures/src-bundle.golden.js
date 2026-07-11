@@ -2322,9 +2322,7 @@
   __export(equipment_exports, {
     PrestigeValue: () => PrestigeValue,
     RPrestigeValue: () => RPrestigeValue,
-    RareWeAttackLevelCapped: () => RareWeAttackLevelCapped,
     RautoEquip: () => RautoEquip,
-    RautoLevelEquipment: () => RautoLevelEquipment,
     RequipCost: () => RequipCost,
     RequipEffect: () => RequipEffect,
     Requipcalc: () => Requipcalc,
@@ -2921,8 +2919,6 @@
       Cost
     };
   }
-  var RresourcesNeeded;
-  var RBest;
   var RpreBuyAmt2 = 1;
   var RpreBuyFiring2 = 1;
   var RpreBuyTooltip2 = false;
@@ -2944,120 +2940,6 @@
     game.global.maxSplit = RpreBuymaxSplit2;
     game.global.firstCustomAmt = RpreBuyCustomFirst2;
     game.global.lastCustomAmt = RpreBuyCustomLast2;
-  }
-  function RautoLevelEquipment() {
-    const Rgearamounttobuy = getPageSetting2("Rgearamounttobuy") > 0 ? getPageSetting2("Rgearamounttobuy") : 1;
-    if (RcalcOurDmg("avg", false, true) <= 0) return;
-    RresourcesNeeded = {
-      "food": 0,
-      "wood": 0,
-      "metal": 0,
-      "science": 0,
-      "gems": 0
-    };
-    RBest = {};
-    const keys = ["healthwood", "healthmetal", "attackmetal"];
-    for (let i = 0; i < keys.length; i++) {
-      RBest[keys[i]] = {
-        Factor: 0,
-        Name: "",
-        Wall: false,
-        StatusBorder: "white",
-        Cost: 0
-      };
-    }
-    const enemyDamage = RcalcBadGuyDmg(null, RgetEnemyMaxAttack(game.global.world, 50, "Snimp", 1));
-    const enoughDamageCutoff = getPageSetting2("Rdmgcuntoff");
-    const numHits = getPageSetting2("Rhitssurvived");
-    const enoughHealthE = RcalcOurHealth(true) > numHits * enemyDamage;
-    const enoughDamageE = RcalcHDratio() <= enoughDamageCutoff;
-    for (const equipName in RequipmentList) {
-      const equip = RequipmentList[equipName];
-      const gameResource = game.equipment[equipName];
-      if (!gameResource.locked) {
-        const $equipName = document.getElementById(equipName);
-        $equipName.style.color = "white";
-        const evaluation = RevaluateEquipmentEfficiency(equipName);
-        const BKey = equip.Stat + equip.Resource;
-        if (RBest[BKey].Factor === 0 || RBest[BKey].Factor < evaluation.Factor) {
-          RBest[BKey].Factor = evaluation.Factor;
-          RBest[BKey].Name = equipName;
-          RBest[BKey].Wall = evaluation.Wall;
-          RBest[BKey].StatusBorder = evaluation.StatusBorder;
-        }
-        RBest[BKey].Cost = evaluation.Cost;
-        RresourcesNeeded[equip.Resource] += RBest[BKey].Cost;
-        if (evaluation.Wall)
-          $equipName.style.color = "yellow";
-        $equipName.style.border = "1px solid " + evaluation.StatusBorder;
-        const $equipUpgrade = document.getElementById(equip.Upgrade);
-        if (evaluation.StatusBorder !== "white" && evaluation.StatusBorder !== "yellow" && $equipUpgrade)
-          $equipUpgrade.style.color = evaluation.StatusBorder;
-        if (evaluation.StatusBorder === "yellow" && $equipUpgrade)
-          $equipUpgrade.style.color = "white";
-        if (evaluation.StatusBorder === "red") {
-          const BuyWeaponUpgrades = getPageSetting2("RBuyWeaponsNew") == 1 || getPageSetting2("RBuyWeaponsNew") == 2;
-          const BuyArmorUpgrades = getPageSetting2("RBuyArmorNew") == 1 || getPageSetting2("RBuyArmorNew") == 2;
-          const DelayArmorWhenNeeded = getPageSetting2("RDelayArmorWhenNeeded");
-          if (BuyWeaponUpgrades && RequipmentList[equipName].Stat === "attack" || BuyArmorUpgrades && RequipmentList[equipName].Stat === "health" && (DelayArmorWhenNeeded && !shouldFarm || DelayArmorWhenNeeded && enoughDamageE || DelayArmorWhenNeeded && !enoughDamageE && !enoughHealthE || DelayArmorWhenNeeded && RequipmentList[equipName].Resource === "wood" || !DelayArmorWhenNeeded)) {
-            const upgrade = RequipmentList[equipName].Upgrade;
-            debug2("Upgrading " + upgrade + " - Prestige " + game.equipment[equipName].prestige, "equips", "*upload");
-            buyUpgrade(upgrade, true, true);
-          } else {
-            $equipName.style.color = "orange";
-            $equipName.style.border = "2px solid orange";
-          }
-        }
-      }
-    }
-    const BuyWeaponLevels = getPageSetting2("RBuyWeaponsNew") == 1 || getPageSetting2("RBuyWeaponsNew") == 3;
-    const BuyArmorLevels = getPageSetting2("RBuyArmorNew") == 1 || getPageSetting2("RBuyArmorNew") == 3;
-    RpreBuy3();
-    for (const stat in RBest) {
-      const eqName = RBest[stat].Name;
-      if (eqName !== "") {
-        const $eqName = document.getElementById(eqName);
-        const DaThing = RequipmentList[eqName];
-        $eqName.style.color = RBest[stat].Wall ? "orange" : "red";
-        $eqName.style.border = "2px solid red";
-        const maxmap = getPageSetting2("RMaxMapBonusAfterZone") && RdoMaxMapBonus;
-        if (BuyArmorLevels && DaThing.Stat === "health" && (!enoughHealthE || maxmap)) {
-          game.global.buyAmt = Rgearamounttobuy;
-          if (smithylogic(eqName, "metal", true) && DaThing.Equip && !RBest[stat].Wall && canAffordBuilding(eqName, null, null, true)) {
-            debug2("Leveling equipment " + eqName, "equips", "*upload3");
-            buyEquipment(eqName, null, true);
-          }
-        }
-        const aalvl2 = getPageSetting2("Ralways2");
-        if (BuyArmorLevels && DaThing.Stat === "health" && aalvl2 && game.equipment[eqName].level < 2) {
-          game.global.buyAmt = 1;
-          if (smithylogic(eqName, "metal", true) && DaThing.Equip && !RBest[stat].Wall && canAffordBuilding(eqName, null, null, true)) {
-            debug2("Leveling equipment " + eqName + " (AlwaysLvl2)", "equips", "*upload3");
-            buyEquipment(eqName, null, true);
-          }
-        }
-        if (BuyWeaponLevels && DaThing.Stat === "attack" && (!enoughDamageE || enoughHealthE || maxmap)) {
-          game.global.buyAmt = Rgearamounttobuy;
-          if (smithylogic(eqName, "metal", true) && DaThing.Equip && !RBest[stat].Wall && canAffordBuilding(eqName, null, null, true)) {
-            debug2("Leveling equipment " + eqName, "equips", "*upload3");
-            buyEquipment(eqName, null, true);
-          }
-        }
-      }
-    }
-    RpostBuy3();
-  }
-  function RareWeAttackLevelCapped() {
-    const attackEvals = [];
-    for (const equipName in RequipmentList) {
-      const equip = RequipmentList[equipName];
-      const gameResource = equip.Equip ? game.equipment[equipName] : game.buildings[equipName];
-      if (!gameResource.locked) {
-        const evaluation = RevaluateEquipmentEfficiency(equipName);
-        if (evaluation.Stat === "attack") attackEvals.push(evaluation);
-      }
-    }
-    return attackEvals.every((e) => e.Factor === 0 && e.Wall === true);
   }
   function Rgetequips2(map, special) {
     let specialCount = 0;
@@ -12595,10 +12477,8 @@
     Rarmydeath: () => Rarmydeath,
     Ravoidempower: () => Ravoidempower,
     RbuyArms: () => RbuyArms,
-    RbuyWeps: () => RbuyWeps,
     Rfightalways: () => Rfightalways,
     Rgetequipcost: () => Rgetequipcost2,
-    Rhelptrimpsnotdie: () => Rhelptrimpsnotdie,
     Rmanageequality: () => Rmanageequality,
     archstring: () => archstring,
     armormagic: () => armormagic,
@@ -12793,14 +12673,8 @@
     elem.innerHTML = importBtn + elem.innerHTML;
     return drawArgs;
   };
-  function RbuyWeps() {
-    preBuy(), game.global.buyAmt = getPageSetting2("Rgearamounttobuy"), game.equipment.Dagger.level < getPageSetting2("RCapEquip2") && canAffordBuilding("Dagger", null, null, true) && buyEquipment("Dagger", true, true), game.equipment.Mace.level < getPageSetting2("RCapEquip2") && canAffordBuilding("Mace", null, null, true) && buyEquipment("Mace", true, true), game.equipment.Polearm.level < getPageSetting2("RCapEquip2") && canAffordBuilding("Polearm", null, null, true) && buyEquipment("Polearm", true, true), game.equipment.Battleaxe.level < getPageSetting2("RCapEquip2") && canAffordBuilding("Battleaxe", null, null, true) && buyEquipment("Battleaxe", true, true), game.equipment.Greatsword.level < getPageSetting2("RCapEquip2") && canAffordBuilding("Greatsword", null, null, true) && buyEquipment("Greatsword", true, true), !game.equipment.Arbalest.locked && game.equipment.Arbalest.level < getPageSetting2("RCapEquip2") && canAffordBuilding("Arbalest", null, null, true) && buyEquipment("Arbalest", true, true), postBuy();
-  }
   function RbuyArms() {
     preBuy(), game.global.buyAmt = 10, game.equipment.Shield.level < getPageSetting2("RCapEquiparm") && canAffordBuilding("Shield", null, null, true) && buyEquipment("Shield", true, true), game.equipment.Boots.level < getPageSetting2("RCapEquiparm") && canAffordBuilding("Boots", null, null, true) && buyEquipment("Boots", true, true), game.equipment.Helmet.level < getPageSetting2("RCapEquiparm") && canAffordBuilding("Helmet", null, null, true) && buyEquipment("Helmet", true, true), game.equipment.Pants.level < getPageSetting2("RCapEquiparm") && canAffordBuilding("Pants", null, null, true) && buyEquipment("Pants", true, true), game.equipment.Shoulderguards.level < getPageSetting2("RCapEquiparm") && canAffordBuilding("Shoulderguards", null, null, true) && buyEquipment("Shoulderguards", true, true), game.equipment.Breastplate.level < getPageSetting2("RCapEquiparm") && canAffordBuilding("Breastplate", null, null, true) && buyEquipment("Breastplate", true, true), !game.equipment.Gambeson.locked && game.equipment.Gambeson.level < getPageSetting2("RCapEquiparm") && canAffordBuilding("Gambeson", null, null, true) && buyEquipment("Gambeson", true, true), postBuy();
-  }
-  function Rhelptrimpsnotdie() {
-    if (!game.global.preMapsActive && !game.global.fighting) RbuyArms();
   }
   function Rfightalways() {
     if (game.global.gridArray.length === 0 || game.global.preMapsActive || !game.upgrades.Battle.done || game.global.fighting)
