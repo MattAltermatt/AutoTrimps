@@ -115,6 +115,19 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **Purchase Coordinator #57 Phase 2 PAUSED** (2026-07-11) — a three-round dueling-agent + live-Chrome
+  brainstorm falsified every Phase-2 direction. (1) The spec's **economy-income look-ahead is
+  misconceived**: Trimps has no Mine, metal income is the food-costed Miner *job*, and `getPsString`
+  excludes buildings, so a building's "extra income" is unreadable; Smithy is actually direct power
+  (`getMult()`), storage is capacity. (2) A pivot to **U1 Smithy automation is IMPOSSIBLE** — U1 cannot
+  build Smithy (`blockU1: true`/`locked: 1`, config.js:11703; unlock skipped when `universe==1`,
+  main.js:10275; only source is the free z50 `SmithFree` map reward). All three U2 Smithy systems are
+  R-prefixed by necessity, not omission — see [[reference-u1-smithy-blocku1]]. (3) A broader power scorer
+  is marginal (disjoint pools; equipment already best-`Factor`-first; Phase 1 subsumed the one real
+  save-up case). **#57's real value landed in Phase 1; #57 stays open but has no compelling next slice.**
+  Postmortem in the spec §"Phase 2 Feasibility Postmortem". GOTCHA recorded: a live "verification" that
+  force-sets a game flag you haven't understood (`Smithy.locked = 0`) masks the real rule AND auto-saves
+  the mutation to contaminate later checks — [[feedback-verify-without-mutating-game-state]].
 - **Purchase Coordinator #57 Phase 1 shipped** (2026-07-10) — opt-in priority-aware spending. New module
   `src/modules/coordinator.ts`: a `MODULES["coordinator"]` context + a `coordinatorAllows(name,res,cost)`
   reservation guard dropped at the `safeBuyBuilding` chokepoint (buildings.ts, gated on

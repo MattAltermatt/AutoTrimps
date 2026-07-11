@@ -1,8 +1,10 @@
 # Purchase Coordinator — Design Spec
 
 **Issue:** [#57](https://github.com/MattAltermatt/AutoTrimps/issues/57)
-**Date:** 2026-07-10
-**Status:** Design approved (brainstorm) → implementation planning
+**Date:** 2026-07-10 (Phase 2 feasibility postmortem added 2026-07-11)
+**Status:** Phase 1 shipped. **Phase 2 PAUSED** — both candidate directions falsified by a
+dueling-agent + live-Chrome investigation (see §"Phase 2 Feasibility Postmortem"). #57's real
+value landed in Phase 1; there is no compelling next slice today.
 
 ---
 
@@ -176,11 +178,20 @@ Equipment already exposes `evaluateEquipmentEfficiency → {Effect, Cost, Factor
 — `Factor` is a ready-made value/cost ratio. Reuse it; do not recompute.
 
 ### Economy / enabling candidates (the hard part — 🪨 primary risk)
+> ⚠️ **2026-07-11 correction — this approach is MISCONCEIVED. Do not build it.** See §"Phase 2
+> Feasibility Postmortem". The "mines" mental model does not map onto Trimps: there is no Mine
+> building; metal income is the **Miner job** (costs food, an *uncontended* pool). Crucially,
+> `getPsString(res, true)` — the game's per-second income primitive — **excludes buildings
+> entirely**, so "the extra income a building provides" is unreadable and the look-ahead has
+> nothing to read. Smithy (the intended star economy target) is actually **direct power** (a
+> compounding `getMult()` attack+health multiplier), and storage buildings produce *capacity*, not
+> income. The bounded-income-look-ahead below is retained only as a record of the rejected design.
+
 Mines (metal), housing (population), science buildings, etc. have **no immediate combat value** but
 unlock power later. A naive "faster kills right now" score undervalues them and would **starve the
 economy** — the failure mode all advocate agents independently flagged.
 
-**Approach:** credit an economy buy by the **best power-buy it makes affordable soon** — a bounded
+**Approach (REJECTED):** credit an economy buy by the **best power-buy it makes affordable soon** — a bounded
 look-ahead, not a full planner. Concretely: value(mine) ≈ the ΔHD/resource of the best power
 candidate that becomes affordable within *N* ticks of the extra income the mine provides. This
 keeps economy and power on one comparable scale (ΔHD-equivalent) without simulating the whole run.
@@ -262,12 +273,56 @@ independently verifiable (OFF byte-faithful + its own unit tests) and live-check
   for **U1 buildings only** (the metal-contention core). Subsume `WarpstationCoordBuy` into the
   generic reservation. Scorer v1 covers direct-power candidates (Coordination + gear via existing
   `Factor`). Prove OFF byte-faithful; live A/B the Coordination save-up case.
-- **Phase 2 — Economy scoring.** Add the bounded-look-ahead economy valuation so mines/housing are
-  scored on the ΔHD-equivalent scale. Tune horizon/cap via live A/B (user-gated).
+- **Phase 2 — Economy scoring. ⛔ PAUSED (2026-07-11).** Add the bounded-look-ahead economy
+  valuation so mines/housing are scored on the ΔHD-equivalent scale. Tune horizon/cap via live A/B
+  (user-gated). — *Both this approach and a pivot to "U1 Smithy automation" were falsified on
+  inspection; see §"Phase 2 Feasibility Postmortem". No compelling Phase 2 slice remains.*
 - **Phase 3 — Broaden buyers.** Add guards to upgrades and equipment chokepoints; extend scoring to
   the full candidate set. Jobs optional (uncontended pool).
 - **Phase 4 — U2 / radon.** Fork the scorer for `Rbuy*` candidate lists; add guards to
   `RsafeBuyBuilding` and `RupgradeList`. Reuse the shared context/guard.
+
+---
+
+## 🔬 Phase 2 Feasibility Postmortem (2026-07-11)
+
+A brainstorm to build Phase 2 ran three rounds of dueling agents (advocates + a dedicated
+premise-falsifying adversary each round) plus live-Chrome verification against `../trimps-game`.
+**Every candidate direction dissolved on inspection.** Recording the dead ends so they are not
+rediscovered:
+
+**1. Economy-income look-ahead (the spec's original Phase 2) — MISCONCEIVED.**
+The "credit a building by the income it unlocks" mechanism cannot be built: Trimps has no Mine;
+metal income is the Miner *job* (food-costed, uncontended); and `getPsString(res, true)` — the
+only per-second income primitive — **excludes buildings**, so a new building's "extra income" is
+unreadable. Smithy (the intended economy star) is actually **direct power** (compounding
+`getMult()` on attack+health), and storage buildings raise *capacity*, not income. There is no
+income signal for the look-ahead to consume.
+
+**2. Pivot to "U1 Smithy automation" (auto-buy + save-up) — IMPOSSIBLE.**
+Smithy looked like the one crisp, high-value save-up target, and U2 has three Smithy systems
+(`RbuyBuildings` town-buy, `smithylogic` save-up, `RsmithyFarm` maps) while U1 has none — seemingly
+a parity gap. But **U1 physically cannot build Smithy**: the building is `blockU1: true` /
+`locked: 1` (`config.js:11703`), both `unlockBuilding("Smithy")` paths are U2-only, and
+`main.js:10275` skips the unlock when `universe == 1`. U1's only Smithy source is the free
+`SmithFree` map reward (z50 Melting Point, `canRunOnce`, +1–2). So there is nothing to town-buy,
+nothing to save up *for*, and no count to farm toward. All three U2 Smithy systems are R-prefixed
+by necessity, not omission. *(A first live "verification" that force-set `Smithy.locked = 0` masked
+this rule and auto-saved the mutation — the round-3 adversary caught it by reading the game def.
+Lesson recorded in memory: don't poke game flags you haven't understood.)*
+
+**3. Was a general power scorer worth building anyway? — Marginal.**
+The round-1 value-adversary (78% conf) argued the buyers' resource pools are largely disjoint
+(only metal is contended, and loop-order already gives buildings first claim), equipment already
+buys best-`Factor`-first, and Phase 1 already subsumed the one dominant save-up case
+(Coordination/Warpstation). The incremental value of a broader scorer over what already ships is
+thin.
+
+**Conclusion:** #57's real value landed in **Phase 1**. Phase 2 is paused. The only physically-real
+U1 Smithy automation that could exist is scheduling the z50 Melting Point map for the free
+Smithies (marginal, `canRunOnce` — backlog-sized at most). Phases 3–4 (broaden buyers / U2 fork)
+remain *possible* but have no demonstrated payoff. #57 stays open; revisit only if live play
+surfaces a concrete, verified priority/contention symptom.
 
 ---
 
