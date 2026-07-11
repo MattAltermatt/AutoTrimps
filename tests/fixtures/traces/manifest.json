@@ -7,5 +7,13 @@
       "status": "fixed 2026-07-09 (user-approved mechanism fix)",
       "coverage": "radon-only; the U1 corpus (01/02/03) never reaches RbuyJobs. The 04-u2-radon save (added #47) DOES run RbuyJobs — yet it produces ZERO L0 delta for THIS fixture's numeric window (verified 2026-07-10): L0 records buyJob(name, buyMax, force), and for a normal buy the fix only shifts the worker QUANTITY computed internally, not buyJob's args (buyMax=true carries no count). NOTE this is empirical, NOT a structural invariant: freeWorkers (jobs.ts:492) also feeds an `if (freeWorkers<=0) return` gate BEFORE any buyJob call, so a different U2 save/seed whose fixed-vs-buggy freeWorkers straddles 0 WOULD surface a real L0 divergence (missing buyJob calls that tick). For 04-u2-radon it stays well above the gate, so the fix remains gated by the jobs.RbuyJobs L1 regression (156→33), not an L0 waiver. This corrects the earlier prediction that adding a U2 save would force an L0 waiver here."
     }
-  ]
+  ],
+  "runtime": {
+    "node": "v26.0.0",
+    "v8": "14.6.202.33-node.19",
+    "jsdom": "29.1.1",
+    "gameClone": "5.10.1",
+    "platform": "darwin",
+    "arch": "arm64"
+  }
 }

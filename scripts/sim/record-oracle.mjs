@@ -14,6 +14,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { runTrace } from './trace.mjs'
 import { CORPUS } from './corpus.mjs'
+import { currentFingerprint, formatFingerprint } from './fingerprint.mjs'
 
 const ORACLE = resolve('tests/fixtures/oracle/autotrimps.oracle.user.js')
 const SAVES_DIR = resolve('tests/fixtures/saves')
@@ -28,3 +29,15 @@ for (const { name: saveName, seeds, ticks } of CORPUS) {
     console.log('[record-oracle]', name, '·', trace.length, 'events')
   }
 }
+
+// Stamp the recording runtime into the manifest ALONGSIDE the traces (#47). Written in the same run
+// that produced them, so the fingerprint and the traces are physically impossible to drift apart —
+// any legitimate re-record refreshes both. baseline-zero reads this back and surfaces it on a diff so
+// a mysterious failure self-classifies as environmental-vs-code (see fingerprint.mjs). Preserve the
+// existing waivers/notes; only replace the runtime block.
+const manifestPath = resolve(TRACES, 'manifest.json')
+const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+manifest.runtime = currentFingerprint()
+writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8')
+console.log('[record-oracle] runtime fingerprint:', formatFingerprint(manifest.runtime))
+
