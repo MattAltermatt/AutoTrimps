@@ -115,6 +115,21 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **Purchase Coordinator #57 Phase 1 shipped** (2026-07-10) — opt-in priority-aware spending. New module
+  `src/modules/coordinator.ts`: a `MODULES["coordinator"]` context + a `coordinatorAllows(name,res,cost)`
+  reservation guard dropped at the `safeBuyBuilding` chokepoint (buildings.ts, gated on
+  `cost?.metal !== undefined`) + a `computeTopTarget()` per-tick pre-pass wired into `mainLoop`
+  (AutoTrimps2.js). Setting `PurchaseCoordinator` (default off) — **OFF is byte-identical** (proof-net L0
+  traces reproduce); ON saves up for Coordination (reserve metal so lesser buys defer, then delegate the
+  Warpstation buy to `safeBuyBuilding` so it self-forces its own buyAmt — never gate on a bare
+  `canAffordBuilding()`, which reads the ambient UI buyAmt and re-stalls). Architecture (**priority-injection
+  hybrid**) + objective (progression-speed) chosen via dueling agents; the load-bearing finding is that
+  buyer resource pools are largely **disjoint** (only metal is contended), which is why a lightweight guard
+  beats a full propose/execute allocator. 3 review passes caught real bugs (non-metal crash, non-accumulating
+  scorer, ambient-buyAmt coupling). Spec `docs/superpowers/specs/2026-07-10-purchase-coordinator-design.md`.
+  Phases 2–4 (economy scoring, broader buyers, U2) remain; **#57 stays open**. GOTCHA: a new `createSetting`
+  updates BOTH the settings-inventory `.snap` AND an inline `toMatchInlineSnapshot` count in
+  `tests/settings-inventory.test.ts` — commit the `.ts` too or CI goes red + blocks deploy.
 - **Proof-net Phase 3 giant-splits shipped** (2026-07-10) — the two biggest modules split behind the
   proof net as pure byte-faithful moves: `mapfunctions.ts` 2799→1963 (extracted `mapfunctions-amp.ts`,
   the 9-fn Radon AMP engine) and `other.ts` 2378→621 (extracted `other-praiding.ts`, the 30-fn U1
