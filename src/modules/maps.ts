@@ -150,6 +150,92 @@ export function testMapSpecialModController() {
     }
 }
 
+// Extracted from autoMap so the U1 unique-map selection is unit-testable (autoMap itself is a
+// ~700-line orchestrator that can't be driven to this loop without a deep progressed save the
+// proof-net corpus doesn't reach). Faithful cut of the original loop: `selectedMap = id; break;`
+// became `return id;`, `continue` stays `continue`, and Trimple's TrimpleZ reset side effect is
+// preserved. Returns the selected unique map's id, or undefined if none applies. #42.
+export function selectUniqueMap(): string | undefined {
+    // #42: The Wall + Dimension of Anger have NO AMU branch below — their natural branch already runs
+    // them (once per portal, until the reward is earned) regardless of the checkbox, so an AMU twin
+    // guarded by the same reward flag would be unreachable dead code (oxlint no-dupe-else-if). The bug
+    // (re-running a completed Wall/Anger) is fixed by simply not having that branch. AMUwall/AMUanger
+    // are intentionally not read here.
+    const AMUblock = (getPageSetting('AutoMaps') == 2 && getPageSetting('AMUblock') == true);
+    const AMUtrimple = (getPageSetting('AutoMaps') == 2 && getPageSetting('AMUtrimple') == true);
+    const AMUprison = (getPageSetting('AutoMaps') == 2 && getPageSetting('AMUprison') == true);
+    const AMUbw = (getPageSetting('AutoMaps') == 2 && getPageSetting('AMUbw') == true);
+    const AMUstar = (getPageSetting('AutoMaps') == 2 && getPageSetting('AMUstar') == true);
+
+    for (const map in game.global.mapsOwnedArray) {
+        const theMap = game.global.mapsOwnedArray[map];
+        if (!theMap.noRecycle) continue;
+        if (theMap.name == 'The Wall' && game.upgrades.Bounty.allowed == 0 && !game.talents.bounty.purchased) {
+            const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
+            if (game.global.world < 15 + theMapDifficulty) continue;
+            return theMap.id;
+        }
+        if (theMap.name == 'Dimension of Anger' && document.getElementById("portalBtn")!.style.display == "none" && !game.talents.portal.purchased) {
+            const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
+            if (game.global.world < 20 + theMapDifficulty) continue;
+            return theMap.id;
+        }
+        const runningC2 = game.global.runningChallengeSquared;
+        if (theMap.name == 'The Block' && !game.upgrades.Shieldblock.allowed && ((game.global.challengeActive == "Scientist" || game.global.challengeActive == "Trimp") && !runningC2 || getPageSetting('BuyShieldblock'))) {
+            const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
+            if (game.global.world < 11 + theMapDifficulty) continue;
+            return theMap.id;
+        } else if (theMap.name == 'The Block' && AMUblock && !game.upgrades.Shieldblock.allowed) {
+            // #42: guard AMU with the natural branch's reward check (Shieldblock not yet allowed) so a
+            // completed Block isn't re-selected. AMU stays meaningful when the natural branch's extra
+            // challenge/BuyShieldblock conditions aren't met but the reward is unearned.
+            const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
+            if (game.global.world < 11 + theMapDifficulty) continue;
+            return theMap.id;
+        }
+        const treasure = getPageSetting('TrimpleZ');
+        if (theMap.name == 'Trimple Of Doom' && (!runningC2 && game.mapUnlocks.AncientTreasure.canRunOnce && game.global.world >= treasure)) {
+            const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
+            if ((game.global.world < 33 + theMapDifficulty) || treasure > -33 && treasure < 33) continue;
+            if (treasure < 0)
+                setPageSetting('TrimpleZ', 0);
+            return theMap.id;
+        } else if (theMap.name == 'Trimple Of Doom' && AMUtrimple && game.mapUnlocks.AncientTreasure.canRunOnce) {
+            // #42: guard AMU with the natural branch's canRunOnce reward flag so a completed Trimple Of
+            // Doom (AncientTreasure claimed) isn't re-selected forever.
+            const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
+            if (game.global.world < 33 + theMapDifficulty) continue;
+            return theMap.id;
+        }
+        if (!runningC2) {
+            if (theMap.name == 'The Prison' && (challengeActive("Electricity") || game.global.challengeActive == "Mapocalypse")) {
+                const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
+                if (game.global.world < 80 + theMapDifficulty) continue;
+                return theMap.id;
+            } else if (theMap.name == 'The Prison' && AMUprison) {
+                const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
+                if (game.global.world < 80 + theMapDifficulty) continue;
+                return theMap.id;
+            }
+            if (theMap.name == 'Bionic Wonderland' && game.global.challengeActive == "Crushed") {
+                const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
+                if (game.global.world < 125 + theMapDifficulty) continue;
+                return theMap.id;
+            } else if (theMap.name == 'Bionic Wonderland' && AMUbw) {
+                const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
+                if (game.global.world < 125 + theMapDifficulty) continue;
+                return theMap.id;
+            }
+        }
+        if (theMap.name == 'Imploding Star' && AMUstar) {
+            const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
+            if (game.global.world < 170 + theMapDifficulty) continue;
+            return theMap.id;
+        }
+    }
+    return undefined;
+}
+
 export function autoMap() {
 
     //Failsafes
@@ -438,99 +524,9 @@ export function autoMap() {
         selectedMap = "create";
 
     //Uniques
-    const runUniques = (getPageSetting('AutoMaps') > 0);
-    const AMUwall = (getPageSetting('AutoMaps') == 2 && getPageSetting('AMUwall') == true);
-    const AMUblock = (getPageSetting('AutoMaps') == 2 && getPageSetting('AMUblock') == true);
-    const AMUanger = (getPageSetting('AutoMaps') == 2 && getPageSetting('AMUanger') == true);
-    const AMUtrimple = (getPageSetting('AutoMaps') == 2 && getPageSetting('AMUtrimple') == true);
-    const AMUprison = (getPageSetting('AutoMaps') == 2 && getPageSetting('AMUprison') == true);
-    const AMUbw = (getPageSetting('AutoMaps') == 2 && getPageSetting('AMUbw') == true);
-    const AMUstar = (getPageSetting('AutoMaps') == 2 && getPageSetting('AMUstar') == true);
-
-    if (runUniques) {
-        for (const map in game.global.mapsOwnedArray) {
-            const theMap = game.global.mapsOwnedArray[map];
-            if (theMap.noRecycle) {
-                if (theMap.name == 'The Wall' && game.upgrades.Bounty.allowed == 0 && !game.talents.bounty.purchased) {
-                    const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-                    if (game.global.world < 15 + theMapDifficulty) continue;
-                    selectedMap = theMap.id;
-                    break;
-                } else if (theMap.name == 'The Wall' && AMUwall) {
-                    const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-                    if (game.global.world < 15 + theMapDifficulty) continue;
-                    selectedMap = theMap.id;
-                    break;
-                }
-                if (theMap.name == 'Dimension of Anger' && document.getElementById("portalBtn")!.style.display == "none" && !game.talents.portal.purchased) {
-                    const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-                    if (game.global.world < 20 + theMapDifficulty) continue;
-                    selectedMap = theMap.id;
-                    break;
-                } else if (theMap.name == 'Dimension of Anger' && AMUanger) {
-                    const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-                    if (game.global.world < 20 + theMapDifficulty) continue;
-                    selectedMap = theMap.id;
-                    break;
-                }
-                const runningC2 = game.global.runningChallengeSquared;
-                if (theMap.name == 'The Block' && !game.upgrades.Shieldblock.allowed && ((game.global.challengeActive == "Scientist" || game.global.challengeActive == "Trimp") && !runningC2 || getPageSetting('BuyShieldblock'))) {
-                    const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-                    if (game.global.world < 11 + theMapDifficulty) continue;
-                    selectedMap = theMap.id;
-                    break;
-                } else if (theMap.name == 'The Block' && AMUblock) {
-                    const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-                    if (game.global.world < 11 + theMapDifficulty) continue;
-                    selectedMap = theMap.id;
-                    break;
-                }
-                const treasure = getPageSetting('TrimpleZ');
-                if (theMap.name == 'Trimple Of Doom' && (!runningC2 && game.mapUnlocks.AncientTreasure.canRunOnce && game.global.world >= treasure)) {
-                    const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-                    if ((game.global.world < 33 + theMapDifficulty) || treasure > -33 && treasure < 33) continue;
-                    selectedMap = theMap.id;
-                    if (treasure < 0)
-                        setPageSetting('TrimpleZ', 0);
-                    break;
-                } else if (theMap.name == 'Trimple Of Doom' && AMUtrimple) {
-                    const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-                    if (game.global.world < 33 + theMapDifficulty) continue;
-                    selectedMap = theMap.id;
-                    break;
-                }
-                if (!runningC2) {
-                    if (theMap.name == 'The Prison' && (challengeActive("Electricity") || game.global.challengeActive == "Mapocalypse")) {
-                        const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-                        if (game.global.world < 80 + theMapDifficulty) continue;
-                        selectedMap = theMap.id;
-                        break;
-                    } else if (theMap.name == 'The Prison' && AMUprison) {
-                        const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-                        if (game.global.world < 80 + theMapDifficulty) continue;
-                        selectedMap = theMap.id;
-                        break;
-                    }
-                    if (theMap.name == 'Bionic Wonderland' && game.global.challengeActive == "Crushed") {
-                        const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-                        if (game.global.world < 125 + theMapDifficulty) continue;
-                        selectedMap = theMap.id;
-                        break;
-                    } else if (theMap.name == 'Bionic Wonderland' && AMUbw) {
-                        const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-                        if (game.global.world < 125 + theMapDifficulty) continue;
-                        selectedMap = theMap.id;
-                        break;
-                    }
-                }
-                if (theMap.name == 'Imploding Star' && AMUstar) {
-                    const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-                    if (game.global.world < 170 + theMapDifficulty) continue;
-                    selectedMap = theMap.id;
-                    break;
-                }
-            }
-        }
+    if (getPageSetting('AutoMaps') > 0) {
+        const uniqueId = selectUniqueMap();
+        if (uniqueId !== undefined) selectedMap = uniqueId;
     }
 
     //Voids
