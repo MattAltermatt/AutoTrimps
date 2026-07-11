@@ -4461,6 +4461,12 @@
     return true;
   }
   function buyUpgrades() {
+    if (getPageSetting2("MetalEfficiencyPriority") && game.global.challengeActive === "Metal" && game.global.world < getPageSetting2("MetalEfficiencyZone")) {
+      const efficiency = game.upgrades["Efficiency"];
+      if (efficiency && efficiency.allowed > efficiency.done && canAffordTwoLevel(efficiency)) {
+        buyUpgrade("Efficiency", true, true);
+      }
+    }
     for (const upgrade of upgradeList) {
       const gameUpgrade = game.upgrades[upgrade];
       const available = gameUpgrade.allowed > gameUpgrade.done && canAffordTwoLevel(gameUpgrade);
@@ -16096,6 +16102,8 @@
     createSetting("ManualGather2", ["Manual Gather/Build", "Auto Gather/Build", "Mining/Building Only", "Science Research OFF"], "Controls what you gather/build do. Manual does nothing<br>Auto Gathering of Food,Wood,Metal(w/turkimp) & Science. Auto speed-Builds your build queue. <br>Mining/Building only does exactly what it says. Only use if you are passed the early stages of the game and have the mastery foremany unlocked (No longer need to trap, food and wood are useless). <br>You can disable science researching for the achievement: Reach Z120 without using manual research.", "multitoggle", 1, null, "Core");
     createSetting("gathermetal", "Metal Only", "For use with Mining/Gather Only. Only gathers Metal if you have foremany unlocked. ", "boolean", false, null, "Core");
     createSetting("BuyUpgradesNew", ["Manual Upgrades", "Buy All Upgrades", "Upgrades no Coords"], "Autobuys non-equipment upgrades (equipment is controlled in the Gear tab). The second option does NOT buy coordination (use this <b>ONLY</b> if you know what you're doing).", "multitoggle", 1, null, "Core");
+    createSetting("MetalEfficiencyPriority", "Metal: Efficiency First", "<b>Metal challenge only (#43).</b> Buys the Efficiency upgrade before all other upgrades while below your Metal Efficiency Zone. During the Metal challenge all metal comes from manual mining and each Efficiency level doubles it, so rushing Efficiency early can save a lot of time per zone. Opt-in \u2014 OFF is exactly the current behavior.", "boolean", false, null, "Core");
+    createSetting("MetalEfficiencyZone", "Metal Efficiency Zone", "Zone cutoff for <b>Metal: Efficiency First</b>. Efficiency is rushed only while your world zone is below this value (default 6 \u2014 past ~zone 6 map farming dominates metal income, so the priority stops mattering). Only used when Metal: Efficiency First is ON.", "value", 6, null, "Core");
     createSetting("amalcoord", "Amal Boost", "Boost your Amal count for more Mi. Will not buy coords until your H:D ratio is below a certain value. This means that you will get amals quicker. Will not activate higher than your Amal Boost End Zone Setting! ", "boolean", false, null, "Core");
     createSetting("amalcoordt", "Amal Target", "Set the amount of Amals you wish to aim for. Once this target is reached, it will buy coords below your Amal ratio regardless of your H:D, just enough to keep the Amal. -1 to disable and use H:D for entire boost. ", "value", -1, null, "Core");
     createSetting("amalcoordhd", "Amal Boost H:D", "Set your H:D for Amal Boost here. The higher it is the less coords AT will buy. 0.0000025 is the default. ", "value", 25e-7, null, "Core");

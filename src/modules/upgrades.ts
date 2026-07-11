@@ -133,6 +133,16 @@ function needGymystic() {
 }
 export function buyUpgrades() {
 
+    //#43: Metal challenge — Efficiency doubles player mining, the only metal source during Metal.
+    //Rush it above every other upgrade below the configured zone. Opt-in; OFF = unchanged.
+    if (getPageSetting('MetalEfficiencyPriority') && game.global.challengeActive === 'Metal' &&
+        game.global.world < getPageSetting('MetalEfficiencyZone')) {
+        const efficiency = game.upgrades['Efficiency'];
+        if (efficiency && efficiency.allowed > efficiency.done && canAffordTwoLevel(efficiency)) {
+            buyUpgrade('Efficiency', true, true);
+        }
+    }
+
     for (const upgrade of upgradeList) {
         const gameUpgrade = game.upgrades[upgrade];
         const available = gameUpgrade.allowed > gameUpgrade.done && canAffordTwoLevel(gameUpgrade);
