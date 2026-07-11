@@ -245,6 +245,8 @@ export function updateCustomButtons() {
     !radonon ? turnOn("FinishC2") : turnOff("FinishC2");
     !radonon ? turnOn("buynojobsc") : turnOff("buynojobsc");
     !radonon ? turnOn("cfightforever") : turnOff("cfightforever");
+    !radonon ? turnOn("carmormagic") : turnOff("carmormagic");
+    radonon ? turnOn("Rcarmormagic") : turnOff("Rcarmormagic");
     !radonon ? turnOn("mapc2hd") : turnOff("mapc2hd");
     !radonon ? turnOn("novmsc2") : turnOff("novmsc2");
     !radonon ? turnOn("c2runnerstart") : turnOff("c2runnerstart");

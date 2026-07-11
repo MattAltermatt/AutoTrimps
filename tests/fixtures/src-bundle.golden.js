@@ -15419,6 +15419,8 @@
     !radonon ? turnOn("FinishC2") : turnOff("FinishC2");
     !radonon ? turnOn("buynojobsc") : turnOff("buynojobsc");
     !radonon ? turnOn("cfightforever") : turnOff("cfightforever");
+    !radonon ? turnOn("carmormagic") : turnOff("carmormagic");
+    radonon ? turnOn("Rcarmormagic") : turnOff("Rcarmormagic");
     !radonon ? turnOn("mapc2hd") : turnOff("mapc2hd");
     !radonon ? turnOn("novmsc2") : turnOff("novmsc2");
     !radonon ? turnOn("c2runnerstart") : turnOff("c2runnerstart");
@@ -16198,6 +16200,7 @@
     createSetting("buynojobsc", "No F/L/M in C2", "Buys No Farmers, Lumberjacks or Miners in the C2 challenges Watch and Trapper. ", "boolean", "false", null, "C2");
     createSetting("cfightforever", "Tox/Nom Fight Always", "Sends trimps to fight if they're not fighting in the Toxicity and Nom Challenges, regardless of BAF. Essenitally the same as the one in combat, can use either if you wish, except this will only activate in these challenges (duh) ", "boolean", "false", null, "C2");
     createSetting("carmormagic", ["C2 Armor Magic Off", "CAM: Above 80%", "CAM: H:D", "CAM: Always"], "Will buy Armor to try and prevent death on Nom/Tox Challenges under the 3 conditions. <br><b>Above 80%:</b> Will activate at and above 80% of your HZE and when your health is sufficiently low. <br><b>H:D:</b> Will activate at and above the H:D you have defined in maps. <br><b>Always</b> Will activate always. <br>All options will activate at or <b>below 25% of your health.</b> ", "multitoggle", 0, null, "C2");
+    createSetting("Rcarmormagic", ["C2 Armor Magic Off", "CAM: Above 80%", "CAM: H:D", "CAM: Always"], "Will buy Armor to try and prevent death on Nom/Tox Challenges under the 3 conditions. <br><b>Above 80%:</b> Will activate at and above 80% of your HZE and when your health is sufficiently low. <br><b>H:D:</b> Will activate at and above the H:D you have defined in maps. <br><b>Always</b> Will activate always. <br>All options will activate at or <b>below 25% of your health.</b> ", "multitoggle", 0, null, "C2");
     createSetting("mapc2hd", "Mapology H:D", "Set your H:D ratio for Mapology. Will not go into maps unless your H:D ratio is above this. -1 to use normal behaviour. ", "value", "-1", null, "C2");
     createSetting("novmsc2", "No VMs", "Turn off VM running for C2s. Handy for the C2 Runner. ", "boolean", "false", null, "C2");
     document.getElementById("novmsc2").parentNode.insertAdjacentHTML("afterend", "<br>");
