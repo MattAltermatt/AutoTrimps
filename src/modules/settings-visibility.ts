@@ -369,8 +369,6 @@ export function updateCustomButtons() {
     //Maps
     !radonon ? turnOn("AutoMaps") : turnOff("AutoMaps");
     (!radonon && getPageSetting('AutoMaps') == 2) ? turnOn("AMUblock") : turnOff("AMUblock");
-    (!radonon && getPageSetting('AutoMaps') == 2) ? turnOn("AMUwall") : turnOff("AMUwall");
-    (!radonon && getPageSetting('AutoMaps') == 2) ? turnOn("AMUanger") : turnOff("AMUanger");
     (!radonon && getPageSetting('AutoMaps') == 2) ? turnOn("AMUtrimple") : turnOff("AMUtrimple");
     (!radonon && getPageSetting('AutoMaps') == 2) ? turnOn("AMUprison") : turnOff("AMUprison");
     (!radonon && getPageSetting('AutoMaps') == 2) ? turnOn("AMUbw") : turnOff("AMUbw");

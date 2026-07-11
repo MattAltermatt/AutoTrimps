@@ -368,8 +368,9 @@ export function initializeAllSettings() {
     //Line 1
     createSetting('AutoMaps', ["Auto Maps Off", "Auto Maps On", "Auto Maps: Unique"], 'Automaps. Recommended ON. Do not use MaZ, it will not work. Automaps: Unique will unlock settings for each unique map. Select which unique maps you would like to run\, but otherwise functions the same. ', 'multitoggle', 1, null, "Maps");
     createSetting('AMUblock', 'AMU: The Block', 'Turn on to run this map every run. ', 'boolean', false, null, 'Maps');
-    createSetting('AMUwall', 'AMU: The Wall', 'Turn on to run this map every run. ', 'boolean', false, null, 'Maps');
-    createSetting('AMUanger', 'AMU: Dimension of Anger', 'Turn on to run this map every run. ', 'boolean', false, null, 'Maps');
+    // #42 removed the AMU: The Wall / Dimension of Anger branches (their natural selector branch already
+    // runs them each portal until the reward is earned; the checkbox re-ran a completed one = the bug).
+    // #61 dropped the now-inert AMUwall/AMUanger createSetting + visibility toggles.
     createSetting('AMUtrimple', 'AMU: Trimple', 'Turn on to run this map every run. ', 'boolean', false, null, 'Maps');
     createSetting('AMUprison', 'AMU: Prison', 'Turn on to run this map every run. ', 'boolean', false, null, 'Maps');
     createSetting('AMUbw', 'AMU: BW', 'Turn on to run this map every run. ', 'boolean', false, null, 'Maps');

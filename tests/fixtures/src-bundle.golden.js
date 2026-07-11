@@ -15516,8 +15516,6 @@
     radonon && getPageSetting("Requipfarmon") == true ? turnOn("Requipfarmhits") : turnOff("Requipfarmhits");
     !radonon ? turnOn("AutoMaps") : turnOff("AutoMaps");
     !radonon && getPageSetting("AutoMaps") == 2 ? turnOn("AMUblock") : turnOff("AMUblock");
-    !radonon && getPageSetting("AutoMaps") == 2 ? turnOn("AMUwall") : turnOff("AMUwall");
-    !radonon && getPageSetting("AutoMaps") == 2 ? turnOn("AMUanger") : turnOff("AMUanger");
     !radonon && getPageSetting("AutoMaps") == 2 ? turnOn("AMUtrimple") : turnOff("AMUtrimple");
     !radonon && getPageSetting("AutoMaps") == 2 ? turnOn("AMUprison") : turnOff("AMUprison");
     !radonon && getPageSetting("AutoMaps") == 2 ? turnOn("AMUbw") : turnOff("AMUbw");
@@ -16298,8 +16296,6 @@
     createSetting("Requipfarmhits", "AEF: Hits", "How many hits do you want to kill an enemy in a AEF map. ", "value", "-1", null, "Gear");
     createSetting("AutoMaps", ["Auto Maps Off", "Auto Maps On", "Auto Maps: Unique"], "Automaps. Recommended ON. Do not use MaZ, it will not work. Automaps: Unique will unlock settings for each unique map. Select which unique maps you would like to run, but otherwise functions the same. ", "multitoggle", 1, null, "Maps");
     createSetting("AMUblock", "AMU: The Block", "Turn on to run this map every run. ", "boolean", false, null, "Maps");
-    createSetting("AMUwall", "AMU: The Wall", "Turn on to run this map every run. ", "boolean", false, null, "Maps");
-    createSetting("AMUanger", "AMU: Dimension of Anger", "Turn on to run this map every run. ", "boolean", false, null, "Maps");
     createSetting("AMUtrimple", "AMU: Trimple", "Turn on to run this map every run. ", "boolean", false, null, "Maps");
     createSetting("AMUprison", "AMU: Prison", "Turn on to run this map every run. ", "boolean", false, null, "Maps");
     createSetting("AMUbw", "AMU: BW", "Turn on to run this map every run. ", "boolean", false, null, "Maps");
