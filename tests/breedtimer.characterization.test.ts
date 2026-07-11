@@ -112,7 +112,10 @@ describe('breedtimer — pure breed-timing math (golden masters)', () => {
 
   it('potencyMod: Geneticists (×0.98^owned — slows breeding)', () => {
     neutralBreed({ jobs: { Geneticist: { owned: 10 } } })
-    expect(str(breedtimer.potencyMod())).toBe('1.000694511885854414695')
+    // 0.98^owned uses native Math.pow (breedtimer.ts:81); its last ULP is libm/platform-dependent,
+    // so the full Decimal toString tail is NOT portable (CI vs local diverged at digit ~19). Pin
+    // 15 significant figures — native-double-stable — instead of the full-precision string.
+    expect(breedtimer.potencyMod().toPrecision(15)).toBe('1.00069451188585')
   })
 
   it('potencyMod: Toxicity challenge (×stackMult^stacks)', () => {
