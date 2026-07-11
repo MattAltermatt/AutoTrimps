@@ -115,6 +115,21 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **Phase 3 — Divergence milestone (#7) CLOSED** (2026-07-11) — wrapped the whole milestone in one session.
+  Shipped + deployed live: **#43** (`04f60f13`, Efficiency Metal-priority — opt-in `MetalEfficiencyPriority`
+  default OFF + `MetalEfficiencyZone` default 6; `buyUpgrades()` rushes Efficiency before all other upgrades
+  during the Metal challenge below the cutoff; OFF = byte-identical) and **#44** (`df61dbd0`, U2 void
+  discoverability). Closed **#45/#46/#47** as bookkeeping (sim harness delivered, byte-golden retired where it
+  matters, proof-net done bar the jsdom-unreachable deep-zone U2 save); moved **#41** to a new **Phase 4 — UI
+  Streamline** milestone (#8). **#44's requested force-abandon actuator = a sim+duel NO-GO:** a sim repro
+  falsified the audit's `maps.ts:686` fix (that's U1 `autoMap`; U2 runs `RautoMap`, gated by different
+  settings), then a 2-champion+adversary duel showed mid-map force-abandon is a net loss (forfeits map
+  bonus/fragments), collides with breedtimer's anti-stack abandon path, and is unverifiable (Bubble absent
+  from the v5.10.1 clone). Real fix = discoverability (PowerSaving flagged U1-only; RVoidMaps documents the
+  rush recipe: set RVoidMaps=zone, Rvoidscell=1, RRunNewVoidsUntilNew=-1). **GOTCHA:** the Pages deploy had
+  been silently RED since `f73aa718` last session (a breed decimal golden asserted 21 digits of a native
+  `Math.pow(0.98,n)` value → libm drift local↔CI); fixed `a3cee184` by pinning 15 sig figs, filed **#62** to
+  pin the sibling breed goldens. Always verify `gh run list --branch main` is green after pushing main.
 - **Purchase Coordinator #57 Phase 2 PAUSED** (2026-07-11) — a three-round dueling-agent + live-Chrome
   brainstorm falsified every Phase-2 direction. (1) The spec's **economy-income look-ahead is
   misconceived**: Trimps has no Mine, metal income is the food-costed Miner *job*, and `getPsString`
