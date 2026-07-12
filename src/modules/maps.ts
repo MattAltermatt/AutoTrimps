@@ -1508,7 +1508,10 @@ export function RautoMap() {
             if (Rshoulddoquest) {
                 RquestMap(Rshoulddoquest);
             }
-            if (Rshouldmayhem > 0 && getPageSetting('Rmayhemmap') == 2 && !Rshouldtimefarm && !Rdshouldtimefarm) {
+            // #65: was `== 2`, so option 1 ("M: Highest Map") never ran a mayhem map — it was
+            // identical to option 0 ("M: Maps Off"). `> 0` runs both map modes; RselectMayhem picks
+            // highest-owned vs smart-create, and RmayhemExtra stays 0 for option 1 (no extra levels).
+            if (Rshouldmayhem > 0 && getPageSetting('Rmayhemmap') > 0 && !Rshouldtimefarm && !Rdshouldtimefarm) {
                 RlevelMap("mayhem");
             }
             if (Rshouldpanda && getPageSetting('Rpandamaps') == true && !Rshouldtimefarm && !Rdshouldtimefarm) {

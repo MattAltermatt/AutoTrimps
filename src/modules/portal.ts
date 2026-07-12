@@ -225,7 +225,12 @@ export function doPortal(challenge?: any) {
     if (getPageSetting('spendmagmite')==1) {
 	autoMagmiteSpender();
     }
-    if (getPageSetting('autoheirlooms') == true && getPageSetting('typetokeep') != 'None' && getPageSetting('raretokeep') != 'None') {
+    // #65: was `typetokeep != 'None' && raretokeep != 'None'` — both always true. getPageSetting
+    // returns typetokeep's numeric INDEX (0 = the 'None' option), never the label, and raretokeep's
+    // dropdown has no 'None' entry at all ('Any' is its permissive value). So the guard collapsed to
+    // just `autoheirlooms == true`, and autoheirlooms3() un-carries every heirloom before re-carrying
+    // per typetokeep — with typetokeep = 0 no carry branch runs, so it stripped every carried heirloom.
+    if (getPageSetting('autoheirlooms') == true && getPageSetting('typetokeep') != 0) {
 	autoheirlooms3();
     }
     if (game.global.ShieldEquipped.name != getPageSetting('highdmg') || game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {
@@ -437,7 +442,12 @@ export function RdailyAutoPortal() {
 
 export function RdoPortal(challenge?: any) {
     if(!game.global.portalActive) return;
-    if (getPageSetting('autoheirlooms') == true && getPageSetting('typetokeep') != 'None' && getPageSetting('raretokeep') != 'None') {
+    // #65: was `typetokeep != 'None' && raretokeep != 'None'` — both always true. getPageSetting
+    // returns typetokeep's numeric INDEX (0 = the 'None' option), never the label, and raretokeep's
+    // dropdown has no 'None' entry at all ('Any' is its permissive value). So the guard collapsed to
+    // just `autoheirlooms == true`, and autoheirlooms3() un-carries every heirloom before re-carrying
+    // per typetokeep — with typetokeep = 0 no carry branch runs, so it stripped every carried heirloom.
+    if (getPageSetting('autoheirlooms') == true && getPageSetting('typetokeep') != 0) {
 	autoheirlooms3();
     }
     if (game.global.ShieldEquipped.name != getPageSetting('highdmg') || game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {

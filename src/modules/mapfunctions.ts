@@ -1498,6 +1498,19 @@ export function RselectMayhem() {
                 selectedMap = "create";
             }
         }
+    } else if (getPageSetting('Rmayhemmap') == 1) {
+        // #65: "M: Highest Map". Per the setting's own tooltip: "always selects the highest map you
+        // have whether it be from Praiding, Time Farming or any you have manually created." Unlike
+        // every other selector in this file (which match an EXACT level), this takes the max level
+        // owned. Falls through to "create" only when no recyclable map is owned at all.
+        var highestLevel = -1;
+        for (var map in game.global.mapsOwnedArray) {
+            var owned = game.global.mapsOwnedArray[map];
+            if (!owned.noRecycle && owned.level > highestLevel) {
+                highestLevel = owned.level;
+                selectedMap = owned.id;
+            }
+        }
     } else {
         for (var map in game.global.mapsOwnedArray) {
             if (!game.global.mapsOwnedArray[map].noRecycle && game.global.world == game.global.mapsOwnedArray[map].level) {

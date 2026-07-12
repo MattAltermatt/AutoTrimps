@@ -8251,7 +8251,7 @@
         if (Rshoulddoquest) {
           RquestMap(Rshoulddoquest);
         }
-        if (Rshouldmayhem > 0 && getPageSetting2("Rmayhemmap") == 2 && !Rshouldtimefarm && !Rdshouldtimefarm) {
+        if (Rshouldmayhem > 0 && getPageSetting2("Rmayhemmap") > 0 && !Rshouldtimefarm && !Rdshouldtimefarm) {
           RlevelMap("mayhem");
         }
         if (Rshouldpanda && getPageSetting2("Rpandamaps") == true && !Rshouldtimefarm && !Rdshouldtimefarm) {
@@ -9547,6 +9547,15 @@
           break;
         } else {
           selectedMap2 = "create";
+        }
+      }
+    } else if (getPageSetting2("Rmayhemmap") == 1) {
+      var highestLevel = -1;
+      for (var map in game.global.mapsOwnedArray) {
+        var owned = game.global.mapsOwnedArray[map];
+        if (!owned.noRecycle && owned.level > highestLevel) {
+          highestLevel = owned.level;
+          selectedMap2 = owned.id;
         }
       }
     } else {
@@ -10955,7 +10964,7 @@
     if (getPageSetting2("spendmagmite") == 1) {
       autoMagmiteSpender();
     }
-    if (getPageSetting2("autoheirlooms") == true && getPageSetting2("typetokeep") != "None" && getPageSetting2("raretokeep") != "None") {
+    if (getPageSetting2("autoheirlooms") == true && getPageSetting2("typetokeep") != 0) {
       autoheirlooms3();
     }
     if (game.global.ShieldEquipped.name != getPageSetting2("highdmg") || game.global.ShieldEquipped.name != getPageSetting2("dhighdmg")) {
@@ -11171,7 +11180,7 @@
   }
   function RdoPortal(challenge) {
     if (!game.global.portalActive) return;
-    if (getPageSetting2("autoheirlooms") == true && getPageSetting2("typetokeep") != "None" && getPageSetting2("raretokeep") != "None") {
+    if (getPageSetting2("autoheirlooms") == true && getPageSetting2("typetokeep") != 0) {
       autoheirlooms3();
     }
     if (game.global.ShieldEquipped.name != getPageSetting2("highdmg") || game.global.ShieldEquipped.name != getPageSetting2("dhighdmg")) {

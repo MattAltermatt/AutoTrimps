@@ -70,6 +70,43 @@ describe('every setting the UI renders is actually wired to code (#65)', () => {
   })
 })
 
+describe('no numeric setting is compared against a label string (#65)', () => {
+  // getPageSetting() on a multitoggle returns the option's numeric INDEX, never its label. Comparing
+  // one to a label string is therefore always true / never true. portal.ts:233+450 did exactly this —
+  // `getPageSetting('typetokeep') != 'None'` — where 'None' is typetokeep's option 0. The guard was
+  // meant to stop autoheirlooms3() from running with no type selected; it never fired, so enabling
+  // Auto Heirlooms with the default typetokeep un-carried every heirloom (autoheirlooms3 strips all
+  // carried heirlooms first, then re-carries per typetokeep — and index 0 has no carry branch).
+  const defsSrc = readFileSync(join(ROOT, DEFS), 'utf8')
+  // A createSetting whose 2nd arg is an array literal is a multitoggle → numeric-valued.
+  const numericIds = new Set(
+    [...defsSrc.matchAll(/createSetting\(\s*'([^']+)'\s*,\s*\[/g)].map((m) => m[1]),
+  )
+
+  it('finds the multitoggle inventory (guards against the regex matching nothing)', () => {
+    expect(numericIds.size).toBeGreaterThan(40)
+    expect(numericIds.has('typetokeep')).toBe(true)
+  })
+
+  it('no getPageSetting(<multitoggle>) is compared to a string literal', () => {
+    const offenders: string[] = []
+    for (const rel of sourceFiles('src').concat(sourceFiles('legacy'))) {
+      if (rel === DEFS) continue
+      readFileSync(join(ROOT, rel), 'utf8')
+        .split('\n')
+        .forEach((line, i) => {
+          for (const m of line.matchAll(
+            /getPageSetting\(\s*'([^']+)'\s*\)\s*(===|!==|==|!=)\s*'([^']*)'/g,
+          )) {
+            if (numericIds.has(m[1]))
+              offenders.push(`${rel}:${i + 1} getPageSetting('${m[1]}') ${m[2]} '${m[3]}'`)
+          }
+        })
+    }
+    expect(offenders).toEqual([])
+  })
+})
+
 describe('gather dispatchers route every selectable option (#64)', () => {
   // The #64 shape: an option index the dispatcher never mentions runs NO handler, so setGather() is
   // never called and playerGathering freezes wherever it was. Pin the routing explicitly.
