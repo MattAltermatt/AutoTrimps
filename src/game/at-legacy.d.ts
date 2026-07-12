@@ -182,8 +182,9 @@ declare global {
   // Equipment/prestige helpers read by bare name from equipment.ts. Prediction math
   // (highDamageShield/getTotalHealthMod/Rcalc* in calc.ts, RgetEnemyMaxHealth in query.ts,
   // Rgetequipcost in other.ts); doMaxMapBonus (maps.ts) / RdoMaxMapBonus (mapfunctions.ts)
-  // are boolean state flags kept `any`. needGymystic / shouldFarm — AutoTrimps2.js
-  // combat-readiness vars (needGymystic is the boolean seam noted in the module header).
+  // are boolean state flags kept `any`. shouldFarm — an AutoTrimps2.js combat-readiness var.
+  // (needGymystic was retired in #63: it was a loader var hardcoded true and never reset, so every
+  // reader saw a permanent "we need Gymystic". Its readers now check allowed>done live.)
   var highDamageShield: typeof import('../modules/calc').highDamageShield
   var getTotalHealthMod: typeof import('../modules/calc').getTotalHealthMod
   // maps.ts / mapfunctions.ts boolean state flags (globalThis-assigned, read bare).
@@ -196,7 +197,6 @@ declare global {
   // NOT a typeof-import: real RcalcOurHealth() takes 0 args, but equipment.ts calls
   // RcalcOurHealth(true) (ignored arg) at 649/1054. Latent bug tracked in #32.
   function RcalcOurHealth(...rest: any[]): number
-  var needGymystic: any
   var shouldFarm: any
   var isSteam: any
   var scienceNeeded: number

@@ -384,9 +384,11 @@ describe('equipment.evaluateEquipmentEfficiency — L1a eval object', () => {
     expect(r.Factor).toBe(996)
   })
 
-  it('Shield with blockNow + needed Gymystic → orange border, walled, sets needGymystic', () => {
+  // #63 retired the `needGymystic` global this branch used to set (it was hardcoded true at load and
+  // never reset, so the flag carried no information). The branch's real output — wall the Shield so we
+  // save the wood for Gymystic — is unchanged.
+  it('Shield with blockNow + needed Gymystic → orange border, walled', () => {
     ;(globalThis as any).getBuildingItemPrice = () => 100
-    ;(globalThis as any).needGymystic = false
     ;(globalThis as any).game = fullGame()
     ;(globalThis as any).game.upgrades.Supershield.locked = 1
     ;(globalThis as any).game.equipment.Shield.blockNow = true
@@ -396,7 +398,6 @@ describe('equipment.evaluateEquipmentEfficiency — L1a eval object', () => {
     expect(r.Stat).toBe('block')
     expect(r.StatusBorder).toBe('orange')
     expect(r.Wall).toBe(true)
-    expect((globalThis as any).needGymystic).toBe(true)
   })
 
   it('affordable prestige path (red border) computes NextEffect/NextCost Wall', () => {

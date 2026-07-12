@@ -386,10 +386,9 @@ describe('query setScienceNeeded / RsetScienceNeeded (global-mutation loops)', (
     delete (globalThis as any).RscienceNeeded
   })
 
-  it('sums science cost over allowed>done upgrades; adds Gymystic when needGymystic', () => {
+  it('sums science cost over allowed>done upgrades; adds Gymystic when it is allowed>done', () => {
     ;(globalThis as any).scienceNeeded = 0 // pre-exist the global the bare assignment writes
     ;(globalThis as any).upgradeList = ['A', 'B', 'C']
-    ;(globalThis as any).needGymystic = true
     setGame({
       global: { world: 5, totalHeliumEarned: 999999 },
       upgrades: {
@@ -406,16 +405,36 @@ describe('query setScienceNeeded / RsetScienceNeeded (global-mutation loops)', (
   it('skips Speed upgrades at world 1 with low helium', () => {
     ;(globalThis as any).scienceNeeded = 0
     ;(globalThis as any).upgradeList = ['Speed2', 'Miner']
-    ;(globalThis as any).needGymystic = false
     setGame({
       global: { world: 1, totalHeliumEarned: 1000 },
       upgrades: {
         Speed2: { allowed: 1, done: 0, cost: { resources: { science: 500 } } }, // skipped (Speed, w1, ≤1000 He)
         Miner: { allowed: 1, done: 0, cost: { resources: { science: 80 } } }, // 80
+        Gymystic: { allowed: 0, done: 0, cost: { resources: { science: 5000000 } } },
       },
     })
     setScienceNeeded()
     expect((globalThis as any).scienceNeeded).toBe(80)
+  })
+
+  // Regression (#63): needGymystic is a loader global hardcoded `true` (AutoTrimps2.js) and never
+  // reset, so setScienceNeeded used to add Gymystic's flat 5,000,000 science cost unconditionally —
+  // even with Gymystic locked/unavailable and no upgrades pending. scienceNeeded never reached 0, so
+  // gather.ts's needScience stayed true and AT researched forever (and never fell through to its
+  // Turkimp→metal branch). The check is now live: allowed > done.
+  it('#63: adds NOTHING for a locked/unavailable Gymystic even when the stale needGymystic is true', () => {
+    ;(globalThis as any).scienceNeeded = 0
+    ;(globalThis as any).upgradeList = ['A']
+    ;(globalThis as any).needGymystic = true // the stale loader value, as it is in a live session
+    setGame({
+      global: { world: 16, totalHeliumEarned: 579 },
+      upgrades: {
+        A: { allowed: 1, done: 1, cost: { resources: { science: 100 } } }, // done → skipped
+        Gymystic: { locked: 1, allowed: 0, done: 0, cost: { resources: { science: 5000000 } } },
+      },
+    })
+    setScienceNeeded()
+    expect((globalThis as any).scienceNeeded).toBe(0)
   })
 
   it('RsetScienceNeeded mirrors with RupgradeList + totalRadonEarned', () => {

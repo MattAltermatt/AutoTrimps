@@ -2441,6 +2441,9 @@
     }
   };
   var mapresourcetojob = { "food": "Farmer", "wood": "Lumberjack", "metal": "Miner", "science": "Scientist" };
+  function waitingOnGymystic() {
+    return game.upgrades.Gymystic.allowed - game.upgrades.Gymystic.done > 0;
+  }
   function equipEffect(gameResource, equip) {
     if (equip.Equip) return gameResource[equip.Stat + "Calculated"];
     const currentEffect = gameResource.increase.by * gameResource.owned;
@@ -2528,7 +2531,6 @@
       Factor = 999 - gameResource.prestige;
     }
     if (equipName === "Shield" && gameResource.blockNow && game.upgrades["Gymystic"].allowed - game.upgrades["Gymystic"].done > 0) {
-      needGymystic = true;
       Factor = 0;
       Wall = true;
       StatusBorder = "orange";
@@ -2673,7 +2675,7 @@
           $equipUpgrade.style.color = evaluation.StatusBorder;
         if (evaluation.StatusBorder === "yellow" && $equipUpgrade)
           $equipUpgrade.style.color = "white";
-        if (equipName === "Gym" && needGymystic) {
+        if (equipName === "Gym" && waitingOnGymystic()) {
           $equipName.style.color = "white";
           $equipName.style.border = "1px solid white";
           if ($equipUpgrade) {
@@ -2707,7 +2709,7 @@
       if (eqName !== "") {
         const $eqName = document.getElementById(eqName);
         const DaThing = equipmentList[eqName];
-        if (eqName === "Gym" && needGymystic) {
+        if (eqName === "Gym" && waitingOnGymystic()) {
           $eqName.style.color = "white";
           $eqName.style.border = "1px solid white";
           continue;
@@ -12364,7 +12366,8 @@
         scienceNeeded += getScienceCostToUpgrade(a);
       }
     }
-    if (needGymystic) scienceNeeded += getScienceCostToUpgrade("Gymystic");
+    if (game.upgrades.Gymystic.allowed > game.upgrades.Gymystic.done)
+      scienceNeeded += getScienceCostToUpgrade("Gymystic");
   }
   function RsetScienceNeeded() {
     RscienceNeeded = 0;

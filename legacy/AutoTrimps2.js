@@ -128,7 +128,6 @@ var preBuymaxSplit;
 var currentworld = 0;
 var lastrunworld = 0;
 var aWholeNewWorld = false;
-var needGymystic = true;
 var heirloomFlag = false;
 var daily3 = false;
 var heirloomCache = game.global.heirloomsExtra.length;

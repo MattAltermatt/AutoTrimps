@@ -4,9 +4,8 @@
 // ambient in src/game/*.d.ts and read by bare name. getPageSetting + debug imported from
 // converted utils. No cross-module shared vars: module-level bindings (equipmentList, Best,
 // resourcesNeeded, preBuy*2, and R* twins) are equipment-internal, so they stay module-scoped
-// (now const/let). The one bare implicit-global write (needGymystic, in
-// evaluateEquipmentEfficiency) resolves to the var declared in AutoTrimps2.js, which
-// loads before this bundle — so no strict-mode ReferenceError at runtime.
+// (now const/let). (#63 retired the one cross-module global this file touched — the AutoTrimps2.js
+// `needGymystic` var — in favour of the module-local live check waitingOnGymystic().)
 //
 // IDIOMATIC (Phase 2 · #51): un-minified behind the proof-net (tests/equipment.characterization.test.ts
 //   pins every exported fn first; L0 backstop ∅). var→const/let; ==→=== / !=→!== ONLY where operands
@@ -115,6 +114,13 @@ const equipmentList: Record<string, any> = {
     }
 };
 const mapresourcetojob: Record<string, string> = {"food": "Farmer", "wood": "Lumberjack", "metal": "Miner", "science": "Scientist"};
+
+// #63: replaces the retired `needGymystic` loader global, which was hardcoded true and never reset.
+// Same predicate buildings.ts uses to gate the Gym buy. Cosmetic here — it only paints Gym's border
+// white to signal "holding off on Gym, waiting to buy Gymystic".
+function waitingOnGymystic() {
+    return game.upgrades.Gymystic.allowed - game.upgrades.Gymystic.done > 0;
+}
 export function equipEffect(gameResource: any, equip: any) {
     if (equip.Equip) return gameResource[equip.Stat + 'Calculated'];
     const currentEffect = gameResource.increase.by * gameResource.owned;
@@ -216,7 +222,6 @@ export function evaluateEquipmentEfficiency(equipName: string) {
     }
     if (equipName === 'Shield' && gameResource.blockNow &&
         game.upgrades['Gymystic'].allowed - game.upgrades['Gymystic'].done > 0) {
-        needGymystic = true;
         Factor = 0;
         Wall = true;
         StatusBorder = 'orange';
@@ -390,7 +395,7 @@ export function autoLevelEquipment() {
                 $equipUpgrade.style.color = evaluation.StatusBorder;
             if (evaluation.StatusBorder === 'yellow' && $equipUpgrade)
                 $equipUpgrade.style.color = 'white';
-            if (equipName === 'Gym' && needGymystic) {
+            if (equipName === 'Gym' && waitingOnGymystic()) {
                 $equipName.style.color = 'white';
                 $equipName.style.border = '1px solid white';
                 if ($equipUpgrade) {
@@ -441,7 +446,7 @@ export function autoLevelEquipment() {
         if (eqName !== '') {
             const $eqName = document.getElementById(eqName)!;
             const DaThing = equipmentList[eqName];
-            if (eqName === 'Gym' && needGymystic) {
+            if (eqName === 'Gym' && waitingOnGymystic()) {
                 $eqName.style.color = 'white';
                 $eqName.style.border = '1px solid white';
                 continue;

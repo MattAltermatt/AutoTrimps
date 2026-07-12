@@ -163,7 +163,12 @@ export function setScienceNeeded() {
             scienceNeeded += getScienceCostToUpgrade(a);
         }
     }
-    if (needGymystic) scienceNeeded += getScienceCostToUpgrade('Gymystic');
+    // Gymystic is not in upgradeList, so it needs its own check. #63: this used to read the loader
+    // global `needGymystic`, which is hardcoded true and never reset — so Gymystic's flat 5,000,000
+    // science cost was added forever, even when it is locked and unbuyable. Live check instead, the
+    // same predicate buildings.ts uses to gate the Gym buy.
+    if (game.upgrades.Gymystic.allowed > game.upgrades.Gymystic.done)
+        scienceNeeded += getScienceCostToUpgrade('Gymystic');
 }
 export function RsetScienceNeeded() {
     RscienceNeeded = 0;
