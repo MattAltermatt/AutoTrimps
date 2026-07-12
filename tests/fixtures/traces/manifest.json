@@ -1,5 +1,13 @@
 {
   "waivers": [],
+  "oracle": {
+    "tag": "oracle/v2-post-bugfix",
+    "commit": "514b790d",
+    "supersedes": "oracle/phase1-faithful (5e51f56d)",
+    "repinned": "2026-07-12",
+    "issue": "#66",
+    "why": "TWO reasons, both load-bearing. (1) HARNESS WAS BLIND: until #66, scripts/sim/boot.mjs left `usingRealTimeOffline` stuck true after load() — the game's offline-progress replay sets it (main.js:2901) and normally clears it via a setTimeout loop the sim stubs out. AT's mainLoop gates `setScienceNeeded()` + `autoLevelEquipment()` on `!usingRealTimeOffline`, so EVERY trace recorded against phase1-faithful was recorded with all gear-buying and science tracking disabled: zero buyEquipment events, U1 buyBuilding nearly absent. The L0 net was comparing a crippled AT against a crippled AT. (2) THE OLD ORACLE ENSHRINED A SHIPPED BUG: phase1-faithful contains #63 (needGymystic hardcoded true → scienceNeeded permanently +5,000,000). On 02-mid-u1 the old oracle computes scienceNeeded=5,001,452 and gathers science where the fixed build computes 1,452 and gathers buildings; every downstream buy timing cascades from that one number. The (save,index,fn) waiver mechanism is built for a few LOCALIZED fix divergences, not a wholly shifted trajectory (~130 brittle entries). Re-pinning was the correct move, and the v2 traces are strictly RICHER than the old ones (they contain the buyEquipment/buyBuilding events the old ones structurally could not), so the net is more sensitive after the re-pin than before it. NOTE: re-pinning is NOT routine — a naked oracle change is exactly the accidental-drift alarm this net exists to raise. Only re-pin behind a root-caused, reviewed, intentional behavior change."
+  },
   "notes": [
     {
       "issue": "#32",

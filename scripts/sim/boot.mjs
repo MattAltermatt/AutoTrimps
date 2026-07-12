@@ -35,7 +35,23 @@ export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, a
   // Load a real save (LZString base64) to start from a representative mid-run state instead
   // of an inert newGame(). load(str) decompresses the string arg directly (main.js:269) and
   // reassigns the global `game`. Must run before AT init so AT sees the loaded state.
-  if (saveString) window.load(saveString)
+  if (saveString) {
+    window.load(saveString)
+
+    // CRITICAL (#66): loading a save with elapsed time starts the game's offline-progress replay,
+    // which sets `usingRealTimeOffline = true` (main.js:2901) and stashes repeatMap/repeatUntil/
+    // exitTo. That replay normally self-terminates via a setTimeout loop — which this harness stubs
+    // out — so without an explicit teardown the flag stays true FOREVER. AutoTrimps' mainLoop gates
+    // on it:
+    //     if (!usingRealTimeOffline) { setScienceNeeded(); autoLevelEquipment(); }
+    // so a stuck flag silently disables ALL gear buying and science tracking for the whole run — AT
+    // banks metal to its storage cap and never equips. Every AT-driven sim result recorded before
+    // this fix was measured with those two subsystems dark.
+    //
+    // finish(true) is the game's own teardown (main.js:2978): it clears the flag AND restores the
+    // stashed repeat/exit settings, so we land in the same state as a browser that finished loading.
+    if (window.usingRealTimeOffline) window.offlineProgress.finish(true)
+  }
 
   if (withAutoTrimps) {
     const at = atBundlePath || resolve(HERE, '../../dist/autotrimps.user.js')
