@@ -273,8 +273,39 @@ describe('gather.manualLabor2 — L1b actuator spy-log (U1 gather)', () => {
     expect(gatherCalls).toEqual(['science'])
   })
 
+  // Regression (#64): ManualGather2 option 3 is "Science Research OFF". It used to dispatch NOTHING
+  // (AutoTrimps2.js routed only ==1 and ==2), so it silently froze playerGathering wherever it was;
+  // and the science guards inside manualLabor2 still said `!= 2`, left over from when "Science
+  // Research OFF" WAS index 2 — before "Mining/Building Only" was inserted ahead of it. Option 3 now
+  // runs the same gather brain as option 1, with every science branch suppressed.
+  it('#64: ManualGather2 == 3 ("Science Research OFF") still gathers, but never science', () => {
+    // Identical state to the needBattle test above, which sends option 1 to 'science'.
+    const state = () => ({
+      global: {
+        playerModifier: 50, world: 50, challengeActive: '', lastClearedCell: 10,
+        totalHeliumEarned: 1e9, buildingsQueue: [], autoCraftModifier: 0,
+        playerGathering: 'metal', turkimpTimer: 0, mapsUnlocked: true,
+      },
+      resources: {
+        trimps: { owned: 100, realMax: () => 100 },
+        food: { owned: 1000 }, wood: { owned: 1000 }, metal: { owned: 1000 }, science: { owned: 5 },
+      },
+      upgrades: { Battle: { done: false }, Scientists: { done: true }, Miners: { done: true } },
+    })
+
+    ;(globalThis as any).autoTrimpSettings = { ManualGather2: { type: 'multitoggle', value: 3 } }
+    ;(globalThis as any).game = baseGame(state())
+    gather.manualLabor2()
+
+    // never researches...
+    expect(gatherCalls).not.toContain('science')
+    // ...but is NOT inert: it still picks a real resource (the old bug set nothing at all).
+    expect(gatherCalls).toHaveLength(1)
+    expect(['food', 'wood', 'metal', 'trimps', 'buildings']).toContain(gatherCalls[0])
+  })
+
   it('needMiner resource gather (metal<100) → setGather("metal")', () => {
-    ;(globalThis as any).autoTrimpSettings = { ManualGather2: { type: 'multitoggle', value: 2 } } // !=2 research suppressed
+    ;(globalThis as any).autoTrimpSettings = { ManualGather2: { type: 'multitoggle', value: 3 } } // 3 = "Science Research OFF" → research suppressed
     ;(globalThis as any).game = baseGame({
       global: {
         playerModifier: 50, world: 50, challengeActive: '', lastClearedCell: 10,
@@ -294,7 +325,7 @@ describe('gather.manualLabor2 — L1b actuator spy-log (U1 gather)', () => {
   it('Metal challenge before maps unlocked → setGather("metal")', () => {
     // drives L124 challengeActive("Metal") true path
     ;(globalThis as any).challengeActive = vi.fn((w: string) => w === 'Metal')
-    ;(globalThis as any).autoTrimpSettings = { ManualGather2: { type: 'multitoggle', value: 2 } }
+    ;(globalThis as any).autoTrimpSettings = { ManualGather2: { type: 'multitoggle', value: 3 } } // 3 = science suppressed
     ;(globalThis as any).game = baseGame({
       global: {
         playerModifier: 50, world: 50, challengeActive: 'Metal', lastClearedCell: 10,
@@ -308,7 +339,7 @@ describe('gather.manualLabor2 — L1b actuator spy-log (U1 gather)', () => {
   })
 
   it('turkimp active → setGather("metal")', () => {
-    ;(globalThis as any).autoTrimpSettings = { ManualGather2: { type: 'multitoggle', value: 2 } }
+    ;(globalThis as any).autoTrimpSettings = { ManualGather2: { type: 'multitoggle', value: 3 } } // 3 = science suppressed
     ;(globalThis as any).game = baseGame({
       global: {
         playerModifier: 50, world: 50, challengeActive: '', lastClearedCell: 10,
@@ -323,7 +354,7 @@ describe('gather.manualLabor2 — L1b actuator spy-log (U1 gather)', () => {
 
   it('untouched-mess fallback: no workers for a visible resource → setGather(lowestResource)', () => {
     // drives L174 visibility!=="hidden", L186 lowestResourceRate===-1, L195 playerGathering!==lowestResource
-    ;(globalThis as any).autoTrimpSettings = { ManualGather2: { type: 'multitoggle', value: 2 } }
+    ;(globalThis as any).autoTrimpSettings = { ManualGather2: { type: 'multitoggle', value: 3 } } // 3 = science suppressed
     ;(globalThis as any).game = baseGame({
       global: {
         playerModifier: 50, world: 50, challengeActive: '', lastClearedCell: 10,

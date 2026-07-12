@@ -187,7 +187,10 @@ function mainLoop() {
         if (getPageSetting('AutoMaps') > 0 && game.global.mapsUnlocked) autoMap();
 	if (getPageSetting('automapsalways') == true && autoTrimpSettings.AutoMaps.value != 1) autoTrimpSettings.AutoMaps.value = 1;
         if (getPageSetting('showautomapstatus') == true) updateAutoMapsStatus();
-        if (getPageSetting('ManualGather2') == 1) manualLabor2();
+        // #64: 3 = "Science Research OFF" runs the same gather brain as 1 = "Auto Gather/Build";
+        // manualLabor2's own `!= 3` guards suppress the science branches. It used to dispatch
+        // nothing, so the option silently froze playerGathering wherever it was.
+        if (getPageSetting('ManualGather2') == 1 || getPageSetting('ManualGather2') == 3) manualLabor2();
         if (getPageSetting('TrapTrimps') && game.global.trapBuildAllowed && game.global.trapBuildToggled == false) toggleAutoTrap();
         if (getPageSetting('ManualGather2') == 2) autogather3();
         if (getPageSetting('ATGA2') == true) ATGA2();
@@ -298,6 +301,9 @@ function mainLoop() {
         if (getPageSetting('Rshowautomapstatus') == true) RupdateAutoMapsStatus();
 	if (getPageSetting('Rautomapsalways') == true && autoTrimpSettings.RAutoMaps.value != 1) autoTrimpSettings.RAutoMaps.value = 1;
         if (getPageSetting('RManualGather2') == 1) RmanualLabor2();
+        // #64: 2 = "Mining/Building Only" dispatched nothing on the U2 side, so the option froze
+        // playerGathering. Same label + tooltip as U1's option 2, so it routes to the same handler.
+        if (getPageSetting('RManualGather2') == 2) autogather3();
         if (getPageSetting('RTrapTrimps') && game.global.trapBuildAllowed && game.global.trapBuildToggled == false) toggleAutoTrap();
         if (game.global.challengeActive == "Daily" && getPageSetting('buyradony') >= 1 && getDailyHeliumValue(countDailyWeight()) >= getPageSetting('buyradony') && game.global.b >= 100 && !game.singleRunBonuses.heliumy.owned) purchaseSingleRunBonus('heliumy');
         if ((getPageSetting('Rshrine') == true) || (getPageSetting('Rdshrine') == 1) || (getPageSetting('Rdshrine') == 2)) autoshrine();

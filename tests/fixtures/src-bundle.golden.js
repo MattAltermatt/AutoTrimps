@@ -4612,7 +4612,7 @@
       setGather("buildings");
       return;
     }
-    if (getPageSetting2("ManualGather2") != 2 && researchAvailable && (needBattle || needScientists || needMiner && game.resources.science.owned < 60)) {
+    if (getPageSetting2("ManualGather2") != 3 && researchAvailable && (needBattle || needScientists || needMiner && game.resources.science.owned < 60)) {
       setGather("science");
       return;
     }
@@ -4628,7 +4628,7 @@
       setGather("trimps");
       return;
     }
-    if (getPageSetting2("ManualGather2") != 2 && researchAvailable && needScience && getPlayerModifier() > getPerSecBeforeManual("Scientist")) {
+    if (getPageSetting2("ManualGather2") != 3 && researchAvailable && needScience && getPlayerModifier() > getPerSecBeforeManual("Scientist")) {
       setGather("science");
       return;
     }
@@ -4642,7 +4642,7 @@
       setGather("metal");
       return;
     }
-    if (getPageSetting2("ManualGather2") != 2 && researchAvailable && needScience) {
+    if (getPageSetting2("ManualGather2") != 3 && researchAvailable && needScience) {
       setGather("science");
       return;
     }
@@ -4683,7 +4683,7 @@
       setGather(lowestResource);
       return;
     }
-    if (getPageSetting2("ManualGather2") != 2 && researchAvailable && haveWorkers) {
+    if (getPageSetting2("ManualGather2") != 3 && researchAvailable && haveWorkers) {
       if (game.resources.science.owned < getPsString("science", true) * MODULES["gather"].minScienceSeconds) {
         setGather("science");
         return;

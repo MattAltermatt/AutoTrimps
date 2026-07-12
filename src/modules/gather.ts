@@ -116,7 +116,7 @@ export function manualLabor2() {
 	}
 
 	//Highest Priority Research if we have less science than needed to buy Battle, Miner and Scientists
-	if (getPageSetting('ManualGather2') != 2 && researchAvailable && (needBattle || needScientists || needMiner && game.resources.science.owned < 60)) {
+	if (getPageSetting('ManualGather2') != 3 && researchAvailable && (needBattle || needScientists || needMiner && game.resources.science.owned < 60)) {
 		setGather('science');
 		return;
 	}
@@ -137,7 +137,7 @@ export function manualLabor2() {
 	if (trapTrimpsOK && trappingIsRelevant && trapWontBeWasted && notFullPop && !lowOnTraps && !trapBuffering) { setGather('trimps'); return; }
 
 	//High Priority Research - When manual research still has more impact than scientists
-	if (getPageSetting('ManualGather2') != 2 && researchAvailable && needScience && getPlayerModifier() > getPerSecBeforeManual('Scientist')) {
+	if (getPageSetting('ManualGather2') != 3 && researchAvailable && needScience && getPlayerModifier() > getPerSecBeforeManual('Scientist')) {
 		setGather('science');
 		return;
 	}
@@ -154,7 +154,7 @@ export function manualLabor2() {
 	if (hasTurkimp) { setGather('metal'); return; }
 
 	//Mid Priority Research
-	if (getPageSetting('ManualGather2') != 2 && researchAvailable && needScience) { setGather('science'); return; }
+	if (getPageSetting('ManualGather2') != 3 && researchAvailable && needScience) { setGather('science'); return; }
 
 	//Low Priority Trap Building
 	if (trapTrimpsOK && trappingIsRelevant && canAffordBuilding('Trap') && (!fullOfTraps || maxTrapBuffering)) {
@@ -202,7 +202,7 @@ export function manualLabor2() {
 	if (game.global.playerGathering !== lowestResource && !haveWorkers && !breedFire) {setGather(lowestResource); return;}
 
 	//Low Priority Research
-	if (getPageSetting('ManualGather2') != 2 && researchAvailable && haveWorkers) {
+	if (getPageSetting('ManualGather2') != 3 && researchAvailable && haveWorkers) {
 		if (game.resources.science.owned < getPsString('science', true) * MODULES["gather"].minScienceSeconds) {
 			setGather('science');
 			return;
