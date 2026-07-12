@@ -9,10 +9,10 @@
 //      buyFoodEfficientHousing; localized to a const here (no external reader) to avoid a
 //      strict-mode ReferenceError. bestBuilding stays bare — it resolves to the
 //      var bestBuilding declared in AutoTrimps2.js (loads first).
-//   2. needGymystic is NOT exported (unlike every other fn): it is byte-identical to
-//      upgrades.js's copy, is never invoked as a function anywhere, and the original's
-//      post-load value is AutoTrimps2.js's boolean var needGymystic = true. Publishing
-//      this function via the bridge would overwrite that boolean at load. Left module-scoped.
+//   2. (#63 removed the dead module-scoped needGymystic() function. It was never invoked, and was
+//      kept unexported only so the bridge would not overwrite AutoTrimps2.js's same-named boolean
+//      — a boolean that is now itself retired. The live check it encoded is inlined at its one real
+//      call site, the Gym buy below.)
 //
 // IDIOMATIC (Phase 2 · #51): un-minified behind the proof-net (tests/buildings.characterization.test.ts
 //   pins every branch first, each converted operator driven to a live evaluation by a fixture; L0
@@ -28,7 +28,7 @@
 //       string|null return (never undefined, but the loose form is the faithful null check).
 //   Every numeric literal + formula shape is preserved exactly (balance is sacrosanct).
 //   Pre-existing DEAD CODE (unchanged): housingList + RhousingList are declared but read nowhere in
-//   src/ or legacy/; needGymystic is never invoked (doc'd above).
+//   src/ or legacy/.
 import { getPageSetting, debug } from './utils'
 
 MODULES["buildings"] = {};
@@ -39,9 +39,6 @@ MODULES["buildings"].storageLowlvlCutoff2 = 0.5;
 //Helium
 const housingList = ['Hut', 'House', 'Mansion', 'Hotel', 'Resort', 'Gateway', 'Collector', 'Warpstation'];
 
-function needGymystic() {
-    return game.upgrades['Gymystic'].allowed - game.upgrades['Gymystic'].done > 0;
-}
 
 export function safeBuyBuilding(building: string) {
     if (isBuildingInQueue(building))

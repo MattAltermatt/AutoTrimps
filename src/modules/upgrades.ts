@@ -5,10 +5,9 @@
 // getPageSetting/debug/setPageSetting imported from converted utils. TWO seam notes:
 //   1. upgradeList + RupgradeList are read by still-legacy query.js by bare name, so they
 //      publish to globalThis (shared-var seam) rather than module-scoped var.
-//   2. needGymystic is NOT exported: byte-identical to the (now-removed) buildings.js copy,
-//      never invoked as a function anywhere, and AutoTrimps2.js's boolean var needGymystic
-//      = true is the intended post-load value. Left module-scoped so the bridge does not
-//      overwrite that boolean at load. (This was the last needGymystic function in legacy.)
+//   2. (#63 removed the dead module-scoped needGymystic() function — never invoked, and kept
+//      unexported only to avoid the bridge overwriting AutoTrimps2.js's same-named boolean, which
+//      is now itself retired.)
 //
 // IDIOMATIC (Phase 2 · #51): un-minified behind the proof-net (tests/upgrades.characterization.test.ts
 //   pins every branch first; L0 backstop ∅). var→const/let, ==→=== where operands are provably the
@@ -128,9 +127,6 @@ export function firstGiga(forced?: boolean) {
     return true;
 }
 
-function needGymystic() {
-    return game.upgrades['Gymystic'].allowed - game.upgrades['Gymystic'].done > 0;
-}
 export function buyUpgrades() {
 
     //#43: Metal challenge — Efficiency doubles player mining, the only metal source during Metal.

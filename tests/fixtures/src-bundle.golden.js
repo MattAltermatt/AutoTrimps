@@ -158,6 +158,7 @@
     var graphs = getPageSetting2("SpamGraphs");
     var magmite = getPageSetting2("SpamMagmite");
     var perks = getPageSetting2("SpamPerks");
+    var nature = getPageSetting2("SpamNature");
     var output = true;
     switch (type) {
       case null:
@@ -191,6 +192,9 @@
         break;
       case "perks":
         output = perks;
+        break;
+      case "nature":
+        output = nature;
         break;
     }
     if (output) {

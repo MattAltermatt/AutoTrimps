@@ -300,10 +300,11 @@ function mainLoop() {
         if (getPageSetting('RAutoMaps') > 0 && game.global.mapsUnlocked) RautoMap();
         if (getPageSetting('Rshowautomapstatus') == true) RupdateAutoMapsStatus();
 	if (getPageSetting('Rautomapsalways') == true && autoTrimpSettings.RAutoMaps.value != 1) autoTrimpSettings.RAutoMaps.value = 1;
-        if (getPageSetting('RManualGather2') == 1) RmanualLabor2();
-        // #64: 2 = "Mining/Building Only" dispatched nothing on the U2 side, so the option froze
-        // playerGathering. Same label + tooltip as U1's option 2, so it routes to the same handler.
-        if (getPageSetting('RManualGather2') == 2) autogather3();
+        // #64: 2 = "Mining/Building Only" dispatched nothing, so the option froze playerGathering.
+        // It routes to RmanualLabor2, NOT to U1's autogather3: RmanualLabor2 already carries the
+        // `== 2` / `!= 2` guards implementing mining-mode (gather.ts:346/366/368), and autogather3
+        // reads `gathermetal`, a setting settings-visibility.ts only exposes outside U2.
+        if (getPageSetting('RManualGather2') == 1 || getPageSetting('RManualGather2') == 2) RmanualLabor2();
         if (getPageSetting('RTrapTrimps') && game.global.trapBuildAllowed && game.global.trapBuildToggled == false) toggleAutoTrap();
         if (game.global.challengeActive == "Daily" && getPageSetting('buyradony') >= 1 && getDailyHeliumValue(countDailyWeight()) >= getPageSetting('buyradony') && game.global.b >= 100 && !game.singleRunBonuses.heliumy.owned) purchaseSingleRunBonus('heliumy');
         if ((getPageSetting('Rshrine') == true) || (getPageSetting('Rdshrine') == 1) || (getPageSetting('Rdshrine') == 2)) autoshrine();

@@ -108,6 +108,9 @@ export function debug(message: any, type?: any, lootIcon?: any) {
     var graphs = getPageSetting('SpamGraphs');
     var magmite = getPageSetting('SpamMagmite');
     var perks = getPageSetting('SpamPerks');
+    // #65: SpamNature was createSetting'd but never read, so debug(..., 'nature') fell through the
+    // switch with output still true — the "Nature Spam" toggle did nothing.
+    var nature = getPageSetting('SpamNature');
     var output = true;
     switch (type) {
         case null:
@@ -141,6 +144,9 @@ export function debug(message: any, type?: any, lootIcon?: any) {
             break;
         case "perks":
             output = perks;
+            break;
+        case "nature":
+            output = nature;
             break;
     }
     if (output) {
