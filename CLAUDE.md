@@ -115,6 +115,46 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **Bug-hunt session: #63/#64/#65/#66 shipped; ORACLE RE-PINNED to v2** (2026-07-12) — started from a user
+  bug report ("AT only researches, ignores the Turkimp") and cascaded. **#63** (`d749a7d4`): `needGymystic`
+  was `var needGymystic = true` in AutoTrimps2.js and **never reset** (a 2016 upstream commit flipped its
+  initial value), so `setScienceNeeded()` added Gymystic's flat **5,000,000** science cost forever — even
+  with Gymystic locked/unbuyable. `scienceNeeded` never reached 0 → `needScience` stayed true → gather's
+  research branch (gather.ts:140) fired *above* the Turkimp branch (:154) and returned first. Readers now
+  check `allowed > done` live; the global is retired. **#64** (`57a837ba`): `ManualGather2 == 3` ("Science
+  Research OFF") and `RManualGather2 == 2` dispatched **nothing** — picking them silently disabled ALL
+  gather automation and froze `playerGathering`. The four `!= 2` science guards in `manualLabor2` were
+  left over from when "Science Research OFF" WAS index 2, before "Mining/Building Only" was inserted ahead
+  of it. **#65** (`572c3f8c`, `514b790d`): audited all **571** settings — `SpamNature` was rendered but read
+  by nobody; `Rmayhemmap == 1` ("M: Highest Map") was a total no-op (implemented to its own tooltip; it's
+  the only selector needing a MAX-level match, every other matches an EXACT level); and portal.ts's
+  `typetokeep != 'None'` guard was **always true** (numeric index vs label string) — which mattered because
+  `autoheirlooms3()` **un-carries every heirloom** before re-carrying per `typetokeep`, and index 0 has no
+  carry branch, so Auto-Heirlooms-on + default type **stripped every carried heirloom**. Two permanent nets
+  in `tests/settings-wired.test.ts` (every createSetting id must be read; no `getPageSetting(<multitoggle>)`
+  vs string literal), both mutation-checked.
+  🚨 **#66 (`6b056258`) — THE SIM WAS BLIND, AND SO WAS THE L0 NET.** `boot.mjs` left `usingRealTimeOffline`
+  stuck true after `load()` (the game's offline replay sets it at main.js:2901 and clears it via a
+  `setTimeout` loop the sim stubs out). AT's mainLoop gates `setScienceNeeded()` + `autoLevelEquipment()`
+  on `!usingRealTimeOffline` — so **every AT-driven sim run ever executed with all gear-buying and science
+  tracking dark** (AT banked metal to its cap, never equipped). It hid because the sim still fought/mapped/
+  hired, and the tests only asserted "AT calls native mutators" (`buyJob` satisfied that). Consequences:
+  (a) L0 traces contained **zero** `buyEquipment` events — `baseline-zero` compared a crippled AT against a
+  crippled AT while reporting green; (b) `corpus-coverage.test.ts` had **enshrined the blindness as a
+  "documented gap"**, misattributing it to corpus depth (see [[feedback-verify-the-harness-measures-what-it-claims]]);
+  (c) **#40's conclusion was circular** and had to be re-measured. Fix = call the game's own
+  `offlineProgress.finish(true)`. **ORACLE RE-PINNED `oracle/phase1-faithful` (5e51f56d) → `oracle/v2-post-bugfix`
+  (514b790d)**: the old pin contains the #63 bug, so diffing against it asserted "keep behaving like the bug"
+  (on 02-mid-u1 the old oracle computes `scienceNeeded=5,001,452` and gathers science; the fixed build
+  computes 1,452 and gathers buildings — every downstream buy timing cascades). The `(save,index,fn)` waiver
+  mechanism is for a few *localized* divergences, not a wholly shifted trajectory (~130 brittle entries).
+  **Re-pinning is NOT routine — a naked oracle change is exactly the accidental-drift alarm the net exists to
+  raise; only re-pin behind a root-caused, reviewed, intentional behavior change.** Rationale in
+  `build-oracle.mjs` + the trace manifest. v2 traces are strictly *richer*, so the net is now more sensitive
+  than it has ever been. **#48 + #40 then CLOSED by measurement** on the honest harness: the early game is
+  **not worker-allocation-limited** (F/L/M spans ~2.5%; miner-heavy is *worse*; 5× scientists = +0.9%), and
+  `scientistRatio2` is **inert for divisors ≥5** (hardcoded `<10` floor at jobs.ts:118) — see
+  [[reference-early-game-not-worker-limited]]. 621 tests green.
 - **Phase 3 — Divergence milestone (#7) CLOSED** (2026-07-11) — wrapped the whole milestone in one session.
   Shipped + deployed live: **#43** (`04f60f13`, Efficiency Metal-priority — opt-in `MetalEfficiencyPriority`
   default OFF + `MetalEfficiencyZone` default 6; `buyUpgrades()` rushes Efficiency before all other upgrades
