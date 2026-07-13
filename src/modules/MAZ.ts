@@ -315,109 +315,118 @@ export function settingsWindowSave(titleText: any, reopen?: any) {
     var error = "";
     var maxSettings = 30;
 
+    // #83 §6: the setting-KEY names and the per-ROW values used to share one set of `var` bindings.
+    // `var` is function-scoped, so `zone` was assigned the key string 'Rtimefarmzone' by the dispatch
+    // below and then CLOBBERED with a NUMBER by `zone = parseInt(byId('windowZone'+x).value, 10)`
+    // inside the loop — and `setting`/`level`/`map`/`special`/`gather` were even re-`var`ed a second
+    // time in the same scope. It appeared to work only because the dispatch re-ran at the top of every
+    // iteration: as long as the LAST iteration hit the `continue` for an unfilled row, `zone` survived
+    // as the key. Fill a MAZ window to its maximum 30 rows and the last iteration falls through — the
+    // loop ends with `zone` as, say, 41, `autoTrimpSettings[41]` is undefined, and the post-loop write
+    // throws `Cannot set properties of undefined`. Save silently did nothing. A cliff, not a gradient.
+    //
+    // The two roles are now separated: the keys are loop-invariant, so hoist them and assign ONCE; the
+    // row values get their own bindings inside the loop.
+    var zoneKey: any;
+    var cellKey: any;
+    var settingKey: any;
+    var levelKey: any;
+    var mapKey: any;
+    var specialKey: any;
+    var gatherKey: any;
+
+    //Settings
+
+    if (titleText == 'Time Farm') {
+        zoneKey = 'Rtimefarmzone';
+        cellKey = 'Rtimefarmcell';
+        settingKey = 'Rtimefarmtime';
+        levelKey = 'Rtimefarmlevel';
+        mapKey = 'Rtimefarmmap';
+        specialKey = 'Rtimefarmspecial';
+        gatherKey = 'Rtimefarmgather';
+    } else if (titleText == 'dTime Farm') {
+        zoneKey = 'Rdtimefarmzone';
+        cellKey = 'Rdtimefarmcell';
+        settingKey = 'Rdtimefarmtime';
+        levelKey = 'Rdtimefarmlevel';
+        mapKey = 'Rdtimefarmmap';
+        specialKey = 'Rdtimefarmspecial';
+        gatherKey = 'Rdtimefarmgather';
+    } else if (titleText.includes('Smithy Farm')) {
+        zoneKey = 'Rsmithyfarmzone';
+        cellKey = 'Rsmithyfarmcell';
+        settingKey = 'Rsmithyfarmamount';
+    } else if (titleText.includes('Tribute Farm')) {
+        zoneKey = 'Rtributefarmzone';
+        cellKey = 'Rtributefarmcell';
+        settingKey = 'Rtributefarmamount';
+        levelKey = 'Rtributefarmlevel';
+        mapKey = 'Rtributemapselection';
+        specialKey = 'Rtributespecialselection';
+        gatherKey = 'Rtributegatherselection';
+    } else if (titleText == 'Shrine - U1') {
+        zoneKey = 'Hshrinezone';
+        cellKey = 'Hshrinecell';
+        settingKey = 'Hshrineamount';
+    } else if (titleText == 'Shrine - U2') {
+        zoneKey = 'Rshrinezone';
+        cellKey = 'Rshrinecell';
+        settingKey = 'Rshrineamount';
+    } else if (titleText == 'Shrine - U1 (Daily)') {
+        zoneKey = 'Hdshrinezone';
+        cellKey = 'Hdshrinecell';
+        settingKey = 'Hdshrineamount';
+    } else if (titleText == 'Shrine - U2 (Daily)') {
+        zoneKey = 'Rdshrinezone';
+        cellKey = 'Rdshrinecell';
+        settingKey = 'Rdshrineamount';
+    } else if (titleText.includes('Quagmire')) {
+        zoneKey = 'Rblackbogzone';
+        settingKey = 'Rblackbogamount';
+    } else if (titleText.includes('Insanity')) {
+        zoneKey = 'Rinsanityfarmzone';
+        cellKey = 'Rinsanityfarmcell';
+        settingKey = 'Rinsanityfarmstack';
+        levelKey = 'Rinsanityfarmlevel';
+    } else if (titleText.includes('Alch')) {
+        zoneKey = 'Ralchfarmzone';
+        cellKey = 'Ralchfarmcell';
+        settingKey = 'Ralchfarmstack';
+        levelKey = 'Ralchfarmlevel';
+        mapKey = 'Ralchfarmselection';
+    } else if (titleText.includes('Hypo')) {
+        zoneKey = 'Rhypofarmzone';
+        cellKey = 'Rhypofarmcell';
+        settingKey = 'Rhypofarmstack';
+        levelKey = 'Rhypofarmlevel';
+    } else if (titleText == 'Praid') {
+        zoneKey = 'RAMPraidzone';
+        cellKey = 'RAMPraidcell';
+        settingKey = 'RAMPraidraid';
+    } else if (titleText == 'dPraid') {
+        zoneKey = 'RdAMPraidzone';
+        cellKey = 'RdAMPraidcell';
+        settingKey = 'RdAMPraidraid';
+    }
+
     for (var x = 0; x < maxSettings; x++) {
-
-        var zone: any;
-        var cell: any;
-        var setting: any;
-        var level: any;
-        var map: any;
-        var special: any;
-        var gather: any;
-
-        // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-        var world = [0];
-        zone = [0];
-
-        //Settings
-
-        if (titleText == 'Time Farm') {
-            zone = 'Rtimefarmzone';
-            cell = 'Rtimefarmcell';
-            setting = 'Rtimefarmtime';
-            level = 'Rtimefarmlevel';
-            map = 'Rtimefarmmap';
-            special = 'Rtimefarmspecial';
-            gather = 'Rtimefarmgather';
-        } else if (titleText == 'dTime Farm') {
-            zone = 'Rdtimefarmzone';
-            cell = 'Rdtimefarmcell';
-            setting = 'Rdtimefarmtime';
-            level = 'Rdtimefarmlevel';
-            map = 'Rdtimefarmmap';
-            special = 'Rdtimefarmspecial';
-            gather = 'Rdtimefarmgather';
-        } else if (titleText.includes('Smithy Farm')) {
-            zone = 'Rsmithyfarmzone';
-            cell = 'Rsmithyfarmcell';
-            setting = 'Rsmithyfarmamount';
-        } else if (titleText.includes('Tribute Farm')) {
-            zone = 'Rtributefarmzone';
-            cell = 'Rtributefarmcell';
-            setting = 'Rtributefarmamount';
-            level = 'Rtributefarmlevel';
-            map = 'Rtributemapselection';
-            special = 'Rtributespecialselection';
-            gather = 'Rtributegatherselection';
-        } else if (titleText == 'Shrine - U1') {
-            zone = 'Hshrinezone';
-            cell = 'Hshrinecell';
-            setting = 'Hshrineamount';
-        } else if (titleText == 'Shrine - U2') {
-            zone = 'Rshrinezone';
-            cell = 'Rshrinecell';
-            setting = 'Rshrineamount';
-        } else if (titleText == 'Shrine - U1 (Daily)') {
-            zone = 'Hdshrinezone';
-            cell = 'Hdshrinecell';
-            setting = 'Hdshrineamount';
-        } else if (titleText == 'Shrine - U2 (Daily)') {
-            zone = 'Rdshrinezone';
-            cell = 'Rdshrinecell';
-            setting = 'Rdshrineamount';
-        } else if (titleText.includes('Quagmire')) {
-            zone = 'Rblackbogzone';
-            setting = 'Rblackbogamount';
-        } else if (titleText.includes('Insanity')) {
-            zone = 'Rinsanityfarmzone';
-            cell = 'Rinsanityfarmcell';
-            setting = 'Rinsanityfarmstack';
-            level = 'Rinsanityfarmlevel';
-        } else if (titleText.includes('Alch')) {
-            zone = 'Ralchfarmzone';
-            cell = 'Ralchfarmcell';
-            setting = 'Ralchfarmstack';
-            level = 'Ralchfarmlevel';
-            map = 'Ralchfarmselection';
-        } else if (titleText.includes('Hypo')) {
-            zone = 'Rhypofarmzone';
-            cell = 'Rhypofarmcell';
-            setting = 'Rhypofarmstack';
-            level = 'Rhypofarmlevel';
-        } else if (titleText == 'Praid') {
-            zone = 'RAMPraidzone';
-            cell = 'RAMPraidcell';
-            setting = 'RAMPraidraid';
-        } else if (titleText == 'dPraid') {
-            zone = 'RdAMPraidzone';
-            cell = 'RdAMPraidcell';
-            setting = 'RdAMPraidraid';
-        }
 
         var zone2 = byId('windowZone' + x);
         if (!zone2 || zone2.value == "-1") {
             continue;
         };
 
-        zone = parseInt(byId('windowZone' + x).value, 10);
+        var zone: any = parseInt(byId('windowZone' + x).value, 10);
 
         var setting: any = 0;
         var level: any = 0;
         var map: any = 0;
         var special: any = 0;
         var gather: any = 0;
+        var cell: any;
 
-        if (!titleText.includes('Quagmire')) var cell: any = parseInt(byId('windowCell' + x).value, 10);
+        if (!titleText.includes('Quagmire')) cell = parseInt(byId('windowCell' + x).value, 10);
 
         if (titleText == 'Time Farm') {
             setting = byId('windowSetting' + x).value;
@@ -505,95 +514,95 @@ export function settingsWindowSave(titleText: any, reopen?: any) {
     }
 
     //Reset variables that are about to get used.
-    autoTrimpSettings[zone].value = [];
-    if (!titleText.includes('Quagmire')) autoTrimpSettings[cell].value = [];
+    autoTrimpSettings[zoneKey].value = [];
+    if (!titleText.includes('Quagmire')) autoTrimpSettings[cellKey].value = [];
 
     //Values
 
     if (titleText == 'Time Farm') {
-        autoTrimpSettings[level].value = [];
-        autoTrimpSettings[map].value = [];
-        autoTrimpSettings[setting].value = [];
-        autoTrimpSettings[special].value = [];
-        autoTrimpSettings[gather].value = [];
+        autoTrimpSettings[levelKey].value = [];
+        autoTrimpSettings[mapKey].value = [];
+        autoTrimpSettings[settingKey].value = [];
+        autoTrimpSettings[specialKey].value = [];
+        autoTrimpSettings[gatherKey].value = [];
     } else if (titleText == 'dTime Farm') {
-        autoTrimpSettings[level].value = [];
-        autoTrimpSettings[map].value = [];
-        autoTrimpSettings[setting].value = [];
-        autoTrimpSettings[special].value = [];
-        autoTrimpSettings[gather].value = [];
+        autoTrimpSettings[levelKey].value = [];
+        autoTrimpSettings[mapKey].value = [];
+        autoTrimpSettings[settingKey].value = [];
+        autoTrimpSettings[specialKey].value = [];
+        autoTrimpSettings[gatherKey].value = [];
     } else if (titleText.includes('Smithy Farm')) {
-        autoTrimpSettings[setting].value = [];
+        autoTrimpSettings[settingKey].value = [];
     } else if (titleText.includes('Tribute Farm')) {
-        autoTrimpSettings[level].value = [];
-        autoTrimpSettings[map].value = [];
-        autoTrimpSettings[setting].value = [];
-        autoTrimpSettings[special].value = [];
-        autoTrimpSettings[gather].value = [];
+        autoTrimpSettings[levelKey].value = [];
+        autoTrimpSettings[mapKey].value = [];
+        autoTrimpSettings[settingKey].value = [];
+        autoTrimpSettings[specialKey].value = [];
+        autoTrimpSettings[gatherKey].value = [];
     } else if (titleText.includes('Shrine')) {
-        autoTrimpSettings[setting].value = [];
+        autoTrimpSettings[settingKey].value = [];
     } else if (titleText.includes('Quagmire')) {
-        autoTrimpSettings[setting].value = [];
+        autoTrimpSettings[settingKey].value = [];
     } else if (titleText.includes('Insanity')) {
-        autoTrimpSettings[level].value = [];
-        autoTrimpSettings[setting].value = [];
+        autoTrimpSettings[levelKey].value = [];
+        autoTrimpSettings[settingKey].value = [];
     } else if (titleText.includes('Alch')) {
-        autoTrimpSettings[level].value = [];
-        autoTrimpSettings[map].value = [];
-        autoTrimpSettings[setting].value = [];
+        autoTrimpSettings[levelKey].value = [];
+        autoTrimpSettings[mapKey].value = [];
+        autoTrimpSettings[settingKey].value = [];
     } else if (titleText.includes('Hypo')) {
-        autoTrimpSettings[level].value = [];
-        autoTrimpSettings[setting].value = [];
+        autoTrimpSettings[levelKey].value = [];
+        autoTrimpSettings[settingKey].value = [];
     } else if (titleText == 'Praid') {
-        autoTrimpSettings[setting].value = [];
+        autoTrimpSettings[settingKey].value = [];
     } else if (titleText == 'dPraid') {
-        autoTrimpSettings[setting].value = [];
+        autoTrimpSettings[settingKey].value = [];
     }
 
     for (var x = 0; x < thisSetting.length; x++) {
-        autoTrimpSettings[zone].value[x] = thisSetting[x].zone
-        if (!titleText.includes('Quagmire')) autoTrimpSettings[cell].value[x] = thisSetting[x].cell
+        autoTrimpSettings[zoneKey].value[x] = thisSetting[x].zone
+        if (!titleText.includes('Quagmire')) autoTrimpSettings[cellKey].value[x] = thisSetting[x].cell
 
         //Saving
 
         if (titleText == 'Time Farm') {
-            autoTrimpSettings[level].value[x] = thisSetting[x].level
-            autoTrimpSettings[map].value[x] = thisSetting[x].map
-            autoTrimpSettings[setting].value[x] = thisSetting[x].setting
-            autoTrimpSettings[special].value[x] = thisSetting[x].special
-            autoTrimpSettings[gather].value[x] = thisSetting[x].gather
+            autoTrimpSettings[levelKey].value[x] = thisSetting[x].level
+            autoTrimpSettings[mapKey].value[x] = thisSetting[x].map
+            autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting
+            autoTrimpSettings[specialKey].value[x] = thisSetting[x].special
+            autoTrimpSettings[gatherKey].value[x] = thisSetting[x].gather
         } else if (titleText == 'dTime Farm') {
-            autoTrimpSettings[level].value[x] = thisSetting[x].level
-            autoTrimpSettings[map].value[x] = thisSetting[x].map
-            autoTrimpSettings[setting].value[x] = thisSetting[x].setting
-            autoTrimpSettings[special].value[x] = thisSetting[x].special
-            autoTrimpSettings[gather].value[x] = thisSetting[x].gather
+            autoTrimpSettings[levelKey].value[x] = thisSetting[x].level
+            autoTrimpSettings[mapKey].value[x] = thisSetting[x].map
+            autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting
+            autoTrimpSettings[specialKey].value[x] = thisSetting[x].special
+            autoTrimpSettings[gatherKey].value[x] = thisSetting[x].gather
         } else if (titleText.includes('Smithy Farm')) {
-            autoTrimpSettings[setting].value[x] = thisSetting[x].setting
+            autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting
         } else if (titleText.includes('Tribute Farm')) {
-            autoTrimpSettings[level].value[x] = thisSetting[x].level
-            autoTrimpSettings[map].value[x] = thisSetting[x].map
-            autoTrimpSettings[setting].value[x] = thisSetting[x].setting
-            autoTrimpSettings[special].value[x] = thisSetting[x].special
-            autoTrimpSettings[gather].value[x] = thisSetting[x].gather
+            autoTrimpSettings[levelKey].value[x] = thisSetting[x].level
+            autoTrimpSettings[mapKey].value[x] = thisSetting[x].map
+            autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting
+            autoTrimpSettings[specialKey].value[x] = thisSetting[x].special
+            autoTrimpSettings[gatherKey].value[x] = thisSetting[x].gather
         } else if (titleText.includes('Shrine')) {
-            autoTrimpSettings[setting].value[x] = thisSetting[x].setting
+            autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting
         } else if (titleText.includes('Quagmire')) {
-            autoTrimpSettings[setting].value[x] = thisSetting[x].setting
+            autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting
         } else if (titleText.includes('Insanity')) {
-            autoTrimpSettings[level].value[x] = thisSetting[x].level
-            autoTrimpSettings[setting].value[x] = thisSetting[x].setting
+            autoTrimpSettings[levelKey].value[x] = thisSetting[x].level
+            autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting
         } else if (titleText.includes('Alch')) {
-            autoTrimpSettings[level].value[x] = thisSetting[x].level
-            autoTrimpSettings[map].value[x] = thisSetting[x].map
-            autoTrimpSettings[setting].value[x] = thisSetting[x].setting
+            autoTrimpSettings[levelKey].value[x] = thisSetting[x].level
+            autoTrimpSettings[mapKey].value[x] = thisSetting[x].map
+            autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting
         } else if (titleText.includes('Hypo')) {
-            autoTrimpSettings[level].value[x] = thisSetting[x].level
-            autoTrimpSettings[setting].value[x] = thisSetting[x].setting
+            autoTrimpSettings[levelKey].value[x] = thisSetting[x].level
+            autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting
         } else if (titleText == 'Praid') {
-            autoTrimpSettings[setting].value[x] = thisSetting[x].setting
+            autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting
         } else if (titleText == 'dPraid') {
-            autoTrimpSettings[setting].value[x] = thisSetting[x].setting
+            autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting
         }
 
     }
