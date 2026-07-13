@@ -19,8 +19,12 @@ MODULES["jobs"].autoRatio4 = [1, 1.1, 10];
 MODULES["jobs"].autoRatio3 = [3, 1, 4];
 MODULES["jobs"].autoRatio2 = [3, 3.1, 5];
 MODULES["jobs"].autoRatio1 = [1.1, 1.15, 1.2];
-// oxlint-disable-next-line no-unused-expressions -- DROPPED ASSIGNMENT — customRatio is never written; the branch is dead (#88)
-MODULES["jobs"].customRatio;
+// #88: was a bare `MODULES["jobs"].customRatio;` — the `= …` had been dropped, so the key never
+// existed. `if (customRatio)` (the highest-priority branch of workerRatios) could never fire, AND
+// exportModuleVars() builds its list from Object.keys(MODULES[mod]), so the feature was invisible in
+// the export box too — unsettable by the only UI that could set it. `null` is falsy exactly as the
+// missing key was, so no worker ratio changes; the key merely EXISTS now, which is the whole fix.
+MODULES["jobs"].customRatio = null;
 
 // Half the colony's max is reserved for workers; the rest breed. This "free worker slots" count —
 // `ceil(realMax/2) - employed` — is read at nearly every hire/fire decision, so it lives here once.
@@ -305,8 +309,8 @@ MODULES["jobs"].RautoRatio4 = [1, 1.1, 10];
 MODULES["jobs"].RautoRatio3 = [3, 1, 4];
 MODULES["jobs"].RautoRatio2 = [3, 3.1, 5];
 MODULES["jobs"].RautoRatio1 = [1.1, 1.15, 1.2];
-// oxlint-disable-next-line no-unused-expressions -- DROPPED ASSIGNMENT — RcustomRatio is never written; the branch is dead (#88)
-MODULES["jobs"].RcustomRatio;
+// #88: the U2 twin of the same dropped assignment. See the customRatio note above.
+MODULES["jobs"].RcustomRatio = null;
 
 export function RsafeBuyJob(jobTitle: string, amount: number): boolean {
     if (!Number.isFinite(amount) || amount === 0 || typeof amount === 'undefined' || Number.isNaN(amount)) {

@@ -3789,7 +3789,7 @@
   MODULES["jobs"].autoRatio3 = [3, 1, 4];
   MODULES["jobs"].autoRatio2 = [3, 3.1, 5];
   MODULES["jobs"].autoRatio1 = [1.1, 1.15, 1.2];
-  MODULES["jobs"].customRatio;
+  MODULES["jobs"].customRatio = null;
   function freeWorkerSlots() {
     return Math.ceil(game.resources.trimps.realMax() / 2) - game.resources.trimps.employed;
   }
@@ -4057,7 +4057,7 @@
   MODULES["jobs"].RautoRatio3 = [3, 1, 4];
   MODULES["jobs"].RautoRatio2 = [3, 3.1, 5];
   MODULES["jobs"].RautoRatio1 = [1.1, 1.15, 1.2];
-  MODULES["jobs"].RcustomRatio;
+  MODULES["jobs"].RcustomRatio = null;
   function RsafeBuyJob(jobTitle, amount) {
     if (!Number.isFinite(amount) || amount === 0 || typeof amount === "undefined" || Number.isNaN(amount)) {
       return false;

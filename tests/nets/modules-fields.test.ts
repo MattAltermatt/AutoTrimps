@@ -176,9 +176,10 @@ const WRITTEN = new Set(writes.map(key))
 const KNOWN_PHANTOM: Record<string, string> = {
   'maps.enoughDamageCutoff': '#70 — U1 armormagic() "CAM: H:D" branch dead; fix reads getPageSetting("mapcuntoff")',
   'maps.RenoughDamageCutoff': '#70 — U2 Rarmormagic() "DAM: H:D" branch dead; fix reads getPageSetting("Rmapcuntoff")',
-  'jobs.customRatio': '#88 — bare member access, `= ...` dropped; highest-priority branch of workerRatios()',
-  'jobs.RcustomRatio': '#88 — same, RworkerRatios()',
   'upgrades.autoGigas': '#70 (inst. 3) — buildings.ts:184 `== false` disjunct can never fire; real id is getPageSetting("AutoGigas")',
+  // ✅ jobs.customRatio / jobs.RcustomRatio — FIXED (#88). They were bare member accesses with the
+  // assignment dropped; now initialized to `null` at jobs.ts:22/:313. The net went red the moment they
+  // gained a writer and would not go green again until these lines were deleted. That is the design.
 }
 
 describe('MODULES.<ns>.<field> — every field read must have a writer (#70, #88)', () => {
