@@ -156,7 +156,7 @@ describe('#94: what the coordinator still CANNOT see (recorded, not fixed)', () 
     //
     // This test does not assert that is FIXED. It asserts the hazard is REAL and pins it, so that if a
     // future change stops force-enabling autoStorage (or starts intercepting it) somebody has to come
-    // back and read this. See the issue filed from #94 for the analysis.
+    // back and read this. Analysis + the three options: #104.
     const { window, game } = bootGame({ withAutoTrimps: true, atBundlePath: TEST_BUNDLE, saveString: U2_SAVE })
     assertHydrated(game)
     expect(game.global.autoStorage).toBe(false)
