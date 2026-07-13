@@ -518,8 +518,13 @@ describe('a test may only seed setting ids that production defines (#74)', () =>
     // along with the function. This is the exact loop #85 exists to break — a test seeds a phantom id so
     // that a dead function can be exercised, the seed makes the test pass, and the passing test is then
     // cited as evidence the function works. Three nets were each carrying an entry for one symptom of it.
-    'tests/equipment.characterization.test.ts:710': "#68/#74 — seeds phantom 'loomswap' (dead nuloom feature)",
-    'tests/equipment.characterization.test.ts:728': "#68/#74 — seeds phantom 'dloomswap' (dead nuloom feature)",
+    // ✅ #86 item 2.2 — the two "seeds phantom 'loomswap'/'dloomswap'" entries are GONE, and they went
+    // the same way the RCapEquip2 pair did. The two Wind tests that seeded them asserted only
+    // `not.toThrow()`, so they passed against `autoLevelEquipment = () => {}` (verified by mutation) —
+    // and the phantom seeds were decoration on a test that checked nothing. Rewriting them to hinge on
+    // `enoughDamageE` (the arms' only observable) made the seeds unnecessary, and they were dropped.
+    // Same loop as #85, one layer up: a seed exists to make a test pass, and the passing test is then
+    // cited as evidence the code works.
   }
 
   it('finds the test-side settings seeds (anti-false-green)', () => {
@@ -541,7 +546,7 @@ describe('a test may only seed setting ids that production defines (#74)', () =>
     const live = new Set(seeds.filter((s) => !DEFINED.has(s.id)).map((s) => `${s.file}:${s.line}`))
     for (const k of Object.keys(KNOWN_TEST_LIE))
       expect(live.has(k), `${k} no longer seeds a phantom id — delete it from KNOWN_TEST_LIE`).toBe(true)
-    expect(Object.keys(KNOWN_TEST_LIE).length).toBeLessThanOrEqual(6) // 8 → 6: the two RCapEquiparm fixtures now seed Requipcaphealth (#68)
+    expect(Object.keys(KNOWN_TEST_LIE).length).toBeLessThanOrEqual(2) // 8 → 6 (#68 repointed the RCapEquiparm pair) → 2 (#86 2.2 dropped the loomswap/dloomswap seeds)
   })
 
   it('the synthetic-fixture allowlist stays inside the two files that own synthetic ids', () => {

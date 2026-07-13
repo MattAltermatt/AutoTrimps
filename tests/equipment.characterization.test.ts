@@ -691,49 +691,93 @@ describe('equipment — hard-gate branch coverage', () => {
     expect(equipment.evaluateEquipmentEfficiency('Dagger').Factor).toBe(0)
   })
 
-  it('Lead challenge drives autoLevelEquipment `world % 2 === 1 && world !== 179`', () => {
+  // ── the enoughDamageE HINGE harness (#86 item 2.2) ────────────────────────────────────────────
+  // The three arms below — Lead's `ourDamage /= 1.5` and the two Wind `enoughDamageCutoff` overrides
+  // — have exactly one observable consequence: they move `enoughDamageE` (equipment.ts:372). But
+  // enoughDamageE is only ONE of five disjuncts in the armor-prestige guard (:415-426), and on a
+  // default fixture the other four SATURATE it to true. So a test that merely *reaches* an arm asserts
+  // nothing: the three tests that used to live here locked every upgrade and checked `not.toThrow()`,
+  // and all three passed against `autoLevelEquipment = () => {}` (verified by mutation). Reaching a
+  // line is not the same as depending on its answer.
+  //
+  // This harness kills the other four disjuncts so the buy hinges on enoughDamageE ALONE:
+  //   arm1 `DelayArmorWhenNeeded && !shouldFarm`               → shouldFarm = true
+  //   arm3 `… && !enoughDamageE && !enoughHealthE`             → calcOurHealth 1e12 ⇒ enoughHealthE true
+  //   arm4 `… && Resource === 'wood'`                          → test Boots (health/METAL), not Shield
+  //   arm5 `!DelayArmorWhenNeeded`                             → DelayArmorWhenNeeded = true
+  // …leaving arm2 `DelayArmorWhenNeeded && enoughDamageE`. With the default stubs calcOurDmg = 100 and
+  // calcEnemyHealth = 50, `enoughDamageE = (ourDamage * cutoff > 50)` straddles at cutoff 0.5 — so the
+  // Bootboost prestige buy is a direct, unsaturated readout of each arm.
+  function autoLevelBootsHinged(opts: {
+    settings?: Record<string, unknown>
+    global?: Record<string, unknown>
+    empowerment?: string
+  }) {
+    installSpies()
     ;(globalThis as any).getBuildingItemPrice = () => 100
-    ;(globalThis as any).autoTrimpSettings = {}
-    ;(globalThis as any).game = fullGame({ global: { world: 101, challengeActive: 'Lead', mapBonus: 0, prestige: { attack: 1, health: 1, block: 1 } } })
-    for (const u of UPGRADE_NAMES) (globalThis as any).game.upgrades[u].locked = 1 // no buys; just reach the arm
-    expect(() => equipment.autoLevelEquipment()).not.toThrow()
-    expect(buyUpgradeCalls).toEqual([])
+    ;(globalThis as any).getNextPrestigeCost = () => 1e9 // Wall false
+    ;(globalThis as any).shouldFarm = true // arm1 false
+    ;(globalThis as any).calcOurHealth = () => 1e12 // enoughHealthE true → arm3 false
+    ;(globalThis as any).getEmpowerment = () => opts.empowerment ?? ''
+    ;(globalThis as any).autoTrimpSettings = {
+      BuyArmorNew: { type: 'multitoggle', value: 1 },
+      DelayArmorWhenNeeded: { type: 'boolean', enabled: true }, // arm5 false
+      ...opts.settings,
+    }
+    ;(globalThis as any).game = fullGame({ global: {
+      world: 100, mapBonus: 0, runningChallengeSquared: false,
+      prestige: { attack: 1, health: 1, block: 1 },
+      ...opts.global,
+    } })
+    // only Bootboost unlocked → Boots (health, METAL) is the sole red piece
+    for (const u of UPGRADE_NAMES) if (u !== 'Bootboost') (globalThis as any).game.upgrades[u].locked = 1
+    equipment.autoLevelEquipment()
+    return buyUpgradeCalls
+  }
+  const BOUGHT = [['Bootboost', true, true]]
+
+  it('Lead `world % 2 === 1 && world !== 179` divides ourDamage by 1.5 — proven by the buy it suppresses', () => {
+    // cutoff 0.6: 100 * 0.6 = 60 > 50 ⇒ enoughDamageE TRUE ⇒ the prestige is bought…
+    const settings = { dmgcuntoff: { type: 'value', value: 0.6 } }
+    expect(autoLevelBootsHinged({ settings, global: { world: 101, challengeActive: '' } })).toEqual(BOUGHT)
+    // …and on Lead at an ODD world the /1.5 makes it (100/1.5) * 0.6 = 40 < 50 ⇒ FALSE ⇒ suppressed.
+    expect(autoLevelBootsHinged({ settings, global: { world: 101, challengeActive: 'Lead' } })).toEqual([])
+    // Both exceptions in the guard restore the buy — which is what actually pins the two conjuncts.
+    expect(autoLevelBootsHinged({ settings, global: { world: 100, challengeActive: 'Lead' } })).toEqual(BOUGHT) // `% 2 === 1`
+    expect(autoLevelBootsHinged({ settings, global: { world: 179, challengeActive: 'Lead' } })).toEqual(BOUGHT) // `!== 179`
   })
 
-  it('Wind non-daily arm drives autoLevelEquipment line-305 `challengeActive !== "Daily"` + loomswap', () => {
-    ;(globalThis as any).getEmpowerment = () => 'Wind'
-    ;(globalThis as any).getBuildingItemPrice = () => 100
-    ;(globalThis as any).autoTrimpSettings = {
+  it('Wind non-daily arm overrides enoughDamageCutoff with `windcutoff` — proven by the buy it enables', () => {
+    const settings = {
+      dmgcuntoff: { type: 'value', value: 0.4 }, // 100 * 0.4 = 40 < 50 ⇒ no buy on the DEFAULT cutoff
       AutoStance: { type: 'multitoggle', value: 3 },
       WindStackingMin: { type: 'value', value: 50 },
-      windcutoff: { type: 'value', value: 2 },
-      loomswap: { type: 'value', value: 1 },
-      highdmg: { type: 'dropdown', selected: 'Boots' }, // != ShieldEquipped.name 'Shield'
+      windcutoff: { type: 'value', value: 0.6 }, // 100 * 0.6 = 60 > 50 ⇒ buy, but only if the arm fires
     }
-    ;(globalThis as any).game = fullGame({ global: {
-      world: 100, challengeActive: '', runningChallengeSquared: false, mapBonus: 0,
-      ShieldEquipped: { name: 'Shield' }, prestige: { attack: 1, health: 1, block: 1 },
-    } })
-    for (const u of UPGRADE_NAMES) (globalThis as any).game.upgrades[u].locked = 1
-    expect(() => equipment.autoLevelEquipment()).not.toThrow()
+    const global = { world: 100, challengeActive: '' }
+    // Not Wind → the arm cannot fire → the default cutoff stands → suppressed.
+    expect(autoLevelBootsHinged({ settings, global, empowerment: 'Fire' })).toEqual([])
+    // Wind → windcutoff wins → bought. The delta IS the arm.
+    expect(autoLevelBootsHinged({ settings, global, empowerment: 'Wind' })).toEqual(BOUGHT)
+    // …and on a Daily this arm must NOT fire (`challengeActive !== "Daily"`); the daily twin needs
+    // dWindStackingMin/dwindcutoff, which are unset here, so the cutoff falls back and the buy vanishes.
+    expect(autoLevelBootsHinged({ settings, global: { ...global, challengeActive: 'Daily' }, empowerment: 'Wind' })).toEqual([])
   })
 
-  it('Wind daily arm drives autoLevelEquipment line-307 `=== "Daily"` + dloomswap', () => {
-    ;(globalThis as any).getEmpowerment = () => 'Wind'
-    ;(globalThis as any).getBuildingItemPrice = () => 100
-    ;(globalThis as any).autoTrimpSettings = {
-      use3daily: { type: 'boolean', enabled: true },
+  it('Wind DAILY arm overrides the cutoff with `dwindcutoff`, and `use3daily` alone satisfies its stance gate', () => {
+    const settings = {
+      dmgcuntoff: { type: 'value', value: 0.4 },
+      use3daily: { type: 'boolean', enabled: true }, // the `|| use3daily == true` half — AutoStance is unset
       dWindStackingMin: { type: 'value', value: 50 },
-      dwindcutoff: { type: 'value', value: 2 },
-      dloomswap: { type: 'value', value: 1 },
-      dhighdmg: { type: 'dropdown', selected: 'Boots' },
+      dwindcutoff: { type: 'value', value: 0.6 },
     }
-    ;(globalThis as any).game = fullGame({ global: {
-      world: 100, challengeActive: 'Daily', runningChallengeSquared: false, mapBonus: 0,
-      ShieldEquipped: { name: 'Shield' }, prestige: { attack: 1, health: 1, block: 1 },
-    } })
-    for (const u of UPGRADE_NAMES) (globalThis as any).game.upgrades[u].locked = 1
-    expect(() => equipment.autoLevelEquipment()).not.toThrow()
+    const global = { world: 100, challengeActive: 'Daily' }
+    expect(autoLevelBootsHinged({ settings, global, empowerment: 'Fire' })).toEqual([]) // not Wind → no override
+    expect(autoLevelBootsHinged({ settings, global, empowerment: 'Wind' })).toEqual(BOUGHT)
+    // `!game.global.runningChallengeSquared` is a real conjunct, not decoration.
+    expect(autoLevelBootsHinged({
+      settings, global: { ...global, runningChallengeSquared: true }, empowerment: 'Wind',
+    })).toEqual([])
   })
 
   it('armor-upgrade DelayArmor wood arm drives autoLevel `Stat===\'health\'` + `Resource===\'wood\'`', () => {
