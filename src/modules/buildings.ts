@@ -485,6 +485,14 @@ export function __syncAutoStorageOnce() {
 }
 
 export function RbuyBuildings() {
+    // #83 §1: pin the buy-amount for the whole U2 tree, exactly as U1's buyBuildings() does.
+    // `canAffordBuilding(x)` with no forceAmt prices the player's AMBIENT UI buy-amount
+    // (game.global.buyAmt — the 1/10/25/100/Max buttons, main.js:4752), while every buy below
+    // takes exactly 1. At buyAmt=10/25/100/Max the gate priced N units, answered "no", and all
+    // U2 housing + Microchip automation silently stopped. Pinning here (rather than patching the
+    // two bare gates) also makes any FUTURE bare gate in this tree safe.
+    const oldBuy = preBuy2();
+    game.global.buyAmt = 1;
 
     // Storage
     if (game.global.challengeActive === "Hypothermia" && getPageSetting('Rhypostorage')) {
@@ -594,4 +602,6 @@ export function RbuyBuildings() {
         }
     }
 
+    // #83 §1: restore the player's own buy-amount selector (and firing/lockTooltip/maxSplit).
+    postBuy2(oldBuy);
 }
