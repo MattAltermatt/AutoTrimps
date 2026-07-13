@@ -80,6 +80,9 @@ declare global {
   // free-ids by settings-menu.ts (#31), resolved via the bridge / still-legacy Graphs.js.
   var getPageSetting: typeof import('../modules/utils').getPageSetting
   var setPageSetting: typeof import('../modules/utils').setPageSetting
+  // #100 — the one spelling of "did the user type a name into this textValue setting?". Accepts every
+  // encoding of unset ('undefined' | '' | false | undefined); see the doc comment on the export.
+  var textSettingIsSet: typeof import('../modules/utils').textSettingIsSet
   function byId<T extends HTMLElement = HTMLInputElement>(id: string): T  // utils.ts (typed DOM helper)
   var GRAPHSETTINGS: any                          // Graphs.js
   // Settings-UI boot fns bridged; read bare by settings-boot.ts.

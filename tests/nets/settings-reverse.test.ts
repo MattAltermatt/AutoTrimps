@@ -130,7 +130,13 @@ for (const rel of SRC_CORPUS) {
       }
 
       // Idiom 1+2: getPageSetting('x') / setPageSetting('x', …) — the dominant read path.
-      if (fn === 'getPageSetting' || fn === 'setPageSetting') {
+      //
+      // textSettingIsSet('x') (#100) is a READ and must be scanned exactly like getPageSetting, or the
+      // fix that introduced it would have punched a hole straight through this net: 17 id references
+      // moved out of `getPageSetting('…')` and into `textSettingIsSet('…')`, and a typo in any of them
+      // would have stopped being visible here. Allowlisting the wrapper's internal forwarding call is
+      // NOT a substitute for scanning its call sites — the wrapper takes an id, so it is a reader.
+      if (fn === 'getPageSetting' || fn === 'setPageSetting' || fn === 'textSettingIsSet') {
         if (a0 && ts.isStringLiteralLike(a0) && !a0.getText(sf).includes('${')) {
           refs.push({ id: a0.text, file: rel, line: lineOf(n), via: fn })
         } else if (a0) {
@@ -241,6 +247,11 @@ const ALLOWED_DYNAMIC: Record<string, string> = {
   "'RMax' + housing": 'buildings.ts — U2 twin, keyed by housing name',
   "'R' + worker + 'Ratio'": 'jobs.ts:650 — RFarmerRatio / RLumberjackRatio / RMinerRatio',
   "'Auto' + nature": 'nature.ts:17 — AutoPoison / AutoWind / AutoIce',
+  // #100 — utils.textSettingIsSet(setting) forwards its own PARAMETER to getPageSetting. This entry
+  // covers only that one internal forwarding call, which introduces no id of its own. The wrapper's
+  // CALL SITES are not waved through here — `textSettingIsSet` is scanned as a first-class reader idiom
+  // above, so every literal id passed to it is resolved and checked exactly like a getPageSetting one.
+  setting: 'utils.ts — textSettingIsSet(setting) forwards its parameter to getPageSetting',
 }
 
 describe('every setting id the code READS must have been createSetting\'d (#68)', () => {
@@ -251,7 +262,7 @@ describe('every setting id the code READS must have been createSetting\'d (#68)'
     expect(new Set(refs.map((r) => r.id)).size).toBeGreaterThan(450)
     // Each of the four reference idioms must actually be finding sites — a regression in any one of them
     // is a silent false-negative channel, and idiom 4 is the one that found the AutoMagmiteSpender2 bug.
-    for (const via of ['getPageSetting', 'setPageSetting', 'settingChanged'])
+    for (const via of ['getPageSetting', 'setPageSetting', 'settingChanged', 'textSettingIsSet'])
       expect(refs.some((r) => r.via === via), `no ${via} reference sites found`).toBe(true)
     expect(refs.some((r) => r.via.endsWith("== '…'")), 'no bare id-comparison sites found').toBe(true)
     // The indirect resolver is the widest coverage channel in this net (praid/bwraid/shrine ids are

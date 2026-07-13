@@ -8,7 +8,7 @@
 //     to the globals created at AutoTrimps2.js top level (loads first) — left bare.
 //   - top-level DOM code appends heirloom buttons to static index.html elements (safe at
 //     the early src slot). animated/worth3/hrlmProtBtn* module vars are heirlooms-internal.
-import { getPageSetting } from './utils'
+import { getPageSetting, textSettingIsSet } from './utils'
 
 // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
 var animated = (game.options.menu.showHeirloomAnimations.enabled) ? "animated " : "";
@@ -358,13 +358,13 @@ export function Rheirloomswap() {
 	}
 	//Swapping Staffs
 	if (getPageSetting('Rhsstaff') != false) {
-		if (getPageSetting('Rhsworldstaff') != "undefined" && game.global.mapsActive == false) {
+		if (textSettingIsSet('Rhsworldstaff') && game.global.mapsActive == false) {
 			Rhsworldstaffequip();
 		}
-		if (getPageSetting('Rhsmapstaff') != "undefined" && (Rshouldtributefarm == false || getPageSetting('Rhstributestaff') == "undefined") && game.global.mapsActive == true) {
+		if (textSettingIsSet('Rhsmapstaff') && (Rshouldtributefarm == false || !textSettingIsSet('Rhstributestaff')) && game.global.mapsActive == true) {
 			Rhsmapstaffequip();
 		}
-		if (getPageSetting('Rhstributestaff') != "undefined" && getPageSetting('Rhsstaff') && Rshouldtributefarm == true && game.global.mapsActive == true) {
+		if (textSettingIsSet('Rhstributestaff') && getPageSetting('Rhsstaff') && Rshouldtributefarm == true && game.global.mapsActive == true) {
 			Rhstributestaffequip();
 		}
 	}
@@ -404,13 +404,13 @@ export function Rdheirloomswap() {
 	// NOT fixed by seeding `globalThis.Rdshouldtributefarm = false` — that would convert a crash into a
 	// permanently-dead feature (the tribute-staff arm could never fire), which is the wrong fix.
 	if (getPageSetting('Rdhsstaff') != false) {
-		if (getPageSetting('Rdhsworldstaff') != "undefined" && game.global.mapsActive == false) {
+		if (textSettingIsSet('Rdhsworldstaff') && game.global.mapsActive == false) {
 			Rdhsworldstaffequip();
 		}
-		if (getPageSetting('Rdhsmapstaff') != "undefined" && (Rshouldtributefarm == false || getPageSetting('Rdhstributestaff') == "undefined") && game.global.mapsActive == true) {
+		if (textSettingIsSet('Rdhsmapstaff') && (Rshouldtributefarm == false || !textSettingIsSet('Rdhstributestaff')) && game.global.mapsActive == true) {
 			Rdhsmapstaffequip();
 		}
-		if (getPageSetting('Rdhstributestaff') != "undefined" && getPageSetting('Rdhsstaff') && Rshouldtributefarm == true && game.global.mapsActive == true) {
+		if (textSettingIsSet('Rdhstributestaff') && getPageSetting('Rdhsstaff') && Rshouldtributefarm == true && game.global.mapsActive == true) {
 			Rdhstributestaffequip();
 		}
 	}

@@ -9,7 +9,7 @@
 // globals nextWorld (read by Graphs.js) + trapIndexs also -> globalThis.
 // (praidSetting moved with the raid cluster to other-praiding.ts.)
 // Free identifiers resolve via the bridge at runtime, typed ambient. Behaviour-preserving: any body edits are TYPE-ONLY.
-import { getPageSetting, debug, byId } from './utils'
+import { getPageSetting, textSettingIsSet, debug, byId } from './utils'
 
 MODULES["other"] = {};
 MODULES["other"].enableRoboTrimpSpam = true;
@@ -439,7 +439,7 @@ export function smithylogic(name: any, resource: any, equip: any) {
 
 export function archstring() {
     if (getPageSetting('Rarchon') == false) return;
-    if (getPageSetting('Rarchstring1') != "undefined" && getPageSetting('Rarchstring2') != "undefined" && getPageSetting('Rarchstring3') != "undefined") {
+    if (textSettingIsSet('Rarchstring1') && textSettingIsSet('Rarchstring2') && textSettingIsSet('Rarchstring3')) {
         var string1 = getPageSetting('Rarchstring1'),
             string2 = getPageSetting('Rarchstring2'),
             string3 = getPageSetting('Rarchstring3');

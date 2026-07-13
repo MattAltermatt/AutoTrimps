@@ -148,14 +148,14 @@ export function initializeAllSettings() {
     createSetting('Rdtimefarmcell', 'DTF: Cell', 'cell', 'multiValue', [-1], null, 'Daily');
     createSetting('Rdtimefarmtime', 'DTF: Time', 'time', 'multiValue', [-1], null, 'Daily');
     createSetting('Rdtimefarmlevel', 'DTF: Map Level', 'level', 'multiValue', [0], null, 'Daily');
-    createSetting('Rdtimefarmmap', 'DTF: Map Selection', 'map', 'textValue', 'undefined', null, 'Daily');
-    createSetting('Rdtimefarmspecial', 'DTF: Special Selection', 'special', 'textValue', 'undefined', null, 'Daily');
-    createSetting('Rdtimefarmgather', 'DTF: Gather Selection', 'gather', 'textValue', 'undefined', null, 'Daily');
+    createSetting('Rdtimefarmmap', 'DTF: Map Selection', 'map', 'textValue', '', null, 'Daily');
+    createSetting('Rdtimefarmspecial', 'DTF: Special Selection', 'special', 'textValue', '', null, 'Daily');
+    createSetting('Rdtimefarmgather', 'DTF: Gather Selection', 'gather', 'textValue', '', null, 'Daily');
 
 
     //Heirloom
-    createSetting('dhighdmg', 'DHS: High Damage', '<b>HIGH DAMAGE HEIRLOOM</b><br><br>Enter the name of your high damage heirloom. This is your heirloom that you will use normally in dailies. ', 'textValue', 'undefined', null, 'Daily');
-    createSetting('dlowdmg', 'DHS: Low Damage', '<b>LOW DAMAGE HEIRLOOM</b><br><br>Enter the name of your low damage heirloom. This is the heirloom that you will use for windstacking in dailies. ', 'textValue', 'undefined', null, 'Daily');
+    createSetting('dhighdmg', 'DHS: High Damage', '<b>HIGH DAMAGE HEIRLOOM</b><br><br>Enter the name of your high damage heirloom. This is your heirloom that you will use normally in dailies. ', 'textValue', '', null, 'Daily');
+    createSetting('dlowdmg', 'DHS: Low Damage', '<b>LOW DAMAGE HEIRLOOM</b><br><br>Enter the name of your low damage heirloom. This is the heirloom that you will use for windstacking in dailies. ', 'textValue', '', null, 'Daily');
 
 
     //RHeirloom
@@ -166,15 +166,15 @@ export function initializeAllSettings() {
     (document.getElementById('Rdhs') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rdhsshield', 'Daily Shields', 'Toggle to swap Shields in Dailies', 'boolean', false, null, 'Daily');
     createSetting('Rdhsz', 'DHSh: Zone', 'Which zone to swap from your first heirloom you have defined to your second heirloom you have defined. I.e if this value is 75 it will switch to the second heirloom <b>on z75</b>', 'value', '-1', null, 'Daily');
-    createSetting('Rdhs1', 'DHSh: First', '<b>First Heirloom to use</b><br><br>Enter the name of your first heirloom. This is the heirloom that you will use before swapping to the second heirloom at the zone you have defined in the HS: Zone. ', 'textValue', 'undefined', null, 'Daily');
-    createSetting('Rdhs2', 'DHSh: Second', '<b>Second Heirloom to use</b><br><br>Enter the name of your second heirloom. This is the heirloom that you will use after swapping from the first heirloom at the zone you have defined in the HS: Zone. ', 'textValue', 'undefined', null, 'Daily');
+    createSetting('Rdhs1', 'DHSh: First', '<b>First Heirloom to use</b><br><br>Enter the name of your first heirloom. This is the heirloom that you will use before swapping to the second heirloom at the zone you have defined in the HS: Zone. ', 'textValue', '', null, 'Daily');
+    createSetting('Rdhs2', 'DHSh: Second', '<b>Second Heirloom to use</b><br><br>Enter the name of your second heirloom. This is the heirloom that you will use after swapping from the first heirloom at the zone you have defined in the HS: Zone. ', 'textValue', '', null, 'Daily');
 
     //DStaff Swapping
     (document.getElementById('Rdhs2') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rdhsstaff', 'Daily Staffs', 'Toggle to swap Staffs', 'boolean', false, null, 'Daily');
-    createSetting('Rdhsworldstaff', 'DHSt: World', '<b>World Staff</b><br><br>Enter the name of your world staff for Dailies.', 'textValue', 'undefined', null, 'Daily');
-    createSetting('Rdhsmapstaff', 'DHSt: Map', '<b>Mapping staff</b><br><br>Enter the name of your mapping staff for Dailies.', 'textValue', 'undefined', null, 'Daily');
-    createSetting('Rdhstributestaff', 'DHSt: Tribute', '<b>Tribute farming staff</b><br><br>Enter the name of the staff you would like to equip during tribute farming for Dailies', 'textValue', 'undefined', null, 'Daily');
+    createSetting('Rdhsworldstaff', 'DHSt: World', '<b>World Staff</b><br><br>Enter the name of your world staff for Dailies.', 'textValue', '', null, 'Daily');
+    createSetting('Rdhsmapstaff', 'DHSt: Map', '<b>Mapping staff</b><br><br>Enter the name of your mapping staff for Dailies.', 'textValue', '', null, 'Daily');
+    createSetting('Rdhstributestaff', 'DHSt: Tribute', '<b>Tribute farming staff</b><br><br>Enter the name of the staff you would like to equip during tribute farming for Dailies', 'textValue', '', null, 'Daily');
 
     //Shrine - U2 (Daily)
     (document.getElementById('Rdhstributestaff') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
@@ -450,9 +450,9 @@ export function initializeAllSettings() {
     createSetting('Rtimefarmcell', 'TF: Cell', 'cell', 'multiValue', [-1], null, 'Maps');
     createSetting('Rtimefarmtime', 'TF: Time', 'time', 'multiValue', [-1], null, 'Maps');
     createSetting('Rtimefarmlevel', 'TF: Map Level', 'level', 'multiValue', [0], null, 'Maps');
-    createSetting('Rtimefarmmap', 'TF: Map Selection', 'map', 'textValue', 'undefined', null, 'Maps');
-    createSetting('Rtimefarmspecial', 'TF: Special Selection', 'special', 'textValue', 'undefined', null, 'Maps');
-    createSetting('Rtimefarmgather', 'TF: Gather Selection', 'gather', 'textValue', 'undefined', null, 'Maps');
+    createSetting('Rtimefarmmap', 'TF: Map Selection', 'map', 'textValue', '', null, 'Maps');
+    createSetting('Rtimefarmspecial', 'TF: Special Selection', 'special', 'textValue', '', null, 'Maps');
+    createSetting('Rtimefarmgather', 'TF: Gather Selection', 'gather', 'textValue', '', null, 'Maps');
 
     //Smithyfarm
     (document.getElementById('Rtimefarmgather') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
@@ -470,9 +470,9 @@ export function initializeAllSettings() {
     createSetting('Rtributefarmcell', 'TrF: Cell', 'cell', 'multiValue', [-1], null, 'Maps');
     createSetting('Rtributefarmamount', 'TrF: Tributes', 'tributes', 'multiValue', [-1], null, 'Maps');
     createSetting('Rtributefarmlevel', 'TrF: Map Level', 'level', 'multiValue', [0], null, 'Maps');
-    createSetting('Rtributemapselection', 'TrF: Map Selection', 'map', 'textValue', 'undefined', null, 'Maps');
-    createSetting('Rtributespecialselection', 'TrF: Special Selection', 'special', 'textValue', 'undefined', null, 'Maps');
-    createSetting('Rtributegatherselection', 'TrF: Gather Selection', 'gather', 'textValue', 'undefined', null, 'Maps');
+    createSetting('Rtributemapselection', 'TrF: Map Selection', 'map', 'textValue', '', null, 'Maps');
+    createSetting('Rtributespecialselection', 'TrF: Special Selection', 'special', 'textValue', '', null, 'Maps');
+    createSetting('Rtributegatherselection', 'TrF: Gather Selection', 'gather', 'textValue', '', null, 'Maps');
 
     //Shrine - U2
     (document.getElementById('Rtributegatherselection') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
@@ -603,9 +603,9 @@ export function initializeAllSettings() {
 
     //Arch
     createSetting('Rarchon', 'Archaeology', 'Turn on Archaeology settings. ', 'boolean', false, null, 'Challenges');
-    createSetting('Rarchstring1', 'First String', 'First string to use in Archaeology. Put the zone you want to stop using this string and start using the second string (Make sure the second string has a value) at the start. I.e: 70,10a,10e ', 'textValue', 'undefined', null, 'Challenges');
-    createSetting('Rarchstring2', 'Second String', 'Second string to use in Archaeology. Put the zone you want to stop using this string and start using the third string (Make sure the third string has a value) at the start. I.e: 94,10a,10e ', 'textValue', 'undefined', null, 'Challenges');
-    createSetting('Rarchstring3', 'Third String', 'Third string to use in Archaeology. Make sure this is just your Archaeology string and nothing else. I.e: 10a,10e ', 'textValue', 'undefined', null, 'Challenges');
+    createSetting('Rarchstring1', 'First String', 'First string to use in Archaeology. Put the zone you want to stop using this string and start using the second string (Make sure the second string has a value) at the start. I.e: 70,10a,10e ', 'textValue', '', null, 'Challenges');
+    createSetting('Rarchstring2', 'Second String', 'Second string to use in Archaeology. Put the zone you want to stop using this string and start using the third string (Make sure the third string has a value) at the start. I.e: 94,10a,10e ', 'textValue', '', null, 'Challenges');
+    createSetting('Rarchstring3', 'Third String', 'Third string to use in Archaeology. Make sure this is just your Archaeology string and nothing else. I.e: 10a,10e ', 'textValue', '', null, 'Challenges');
 
     //Mayhem
     createSetting('Rmayhemon', 'Mayhem', 'Turn on Mayhem settings. ', 'boolean', false, null, 'Challenges');
@@ -649,7 +649,7 @@ export function initializeAllSettings() {
     createSetting('Ralchfarmzone', 'Alchemy Farming', 'zone', 'multiValue', [-1], null, 'Challenges');
     // #96 sibling: was the STRING '[-1]' → Array.from('[-1]') is ['[','-','1',']'] → [NaN, NaN, 1, NaN].
     createSetting('Ralchfarmcell', 'AF: Cell', 'cell', 'multiValue', [-1], null, 'Challenges');
-    createSetting('Ralchfarmstack', 'AF: Potion', 'potion', 'textValue', 'undefined', null, 'Challenges');
+    createSetting('Ralchfarmstack', 'AF: Potion', 'potion', 'textValue', '', null, 'Challenges');
     createSetting('Ralchfarmlevel', 'AF: Map Level', 'level', 'multiValue', [0], null, 'Challenges');
     createSetting('Ralchfarmselection', 'AF: Map Selection', 'map', 'textValue', 'l', null, 'Challenges');
     createSetting('Ralchfarmfrag', 'AF: Frags', 'Turn this on to farm fragments if you cannot afford the map you have selected for AF. ', 'boolean', false, null, 'Challenges');
@@ -754,8 +754,8 @@ export function initializeAllSettings() {
     createSetting('MagmiteExplain', 'Magmite spending behaviour', '1. Buy one-and-done upgrades, expensive first, then consider 1st level of Overclocker;<br>2. Buy Overclocker IF AND ONLY IF we can afford it;<br>2.5. Exit if OneTimeOnly<br>3. Buy Efficiency if it is better than capacity;<br>4. Buy Capacity or Supply depending on which is cheaper, or based on SupplyWall', 'infoclick', 'MagmiteExplain', null, 'Magma');
 
     //Heirloom
-    createSetting('highdmg', 'WS: High Damage', '<b>HIGH DAMAGE HEIRLOOM</b><br><br>Enter the name of your high damage heirloom. This is your heirloom that you will use normally. ', 'textValue', 'undefined', null, 'Heirlooms');
-    createSetting('lowdmg', 'WS: Low Damage', '<b>LOW DAMAGE HEIRLOOM</b><br><br>Enter the name of your low damage heirloom. This is the heirloom that you will use for windstacking. ', 'textValue', 'undefined', null, 'Heirlooms');
+    createSetting('highdmg', 'WS: High Damage', '<b>HIGH DAMAGE HEIRLOOM</b><br><br>Enter the name of your high damage heirloom. This is your heirloom that you will use normally. ', 'textValue', '', null, 'Heirlooms');
+    createSetting('lowdmg', 'WS: Low Damage', '<b>LOW DAMAGE HEIRLOOM</b><br><br>Enter the name of your low damage heirloom. This is the heirloom that you will use for windstacking. ', 'textValue', '', null, 'Heirlooms');
 
     //Heirloom Swapping
     (document.getElementById('lowdmg') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
@@ -765,15 +765,15 @@ export function initializeAllSettings() {
     (document.getElementById('Rhs') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rhsshield', 'Shields', 'Toggle to swap Shields', 'boolean', false, null, 'Heirlooms');
     createSetting('Rhsz', 'HS: Zone', 'Which zone to swap from your first heirloom you have defined to your second heirloom you have defined. I.e if this value is 75 it will switch to the second heirloom <b>on z75</b>', 'value', '-1', null, 'Heirlooms');
-    createSetting('Rhs1', 'HS: First', '<b>First Heirloom to use</b><br><br>Enter the name of your first heirloom. This is the heirloom that you will use before swapping to the second heirloom at the zone you have defined in the HS: Zone. ', 'textValue', 'undefined', null, 'Heirlooms');
-    createSetting('Rhs2', 'HS: Second', '<b>Second Heirloom to use</b><br><br>Enter the name of your second heirloom. This is the heirloom that you will use after swapping from the first heirloom at the zone you have defined in the HS: Zone. ', 'textValue', 'undefined', null, 'Heirlooms');
+    createSetting('Rhs1', 'HS: First', '<b>First Heirloom to use</b><br><br>Enter the name of your first heirloom. This is the heirloom that you will use before swapping to the second heirloom at the zone you have defined in the HS: Zone. ', 'textValue', '', null, 'Heirlooms');
+    createSetting('Rhs2', 'HS: Second', '<b>Second Heirloom to use</b><br><br>Enter the name of your second heirloom. This is the heirloom that you will use after swapping from the first heirloom at the zone you have defined in the HS: Zone. ', 'textValue', '', null, 'Heirlooms');
 
     //Staff Swapping
     (document.getElementById('Rhs2') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rhsstaff', 'Staffs', 'Toggle to swap Staffs', 'boolean', false, null, 'Heirlooms');
-    createSetting('Rhsworldstaff', 'World', '<b>World Staff</b><br><br>Enter the name of your world staff.', 'textValue', 'undefined', null, 'Heirlooms');
-    createSetting('Rhsmapstaff', 'Map', '<b>Mapping staff</b><br><br>Enter the name of your mapping staff.', 'textValue', 'undefined', null, 'Heirlooms');
-    createSetting('Rhstributestaff', 'Tribute', '<b>Tribute farming staff</b><br><br>Enter the name of the staff you would like to equip during tribute farming.', 'textValue', 'undefined', null, 'Heirlooms');
+    createSetting('Rhsworldstaff', 'World', '<b>World Staff</b><br><br>Enter the name of your world staff.', 'textValue', '', null, 'Heirlooms');
+    createSetting('Rhsmapstaff', 'Map', '<b>Mapping staff</b><br><br>Enter the name of your mapping staff.', 'textValue', '', null, 'Heirlooms');
+    createSetting('Rhstributestaff', 'Tribute', '<b>Tribute farming staff</b><br><br>Enter the name of the staff you would like to equip during tribute farming.', 'textValue', '', null, 'Heirlooms');
 
     //Heirloom Line
     (document.getElementById('Rhstributestaff') as any).parentNode.insertAdjacentHTML('afterend', '<br>');

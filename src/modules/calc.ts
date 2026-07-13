@@ -17,7 +17,7 @@
 // trimps.d.ts (game API) + at-legacy.d.ts (not-yet-converted AT modules). getPageSetting imported
 // from converted utils. Shared top-level vars critCC/critDD/trimpAA are read by legacy equipment.js +
 // maps.js, so they publish to globalThis (shared-var seam) rather than module-scoped.
-import { getPageSetting } from './utils'
+import { getPageSetting, textSettingIsSet } from './utils'
 
 globalThis.critCC = 1;
 globalThis.critDD = 1;
@@ -169,8 +169,8 @@ export function getCritMulti(high?: boolean): number {
 
     if (
         high &&
-        (getPageSetting('AutoStance') == 3 && getPageSetting('highdmg') != undefined && game.global.challengeActive !== "Daily") ||
-        (getPageSetting('use3daily') == true && getPageSetting('dhighdmg') != undefined && game.global.challengeActive === "Daily")
+        (getPageSetting('AutoStance') == 3 && textSettingIsSet('highdmg') && game.global.challengeActive !== "Daily") ||
+        (getPageSetting('use3daily') == true && textSettingIsSet('dhighdmg') && game.global.challengeActive === "Daily")
     ) {
         highDamageShield();
         critChance = critCC;
@@ -864,12 +864,12 @@ export function calcHDratio(map?: any): number {
 
     //Shield
     highDamageShield();
-    if (getPageSetting('AutoStance') == 3 && getPageSetting('highdmg') != undefined && game.global.challengeActive !== "Daily" && game.global.ShieldEquipped.name != getPageSetting('highdmg')) {
+    if (getPageSetting('AutoStance') == 3 && textSettingIsSet('highdmg') && game.global.challengeActive !== "Daily" && game.global.ShieldEquipped.name != getPageSetting('highdmg')) {
         ourBaseDamage /= getCritMulti(false);
         ourBaseDamage *= trimpAA;
         ourBaseDamage *= getCritMulti(true);
     }
-    if (getPageSetting('use3daily') == true && getPageSetting('dhighdmg') != undefined && game.global.challengeActive === "Daily" && game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {
+    if (getPageSetting('use3daily') == true && textSettingIsSet('dhighdmg') && game.global.challengeActive === "Daily" && game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {
         ourBaseDamage /= getCritMulti(false);
         ourBaseDamage *= trimpAA;
         ourBaseDamage *= getCritMulti(true);
@@ -908,11 +908,11 @@ export function calcCurrentStance(): number | undefined {
 
         //Heirloom Calc
         highDamageShield();
-        if (getPageSetting('AutoStance') == 3 && getPageSetting('highdmg') != undefined && game.global.challengeActive !== "Daily" && game.global.ShieldEquipped.name != getPageSetting('highdmg')) {
+        if (getPageSetting('AutoStance') == 3 && textSettingIsSet('highdmg') && game.global.challengeActive !== "Daily" && game.global.ShieldEquipped.name != getPageSetting('highdmg')) {
             attackhigh *= trimpAA;
             attackhigh *= getCritMulti(true);
         }
-        if (getPageSetting('use3daily') == true && getPageSetting('dhighdmg') != undefined && game.global.challengeActive === "Daily" && game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {
+        if (getPageSetting('use3daily') == true && textSettingIsSet('dhighdmg') && game.global.challengeActive === "Daily" && game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {
             attackhigh *= trimpAA;
             attackhigh *= getCritMulti(true);
         }

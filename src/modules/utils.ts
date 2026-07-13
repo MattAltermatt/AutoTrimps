@@ -74,6 +74,34 @@ export function getPageSetting(setting: string) {
     }
 }
 
+/**
+ * #100 — "did the user actually type a name into this `textValue` setting?"
+ *
+ * There is no single encoding of "unset", and there never will be, so every reader must accept ALL
+ * of them. A `textValue` id can be carrying any of these RIGHT NOW, in the field:
+ *
+ *   'undefined'  the STRING — 27 settings shipped with this as their `createSetting` default, so it
+ *                is what every unconfigured player has, and (because serializeSettings() flattens each
+ *                setting to its bare value and createSetting only consults `defaultValue` when NOTHING
+ *                is stored — #68) it is what every VETERAN's localStorage still holds even after the
+ *                defaults below were changed. This encoding can never be retired. It is why the
+ *                consumers had to be fixed BEFORE the defaults, and why they must stay fixed.
+ *   ''           the empty string — the corrected default, and what the GUI text input yields when the
+ *                user clears the box.
+ *   false        getPageSetting()'s answer for a key that is not in the store at all.
+ *   undefined    a stored record whose `.value` was never written.
+ *
+ * The bug this closes: `getPageSetting('highdmg') != undefined` is a TAUTOLOGY against the string
+ * 'undefined' — it is `!=` against the VALUE undefined, and the string is not that value. So every
+ * such guard passed for every unconfigured player. Meanwhile OTHER sites spelled the same test
+ * `!= "undefined"`, which worked — by accident of the bug. Both spellings existed, sometimes in one
+ * function. This is the one spelling.
+ */
+export function textSettingIsSet(setting: string): boolean {
+    const v = getPageSetting(setting);
+    return v !== undefined && v !== null && v !== false && v !== '' && v !== 'undefined';
+}
+
 export function setPageSetting(setting: string, value: any) {
     if (autoTrimpSettings.hasOwnProperty(setting) == false) {
         return false;

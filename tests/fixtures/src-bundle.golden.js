@@ -21,7 +21,8 @@
     serializeSettings550: () => serializeSettings5502,
     serializeSettings60: () => serializeSettings602,
     setPageSetting: () => setPageSetting2,
-    setTitle: () => setTitle
+    setTitle: () => setTitle,
+    textSettingIsSet: () => textSettingIsSet
   });
 
   // src/modules/time.ts
@@ -122,6 +123,10 @@
     } else if (autoTrimpSettings[setting].type == "dropdown") {
       return autoTrimpSettings[setting].selected;
     }
+  }
+  function textSettingIsSet(setting) {
+    const v = getPageSetting2(setting);
+    return v !== void 0 && v !== null && v !== false && v !== "" && v !== "undefined";
   }
   function setPageSetting2(setting, value) {
     if (autoTrimpSettings.hasOwnProperty(setting) == false) {
@@ -1017,7 +1022,7 @@
   function getCritMulti(high) {
     let critChance = getPlayerCritChance();
     let CritD = getPlayerCritDamageMult();
-    if (high && (getPageSetting2("AutoStance") == 3 && getPageSetting2("highdmg") != void 0 && game.global.challengeActive !== "Daily") || getPageSetting2("use3daily") == true && getPageSetting2("dhighdmg") != void 0 && game.global.challengeActive === "Daily") {
+    if (high && (getPageSetting2("AutoStance") == 3 && textSettingIsSet("highdmg") && game.global.challengeActive !== "Daily") || getPageSetting2("use3daily") == true && textSettingIsSet("dhighdmg") && game.global.challengeActive === "Daily") {
       highDamageShield2();
       critChance = critCC;
       CritD = critDD;
@@ -1559,12 +1564,12 @@
     let ratio = 0;
     let ourBaseDamage = calcOurDmg2("avg", false, true);
     highDamageShield2();
-    if (getPageSetting2("AutoStance") == 3 && getPageSetting2("highdmg") != void 0 && game.global.challengeActive !== "Daily" && game.global.ShieldEquipped.name != getPageSetting2("highdmg")) {
+    if (getPageSetting2("AutoStance") == 3 && textSettingIsSet("highdmg") && game.global.challengeActive !== "Daily" && game.global.ShieldEquipped.name != getPageSetting2("highdmg")) {
       ourBaseDamage /= getCritMulti(false);
       ourBaseDamage *= trimpAA;
       ourBaseDamage *= getCritMulti(true);
     }
-    if (getPageSetting2("use3daily") == true && getPageSetting2("dhighdmg") != void 0 && game.global.challengeActive === "Daily" && game.global.ShieldEquipped.name != getPageSetting2("dhighdmg")) {
+    if (getPageSetting2("use3daily") == true && textSettingIsSet("dhighdmg") && game.global.challengeActive === "Daily" && game.global.ShieldEquipped.name != getPageSetting2("dhighdmg")) {
       ourBaseDamage /= getCritMulti(false);
       ourBaseDamage *= trimpAA;
       ourBaseDamage *= getCritMulti(true);
@@ -1587,11 +1592,11 @@
       const attacklow = calcOurDmg2("max", false, true);
       let attackhigh = calcOurDmg2("max", false, true);
       highDamageShield2();
-      if (getPageSetting2("AutoStance") == 3 && getPageSetting2("highdmg") != void 0 && game.global.challengeActive !== "Daily" && game.global.ShieldEquipped.name != getPageSetting2("highdmg")) {
+      if (getPageSetting2("AutoStance") == 3 && textSettingIsSet("highdmg") && game.global.challengeActive !== "Daily" && game.global.ShieldEquipped.name != getPageSetting2("highdmg")) {
         attackhigh *= trimpAA;
         attackhigh *= getCritMulti(true);
       }
-      if (getPageSetting2("use3daily") == true && getPageSetting2("dhighdmg") != void 0 && game.global.challengeActive === "Daily" && game.global.ShieldEquipped.name != getPageSetting2("dhighdmg")) {
+      if (getPageSetting2("use3daily") == true && textSettingIsSet("dhighdmg") && game.global.challengeActive === "Daily" && game.global.ShieldEquipped.name != getPageSetting2("dhighdmg")) {
         attackhigh *= trimpAA;
         attackhigh *= getCritMulti(true);
       }
@@ -4863,13 +4868,13 @@
       }
     }
     if (getPageSetting2("Rhsstaff") != false) {
-      if (getPageSetting2("Rhsworldstaff") != "undefined" && game.global.mapsActive == false) {
+      if (textSettingIsSet("Rhsworldstaff") && game.global.mapsActive == false) {
         Rhsworldstaffequip();
       }
-      if (getPageSetting2("Rhsmapstaff") != "undefined" && (Rshouldtributefarm == false || getPageSetting2("Rhstributestaff") == "undefined") && game.global.mapsActive == true) {
+      if (textSettingIsSet("Rhsmapstaff") && (Rshouldtributefarm == false || !textSettingIsSet("Rhstributestaff")) && game.global.mapsActive == true) {
         Rhsmapstaffequip();
       }
-      if (getPageSetting2("Rhstributestaff") != "undefined" && getPageSetting2("Rhsstaff") && Rshouldtributefarm == true && game.global.mapsActive == true) {
+      if (textSettingIsSet("Rhstributestaff") && getPageSetting2("Rhsstaff") && Rshouldtributefarm == true && game.global.mapsActive == true) {
         Rhstributestaffequip();
       }
     }
@@ -4884,13 +4889,13 @@
       }
     }
     if (getPageSetting2("Rdhsstaff") != false) {
-      if (getPageSetting2("Rdhsworldstaff") != "undefined" && game.global.mapsActive == false) {
+      if (textSettingIsSet("Rdhsworldstaff") && game.global.mapsActive == false) {
         Rdhsworldstaffequip();
       }
-      if (getPageSetting2("Rdhsmapstaff") != "undefined" && (Rshouldtributefarm == false || getPageSetting2("Rdhstributestaff") == "undefined") && game.global.mapsActive == true) {
+      if (textSettingIsSet("Rdhsmapstaff") && (Rshouldtributefarm == false || !textSettingIsSet("Rdhstributestaff")) && game.global.mapsActive == true) {
         Rdhsmapstaffequip();
       }
-      if (getPageSetting2("Rdhstributestaff") != "undefined" && getPageSetting2("Rdhsstaff") && Rshouldtributefarm == true && game.global.mapsActive == true) {
+      if (textSettingIsSet("Rdhstributestaff") && getPageSetting2("Rdhsstaff") && Rshouldtributefarm == true && game.global.mapsActive == true) {
         Rdhstributestaffequip();
       }
     }
@@ -12216,7 +12221,7 @@
   }
   function archstring() {
     if (getPageSetting2("Rarchon") == false) return;
-    if (getPageSetting2("Rarchstring1") != "undefined" && getPageSetting2("Rarchstring2") != "undefined" && getPageSetting2("Rarchstring3") != "undefined") {
+    if (textSettingIsSet("Rarchstring1") && textSettingIsSet("Rarchstring2") && textSettingIsSet("Rarchstring3")) {
       var string1 = getPageSetting2("Rarchstring1"), string2 = getPageSetting2("Rarchstring2"), string3 = getPageSetting2("Rarchstring3");
       var string1z = string1.split(",")[0], string2z = string2.split(",")[0];
       var string1split = string1.split(",").slice(1).toString(), string2split = string2.split(",").slice(1).toString();
@@ -15582,23 +15587,23 @@
     createSetting("Rdtimefarmcell", "DTF: Cell", "cell", "multiValue", [-1], null, "Daily");
     createSetting("Rdtimefarmtime", "DTF: Time", "time", "multiValue", [-1], null, "Daily");
     createSetting("Rdtimefarmlevel", "DTF: Map Level", "level", "multiValue", [0], null, "Daily");
-    createSetting("Rdtimefarmmap", "DTF: Map Selection", "map", "textValue", "undefined", null, "Daily");
-    createSetting("Rdtimefarmspecial", "DTF: Special Selection", "special", "textValue", "undefined", null, "Daily");
-    createSetting("Rdtimefarmgather", "DTF: Gather Selection", "gather", "textValue", "undefined", null, "Daily");
-    createSetting("dhighdmg", "DHS: High Damage", "<b>HIGH DAMAGE HEIRLOOM</b><br><br>Enter the name of your high damage heirloom. This is your heirloom that you will use normally in dailies. ", "textValue", "undefined", null, "Daily");
-    createSetting("dlowdmg", "DHS: Low Damage", "<b>LOW DAMAGE HEIRLOOM</b><br><br>Enter the name of your low damage heirloom. This is the heirloom that you will use for windstacking in dailies. ", "textValue", "undefined", null, "Daily");
+    createSetting("Rdtimefarmmap", "DTF: Map Selection", "map", "textValue", "", null, "Daily");
+    createSetting("Rdtimefarmspecial", "DTF: Special Selection", "special", "textValue", "", null, "Daily");
+    createSetting("Rdtimefarmgather", "DTF: Gather Selection", "gather", "textValue", "", null, "Daily");
+    createSetting("dhighdmg", "DHS: High Damage", "<b>HIGH DAMAGE HEIRLOOM</b><br><br>Enter the name of your high damage heirloom. This is your heirloom that you will use normally in dailies. ", "textValue", "", null, "Daily");
+    createSetting("dlowdmg", "DHS: Low Damage", "<b>LOW DAMAGE HEIRLOOM</b><br><br>Enter the name of your low damage heirloom. This is the heirloom that you will use for windstacking in dailies. ", "textValue", "", null, "Daily");
     document.getElementById("dlowdmg").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("Rdhs", ["DHS: Off", "DHS: On", "DHS: Normal"], "Heirloom swapping master button for Dailies. Turn this on to allow heirloom swapping and its associated settings. Use DHS: Normal to use the non-daily settings. ", "multitoggle", 0, null, "Daily");
     document.getElementById("Rdhs").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("Rdhsshield", "Daily Shields", "Toggle to swap Shields in Dailies", "boolean", false, null, "Daily");
     createSetting("Rdhsz", "DHSh: Zone", "Which zone to swap from your first heirloom you have defined to your second heirloom you have defined. I.e if this value is 75 it will switch to the second heirloom <b>on z75</b>", "value", "-1", null, "Daily");
-    createSetting("Rdhs1", "DHSh: First", "<b>First Heirloom to use</b><br><br>Enter the name of your first heirloom. This is the heirloom that you will use before swapping to the second heirloom at the zone you have defined in the HS: Zone. ", "textValue", "undefined", null, "Daily");
-    createSetting("Rdhs2", "DHSh: Second", "<b>Second Heirloom to use</b><br><br>Enter the name of your second heirloom. This is the heirloom that you will use after swapping from the first heirloom at the zone you have defined in the HS: Zone. ", "textValue", "undefined", null, "Daily");
+    createSetting("Rdhs1", "DHSh: First", "<b>First Heirloom to use</b><br><br>Enter the name of your first heirloom. This is the heirloom that you will use before swapping to the second heirloom at the zone you have defined in the HS: Zone. ", "textValue", "", null, "Daily");
+    createSetting("Rdhs2", "DHSh: Second", "<b>Second Heirloom to use</b><br><br>Enter the name of your second heirloom. This is the heirloom that you will use after swapping from the first heirloom at the zone you have defined in the HS: Zone. ", "textValue", "", null, "Daily");
     document.getElementById("Rdhs2").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("Rdhsstaff", "Daily Staffs", "Toggle to swap Staffs", "boolean", false, null, "Daily");
-    createSetting("Rdhsworldstaff", "DHSt: World", "<b>World Staff</b><br><br>Enter the name of your world staff for Dailies.", "textValue", "undefined", null, "Daily");
-    createSetting("Rdhsmapstaff", "DHSt: Map", "<b>Mapping staff</b><br><br>Enter the name of your mapping staff for Dailies.", "textValue", "undefined", null, "Daily");
-    createSetting("Rdhstributestaff", "DHSt: Tribute", "<b>Tribute farming staff</b><br><br>Enter the name of the staff you would like to equip during tribute farming for Dailies", "textValue", "undefined", null, "Daily");
+    createSetting("Rdhsworldstaff", "DHSt: World", "<b>World Staff</b><br><br>Enter the name of your world staff for Dailies.", "textValue", "", null, "Daily");
+    createSetting("Rdhsmapstaff", "DHSt: Map", "<b>Mapping staff</b><br><br>Enter the name of your mapping staff for Dailies.", "textValue", "", null, "Daily");
+    createSetting("Rdhstributestaff", "DHSt: Tribute", "<b>Tribute farming staff</b><br><br>Enter the name of the staff you would like to equip during tribute farming for Dailies", "textValue", "", null, "Daily");
     document.getElementById("Rdhstributestaff").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("Rdshrine", ["Daily AutoShrine Off", "Daily AutoShrine On", "DAS: Normal"], "Turn this on if you want to use Shrines automatically in Dailies. Use DAS: Normal if you want to use the settings in the Maps tab if do not wish to copy them here. ", "multitoggle", 0, null, "Daily");
     createSetting("Rdshrinemaz", "Daily AutoShrine Settings", "Click to open Daily AutoShrine settings. <br> <b>Zone:</b> What zone to use Bone Shrine charges. <br> <b>Cell:</b> What cell to use Bone Shrine charges at, if you use it after cell 80 you will get the benefit of all the books. to use. <br> <b>Amount:</b> How many Bone Shrine charges you wish to use. <br> <b>Example:</b> If you put Zone: 40, Cell: 10, Amount: 3, you will use 3 Bone Shrine Charges at zone 40 at cell 10 in a Daily. ", "infoclick", false, null, "Daily");
@@ -15790,9 +15795,9 @@
     createSetting("Rtimefarmcell", "TF: Cell", "cell", "multiValue", [-1], null, "Maps");
     createSetting("Rtimefarmtime", "TF: Time", "time", "multiValue", [-1], null, "Maps");
     createSetting("Rtimefarmlevel", "TF: Map Level", "level", "multiValue", [0], null, "Maps");
-    createSetting("Rtimefarmmap", "TF: Map Selection", "map", "textValue", "undefined", null, "Maps");
-    createSetting("Rtimefarmspecial", "TF: Special Selection", "special", "textValue", "undefined", null, "Maps");
-    createSetting("Rtimefarmgather", "TF: Gather Selection", "gather", "textValue", "undefined", null, "Maps");
+    createSetting("Rtimefarmmap", "TF: Map Selection", "map", "textValue", "", null, "Maps");
+    createSetting("Rtimefarmspecial", "TF: Special Selection", "special", "textValue", "", null, "Maps");
+    createSetting("Rtimefarmgather", "TF: Gather Selection", "gather", "textValue", "", null, "Maps");
     document.getElementById("Rtimefarmgather").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("Rsmithyfarm", "Smithy Farm", "Turn this on if you want to use Smithy Farming. ", "boolean", false, null, "Maps");
     createSetting("Rsmithyfarmmaz", "Smithy Farm Settings", "Click to open the Smithy Farm settings. <br> <b>Zone:</b> What zone to start smithy farming.<br> <b>Cell:</b> What cell to start smithy farming at. <br> <b>Smithys:</b> How many smithys you want to have at that zone. <br> <b>Example:</b> If you put Zone: 60, Cell: 10, Smithys: 2, you will farm at zone 60 at cell 10 for 2 total smithies in an autogenerated map that will fill your resource needs, gather and job appropriately", "infoclick", false, null, "Maps");
@@ -15806,9 +15811,9 @@
     createSetting("Rtributefarmcell", "TrF: Cell", "cell", "multiValue", [-1], null, "Maps");
     createSetting("Rtributefarmamount", "TrF: Tributes", "tributes", "multiValue", [-1], null, "Maps");
     createSetting("Rtributefarmlevel", "TrF: Map Level", "level", "multiValue", [0], null, "Maps");
-    createSetting("Rtributemapselection", "TrF: Map Selection", "map", "textValue", "undefined", null, "Maps");
-    createSetting("Rtributespecialselection", "TrF: Special Selection", "special", "textValue", "undefined", null, "Maps");
-    createSetting("Rtributegatherselection", "TrF: Gather Selection", "gather", "textValue", "undefined", null, "Maps");
+    createSetting("Rtributemapselection", "TrF: Map Selection", "map", "textValue", "", null, "Maps");
+    createSetting("Rtributespecialselection", "TrF: Special Selection", "special", "textValue", "", null, "Maps");
+    createSetting("Rtributegatherselection", "TrF: Gather Selection", "gather", "textValue", "", null, "Maps");
     document.getElementById("Rtributegatherselection").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("Rshrine", "AutoShrine", "Turn this on if you want to use Shrines automatically. ", "boolean", false, null, "Maps");
     createSetting("Rshrinemaz", "AutoShrine Settings", "Click to open AutoShrine settings. <br> <b>Zone:</b> What zone to use Bone Shrine charges. <br> <b>Cell:</b> What cell to use Bone Shrine charges at, if you use it after cell 80 you will get the benefit of all the books. to use. <br> <b>Amount:</b> How many Bone Shrine charges you wish to use. <br> <b>Example:</b> If you put Zone: 40, Cell: 10, Amount: 3, you will use 3 Bone Shrine Charges at zone 40 at cell 10. ", "infoclick", false, null, "Maps");
@@ -15890,9 +15895,9 @@
     createSetting("Rblackbogamount", "Amount", "black bogs", "multiValue", [-1], null, "Challenges");
     createSetting("Rnurtureon", "Nurture", "Enables the Lab setting in Buildings and building labs through it. ", "boolean", false, null, "Challenges");
     createSetting("Rarchon", "Archaeology", "Turn on Archaeology settings. ", "boolean", false, null, "Challenges");
-    createSetting("Rarchstring1", "First String", "First string to use in Archaeology. Put the zone you want to stop using this string and start using the second string (Make sure the second string has a value) at the start. I.e: 70,10a,10e ", "textValue", "undefined", null, "Challenges");
-    createSetting("Rarchstring2", "Second String", "Second string to use in Archaeology. Put the zone you want to stop using this string and start using the third string (Make sure the third string has a value) at the start. I.e: 94,10a,10e ", "textValue", "undefined", null, "Challenges");
-    createSetting("Rarchstring3", "Third String", "Third string to use in Archaeology. Make sure this is just your Archaeology string and nothing else. I.e: 10a,10e ", "textValue", "undefined", null, "Challenges");
+    createSetting("Rarchstring1", "First String", "First string to use in Archaeology. Put the zone you want to stop using this string and start using the second string (Make sure the second string has a value) at the start. I.e: 70,10a,10e ", "textValue", "", null, "Challenges");
+    createSetting("Rarchstring2", "Second String", "Second string to use in Archaeology. Put the zone you want to stop using this string and start using the third string (Make sure the third string has a value) at the start. I.e: 94,10a,10e ", "textValue", "", null, "Challenges");
+    createSetting("Rarchstring3", "Third String", "Third string to use in Archaeology. Make sure this is just your Archaeology string and nothing else. I.e: 10a,10e ", "textValue", "", null, "Challenges");
     createSetting("Rmayhemon", "Mayhem", "Turn on Mayhem settings. ", "boolean", false, null, "Challenges");
     createSetting("Rmayhemattack", "M: Attack", "Turn this on to ignore your farm settings so It will do maps if you cannot survive the hits you have defined in Maps. ", "boolean", false, null, "Challenges");
     createSetting("Rmayhemhealth", "M: Health", "Turn this on to ignore your farm settings so It will do maps if your HD is above the target you have defined in Maps. ", "boolean", false, null, "Challenges");
@@ -15922,7 +15927,7 @@
     createSetting("Ralchfarmmaz", "Alchemy Settings", "Click to open the Alchemy settings. Do not use vanilla autobrew AF will buy potions for you. <br> <b>Zone:</b> What zone to farm herbs and potions in.<br> <b>Cell:</b> What cell to start farming herbs and potions on.<br> <b>Potion:</b> You must pair a potion with a level here. Example: h15,g20,s15. This will farm Herby potion up to level 15 on the first AF zone, Gaseous potion to level 20 and so on. <br> <b>Level:</b> How many map levels you want above zone. <br> <b>Example:</b> If you put Zone: 81, Cell: 50, Potion: h15, Level: 5, Map: Farmlands, you will farm at zone 81, on cell 50 until you can afford 15 total herby potions, in a +5 map, using a farmlands map. ", "infoclick", false, null, "Challenges");
     createSetting("Ralchfarmzone", "Alchemy Farming", "zone", "multiValue", [-1], null, "Challenges");
     createSetting("Ralchfarmcell", "AF: Cell", "cell", "multiValue", [-1], null, "Challenges");
-    createSetting("Ralchfarmstack", "AF: Potion", "potion", "textValue", "undefined", null, "Challenges");
+    createSetting("Ralchfarmstack", "AF: Potion", "potion", "textValue", "", null, "Challenges");
     createSetting("Ralchfarmlevel", "AF: Map Level", "level", "multiValue", [0], null, "Challenges");
     createSetting("Ralchfarmselection", "AF: Map Selection", "map", "textValue", "l", null, "Challenges");
     createSetting("Ralchfarmfrag", "AF: Frags", "Turn this on to farm fragments if you cannot afford the map you have selected for AF. ", "boolean", false, null, "Challenges");
@@ -15991,20 +15996,20 @@
     createSetting("SupplyWall", "Throttle Supply (or Capacity)", "Positive number NOT 1 e.g. 2.5: Consider Supply when its cost * 2.5 is < Capacity, instead of immediately when < Cap. Effectively throttles supply for when you don't need too many.<br><br>Negative number (-1 is ok) e.g. -2.5: Consider Supply if it costs < Capacity * 2.5, buy more supplys! Effectively throttling capacity instead.<br><br><b>Set to 1: DISABLE SUPPLY only spend magmite on Efficiency, Capacity and Overclocker. Always try to get supply close to your HZE. <br>Set to 0: IGNORE SETTING and use old behaviour (will still try to buy overclocker)</b>", "valueNegative", 0.4, null, "Magma");
     createSetting("spendmagmitesetting", ["Normal", "Normal & No OC", "OneTime Only", "OneTime & OC"], "<b>Normal:</b> Spends Magmite Normally as Explained in Magmite spending behaviour. <br><b>Normal & No OC:</b> Same as normal, except skips OC afterbuying 1 OC upgrade. <br><b>OneTime Only:</b> Only Buys the One off upgrades except skips OC afterbuying 1 OC upgrade. <br><b>OneTime & OC:</b> Buys all One off upgrades, then buys OC only. ", "multitoggle", 0, null, "Magma");
     createSetting("MagmiteExplain", "Magmite spending behaviour", "1. Buy one-and-done upgrades, expensive first, then consider 1st level of Overclocker;<br>2. Buy Overclocker IF AND ONLY IF we can afford it;<br>2.5. Exit if OneTimeOnly<br>3. Buy Efficiency if it is better than capacity;<br>4. Buy Capacity or Supply depending on which is cheaper, or based on SupplyWall", "infoclick", "MagmiteExplain", null, "Magma");
-    createSetting("highdmg", "WS: High Damage", "<b>HIGH DAMAGE HEIRLOOM</b><br><br>Enter the name of your high damage heirloom. This is your heirloom that you will use normally. ", "textValue", "undefined", null, "Heirlooms");
-    createSetting("lowdmg", "WS: Low Damage", "<b>LOW DAMAGE HEIRLOOM</b><br><br>Enter the name of your low damage heirloom. This is the heirloom that you will use for windstacking. ", "textValue", "undefined", null, "Heirlooms");
+    createSetting("highdmg", "WS: High Damage", "<b>HIGH DAMAGE HEIRLOOM</b><br><br>Enter the name of your high damage heirloom. This is your heirloom that you will use normally. ", "textValue", "", null, "Heirlooms");
+    createSetting("lowdmg", "WS: Low Damage", "<b>LOW DAMAGE HEIRLOOM</b><br><br>Enter the name of your low damage heirloom. This is the heirloom that you will use for windstacking. ", "textValue", "", null, "Heirlooms");
     document.getElementById("lowdmg").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("Rhs", "Heirloom Swapping", "Heirloom swapping master button. Turn this on to allow heirloom swapping and its associated settings. ", "boolean", false, null, "Heirlooms");
     document.getElementById("Rhs").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("Rhsshield", "Shields", "Toggle to swap Shields", "boolean", false, null, "Heirlooms");
     createSetting("Rhsz", "HS: Zone", "Which zone to swap from your first heirloom you have defined to your second heirloom you have defined. I.e if this value is 75 it will switch to the second heirloom <b>on z75</b>", "value", "-1", null, "Heirlooms");
-    createSetting("Rhs1", "HS: First", "<b>First Heirloom to use</b><br><br>Enter the name of your first heirloom. This is the heirloom that you will use before swapping to the second heirloom at the zone you have defined in the HS: Zone. ", "textValue", "undefined", null, "Heirlooms");
-    createSetting("Rhs2", "HS: Second", "<b>Second Heirloom to use</b><br><br>Enter the name of your second heirloom. This is the heirloom that you will use after swapping from the first heirloom at the zone you have defined in the HS: Zone. ", "textValue", "undefined", null, "Heirlooms");
+    createSetting("Rhs1", "HS: First", "<b>First Heirloom to use</b><br><br>Enter the name of your first heirloom. This is the heirloom that you will use before swapping to the second heirloom at the zone you have defined in the HS: Zone. ", "textValue", "", null, "Heirlooms");
+    createSetting("Rhs2", "HS: Second", "<b>Second Heirloom to use</b><br><br>Enter the name of your second heirloom. This is the heirloom that you will use after swapping from the first heirloom at the zone you have defined in the HS: Zone. ", "textValue", "", null, "Heirlooms");
     document.getElementById("Rhs2").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("Rhsstaff", "Staffs", "Toggle to swap Staffs", "boolean", false, null, "Heirlooms");
-    createSetting("Rhsworldstaff", "World", "<b>World Staff</b><br><br>Enter the name of your world staff.", "textValue", "undefined", null, "Heirlooms");
-    createSetting("Rhsmapstaff", "Map", "<b>Mapping staff</b><br><br>Enter the name of your mapping staff.", "textValue", "undefined", null, "Heirlooms");
-    createSetting("Rhstributestaff", "Tribute", "<b>Tribute farming staff</b><br><br>Enter the name of the staff you would like to equip during tribute farming.", "textValue", "undefined", null, "Heirlooms");
+    createSetting("Rhsworldstaff", "World", "<b>World Staff</b><br><br>Enter the name of your world staff.", "textValue", "", null, "Heirlooms");
+    createSetting("Rhsmapstaff", "Map", "<b>Mapping staff</b><br><br>Enter the name of your mapping staff.", "textValue", "", null, "Heirlooms");
+    createSetting("Rhstributestaff", "Tribute", "<b>Tribute farming staff</b><br><br>Enter the name of the staff you would like to equip during tribute farming.", "textValue", "", null, "Heirlooms");
     document.getElementById("Rhstributestaff").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("autoheirlooms", "Auto Heirlooms", "Auto Heirlooms master button. Turn this on to enable all Auto Heirloom settings. <br><br><b>The Modifier points will be explained here.</b> The more points an heirloom has, the better chance it has of being kept. If empty is selected, it will muliplty the score by 4. <br><br>E.g Mod 1 = CC (+5 if dropped, 1st modifier) <br>Mod 2 = CD (+5 if dropped, 2nd modifier) <br>Mod 3 = PB (+5 if dropped, 3rd modifier) <br>Mod 4 = Empty (x4 if dropped, +0 if not) <br>Mod 5 = Empty (x4 if dropped, +0 if not) <br><br>If an heirloom dropped with these exact modifiers, it would get a score of 192 (5+5+5*4*4=240). The highest point heirlooms will be kept. <br> <b>You MUST select at least one modifier. It will fill up the slots first then recycle the lowest rarity. </b>", "boolean", false, null, "Heirlooms");
     createSetting("typetokeep", ["None", "Shields", "Staffs", "Cores", "All"], "<b>Shields: </b>Keeps Shields and nothing else.<br><b>Staffs: </b>Keeps Staffs and nothing else.<br><b>Cores: </b>Keeps Cores and nothing else.<br><b>All: </b>Keeps 4 Shields and 3 Staffs and 3 Cores. If you have protected heirlooms in your inventory it will overrite one slot. E.g if one heirloom is protected, you will keep 4 Shields and 3 Staffs and 2 Cores. ", "multitoggle", 0, null, "Heirlooms");

@@ -179,52 +179,26 @@ const KNOWN_TYPE_VIOLATION: Record<string, string> = {
   // If you are about to park something here: the entry is a promise to come back. Prefer fixing it.
 }
 
-// ═══ THE STRING-SENTINEL BASELINE (a NEAR-MISS the type contract cannot see) ══════════════════════
-// `textValue` settings decode to a string, so a default of 'undefined' is TYPE-legal — and still a bug:
-// every guard of the form `getPageSetting('highdmg') != undefined` is a TAUTOLOGY, because the string
-// 'undefined' is not the value undefined. Same root cause as #96, different arm, and invisible to the
-// contract above. Tracked here so the class is enumerated rather than forgotten; these are OUT OF SCOPE
-// for #96 (each has its own consumers to verify first) and are a fix queue for a follow-up.
+// ═══ THE STRING-SENTINEL BASELINE — ✅ EMPTIED BY #100 ═══════════════════════════════════════════
+// `textValue` settings decode to a string, so a default of 'undefined' was TYPE-legal — and still a bug:
+// every guard of the form `getPageSetting('highdmg') != undefined` was a TAUTOLOGY, because the string
+// 'undefined' is not the value undefined. Same root cause as #96, different arm, invisible to the type
+// contract above. This net enumerated 27 of them (the review had reported 3 — which is the argument for
+// mechanizing a class instead of reading for it).
 //
-// The net found 27 of these, not the 3 the issue named — which is the argument for mechanizing a class
-// instead of reading for it. They group into three families, each needing its own consumer audit:
+// All 27 are FIXED. The order was load-bearing and is worth keeping written down:
+//   1. The CONSUMERS first — `utils.textSettingIsSet()` is now the one spelling, and it accepts EVERY
+//      encoding of unset ('undefined' | '' | false | undefined). Flipping the defaults first would have
+//      been an active regression: archstring() gated on `!= "undefined"`, which is TRUE for '', so it
+//      would have written `game.global.archString = ''` into the live game for every unconfigured player.
+//   2. THEN the defaults ('undefined' → '').
+//   3. Then this baseline, to zero.
+// The string encoding can NEVER be retired — a veteran's localStorage still carries it and createSetting
+// only applies a default when nothing is stored (#68). tests/nets/settings-unset-encodings.test.ts is
+// what protects those users; the assertion below is what stops a NEW one being declared.
 const KNOWN_STRING_SENTINEL: Record<string, string> = {
-  // ── MAZ-window selections. Benign-ish: MAZ.ts overwrites all of them on the first Save, and the
-  //    unconfigured path is guarded upstream by the zone list ([-1]). Same shape as #96 all the same.
-  Rtimefarmmap: 'MAZ selection — Time Farm',
-  Rtimefarmspecial: 'MAZ selection — Time Farm',
-  Rtimefarmgather: 'MAZ selection — Time Farm',
-  Rdtimefarmmap: 'MAZ selection — dTime Farm',
-  Rdtimefarmspecial: 'MAZ selection — dTime Farm',
-  Rdtimefarmgather: 'MAZ selection — dTime Farm',
-  Rtributemapselection: 'MAZ selection — Tribute Farm',
-  Rtributespecialselection: 'MAZ selection — Tribute Farm',
-  Rtributegatherselection: 'MAZ selection — Tribute Farm',
-  Ralchfarmstack: 'MAZ selection — AF potion spec (maps.ts:1259 reads .length — 9, not 0!)',
-
-  // ── Heirloom NAMES the user types in. These are the live ones: a guard of the form
-  //    `getPageSetting('highdmg') != undefined` is a TAUTOLOGY against the string 'undefined', so the
-  //    "did the user name an heirloom?" check passes with nothing configured. Audit before fixing —
-  //    the correct default is probably '' (falsy), not another sentinel.
-  highdmg: 'heirloom name — `!= undefined` guards are tautologies',
-  lowdmg: 'heirloom name — same',
-  dhighdmg: 'heirloom name — daily twin',
-  dlowdmg: 'heirloom name — daily twin',
-  Rhs1: 'heirloom name — heirloom-swap slot 1',
-  Rhs2: 'heirloom name — heirloom-swap slot 2',
-  Rdhs1: 'heirloom name — daily twin',
-  Rdhs2: 'heirloom name — daily twin',
-  Rhsworldstaff: 'heirloom name — staff swap',
-  Rhsmapstaff: 'heirloom name — staff swap',
-  Rhstributestaff: 'heirloom name — staff swap',
-  Rdhsworldstaff: 'heirloom name — daily twin',
-  Rdhsmapstaff: 'heirloom name — daily twin',
-  Rdhstributestaff: 'heirloom name — daily twin',
-
-  // ── Archaeology strings.
-  Rarchstring1: 'archaeology string',
-  Rarchstring2: 'archaeology string',
-  Rarchstring3: 'archaeology string',
+  // ✅ EMPTY (#100). Was 27: 10 MAZ selections, 14 heirloom names, 3 archaeology strings.
+  // If you are about to park something here: the entry is a promise to come back. Prefer fixing it.
 }
 
 describe('settings runtime type contract · fresh install (#96)', () => {
@@ -369,7 +343,7 @@ describe('the baselines only shrink — they are fix queues, not allowlists', ()
         ).toBe('undefined')
       }
     })
-    expect(Object.keys(KNOWN_STRING_SENTINEL).length).toBeLessThanOrEqual(27)
+    expect(Object.keys(KNOWN_STRING_SENTINEL).length).toBe(0) // #100 emptied it. The ceiling is now zero.
   })
 
   it("no NEW textValue setting defaults to the string 'undefined'", () => {
