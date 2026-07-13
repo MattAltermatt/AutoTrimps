@@ -14256,6 +14256,10 @@
     autoTrimpSettings[id].value = Number.isInteger(fallback) && fallback >= 0 && fallback < name.length ? fallback : 0;
   }
   var definedSettingIds2 = /* @__PURE__ */ new Set();
+  var tipAttr = (name, description) => {
+    const esc = (s) => String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return 'tooltip("' + esc(name) + '", "customText", event, "' + esc(description) + '")';
+  };
   function createSetting2(id, name, description, type, defaultValue, list, container) {
     definedSettingIds2.add(id);
     var btnParent = document.createElement("DIV");
@@ -14277,7 +14281,7 @@
       btn.setAttribute("style", "font-size: 1.1vw;");
       btn.setAttribute("class", "noselect settingsBtn settingKind-toggle settingBtn" + autoTrimpSettings[id].enabled);
       btn.setAttribute("onclick", 'settingChanged("' + id + '")');
-      btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
+      btn.setAttribute("onmouseover", tipAttr(name, description));
       btn.setAttribute("onmouseout", 'tooltip("hide")');
       renderControlFace2(btn, autoTrimpSettings[id]);
       btnParent.appendChild(btn);
@@ -14295,7 +14299,7 @@
       btn.setAttribute("style", "font-size: 1.1vw;");
       btn.setAttribute("class", "noselect settingsBtn btn-info settingKind-input");
       btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == "valueNegative"}, ${type == "multiValue"})`);
-      btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
+      btn.setAttribute("onmouseover", tipAttr(name, description));
       btn.setAttribute("onmouseout", 'tooltip("hide")');
       btn.textContent = name;
       btnParent.appendChild(btn);
@@ -14313,7 +14317,7 @@
       btn.setAttribute("style", "font-size: 1.1vw;");
       btn.setAttribute("class", "noselect settingsBtn btn-info settingKind-input");
       btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == "valueNegative"}, ${type == "multiValue"})`);
-      btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
+      btn.setAttribute("onmouseover", tipAttr(name, description));
       btn.setAttribute("onmouseout", 'tooltip("hide")');
       btn.textContent = name;
       btnParent.appendChild(btn);
@@ -14331,7 +14335,7 @@
       btn.setAttribute("style", "font-size: 1.1vw;");
       btn.setAttribute("class", "noselect settingsBtn btn-info settingKind-input");
       btn.setAttribute("onclick", `autoSetTextToolTip("${id}", "${name}", ${type == "textValue"})`);
-      btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
+      btn.setAttribute("onmouseover", tipAttr(name, description));
       btn.setAttribute("onmouseout", 'tooltip("hide")');
       btn.textContent = name;
       btnParent.appendChild(btn);
@@ -14352,7 +14356,7 @@
       if (game.options.menu.darkTheme.enabled == 2) btn.setAttribute("style", "color: #C8C8C8; font-size: 1.0vw;");
       else btn.setAttribute("style", "color:black; font-size: 1.0vw;");
       btn.setAttribute("class", "noselect settingKind-select");
-      btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
+      btn.setAttribute("onmouseover", tipAttr(name, description));
       btn.setAttribute("onmouseout", 'tooltip("hide")');
       btn.setAttribute("onchange", 'settingChanged("' + id + '")');
       for (var item in list) {
@@ -14373,7 +14377,7 @@
     } else if (type == "infoclick") {
       btn.setAttribute("class", "noselect settingsBtn settingKind-action settingKind-info");
       btn.setAttribute("onclick", "ImportExportTooltip('" + defaultValue + "', 'update')");
-      btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
+      btn.setAttribute("onmouseover", tipAttr(name, description));
       btn.setAttribute("onmouseout", 'tooltip("hide")');
       btn.setAttribute("style", "font-size: 1.1vw;");
       renderControlFace2(btn, { type: "infoclick", name });
@@ -14394,7 +14398,7 @@
       btn.setAttribute("style", "font-size: 1.1vw;");
       btn.setAttribute("class", "noselect settingsBtn settingKind-cycle settingBtn" + autoTrimpSettings[id].value);
       btn.setAttribute("onclick", 'settingChanged("' + id + '")');
-      btn.setAttribute("onmouseover", 'tooltip("' + name.join(" / ") + '", "customText", event, "' + description + '")');
+      btn.setAttribute("onmouseover", tipAttr(name.join(" / "), description));
       btn.setAttribute("onmouseout", 'tooltip("hide")');
       renderControlFace2(btn, autoTrimpSettings[id]);
       btnParent.appendChild(btn);
@@ -14404,7 +14408,7 @@
       btn.setAttribute("style", "font-size: 1.1vw;");
       btn.setAttribute("class", "noselect settingsBtn settingKind-action settingBtn3");
       btn.setAttribute("onclick", defaultValue);
-      btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
+      btn.setAttribute("onmouseover", tipAttr(name, description));
       btn.setAttribute("onmouseout", 'tooltip("hide")');
       renderControlFace2(btn, { type: "action", name });
       btnParent.appendChild(btn);
@@ -15111,6 +15115,7 @@
     radonon ? turnOn("RFarmerRatio") : turnOff("RFarmerRatio");
     radonon ? turnOn("RLumberjackRatio") : turnOff("RLumberjackRatio");
     radonon ? turnOn("RMinerRatio") : turnOff("RMinerRatio");
+    radonon ? turnOn("RScientistPercent") : turnOff("RScientistPercent");
     radonon ? turnOn("RMaxExplorers") : turnOff("RMaxExplorers");
     radonon ? turnOn("Rshipfarmon") : turnOff("Rshipfarmon");
     radonon && getPageSetting("Rshipfarmon") == true ? turnOn("Rshipfarmzone") : turnOff("Rshipfarmzone");

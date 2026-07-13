@@ -88,6 +88,23 @@ function clampMultitoggle(id: any, name: any, defaultValue: any) {
 // cleanupCandidates).
 export const definedSettingIds = new Set<string>();
 
+// #110 — the tooltip is injected as an HTML attribute holding a JS call whose last argument is a
+// DOUBLE-QUOTED string literal:
+//     onmouseover="tooltip("<name>", "customText", event, "<description>")"
+// so a raw `"` anywhere in the description CLOSES that literal, the handler fails to COMPILE, and the
+// browser silently leaves `el.onmouseover === null`. The control still renders and still clicks — only
+// the tooltip is dead, which is why this survives: nothing throws and nothing looks broken. `RVoidMaps`
+// has shipped with a dead tooltip this way. Escape at the seam, not per-description, so no future
+// tooltip can re-open the hole by quoting a word.
+// Escapes ONLY the copy spliced into the attribute. `name` and `description` themselves must stay
+// untouched: both are stored on the settings record and rendered as the visible label, and for a
+// multitoggle `name` is an ARRAY of option labels (renderControlFace reads rec.name[rec.value]) — so
+// coercing or escaping them in place would corrupt the UI text, not just the tooltip.
+const tipAttr = (name: any, description: any) => {
+    const esc = (s: any) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    return 'tooltip("' + esc(name) + '", "customText", event, "' + esc(description) + '")';
+};
+
 export function createSetting(id: any, name: any, description: any, type: any, defaultValue: any, list: any, container: any) {
     definedSettingIds.add(id);
     var btnParent = document.createElement("DIV");
@@ -126,7 +143,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn settingKind-toggle settingBtn' + autoTrimpSettings[id].enabled);
         btn.setAttribute("onclick", 'settingChanged("' + id + '")');
-        btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
+        btn.setAttribute("onmouseover", tipAttr(name, description));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         renderControlFace(btn, autoTrimpSettings[id]);
         btnParent.appendChild(btn);
@@ -144,7 +161,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn btn-info settingKind-input');
         btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == 'valueNegative'}, ${type == 'multiValue'})`);
-        btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
+        btn.setAttribute("onmouseover", tipAttr(name, description));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = name;
         btnParent.appendChild(btn);
@@ -162,7 +179,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn btn-info settingKind-input');
         btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == 'valueNegative'}, ${type == 'multiValue'})`);
-        btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
+        btn.setAttribute("onmouseover", tipAttr(name, description));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = name;
         btnParent.appendChild(btn);
@@ -180,7 +197,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn btn-info settingKind-input');
         btn.setAttribute("onclick", `autoSetTextToolTip("${id}", "${name}", ${type == 'textValue'})`);
-        btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
+        btn.setAttribute("onmouseover", tipAttr(name, description));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = name;
         btnParent.appendChild(btn);
@@ -201,7 +218,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         if (game.options.menu.darkTheme.enabled == 2) btn.setAttribute("style", "color: #C8C8C8; font-size: 1.0vw;");
         else btn.setAttribute("style", "color:black; font-size: 1.0vw;");
         btn.setAttribute("class", "noselect settingKind-select");
-        btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
+        btn.setAttribute("onmouseover", tipAttr(name, description));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.setAttribute("onchange", 'settingChanged("' + id + '")');
         for (var item in list) {
@@ -222,7 +239,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
     } else if (type == 'infoclick') {
         btn.setAttribute('class', 'noselect settingsBtn settingKind-action settingKind-info');
         btn.setAttribute("onclick", 'ImportExportTooltip(\'' + defaultValue + '\', \'update\')');
-        btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
+        btn.setAttribute("onmouseover", tipAttr(name, description));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.setAttribute("style", "font-size: 1.1vw;");
         renderControlFace(btn, { type: 'infoclick', name: name });
@@ -243,7 +260,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn settingKind-cycle settingBtn' + autoTrimpSettings[id].value);
         btn.setAttribute("onclick", 'settingChanged("' + id + '")');
-        btn.setAttribute("onmouseover", 'tooltip("' + name.join(' / ') + '", "customText", event, "' + description + '")');
+        btn.setAttribute("onmouseover", tipAttr(name.join(' / '), description));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         renderControlFace(btn, autoTrimpSettings[id]);
         btnParent.appendChild(btn);
@@ -253,7 +270,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn settingKind-action settingBtn3'); // keep native teal (additive)
         btn.setAttribute('onclick', defaultValue);
-        btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
+        btn.setAttribute("onmouseover", tipAttr(name, description));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         renderControlFace(btn, { type: 'action', name: name });
         btnParent.appendChild(btn);
