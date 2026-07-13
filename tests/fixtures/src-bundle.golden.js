@@ -2655,6 +2655,7 @@
     }
     const BuyWeaponLevels = getPageSetting2("BuyWeaponsNew") == 1 || getPageSetting2("BuyWeaponsNew") == 3;
     const BuyArmorLevels = getPageSetting2("BuyArmorNew") == 1 || getPageSetting2("BuyArmorNew") == 3;
+    const investSpareMetal = getPageSetting2("InvestSpareMetal") == true;
     preBuy32();
     for (const stat in Best) {
       const eqName = Best[stat].Name;
@@ -2670,7 +2671,7 @@
           $eqName.style.border = "2px solid red";
         }
         const maxmap = getPageSetting2("MaxMapBonusAfterZone") && doMaxMapBonus;
-        if (BuyArmorLevels && (DaThing.Stat === "health" || DaThing.Stat === "block") && (!enoughHealthE || maxmap)) {
+        if (BuyArmorLevels && (DaThing.Stat === "health" || DaThing.Stat === "block") && (!enoughHealthE || maxmap || investSpareMetal)) {
           game.global.buyAmt = gearamounttobuy;
           if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true)) {
             debug2("Leveling equipment " + eqName, "equips", "*upload3");
@@ -2685,7 +2686,7 @@
             buyEquipment(eqName, null, true);
           }
         }
-        if (windstackingprestige() && BuyWeaponLevels && DaThing.Stat === "attack" && (!enoughDamageE || enoughHealthE || maxmap)) {
+        if (windstackingprestige() && BuyWeaponLevels && DaThing.Stat === "attack" && (!enoughDamageE || enoughHealthE || maxmap || investSpareMetal)) {
           game.global.buyAmt = gearamounttobuy;
           if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true)) {
             debug2("Leveling equipment " + eqName, "equips", "*upload3");
@@ -15131,6 +15132,7 @@
     !radonon ? turnOn("trimpsnotdie") : turnOff("trimpsnotdie");
     !radonon ? turnOn("gearamounttobuy") : turnOff("gearamounttobuy");
     !radonon ? turnOn("always2") : turnOff("always2");
+    !radonon ? turnOn("InvestSpareMetal") : turnOff("InvestSpareMetal");
     radonon ? turnOn("Requipon") : turnOff("Requipon");
     radonon && getPageSetting("Requipon") == true ? turnOn("Requipamount") : turnOff("Requipamount");
     radonon && getPageSetting("Requipon") == true ? turnOn("Requipcapattack") : turnOff("Requipcapattack");
@@ -15916,6 +15918,7 @@
     createSetting("trimpsnotdie", "Buy Armor on Death", "Buys 10 levels of Armor when Trimps die. Useful when your trimps die frequentely. ", "boolean", false, null, "Gear");
     createSetting("gearamounttobuy", "Gear Levels to Buy", "Set the amount of Gear Levels to buy for AT. I.e if set to 1 will buy 1 level at a time. Recommended value 1. <b>MUST ALWAYS HAVE A VALUE GREATER THAN 0! </b>", "value", 1, null, "Gear");
     createSetting("always2", "Always Level 2", "Always buys level 2 of weapons and armor regardless of efficiency", "boolean", false, null, "Gear");
+    createSetting("InvestSpareMetal", "Invest Spare Metal", 'Keep leveling the most efficient gear whenever you can afford it, instead of stopping once you are "strong enough" for the current zone. <b>Off by default \u2014 this changes how your bot spends.</b><br><br>Normally AT buys armor only while it cannot survive enough hits, and weapons only while it cannot kill fast enough (see <b>Equipment Cut Off</b>). Once both are satisfied it buys nothing and banks the metal. Measured on a real z21 save: it declined an affordable gear level on <b>18,503 of 20,000 ticks</b>. Turning this on reaches the next zone <b>~19.5% sooner</b> \u2014 not by buying much more gear (only ~3 extra levels), but by buying it <b>early</b>, where the damage compounds into faster clears and more income.<br><br>The level caps (<b>Weapon/Armor Level Cap</b>) and the efficiency choice are still respected \u2014 this only removes the "I am strong enough, stop buying" brake.', "boolean", false, null, "Gear");
     createSetting("Requipon", "AutoEquip", "AutoEquip. Buys Prestiges and levels equipment according to various settings. Will only buy prestiges if it is worth it. Levels all eqiupment according to best efficiency. ", "boolean", false, null, "Gear");
     createSetting("Rdmgcuntoff", "AE: Cut-off", "Decides when to buy gear. 1 is default. This means it will take 1 hit to kill an enemy. If zone is below the zone you have defined in AE: Zone then it will only buy equips when needed. ", "value", "1", null, "Gear");
     createSetting("Requipamount", "AE: Amount", "How much equipment to level per time. ", "value", 1, null, "Gear");

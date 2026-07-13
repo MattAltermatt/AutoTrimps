@@ -560,6 +560,45 @@ describe('equipment.autoLevelEquipment — L1b spy-log', () => {
       ['Boots', null, true], ['Boots', null, true],
     ])
   })
+
+  // ── #108 InvestSpareMetal: the sufficiency brake, made optional ────────────────────────────────
+  // The two level-buy guards stop buying once AT is strong enough for the zone, which is why it banks
+  // metal it could be converting (18,503 of 20,000 ticks on a real z21 save). This fixture SATURATES
+  // both sufficiency terms so the buy hinges on the new disjunct ALONE:
+  //   armor  `!enoughHealthE`               → calcOurHealth 1e12 ⇒ enoughHealthE TRUE  ⇒ arm dead
+  //   weapon `!enoughDamageE || enoughHealthE` → the enoughHealthE disjunct would REVIVE the weapon
+  //          arm, so this case tests ARMOR only, where the brake is unconditional.
+  //   maxmap `MaxMapBonusAfterZone && doMaxMapBonus` → doMaxMapBonus false ⇒ arm dead
+  // …leaving `investSpareMetal`. Off ⇒ no armor level is bought; on ⇒ it is. The delta IS the setting.
+  function autoLevelArmorSated(invest: boolean) {
+    installSpies()
+    ;(globalThis as any).getBuildingItemPrice = () => 100
+    ;(globalThis as any).calcOurHealth = () => 1e12 // enoughHealthE TRUE → the armor brake engages
+    ;(globalThis as any).doMaxMapBonus = false // maxmap arm dead
+    ;(globalThis as any).autoTrimpSettings = {
+      BuyArmorNew: { type: 'multitoggle', value: 1 },
+      InvestSpareMetal: { type: 'boolean', enabled: invest },
+    }
+    ;(globalThis as any).game = fullGame()
+    for (const u of UPGRADE_NAMES) (globalThis as any).game.upgrades[u].locked = 1 // no prestige noise
+    ;(globalThis as any).game.equipment.Boots.healthCalculated = 1000 // Best.healthmetal = Boots
+    ;(globalThis as any).game.equipment.Boots.level = 5 // >= 2, so always2 cannot supply the buy
+    ;(globalThis as any).game.equipment.Shield.level = 5
+    equipment.autoLevelEquipment()
+    return buyEquipmentCalls
+  }
+
+  it('OFF (default): the sufficiency brake suppresses the armor level buy — unchanged behaviour', () => {
+    expect(autoLevelArmorSated(false)).toEqual([])
+  })
+
+  it('ON: buys the affordable armor level the brake would have declined (#108)', () => {
+    // Best iteration order = ['healthwood','healthmetal',…] → Shield (health/wood) then Boots.
+    expect(autoLevelArmorSated(true)).toEqual([
+      ['Shield', null, true],
+      ['Boots', null, true],
+    ])
+  })
 })
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════

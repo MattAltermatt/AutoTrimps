@@ -443,6 +443,16 @@ export function autoLevelEquipment() {
 
     const BuyWeaponLevels = ((getPageSetting('BuyWeaponsNew') == 1) || (getPageSetting('BuyWeaponsNew') == 3));
     const BuyArmorLevels = ((getPageSetting('BuyArmorNew') == 1) || (getPageSetting('BuyArmorNew') == 3));
+    // #108 — the SATISFICING BRAKE, made optional. The two level-buy guards below stop buying the
+    // moment AT judges itself strong enough for the current zone (`!enoughHealthE` for armor,
+    // `!enoughDamageE || enoughHealthE` for weapons), so it banks the metal instead: measured on a real
+    // z21 save, it declined an affordable gear level on 18,503 of 20,000 ticks while sitting on 20M
+    // metal. Off (default) this disjunct is dead and behaviour is unchanged. On, it removes ONLY the
+    // sufficiency brake — Wall (the level caps) and canAffordBuilding still gate every buy, and Best
+    // still picks the most efficient piece. Worth ~19.5% ticks-to-next-zone, and the win is TIMING, not
+    // volume: it ends with only ~3 more levels, bought early, where the damage compounds.
+    // getPageSetting is polymorphic → KEEP == loose.
+    const investSpareMetal = (getPageSetting('InvestSpareMetal') == true);
     preBuy3();
     for (const stat in Best) {
         const eqName = Best[stat].Name;
@@ -458,7 +468,7 @@ export function autoLevelEquipment() {
                 $eqName.style.border = '2px solid red';
             }
             const maxmap = getPageSetting('MaxMapBonusAfterZone') && doMaxMapBonus;
-            if (BuyArmorLevels && (DaThing.Stat === 'health' || DaThing.Stat === 'block') && (!enoughHealthE || maxmap)) {
+            if (BuyArmorLevels && (DaThing.Stat === 'health' || DaThing.Stat === 'block') && (!enoughHealthE || maxmap || investSpareMetal)) {
                 game.global.buyAmt = gearamounttobuy;
                 if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true)) {
                     debug('Leveling equipment ' + eqName, "equips", '*upload3');
@@ -473,7 +483,7 @@ export function autoLevelEquipment() {
                     buyEquipment(eqName, null, true);
                 }
             }
-            if (windstackingprestige() && BuyWeaponLevels && DaThing.Stat === 'attack' && (!enoughDamageE || enoughHealthE || maxmap)) {
+            if (windstackingprestige() && BuyWeaponLevels && DaThing.Stat === 'attack' && (!enoughDamageE || enoughHealthE || maxmap || investSpareMetal)) {
                 game.global.buyAmt = gearamounttobuy;
                 if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true)) {
                     debug('Leveling equipment ' + eqName, "equips", '*upload3');
