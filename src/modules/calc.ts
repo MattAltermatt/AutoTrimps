@@ -1079,7 +1079,30 @@ export function RgetCritMulti(): number {
     return ((1 - highTierChance) * lowTierMulti + highTierChance * highTierMulti) * doubleCritFactor * CritD
 }
 
-export function RcalcOurDmg(minMaxAvg?: string, equality?: boolean, _unusedIncFlucts?: unknown): number {
+// #99: the `min` / `max` branches and the two *DailyMod accumulators are DELETED, not fixed.
+//
+// They were unreachable — all 8 production call sites pass 'avg' — and their composition did not
+// match the game. The game folds the daily modifier INTO the fluctuation and then applies it once
+// (main.js:12346-12352 + :12413/:12416):
+//     minFluct = (0.2 - 0.02*Range) + minDamage.getMult   ->   min = base * (1 - minFluct)
+// while this function multiplied the bound BY the modifier:  min = base * (0.8 + 0.02*Range) * (1 - getMult).
+// Those differ for any nonzero strength. It was also missing the game's minFluct clamps (:12409-12411)
+// and the `fluctChallenge` guard on the Range perk (:12246) — i.e. three defects, not one.
+//
+// WHY DELETE RATHER THAN FIX. Nothing consumes a U2 min/max: the only min/max consumers in the fork are
+// stance.ts's autoStance/autoStance2/windStance/useScryerStance, and mainLoop dispatches those ONLY inside
+// its `game.global.universe == 1` block — the U2 block has no stance/scryer/formation automation at all.
+// A "fixed" branch would therefore be correct-looking code that still never runs, blessed by a golden that
+// certifies it — the exact artifact this codebase keeps getting bitten by (#69's RbuyBuildings had never
+// run and turned out to seize the player's AutoStorage button; per tests/nets/reachability.test.ts,
+// RevaluateEquipmentEfficiency and Requipcalc "sat there for years with characterization tests certifying
+// them as working"). The L0 proof net is structurally blind here (#98), so nothing would catch it either.
+//
+// If U2 stance automation is ever built, do NOT resurrect this. The U1 twin `calcOurDmg` above already
+// mirrors the game's composition CORRECTLY (minFluct/maxFluct + the clamps, calc.ts ~:250/:336-341/:383-389).
+// Copy that. The param is narrowed to the literal 'avg' so that a future RcalcOurDmg('min') is a COMPILE
+// ERROR rather than a silently-wrong number, which is what deleting the cases would otherwise have made it.
+export function RcalcOurDmg(minMaxAvg?: 'avg', equality?: boolean, _unusedIncFlucts?: unknown): number {
 
     // Base + equipment
     let number = 6;
@@ -1218,15 +1241,12 @@ export function RcalcOurDmg(minMaxAvg?: string, equality?: boolean, _unusedIncFl
     }
 
     // Dailies
-    let minDailyMod = 1;
-    let maxDailyMod = 1;
+    // (#99: minDailyMod/maxDailyMod lived here. They fed ONLY the deleted min/max cases — the
+    // game's minDamage/maxDamage dailies shift the fluctuation BAND, not the average, so they have
+    // no effect on the 'avg' result this function actually returns.)
     if (game.global.challengeActive === "Daily") {
         // Legs for Days mastery
         number *= game.talents.daily.purchased ? 1.5 : 1;
-        // Min damage reduced (additive)
-        minDailyMod -= typeof game.global.dailyChallenge.minDamage !== 'undefined' ? dailyModifiers.minDamage.getMult(game.global.dailyChallenge.minDamage.strength) : 0;
-        // Max damage increased (additive)
-        maxDailyMod += typeof game.global.dailyChallenge.maxDamage !== 'undefined' ? dailyModifiers.maxDamage.getMult(game.global.dailyChallenge.maxDamage.strength) : 0;
         // Minus attack on odd zones (MULTIPLICATIVE — .trimps-game/main.js:12357)
         if (typeof game.global.dailyChallenge.oddTrimpNerf !== 'undefined' && ((game.global.world % 2) === 1)) {
             number *= dailyModifiers.oddTrimpNerf.getMult(game.global.dailyChallenge.oddTrimpNerf.strength);
@@ -1272,15 +1292,6 @@ export function RcalcOurDmg(minMaxAvg?: string, equality?: boolean, _unusedIncFl
 
     // Average out crit damage
     number *= RgetCritMulti();
-
-    switch (minMaxAvg) {
-        case 'min':
-            return number * (game.portal.Range.radLevel * 0.02 + 0.8) * minDailyMod;
-        case 'max':
-            return number * 1.2 * maxDailyMod;
-        case 'avg':
-            return number;
-    }
 
     return number;
 }

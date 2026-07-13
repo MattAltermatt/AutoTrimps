@@ -1855,12 +1855,8 @@
     if (game.global.challengeActive === "Desolation") {
       number *= game.challenges.Desolation.trimpAttackMult();
     }
-    let minDailyMod = 1;
-    let maxDailyMod = 1;
     if (game.global.challengeActive === "Daily") {
       number *= game.talents.daily.purchased ? 1.5 : 1;
-      minDailyMod -= typeof game.global.dailyChallenge.minDamage !== "undefined" ? dailyModifiers.minDamage.getMult(game.global.dailyChallenge.minDamage.strength) : 0;
-      maxDailyMod += typeof game.global.dailyChallenge.maxDamage !== "undefined" ? dailyModifiers.maxDamage.getMult(game.global.dailyChallenge.maxDamage.strength) : 0;
       if (typeof game.global.dailyChallenge.oddTrimpNerf !== "undefined" && game.global.world % 2 === 1) {
         number *= dailyModifiers.oddTrimpNerf.getMult(game.global.dailyChallenge.oddTrimpNerf.strength);
       }
@@ -1891,14 +1887,6 @@
       }
     }
     number *= RgetCritMulti();
-    switch (minMaxAvg) {
-      case "min":
-        return number * (game.portal.Range.radLevel * 0.02 + 0.8) * minDailyMod;
-      case "max":
-        return number * 1.2 * maxDailyMod;
-      case "avg":
-        return number;
-    }
     return number;
   }
   function RcalcOurHealth2() {

@@ -403,3 +403,51 @@ describe('#85 — call-graph reachability over the shipped bundle', () => {
     expect(reachableFromLiveOnly('autoLevelEquipment')).toBe(true)
   })
 })
+
+// ── #99 — BRANCH reachability for RcalcOurDmg ───────────────────────────────────────────────────────
+//
+// The walk above resolves at FUNCTION granularity, so it (correctly) reports RcalcOurDmg as LIVE — it has
+// 8 callers. But the thing that was dead in #99 was a *branch*: the `min` / `max` cases of its
+// `switch (minMaxAvg)`. Whether control can reach those is not a call-graph question at all, it is an
+// ARGUMENT-VALUE question, and no amount of call-graph walking answers it. This net answers it.
+//
+// The branches are now deleted and the param is narrowed to the literal 'avg', so `tsc` rejects any
+// min/max call site in src/. That is NOT sufficient on its own: legacy/*.js is plain JS and is never
+// typechecked, so a legacy `RcalcOurDmg('min')` would slip past tsc and silently receive the AVERAGE.
+// This net closes that hole by scanning the SHIPPED text — the same corpus the walk uses, legacy included.
+describe('#99 — RcalcOurDmg is only ever asked for the average', () => {
+  const callSites: { file: string; arg: string }[] = []
+  for (const rel of CORPUS) {
+    const src = parse(rel, shippedText(rel))
+    const visit = (n: ts.Node): void => {
+      if (
+        ts.isCallExpression(n) &&
+        ts.isIdentifier(n.expression) &&
+        n.expression.text === 'RcalcOurDmg'
+      ) {
+        const a = n.arguments[0]
+        callSites.push({
+          file: rel,
+          // a non-literal first arg (e.g. `maxOrMin ? 'max' : 'min'`, which the U1 twin really does use)
+          // is reported by its source text and will fail the assertion below — deliberately.
+          arg: a && ts.isStringLiteral(a) ? a.text : a ? a.getText(src) : '<none>',
+        })
+      }
+      ts.forEachChild(n, visit)
+    }
+    visit(src)
+
+  }
+
+  it('has call sites at all (anti-false-green: an empty scan must not pass vacuously)', () => {
+    expect(callSites.length).toBeGreaterThanOrEqual(8)
+  })
+
+  it("every shipped call site passes the literal 'avg'", () => {
+    const offenders = callSites.filter((c) => c.arg !== 'avg')
+    // If this fails, someone wired up a min/max consumer. Do NOT re-add the deleted branches from
+    // git history — they were wrong (see the note on RcalcOurDmg in calc.ts). Port the U1 twin's
+    // minFluct/maxFluct composition instead.
+    expect(offenders).toEqual([])
+  })
+})

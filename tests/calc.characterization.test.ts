@@ -549,10 +549,19 @@ describe('calc.RcalcOurDmg — U2 offense composer', () => {
     // 6 base ×10 soldiers = 60, all mults ×1, RgetCritMulti 1
     expect(RcalcOurDmg('avg', false)).toBe(60)
   })
-  it('min = avg × (Range.radLevel×0.02 + 0.8), max = avg × 1.2', () => {
+  // #99: this `it` used to assert min=48 / max=72 — and those two assertions were the ONLY thing in the
+  // whole tree that ever executed RcalcOurDmg's min/max branches. They were a golden certifying a
+  // composition that did not match the game (it multiplied the bound by the daily modifier; the game adds
+  // the modifier into the fluctuation and applies it once). The branches are deleted and `minMaxAvg` is
+  // narrowed to the literal 'avg', so a resurrected `RcalcOurDmg('min')` is now a COMPILE error. Deleting
+  // the test without that narrowing would have been the real hazard: the function would have quietly
+  // returned the AVERAGE for a 'min' request.
+  it("only 'avg' is a legal request — the min/max branches are deleted (#99)", () => {
     G.game = u2CombatGame()
-    expect(RcalcOurDmg('min', false)).toBeCloseTo(48, 9) // 60 × 0.8
-    expect(RcalcOurDmg('max', false)).toBeCloseTo(72, 9) // 60 × 1.2
+    expect(RcalcOurDmg('avg', false)).toBe(60)
+    // @ts-expect-error #99: 'min' is no longer assignable — this line failing to error means the
+    // min/max branches (or the widened `string` param) have been resurrected. See calc.ts RcalcOurDmg.
+    expect(RcalcOurDmg('min', false)).toBe(60)
   })
   it('Melt challenge applies 5 × 0.99^stacks', () => {
     G.game = u2CombatGame({ global: { world: 100, universe: 2, challengeActive: 'Melt', achievementBonus: 0, mapBonus: 0,
