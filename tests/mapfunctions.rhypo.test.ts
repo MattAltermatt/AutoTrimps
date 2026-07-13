@@ -131,41 +131,67 @@ describe('#96 · an unconfigured HF player is unaffected by the re-default', () 
 
 // ─── The configured cases the fix is FOR. ───────────────────────────────────────────────────────
 describe('#96 · a configured HF player gets the target compared as a NUMBER', () => {
-  it('single-zone stack [5]: unchanged (the old array coercion happened to work here)', () => {
+  // ⚠️ #101 flipped the sense of this clause: `bonfire > target` → `bonfire < target`. The three cases
+  // below are the whole contract, and two of them changed. See mapfunctions.ts for the full argument;
+  // the short version is that the tooltip promises "will not spend wood … until you have achieved your
+  // bonfire goal", and "until achieved" means conserve WHILE NOT ACHIEVED.
+  it('#101 single-zone stack [5]: conserve BELOW the goal, spend once it is achieved', () => {
+    // BELOW the goal ⇒ conserve. This is the case that was backwards: the old `>` let AT spend wood
+    // freely for the entire run right up to the goal, which is the exact opposite of the promise. Note
+    // world 10 is NOT in the zone list, so gofarmbonfire is inert here and this clause is the only one
+    // that can fire — which is why the inversion was load-bearing rather than cosmetic.
+    seedGame({ world: 10, bonfires: 0, wood: 0 })
     setZone([17])
     setStack([5])
-    // Below target: the clause is false, and (outside a farm zone) so is gofarmbonfire.
+    mapfunctions.Rhypo(false, false, true)
+    expect((globalThis as any).Rhyposhouldwood).toBe(false)
+
+    // AT the goal ⇒ "achieved" ⇒ spend. (5 < 5 is false. Unchanged by the fix — the old `5 > 5` was
+    // also false — so the boundary itself is the one case both readings agreed on.)
+    resetAmbient()
     seedGame({ world: 10, bonfires: 5, wood: 0 })
     setZone([17])
     setStack([5])
     mapfunctions.Rhypo(false, false, true)
     expect((globalThis as any).Rhyposhouldwood).toBe(true)
 
-    // Past target: 6 > 5 ⇒ stop spending wood. Old code: 6 > [5] → 6 > 5 ⇒ same.
+    // PAST the goal ⇒ still achieved ⇒ still spend. The old code CONSERVED here, forever, which is the
+    // other half of the inversion: it started hoarding wood precisely when it no longer needed any.
     resetAmbient()
     seedGame({ world: 10, bonfires: 6, wood: 0 })
     setZone([17])
     setStack([5])
     mapfunctions.Rhypo(false, false, true)
-    expect((globalThis as any).Rhyposhouldwood).toBe(false)
+    expect((globalThis as any).Rhyposhouldwood).toBe(true)
   })
 
-  it('multi-zone stack [5,10]: the FINAL target (10) is the one that counts — unchanged', () => {
+  it('multi-zone stack [5,10]: the FINAL target (10) is the one that counts', () => {
     // ⚠️ Corrected mid-implementation, by the mutation-check. I had assumed the old array comparison
     // was DEAD for a multi-zone stack ("5,10" → NaN). It was not: `.slice(-1)` already reduced the
     // stack to its LAST element, and `a > [b]` on a ONE-element numeric array coerces exactly
     // (["10"] → "10" → 10). So the old expression was semantically correct for every stack whose last
     // element is a real number — its only true defect was that it leaned on NaN/"" coercion for the
     // UNSET encodings. Pinning that here so nobody "re-fixes" a bug that was never there.
-    seedGame({ world: 10, bonfires: 11, wood: 0 })
+    // 9 bonfires against a FINAL target of 10 ⇒ not yet achieved ⇒ conserve. The intermediate 5 is not
+    // the stop condition; only the last row is. (Anti-vacuous: 9 is above the FIRST row, so a member
+    // that read hypofarmamount[0] instead of the last would spend here and this would go red.)
+    seedGame({ world: 10, bonfires: 9, wood: 0 })
     setZone([17, 25])
     setStack([5, 10])
     mapfunctions.Rhypo(false, false, true)
-    expect((globalThis as any).Rhyposhouldwood).toBe(false) // 11 > 10
+    expect((globalThis as any).Rhyposhouldwood).toBe(false)
 
-    // …and still correctly INACTIVE at exactly the final target (10 > 10 is false).
+    // At the final target ⇒ achieved ⇒ spend.
     resetAmbient()
     seedGame({ world: 10, bonfires: 10, wood: 0 })
+    setZone([17, 25])
+    setStack([5, 10])
+    mapfunctions.Rhypo(false, false, true)
+    expect((globalThis as any).Rhyposhouldwood).toBe(true)
+
+    // …and past it. (The old code conserved here — `11 > 10`.)
+    resetAmbient()
+    seedGame({ world: 10, bonfires: 11, wood: 0 })
     setZone([17, 25])
     setStack([5, 10])
     mapfunctions.Rhypo(false, false, true)

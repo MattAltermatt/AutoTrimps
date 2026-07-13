@@ -1305,9 +1305,32 @@ export function Rhypo(should: any, level: any, reset: any) {
     // So state "no target" EXPLICITLY rather than leaning on NaN poison, and compare against the NUMBER.
     // Unconfigured behavior is unchanged by construction, and all three unset encodings now agree.
     // Proven, and mutation-checked, in tests/mapfunctions.rhypo.test.ts.
+    // #101 — the comparison was INVERTED, not off-by-one. `Rhyposhouldwood === false` means CONSERVE
+    // wood (it blocks Smithy at buildings.ts:532, deprioritizes wood-costing housing at :382, and skips
+    // Shield levelling at equipment.ts:826). The setting's own tooltip (settings-defs.ts:659) enumerates
+    // exactly three conserve conditions, and this function has exactly three clauses:
+    //
+    //   "will not spend wood on zones you are farming bonfires"  → `should && hypofarmzone.includes(world)`  ✅
+    //   "…until you can afford N total bonfires" (its example)   → gofarmbonfire (wood.owned < targetprice) ✅
+    //   "or until you have ACHIEVED your bonfire goal"           → THIS clause                              ❌ was `>`
+    //
+    // "until you have achieved" means conserve WHILE NOT ACHIEVED — `bonfire < target`. The old `>` meant
+    // the opposite: spend wood freely all the way up to the goal, then hoard it forever after overshooting.
+    //
+    // It mattered far more than it looks, because this is the ONLY clause that can fire outside a farm
+    // zone — i.e. during most of the run. The other two are both inert there:
+    //   - `hypofarmzone.includes(world)` is false by definition outside the zone list; and
+    //   - hypoamountfarmindex = indexOf(world) = -1 ⇒ hypofarmamount[-1] is undefined ⇒ targetprice is
+    //     NaN ⇒ `wood.owned < NaN` is FALSE ⇒ gofarmbonfire never fires.
+    // (Note targetprice is independent of the current bonfire count: the 100^bonfire in `currentprice`
+    // cancels against 100^(target - bonfire - 1), leaving 1e10 * 100^(target-1) * 1.05 — the price of the
+    // target-th bonfire. So gofarmbonfire is "can I afford the goal", never "am I done".)
+    //
+    // Unconfigured players are unaffected by construction: hasBonfireTarget requires a target > 0, and all
+    // three "unset" encodings ([-1] / [] / [NaN×9]) still leave Rhyposhouldwood true (#96, pinned below).
     const finalBonfireTarget = hypofarmamount[hypofarmamount.length - 1];
     const hasBonfireTarget = finalBonfireTarget > 0;
-    if (reset && (gofarmbonfire || (hasBonfireTarget && bonfire > finalBonfireTarget))) Rhyposhouldwood = false;
+    if (reset && (gofarmbonfire || (hasBonfireTarget && bonfire < finalBonfireTarget))) Rhyposhouldwood = false;
 
 }
 

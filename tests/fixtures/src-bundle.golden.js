@@ -8806,7 +8806,7 @@
     }
     const finalBonfireTarget = hypofarmamount[hypofarmamount.length - 1];
     const hasBonfireTarget = finalBonfireTarget > 0;
-    if (reset && (gofarmbonfire || hasBonfireTarget && bonfire > finalBonfireTarget)) Rhyposhouldwood = false;
+    if (reset && (gofarmbonfire || hasBonfireTarget && bonfire < finalBonfireTarget)) Rhyposhouldwood = false;
   }
   function RhypoMap2() {
     var hypofragcheck = true;
