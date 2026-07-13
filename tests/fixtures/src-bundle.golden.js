@@ -9396,7 +9396,9 @@
       hypoprefragmappy = void 0;
       hypofragmappybought = false;
     }
-    if (reset && (gofarmbonfire || bonfire > getPageSetting2("Rhypofarmstack").slice(-1))) Rhyposhouldwood = false;
+    const finalBonfireTarget = hypofarmamount[hypofarmamount.length - 1];
+    const hasBonfireTarget = finalBonfireTarget > 0;
+    if (reset && (gofarmbonfire || hasBonfireTarget && bonfire > finalBonfireTarget)) Rhyposhouldwood = false;
   }
   function RhypoMap2() {
     var hypofragcheck = true;

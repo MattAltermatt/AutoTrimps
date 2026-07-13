@@ -1285,7 +1285,24 @@ export function Rhypo(should: any, level: any, reset: any) {
         hypofragmappybought = false;
     }
 
-    if (reset && (gofarmbonfire || bonfire > (getPageSetting('Rhypofarmstack').slice(-1)))) Rhyposhouldwood = false;
+    // #96 — this line used to compare a NUMBER to an ARRAY: `bonfire > getPageSetting(...).slice(-1)`.
+    // `.slice(-1)` yields a one-element ARRAY, so `>` ran it through ToPrimitive → String → Number. For a
+    // CONFIGURED stack that coercion is exact (["10"] → "10" → 10), so this was never wrong for real
+    // targets. The bug is what the UNSET encodings coerce to:
+    //   [NaN×9] → "NaN" → NaN ⇒ every comparison FALSE  — the STRING 'undefined' default (see defs)
+    //   []      → ""    → 0   ⇒ `bonfire > 0` TRUE       — LIVE BUG: an HF window saved with no rows
+    //   [-1]    → "-1"  → -1  ⇒ `bonfire > -1` TRUE      — which is why the default could NOT simply be
+    //                                                       re-pointed at the codebase's -1 sentinel
+    // The [NaN] row was doing real work: it WAS the de-facto "no bonfire target" semantic, and clearing
+    // Rhyposhouldwood blocks Smithy (buildings.ts:640), deprioritizes wood-costing housing (:501) and
+    // skips Shield levelling (equipment.ts:985) for the whole challenge.
+    //
+    // So state "no target" EXPLICITLY rather than leaning on NaN poison, and compare against the NUMBER.
+    // Unconfigured behavior is unchanged by construction, and all three unset encodings now agree.
+    // Proven, and mutation-checked, in tests/mapfunctions.rhypo.test.ts.
+    const finalBonfireTarget = hypofarmamount[hypofarmamount.length - 1];
+    const hasBonfireTarget = finalBonfireTarget > 0;
+    if (reset && (gofarmbonfire || (hasBonfireTarget && bonfire > finalBonfireTarget))) Rhyposhouldwood = false;
 
 }
 
