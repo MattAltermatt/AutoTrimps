@@ -744,7 +744,13 @@ describe('gather.RmanualLabor2 — L1b actuator spy-log (U2 gather)', () => {
     ;(globalThis as any).Rshouldtributefarm = true
     ;(globalThis as any).autoTrimpSettings = {
       Rtributefarmzone: { type: 'multiValue', value: [50] }, // getPageSetting → [50]; indexOf(world 50)=0
-      Rtributegatherselection: { value: ['metal'] },         // read directly [.value[0]]
+      // #103: this record used to omit `type` entirely, because the reader indexed `.value[0]` off the
+      // store and never asked what kind of setting it was. That shape cannot exist in production —
+      // settings-defs.ts declares this id `textValue` — so the fixture was modelling a store the game
+      // can never produce. Now that the reader goes through getPageSetting(), the type tag is load-bearing
+      // and the fixture has to tell the truth. (A fixture that a real createSetting could not have written
+      // is a test that certifies nothing; this is the #66 shape in miniature.)
+      Rtributegatherselection: { type: 'textValue', value: ['metal'] },
     }
     ;(globalThis as any).game = baseGame()
     gather.RmanualLabor2()

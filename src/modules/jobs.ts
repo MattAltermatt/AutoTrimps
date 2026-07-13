@@ -1,7 +1,7 @@
 // TRUE TS (Phase 1 · #28): converted from the faithful port under strict.
 // Was: relocated verbatim from legacy/modules/jobs.js.
 // Job hire/fire, worker ratios, quest jobs (U1 + U2 radon R* family). Deeply game-coupled (174 game.* touches), @ts-nocheck. Module vars tierMagmamancers/reservedJobs are jobs-internal. No shared vars, no implicit globals, no collisions.
-import { getPageSetting, debug, setPageSetting } from './utils'
+import { getPageSetting, getPageSettingAt, debug, setPageSetting } from './utils'
 
 MODULES["jobs"] = {};
 
@@ -574,29 +574,34 @@ export function RbuyJobs() {
     // Calculate how much of each worker we should have
     // If focused farming go all in for caches
     let allIn = "";
+    // #103: `autoTrimpSettings.Rtimefarmspecial.value[i]` → the one setting reader. Identical value
+    // for a configured player (getPageSetting returns that very array for a textValue), and the
+    // read can no longer throw its way out of mainLoop, which has no try/catch (#87).
     if (Rshouldtimefarm) {
         let timefarmzone = getPageSetting('Rtimefarmzone');
         let timefarmlevelindex = timefarmzone.indexOf(game.global.world);
-        if (autoTrimpSettings.Rtimefarmspecial.value[timefarmlevelindex].includes('wc')) {
+        let timefarmspecial = getPageSettingAt('Rtimefarmspecial', timefarmlevelindex);
+        if (timefarmspecial.includes('wc')) {
             allIn = "Lumberjack";
-        } else if (autoTrimpSettings.Rtimefarmspecial.value[timefarmlevelindex].includes('sc')) {
+        } else if (timefarmspecial.includes('sc')) {
             allIn = "Farmer";
-        } else if (autoTrimpSettings.Rtimefarmspecial.value[timefarmlevelindex].includes('mc')) {
+        } else if (timefarmspecial.includes('mc')) {
             allIn = "Miner";
-        } else if (autoTrimpSettings.Rtimefarmspecial.value[timefarmlevelindex].includes('rc')) {
+        } else if (timefarmspecial.includes('rc')) {
             allIn = "Scientist";
         }
     }
     if (Rdshouldtimefarm) {
         let dtimefarmzone = getPageSetting('Rdtimefarmzone');
         let dtimefarmlevelindex = dtimefarmzone.indexOf(game.global.world);
-        if (autoTrimpSettings.Rdtimefarmspecial.value[dtimefarmlevelindex].includes('wc')) {
+        let dtimefarmspecial = getPageSettingAt('Rdtimefarmspecial', dtimefarmlevelindex);
+        if (dtimefarmspecial.includes('wc')) {
             allIn = "Lumberjack";
-        } else if (autoTrimpSettings.Rdtimefarmspecial.value[dtimefarmlevelindex].includes('sc')) {
+        } else if (dtimefarmspecial.includes('sc')) {
             allIn = "Farmer";
-        } else if (autoTrimpSettings.Rdtimefarmspecial.value[dtimefarmlevelindex].includes('mc')) {
+        } else if (dtimefarmspecial.includes('mc')) {
             allIn = "Miner";
-        } else if (autoTrimpSettings.Rdtimefarmspecial.value[dtimefarmlevelindex].includes('rc')) {
+        } else if (dtimefarmspecial.includes('rc')) {
             allIn = "Scientist";
         }
     }
@@ -611,13 +616,14 @@ export function RbuyJobs() {
     if (Rshouldtributefarm) {
         let tributefarmzone = getPageSetting('Rtributefarmzone');
         let tributefarmlevelindex = tributefarmzone.indexOf(game.global.world);
-        if (autoTrimpSettings.Rtributespecialselection.value[tributefarmlevelindex].includes('wc')) {
+        let tributefarmspecial = getPageSettingAt('Rtributespecialselection', tributefarmlevelindex);
+        if (tributefarmspecial.includes('wc')) {
             allIn = "Lumberjack";
-        } else if (autoTrimpSettings.Rtributespecialselection.value[tributefarmlevelindex].includes('sc')) {
+        } else if (tributefarmspecial.includes('sc')) {
             allIn = "Farmer";
-        } else if (autoTrimpSettings.Rtributespecialselection.value[tributefarmlevelindex].includes('mc')) {
+        } else if (tributefarmspecial.includes('mc')) {
             allIn = "Miner";
-        } else if (autoTrimpSettings.Rtributespecialselection.value[tributefarmlevelindex].includes('rc')) {
+        } else if (tributefarmspecial.includes('rc')) {
             allIn = "Scientist";
         }
     }

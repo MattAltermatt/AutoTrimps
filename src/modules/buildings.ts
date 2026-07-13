@@ -64,17 +64,16 @@ export function safeBuyBuilding(building: string) {
         return false;
     }
     // #57 coordinator: defer a lesser building that would spend metal reserved for a higher-priority
-    // target (e.g. saving up for Coordination). The whole block is gated on `active` so that when the
-    // setting is OFF nothing extra runs at all — the OFF path is byte-identical (the proof-net L0
-    // traces reproduce). Phase 1 reserves the metal pool only.
-    // Only metal-costed buildings can dip into a metal reserve; skip the rest (and never ask
-    // getBuildingItemPrice for a resource a building doesn't cost — native throws on a missing key).
-    if (MODULES["coordinator"]?.active && game.buildings[building].cost?.metal !== undefined) {
-        const coordMetalCost = getBuildingItemPrice(game.buildings[building], "metal", false, game.global.buyAmt === 'Max' ? 1 : game.global.buyAmt);
-        if (!coordinatorAllows(building, "metal", coordMetalCost)) {
-            postBuy2(oldBuy);
-            return false;
-        }
+    // target (e.g. saving up for Coordination). Inactive → coordinatorAllowsBuilding returns true
+    // before it touches the game at all, so the OFF path is byte-identical (the proof-net L0 traces
+    // reproduce). #94 moved the pricing into coordinator.ts so the U2 buyers can share this exact
+    // gate — there is now ONE way for AT to ask "may I spend on this building?".
+    // Note the buyAmt read: safeBuyBuilding has already pinned game.global.buyAmt to the amount it is
+    // about to buy (1 / 2 / 10 above), so that IS the forceAmt here — except 'Max', which is not a
+    // number and prices as 1 (the pre-#94 behavior, preserved).
+    if (!coordinatorAllowsBuilding(building, game.global.buyAmt === 'Max' ? 1 : game.global.buyAmt)) {
+        postBuy2(oldBuy);
+        return false;
     }
 
     game.global.firing = false;
@@ -438,7 +437,8 @@ export function RbuyStorage(buyFood: boolean, buyWood: boolean, buyMetal: boolea
 
 
         if (resMax < jestImps[Res]) {
-            if (canAffordBuilding(Resources[Res]) && !(game.buildings[Resources[Res]].locked)) {
+            // #94: Forge costs METAL, so this is a coordinator-visible spender like any other.
+            if (canAffordBuilding(Resources[Res]) && !(game.buildings[Resources[Res]].locked) && coordinatorAllowsBuilding(Resources[Res], 1)) {
                 buyBuilding(Resources[Res], true, true, 1);
             }
         }
@@ -508,7 +508,7 @@ export function RbuyBuildings() {
                 toggleAutoStorage(false);
             }
 
-            if (targetprice >= 1e10 && ((woodmax * Math.pow(2, game.buildings.Shed.purchased - game.buildings.Shed.owned)) < targetprice)) {
+            if (targetprice >= 1e10 && ((woodmax * Math.pow(2, game.buildings.Shed.purchased - game.buildings.Shed.owned)) < targetprice) && coordinatorAllowsBuilding('Shed', 1)) {
                 buyBuilding('Shed', true, true, 1);
             }
 
@@ -521,7 +521,9 @@ export function RbuyBuildings() {
 
 
     //Smithy
-    if (!game.buildings.Smithy.locked && canAffordBuilding("Smithy", false, false, false, false, 1) && Rhyposhouldwood) {
+    // #94: Smithy costs metal. Every buyBuilding() below now clears coordinatorAllowsBuilding() first,
+    // so the #57 reservation guard sees the U2 buyers too — it used to see only U1's safeBuyBuilding.
+    if (!game.buildings.Smithy.locked && canAffordBuilding("Smithy", false, false, false, false, 1) && Rhyposhouldwood && coordinatorAllowsBuilding("Smithy", 1)) {
         // On quest challenge
         if (game.global.challengeActive === 'Quest') {
             if (smithybought > game.global.world) { smithybought = 0; }
@@ -536,7 +538,7 @@ export function RbuyBuildings() {
     }
 
     //Microchip
-    if (!game.buildings.Microchip.locked && canAffordBuilding('Microchip')) {
+    if (!game.buildings.Microchip.locked && canAffordBuilding('Microchip') && coordinatorAllowsBuilding('Microchip', 1)) {
         buyBuilding('Microchip', true, true, 1);
     }
 
@@ -560,7 +562,9 @@ export function RbuyBuildings() {
         boughtHousing = false;
         const housing = mostEfficientHousing();
 
-        if (housing != null && canAffordBuilding(housing) && game.buildings[housing].purchased < (getPageSetting('RMax' + housing) === -1 ? Infinity : getPageSetting('RMax' + housing))) {
+        // #94: House/Mansion/Hotel/Resort all cost metal. A blocked buy leaves boughtHousing false,
+        // which ends the do/while — the loop defers rather than spinning.
+        if (housing != null && canAffordBuilding(housing) && game.buildings[housing].purchased < (getPageSetting('RMax' + housing) === -1 ? Infinity : getPageSetting('RMax' + housing)) && coordinatorAllowsBuilding(housing, 1)) {
             buyBuilding(housing, true, true, 1);
             boughtHousing = true;
         }
@@ -573,14 +577,17 @@ export function RbuyBuildings() {
         if (getPageSetting('RMaxTribute') > game.buildings.Tribute.owned) {
             buyTributeCount = Math.min(buyTributeCount, getPageSetting('RMaxTribute') - game.buildings.Tribute.owned);
         }
-        if (getPageSetting('RMaxTribute') < 0 || (getPageSetting('RMaxTribute') > game.buildings.Tribute.owned)) {
+        // Tribute costs food only, so the metal guard is a no-op for it today — routed anyway, because
+        // the invariant #94 is buying is "no AT building purchase happens outside the chokepoint", and
+        // an exception here is exactly how the next reserved pool would leak.
+        if ((getPageSetting('RMaxTribute') < 0 || (getPageSetting('RMaxTribute') > game.buildings.Tribute.owned)) && coordinatorAllowsBuilding('Tribute', buyTributeCount)) {
             buyBuilding('Tribute', true, true, buyTributeCount);
         }
     }
 
     //Labs
     if (!game.buildings.Laboratory.locked && getPageSetting('Rnurtureon') == true) {
-        if (!isBuildingInQueue('Laboratory') && (getPageSetting('RMaxLabs') < 0 || (getPageSetting('RMaxLabs') > game.buildings.Laboratory.owned))) {
+        if (!isBuildingInQueue('Laboratory') && (getPageSetting('RMaxLabs') < 0 || (getPageSetting('RMaxLabs') > game.buildings.Laboratory.owned)) && coordinatorAllowsBuilding('Laboratory', 1)) {
             buyBuilding('Laboratory', true, true, 1);
         }
     }

@@ -23,6 +23,7 @@ declare global {
 
   // Purchase Coordinator (#57) — the reservation guard + per-tick pre-pass, read via the bare-name seam.
   var coordinatorAllows: typeof import('../modules/coordinator').coordinatorAllows
+  var coordinatorAllowsBuilding: typeof import('../modules/coordinator').coordinatorAllowsBuilding
   var computeTopTarget: typeof import('../modules/coordinator').computeTopTarget
   // Log helpers defined in still-legacy modules.
   function getCurrentTime(): string
@@ -83,6 +84,7 @@ declare global {
   // #100 — the one spelling of "did the user type a name into this textValue setting?". Accepts every
   // encoding of unset ('undefined' | '' | false | undefined); see the doc comment on the export.
   var textSettingIsSet: typeof import('../modules/utils').textSettingIsSet
+  var getPageSettingAt: typeof import('../modules/utils').getPageSettingAt
   function byId<T extends HTMLElement = HTMLInputElement>(id: string): T  // utils.ts (typed DOM helper)
   var GRAPHSETTINGS: any                          // Graphs.js
   // Settings-UI boot fns bridged; read bare by settings-boot.ts.

@@ -11,7 +11,7 @@
 //   autoTrimpSettings.<farm>.value[index] comparison (a per-setting multi-value array read at a
 //   possibly-out-of-range index → undefined element; same polymorphism rationale as getPageSetting).
 //   Every numeric literal + formula shape is preserved exactly (balance is sacrosanct).
-import { getPageSetting } from './utils'
+import { getPageSetting, getPageSettingAt } from './utils'
 
 //updated
 MODULES["gather"] = {};
@@ -302,16 +302,18 @@ export function RmanualLabor2() {
     else if (Rshouldtimefarm) {
         const timefarmzone = getPageSetting('Rtimefarmzone');
         const timefarmlevelindex = timefarmzone.indexOf(game.global.world);
-        if (autoTrimpSettings.Rtimefarmgather.value[timefarmlevelindex] == "food") {
+        // #103: was autoTrimpSettings.Rtimefarmgather.value[i] — the one setting reader now.
+        const timefarmgather = getPageSettingAt('Rtimefarmgather', timefarmlevelindex);
+        if (timefarmgather == "food") {
             setGather('food');
         }
-        if (autoTrimpSettings.Rtimefarmgather.value[timefarmlevelindex] == "wood") {
+        if (timefarmgather == "wood") {
             setGather('wood');
         }
-        if (autoTrimpSettings.Rtimefarmgather.value[timefarmlevelindex] == "metal") {
+        if (timefarmgather == "metal") {
             setGather('metal');
         }
-        if (autoTrimpSettings.Rtimefarmgather.value[timefarmlevelindex] == "science") {
+        if (timefarmgather == "science") {
             setGather('science');
         }
     } 
@@ -325,16 +327,17 @@ export function RmanualLabor2() {
     else if (Rshouldtributefarm) {
         var tributefarmzone = getPageSetting('Rtributefarmzone');
         var tributefarmlevelindex = tributefarmzone.indexOf(game.global.world);
-        if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "food") {
+        var tributegather = getPageSettingAt('Rtributegatherselection', tributefarmlevelindex);
+        if (tributegather == "food") {
             setGather('food');
         }
-        if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "wood") {
+        if (tributegather == "wood") {
             setGather('wood');
         }
-        if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "metal") {
+        if (tributegather == "metal") {
             setGather('metal');
         }
-        if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "science") {
+        if (tributegather == "science") {
             setGather('science');
         }
     }

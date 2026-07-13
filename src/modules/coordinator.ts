@@ -29,6 +29,32 @@ export function coordinatorAllows(name: string, costResource: string, cost: numb
 }
 
 /**
+ * #94 — the ONE building-buy chokepoint. Every AT building purchase, in either universe, asks this
+ * before it calls the native `buyBuilding()`.
+ *
+ * It exists because `coordinatorAllows` needs a *price*, and pricing a building is three lines of
+ * game-API knowledge (does it even cost metal? what does N of them cost?) that were previously
+ * inlined in `safeBuyBuilding` only — which is the U1 path. `RbuyBuildings` (U2) called
+ * `buyBuilding()` directly seven times and `RbuyStorage` once, so the coordinator never saw a single
+ * U2 purchase. Anything that needs to spend now goes through here, so a new buy site cannot silently
+ * re-open the hole.
+ *
+ * `amt` is the number of units about to be bought — pass what you pass to `buyBuilding`'s forceAmt,
+ * NOT the ambient `game.global.buyAmt` (see #83 §1: that flag is a player UI preference).
+ *
+ * Faithful-by-default: inactive → `true` before any game call, so the OFF path adds one boolean read.
+ * Non-metal buildings are allowed unconditionally — Phase 1 reserves the metal pool only, and asking
+ * `getBuildingItemPrice` for a resource a building does not cost makes the native throw.
+ */
+export function coordinatorAllowsBuilding(building: string, amt: number): boolean {
+  const co = MODULES["coordinator"];
+  if (!co?.active) return true;
+  if (game.buildings[building]?.cost?.metal === undefined) return true;
+  const metalCost = getBuildingItemPrice(game.buildings[building], "metal", false, amt);
+  return coordinatorAllows(building, "metal", metalCost);
+}
+
+/**
  * Per-tick pre-pass (called from mainLoop before the buyers run). Reads live game state and the
  * `PurchaseCoordinator` toggle, and writes the current top-priority target + resource reserve into
  * the context. Recomputing from scratch each tick is what lets a manual player purchase be absorbed

@@ -492,8 +492,8 @@ describe('a test may only seed setting ids that production defines (#74)', () =>
   // may be legitimately seeded elsewhere once its production bug is fixed). Each entry dies together with
   // the KNOWN_PHANTOM entry it is covering for.
   const KNOWN_TEST_LIE: Record<string, string> = {
-    'tests/buildings.characterization.test.ts:321': "#68/#74 — seeds phantom 'GatewayWall'",
-    'tests/buildings.characterization.test.ts:426': "#68/#74 — seeds phantom 'GemEfficiencyIgnoresMax'",
+    'tests/buildings.characterization.test.ts:325': "#68/#74 — seeds phantom 'GatewayWall'",
+    'tests/buildings.characterization.test.ts:430': "#68/#74 — seeds phantom 'GemEfficiencyIgnoresMax'",
     // ✅ #85 — the two "seeds phantom 'RCapEquip2'" entries are GONE. Nothing repointed them: the tests
     // that seeded the id were tests OF DEAD CODE (RevaluateEquipmentEfficiency), and they were deleted
     // along with the function. This is the exact loop #85 exists to break — a test seeds a phantom id so

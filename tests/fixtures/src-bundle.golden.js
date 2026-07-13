@@ -13,6 +13,7 @@
     debug: () => debug2,
     filterMessage2: () => filterMessage2,
     getPageSetting: () => getPageSetting2,
+    getPageSettingAt: () => getPageSettingAt,
     loadPageVariables: () => loadPageVariables,
     message2: () => message2,
     safeSetItems: () => safeSetItems2,
@@ -127,6 +128,11 @@
   function textSettingIsSet(setting) {
     const v = getPageSetting2(setting);
     return v !== void 0 && v !== null && v !== false && v !== "" && v !== "undefined";
+  }
+  function getPageSettingAt(setting, index) {
+    const v = getPageSetting2(setting);
+    if (v === void 0 || v === null) return void 0;
+    return v[index];
   }
   function setPageSetting2(setting, value) {
     if (autoTrimpSettings.hasOwnProperty(setting) == false) {
@@ -3078,12 +3084,9 @@
       postBuy2(oldBuy);
       return false;
     }
-    if (MODULES["coordinator"]?.active && game.buildings[building].cost?.metal !== void 0) {
-      const coordMetalCost = getBuildingItemPrice(game.buildings[building], "metal", false, game.global.buyAmt === "Max" ? 1 : game.global.buyAmt);
-      if (!coordinatorAllows(building, "metal", coordMetalCost)) {
-        postBuy2(oldBuy);
-        return false;
-      }
+    if (!coordinatorAllowsBuilding(building, game.global.buyAmt === "Max" ? 1 : game.global.buyAmt)) {
+      postBuy2(oldBuy);
+      return false;
     }
     game.global.firing = false;
     if (building === "Gym" && getPageSetting2("GymWall")) {
@@ -3368,7 +3371,7 @@
         jestImps[Res] = curRes * 1.1;
       }
       if (resMax < jestImps[Res]) {
-        if (canAffordBuilding(Resources[Res]) && !game.buildings[Resources[Res]].locked) {
+        if (canAffordBuilding(Resources[Res]) && !game.buildings[Resources[Res]].locked && coordinatorAllowsBuilding(Resources[Res], 1)) {
           buyBuilding(Resources[Res], true, true, 1);
         }
       }
@@ -3406,7 +3409,7 @@
         if (game.global.autoStorage) {
           toggleAutoStorage(false);
         }
-        if (targetprice >= 1e10 && woodmax * Math.pow(2, game.buildings.Shed.purchased - game.buildings.Shed.owned) < targetprice) {
+        if (targetprice >= 1e10 && woodmax * Math.pow(2, game.buildings.Shed.purchased - game.buildings.Shed.owned) < targetprice && coordinatorAllowsBuilding("Shed", 1)) {
           buyBuilding("Shed", true, true, 1);
         }
         RbuyStorage(true, false, true);
@@ -3414,7 +3417,7 @@
     } else {
       __syncAutoStorageOnce();
     }
-    if (!game.buildings.Smithy.locked && canAffordBuilding("Smithy", false, false, false, false, 1) && Rhyposhouldwood) {
+    if (!game.buildings.Smithy.locked && canAffordBuilding("Smithy", false, false, false, false, 1) && Rhyposhouldwood && coordinatorAllowsBuilding("Smithy", 1)) {
       if (game.global.challengeActive === "Quest") {
         if (smithybought > game.global.world) {
           smithybought = 0;
@@ -3427,14 +3430,14 @@
         buyBuilding("Smithy", true, true, 1);
       }
     }
-    if (!game.buildings.Microchip.locked && canAffordBuilding("Microchip")) {
+    if (!game.buildings.Microchip.locked && canAffordBuilding("Microchip") && coordinatorAllowsBuilding("Microchip", 1)) {
       buyBuilding("Microchip", true, true, 1);
     }
     let boughtHousing = false;
     do {
       boughtHousing = false;
       const housing = mostEfficientHousing();
-      if (housing != null && canAffordBuilding(housing) && game.buildings[housing].purchased < (getPageSetting2("RMax" + housing) === -1 ? Infinity : getPageSetting2("RMax" + housing))) {
+      if (housing != null && canAffordBuilding(housing) && game.buildings[housing].purchased < (getPageSetting2("RMax" + housing) === -1 ? Infinity : getPageSetting2("RMax" + housing)) && coordinatorAllowsBuilding(housing, 1)) {
         buyBuilding(housing, true, true, 1);
         boughtHousing = true;
       }
@@ -3444,12 +3447,12 @@
       if (getPageSetting2("RMaxTribute") > game.buildings.Tribute.owned) {
         buyTributeCount = Math.min(buyTributeCount, getPageSetting2("RMaxTribute") - game.buildings.Tribute.owned);
       }
-      if (getPageSetting2("RMaxTribute") < 0 || getPageSetting2("RMaxTribute") > game.buildings.Tribute.owned) {
+      if ((getPageSetting2("RMaxTribute") < 0 || getPageSetting2("RMaxTribute") > game.buildings.Tribute.owned) && coordinatorAllowsBuilding("Tribute", buyTributeCount)) {
         buyBuilding("Tribute", true, true, buyTributeCount);
       }
     }
     if (!game.buildings.Laboratory.locked && getPageSetting2("Rnurtureon") == true) {
-      if (!isBuildingInQueue("Laboratory") && (getPageSetting2("RMaxLabs") < 0 || getPageSetting2("RMaxLabs") > game.buildings.Laboratory.owned)) {
+      if (!isBuildingInQueue("Laboratory") && (getPageSetting2("RMaxLabs") < 0 || getPageSetting2("RMaxLabs") > game.buildings.Laboratory.owned) && coordinatorAllowsBuilding("Laboratory", 1)) {
         buyBuilding("Laboratory", true, true, 1);
       }
     }
@@ -3966,26 +3969,28 @@
     if (Rshouldtimefarm) {
       let timefarmzone = getPageSetting2("Rtimefarmzone");
       let timefarmlevelindex = timefarmzone.indexOf(game.global.world);
-      if (autoTrimpSettings.Rtimefarmspecial.value[timefarmlevelindex].includes("wc")) {
+      let timefarmspecial = getPageSettingAt("Rtimefarmspecial", timefarmlevelindex);
+      if (timefarmspecial.includes("wc")) {
         allIn = "Lumberjack";
-      } else if (autoTrimpSettings.Rtimefarmspecial.value[timefarmlevelindex].includes("sc")) {
+      } else if (timefarmspecial.includes("sc")) {
         allIn = "Farmer";
-      } else if (autoTrimpSettings.Rtimefarmspecial.value[timefarmlevelindex].includes("mc")) {
+      } else if (timefarmspecial.includes("mc")) {
         allIn = "Miner";
-      } else if (autoTrimpSettings.Rtimefarmspecial.value[timefarmlevelindex].includes("rc")) {
+      } else if (timefarmspecial.includes("rc")) {
         allIn = "Scientist";
       }
     }
     if (Rdshouldtimefarm) {
       let dtimefarmzone = getPageSetting2("Rdtimefarmzone");
       let dtimefarmlevelindex = dtimefarmzone.indexOf(game.global.world);
-      if (autoTrimpSettings.Rdtimefarmspecial.value[dtimefarmlevelindex].includes("wc")) {
+      let dtimefarmspecial = getPageSettingAt("Rdtimefarmspecial", dtimefarmlevelindex);
+      if (dtimefarmspecial.includes("wc")) {
         allIn = "Lumberjack";
-      } else if (autoTrimpSettings.Rdtimefarmspecial.value[dtimefarmlevelindex].includes("sc")) {
+      } else if (dtimefarmspecial.includes("sc")) {
         allIn = "Farmer";
-      } else if (autoTrimpSettings.Rdtimefarmspecial.value[dtimefarmlevelindex].includes("mc")) {
+      } else if (dtimefarmspecial.includes("mc")) {
         allIn = "Miner";
-      } else if (autoTrimpSettings.Rdtimefarmspecial.value[dtimefarmlevelindex].includes("rc")) {
+      } else if (dtimefarmspecial.includes("rc")) {
         allIn = "Scientist";
       }
     }
@@ -4000,13 +4005,14 @@
     if (Rshouldtributefarm) {
       let tributefarmzone = getPageSetting2("Rtributefarmzone");
       let tributefarmlevelindex = tributefarmzone.indexOf(game.global.world);
-      if (autoTrimpSettings.Rtributespecialselection.value[tributefarmlevelindex].includes("wc")) {
+      let tributefarmspecial = getPageSettingAt("Rtributespecialselection", tributefarmlevelindex);
+      if (tributefarmspecial.includes("wc")) {
         allIn = "Lumberjack";
-      } else if (autoTrimpSettings.Rtributespecialselection.value[tributefarmlevelindex].includes("sc")) {
+      } else if (tributefarmspecial.includes("sc")) {
         allIn = "Farmer";
-      } else if (autoTrimpSettings.Rtributespecialselection.value[tributefarmlevelindex].includes("mc")) {
+      } else if (tributefarmspecial.includes("mc")) {
         allIn = "Miner";
-      } else if (autoTrimpSettings.Rtributespecialselection.value[tributefarmlevelindex].includes("rc")) {
+      } else if (tributefarmspecial.includes("rc")) {
         allIn = "Scientist";
       }
     }
@@ -4455,16 +4461,17 @@
     } else if (Rshouldtimefarm) {
       const timefarmzone = getPageSetting2("Rtimefarmzone");
       const timefarmlevelindex = timefarmzone.indexOf(game.global.world);
-      if (autoTrimpSettings.Rtimefarmgather.value[timefarmlevelindex] == "food") {
+      const timefarmgather = getPageSettingAt("Rtimefarmgather", timefarmlevelindex);
+      if (timefarmgather == "food") {
         setGather("food");
       }
-      if (autoTrimpSettings.Rtimefarmgather.value[timefarmlevelindex] == "wood") {
+      if (timefarmgather == "wood") {
         setGather("wood");
       }
-      if (autoTrimpSettings.Rtimefarmgather.value[timefarmlevelindex] == "metal") {
+      if (timefarmgather == "metal") {
         setGather("metal");
       }
-      if (autoTrimpSettings.Rtimefarmgather.value[timefarmlevelindex] == "science") {
+      if (timefarmgather == "science") {
         setGather("science");
       }
     } else if (Rshouldsmithyfarm) {
@@ -4472,16 +4479,17 @@
     } else if (Rshouldtributefarm) {
       var tributefarmzone = getPageSetting2("Rtributefarmzone");
       var tributefarmlevelindex = tributefarmzone.indexOf(game.global.world);
-      if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "food") {
+      var tributegather = getPageSettingAt("Rtributegatherselection", tributefarmlevelindex);
+      if (tributegather == "food") {
         setGather("food");
       }
-      if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "wood") {
+      if (tributegather == "wood") {
         setGather("wood");
       }
-      if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "metal") {
+      if (tributegather == "metal") {
         setGather("metal");
       }
-      if (autoTrimpSettings.Rtributegatherselection.value[tributefarmlevelindex] == "science") {
+      if (tributegather == "science") {
         setGather("science");
       }
     } else if (getPageSetting2("RManualGather2") != 2 && game.resources.science.owned < MODULES["gather"].RminScienceAmount && document.getElementById("scienceCollectBtn").style.display !== "none" && document.getElementById("science").style.visibility !== "hidden") {
@@ -5227,7 +5235,7 @@
     var string = [autoBattle.enemyLevel, bestdust, equips];
     if (getPageSetting2("RABfarmstring") == "-1") {
       setPageSetting2("RABfarmstring", string);
-    } else if (autoBattle.sessionEnemiesKilled > 8 && autoBattle.sessionEnemiesKilled > autoBattle.sessionTrimpsKilled && bestdust > 0 && autoTrimpSettings.RABfarmstring.value[1] < bestdust) {
+    } else if (autoBattle.sessionEnemiesKilled > 8 && autoBattle.sessionEnemiesKilled > autoBattle.sessionTrimpsKilled && bestdust > 0 && getPageSettingAt("RABfarmstring", 1) < bestdust) {
       setPageSetting2("RABfarmstring", string);
     }
   }
@@ -8079,9 +8087,9 @@
     var timefarmindex = timefarmzone.indexOf(game.global.world);
     var timefarmlevel = daily ? getPageSetting2("Rdtimefarmlevel")[timefarmindex] : getPageSetting2("Rtimefarmlevel")[timefarmindex];
     if (level) return timefarmlevel;
-    var timefarmmap = daily ? autoTrimpSettings.Rdtimefarmmap.value[timefarmindex] : autoTrimpSettings.Rtimefarmmap.value[timefarmindex];
+    var timefarmmap = getPageSettingAt(daily ? "Rdtimefarmmap" : "Rtimefarmmap", timefarmindex);
     if (map) return timefarmmap;
-    var timefarmspecial = daily ? autoTrimpSettings.Rdtimefarmspecial.value[timefarmindex] : autoTrimpSettings.Rtimefarmspecial.value[timefarmindex];
+    var timefarmspecial = getPageSettingAt(daily ? "Rdtimefarmspecial" : "Rtimefarmspecial", timefarmindex);
     if (special) return timefarmspecial;
     var timefarmcell = daily ? getPageSetting2("Rdtimefarmcell")[timefarmindex] : getPageSetting2("Rtimefarmcell")[timefarmindex];
     var timefarmtime = daily ? getPageSetting2("Rdtimefarmtime") : getPageSetting2("Rtimefarmtime");
@@ -8196,9 +8204,9 @@
     var tributefarmindex = tributefarmzone.indexOf(game.global.world);
     var tributefarmlevel = getPageSetting2("Rtributefarmlevel")[tributefarmindex];
     if (level) return tributefarmlevel;
-    var tributefarmmap = autoTrimpSettings.Rtributemapselection.value[tributefarmindex];
+    var tributefarmmap = getPageSettingAt("Rtributemapselection", tributefarmindex);
     if (map) return tributefarmmap;
-    var tributefarmspecial = autoTrimpSettings.Rtributespecialselection.value[tributefarmindex];
+    var tributefarmspecial = getPageSettingAt("Rtributespecialselection", tributefarmindex);
     if (special) return tributefarmspecial;
     var tributefarmcell = getPageSetting2("Rtributefarmcell")[tributefarmindex];
     var tributefarmtribute = getPageSetting2("Rtributefarmamount");
@@ -14113,19 +14121,27 @@
   var coordinator_exports = {};
   __export(coordinator_exports, {
     computeTopTarget: () => computeTopTarget,
-    coordinatorAllows: () => coordinatorAllows2
+    coordinatorAllows: () => coordinatorAllows,
+    coordinatorAllowsBuilding: () => coordinatorAllowsBuilding2
   });
   MODULES["coordinator"] = {
     active: false,
     topTarget: null,
     reserved: {}
   };
-  function coordinatorAllows2(name, costResource, cost) {
+  function coordinatorAllows(name, costResource, cost) {
     const co = MODULES["coordinator"];
     if (!co.active || co.topTarget == null) return true;
     if (name === co.topTarget.name) return true;
     const keep = co.reserved[costResource] ?? 0;
     return game.resources[costResource].owned - cost >= keep;
+  }
+  function coordinatorAllowsBuilding2(building, amt) {
+    const co = MODULES["coordinator"];
+    if (!co?.active) return true;
+    if (game.buildings[building]?.cost?.metal === void 0) return true;
+    const metalCost = getBuildingItemPrice(game.buildings[building], "metal", false, amt);
+    return coordinatorAllows(building, "metal", metalCost);
   }
   function computeTopTarget() {
     const co = MODULES["coordinator"];

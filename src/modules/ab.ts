@@ -3,7 +3,7 @@
 // AutoBattle (U2) preset/dust/farm automation + solver. contractVoid left bare (resolves to
 // the var declared in still-legacy mapfunctions.js, read at runtime) — typed ambient. autoBattle
 // is the game's U2 combat global (ambient). Behaviour-preserving: any body edits are TYPE-ONLY.
-import { getPageSetting, setPageSetting } from './utils'
+import { getPageSetting, getPageSettingAt, setPageSetting } from './utils'
 
 //AB
 
@@ -159,7 +159,10 @@ export function ABfarmsave() {
     if (getPageSetting('RABfarmstring') == "-1") {
         setPageSetting('RABfarmstring', string);
     }
-    else if (autoBattle.sessionEnemiesKilled > 8 && autoBattle.sessionEnemiesKilled > autoBattle.sessionTrimpsKilled && bestdust > 0 && autoTrimpSettings.RABfarmstring.value[1] < bestdust) {
+    // #103: this was the ONE direct `autoTrimpSettings.RABfarmstring.value[1]` in a function family
+    // that otherwise reads `getPageSetting('RABfarmstring')[0]` / `[2]` (ABfarmswitch, below). Same id,
+    // same textValue array, two different reading paths — exactly the inconsistency #103 is closing.
+    else if (autoBattle.sessionEnemiesKilled > 8 && autoBattle.sessionEnemiesKilled > autoBattle.sessionTrimpsKilled && bestdust > 0 && getPageSettingAt('RABfarmstring', 1) < bestdust) {
         setPageSetting('RABfarmstring', string);
     }
 }

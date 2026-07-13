@@ -8,7 +8,7 @@
 // every top-level var is published to globalThis (shared-var seam; they were all globals in
 // the original concat). Plus 3 sloppy implicit-global writes (sepcial/levelzones/selectedMap)
 // initialised on globalThis below; functions with a local var selectedMap/levelzones keep it.
-import { getPageSetting, debug, byId } from './utils'
+import { getPageSetting, getPageSettingAt, debug, byId } from './utils'
 
 // Formerly-implicit-global state (see header) — published so strict-mode bare writes resolve.
 globalThis.sepcial = undefined; globalThis.levelzones = undefined; globalThis.selectedMap = undefined;
@@ -438,10 +438,13 @@ export function RtimeFarm(should: any, level: any, map: any, special: any, daily
     var timefarmlevel = daily ? getPageSetting('Rdtimefarmlevel')[timefarmindex] : getPageSetting('Rtimefarmlevel')[timefarmindex];
     if (level) return timefarmlevel;
 
-    var timefarmmap = daily ? autoTrimpSettings.Rdtimefarmmap.value[timefarmindex] : autoTrimpSettings.Rtimefarmmap.value[timefarmindex];
+    // #103: these two used to index autoTrimpSettings.<id>.value[i] directly, the only two reads in
+    // this function that reached around getPageSetting. Same value for every configured and every
+    // unconfigured player (see utils.getPageSettingAt); it just can no longer throw on a bad store.
+    var timefarmmap = getPageSettingAt(daily ? 'Rdtimefarmmap' : 'Rtimefarmmap', timefarmindex);
     if (map) return timefarmmap;
 
-    var timefarmspecial = daily ? autoTrimpSettings.Rdtimefarmspecial.value[timefarmindex] : autoTrimpSettings.Rtimefarmspecial.value[timefarmindex];
+    var timefarmspecial = getPageSettingAt(daily ? 'Rdtimefarmspecial' : 'Rtimefarmspecial', timefarmindex);
     if (special) return timefarmspecial;
 
     var timefarmcell = daily ? getPageSetting('Rdtimefarmcell')[timefarmindex] : getPageSetting('Rtimefarmcell')[timefarmindex];
@@ -583,10 +586,12 @@ export function RtributeFarm(should: any, level: any, map: any, special: any) {
     var tributefarmlevel = getPageSetting('Rtributefarmlevel')[tributefarmindex];
     if (level) return tributefarmlevel;
 
-    var tributefarmmap = autoTrimpSettings.Rtributemapselection.value[tributefarmindex];
+    // #103: the tribute-farm family is the same class as the time-farm one above — the net found it;
+    // the issue body did not name it. Same fix, same equivalence.
+    var tributefarmmap = getPageSettingAt('Rtributemapselection', tributefarmindex);
     if (map) return tributefarmmap;
 
-    var tributefarmspecial = autoTrimpSettings.Rtributespecialselection.value[tributefarmindex];
+    var tributefarmspecial = getPageSettingAt('Rtributespecialselection', tributefarmindex);
     if (special) return tributefarmspecial;
 
     var tributefarmcell = getPageSetting('Rtributefarmcell')[tributefarmindex];

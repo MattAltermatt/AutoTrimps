@@ -20,14 +20,17 @@ import { makeMinimalGame } from './harness/gameFixture'
 
 let buildings: typeof import('../src/modules/buildings')
 let coordinatorAllowsFn: typeof import('../src/modules/coordinator').coordinatorAllows
+let coordinatorAllowsBuildingFn: typeof import('../src/modules/coordinator').coordinatorAllowsBuilding
 
 beforeAll(async () => {
   ;(globalThis as any).MODULES = {}
   buildings = await import('../src/modules/buildings')
-  // #57: safeBuyBuilding calls coordinatorAllows as a bare-name bridge global. Wire the REAL guard
-  // so the coordinator tests exercise genuine integration (import after MODULES exists — coordinator.ts
-  // sets MODULES["coordinator"] at load).
-  coordinatorAllowsFn = (await import('../src/modules/coordinator')).coordinatorAllows
+  // #57/#94: safeBuyBuilding, RbuyBuildings and RbuyStorage all call the coordinator by bare name
+  // through the bridge. Wire the REAL guards so the coordinator tests exercise genuine integration
+  // (import after MODULES exists — coordinator.ts sets MODULES["coordinator"] at load).
+  const coordinator = await import('../src/modules/coordinator')
+  coordinatorAllowsFn = coordinator.coordinatorAllows
+  coordinatorAllowsBuildingFn = coordinator.coordinatorAllowsBuilding
 })
 
 // ── native-mutator spy: ordered buyBuilding calls WITH the smuggled decision state ──────────────
@@ -106,6 +109,7 @@ beforeEach(() => {
     coordinator: { active: false, topTarget: null, reserved: {} },
   }
   ;(globalThis as any).coordinatorAllows = coordinatorAllowsFn
+  ;(globalThis as any).coordinatorAllowsBuilding = coordinatorAllowsBuildingFn
 })
 
 afterEach(() => {

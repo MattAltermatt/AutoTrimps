@@ -102,6 +102,33 @@ export function textSettingIsSet(setting: string): boolean {
     return v !== undefined && v !== null && v !== false && v !== '' && v !== 'undefined';
 }
 
+/**
+ * #103 — read ONE zone's entry out of a per-zone (MAZ) setting.
+ *
+ * The MAZ settings are parallel arrays keyed by position in the `*zone` list, so every reader does
+ * `<setting>[ zoneList.indexOf(game.global.world) ]`. Three of them (`mapfunctions.RtimeFarm`,
+ * `jobs.RworkerRatios`, `gather.RmanualLabor2`) reached AROUND getPageSetting and indexed
+ * `autoTrimpSettings.X.value[i]` straight off the store — skipping the hasOwnProperty check, the type
+ * dispatch, and the unset handling that #96/#100 standardized. There must be ONE way to read a
+ * setting, or a fix to the reading path does not reach every reader.
+ *
+ * Equivalence with the direct index it replaces, case by case:
+ *   configured    `.value` is the real array → getPageSetting('textValue') returns that SAME array →
+ *                 `[i]` is identical. No behavior change.
+ *   unconfigured  `.value` is `''` (the #100 default) or `'undefined'` (every veteran's stored value);
+ *                 `''[i]` and `'undefined'[-1]` are both `undefined`, exactly as before.
+ *   absent key    was `autoTrimpSettings.X.value` → **TypeError**. Now getPageSetting returns `false`,
+ *                 and `false[i]` is `undefined` — reads as unset instead of throwing.
+ *   null `.value` was `undefined[i]` → **TypeError**. Now `undefined`.
+ * The last two are the point: `mainLoop` has no try/catch (#87), so a throw here kills every
+ * automation ordered after it, every tick, until reload.
+ */
+export function getPageSettingAt(setting: string, index: number): any {
+    const v: any = getPageSetting(setting);
+    if (v === undefined || v === null) return undefined;
+    return v[index];
+}
+
 export function setPageSetting(setting: string, value: any) {
     if (autoTrimpSettings.hasOwnProperty(setting) == false) {
         return false;

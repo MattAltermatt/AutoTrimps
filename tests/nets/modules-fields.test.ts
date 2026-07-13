@@ -304,8 +304,8 @@ describe('a test fixture may only seed MODULES fields production can produce (#7
     // production never writes, and that injection is exactly what kept the dead branch looking alive. The
     // production bug is fixed and the injection is deleted; the test now reads production's real MODULES
     // shape and drives the H:D arm through the setting it actually reads.
-    'tests/buildings.characterization.test.ts:103': '#70 (inst. 3) — injects upgrades.autoGigas',
-    'tests/buildings.characterization.test.ts:354': '#70 (inst. 3) — injects upgrades.autoGigas',
+    'tests/buildings.characterization.test.ts:106': '#70 (inst. 3) — injects upgrades.autoGigas',
+    'tests/buildings.characterization.test.ts:358': '#70 (inst. 3) — injects upgrades.autoGigas',
   }
 
   it('finds the test-side MODULES injections (anti-false-green)', () => {
