@@ -211,9 +211,9 @@ const RESOLVED = new Set<string>([
  * A NEW dead id fails on arrival — which is the entire point.
  */
 const KNOWN_DEAD: Record<string, string> = {
-  advExtraMapLevelselect:
-    '#73 THE BUG — maps.ts:144. The game id is `advExtraLevelSelect`. AdvMapSpecialModifier is ' +
-    'default-ON and its extra-zones half has never run. DO NOT fix by adding it to AT_CREATED.',
+  // ✅ advExtraMapLevelselect — FIXED (#73). maps.ts now looks up the real game id `advExtraLevelSelect`.
+  // The net went red the moment the typo resolved and would not go green again until this entry was
+  // deleted. That is the design: the baseline is a fix queue, never an allowlist.
   RPrestige:
     '#73 dead-but-harmless — dynprestige.ts:12,:31, inside RprestigeChanging2(), which has ZERO ' +
     'callers. The U2 twin of the `Prestige` dropdown was never rendered.',
@@ -294,7 +294,8 @@ describe('DOM-id lookups must resolve to an element that exists (#73)', () => {
         `${id} is no longer looked up anywhere — delete it from KNOWN_DEAD`,
       ).toBe(true)
     }
-    expect(Object.keys(KNOWN_DEAD).length).toBeLessThanOrEqual(4)
+    // Ratcheted 4 → 3 by the #73 fix. Only ever tighten.
+    expect(Object.keys(KNOWN_DEAD).length).toBeLessThanOrEqual(3)
   })
 
   it('every AT_CREATED entry has a real creation site in the shipped fork', () => {

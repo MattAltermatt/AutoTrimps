@@ -141,7 +141,13 @@ export function testMapSpecialModController() {
             // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
             const k = getPageSetting("AdvMapSpecialModifier") ? getExtraMapLevels() : 0;
             if (game.global.highestLevelCleared >= 209) {
-                const m = byId<HTMLSelectElement>("advExtraMapLevelselect");
+                // #73: the id was `advExtraMapLevelselect` — an element that does not exist. The game's
+                // id is `advExtraLevelSelect` (no `Map`, capital `S`), and the ~17 other lookups in the
+                // fork all spell it correctly. byId() returns null for a miss and the `if (!m) return`
+                // below swallowed it, so the extra-zones half of AdvMapSpecialModifier — a DEFAULT-ON
+                // setting — has been a silent no-op. Fixing the string makes the write below land, and
+                // the affordability walk-down that follows it run, for the first time.
+                const m = byId<HTMLSelectElement>("advExtraLevelSelect");
                 if (!m)
                     return;
                 const n = byId("mapLevelInput").value;

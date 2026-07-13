@@ -7121,7 +7121,7 @@
         const j = document.getElementById("advPerfectCheckbox");
         const k = getPageSetting2("AdvMapSpecialModifier") ? getExtraMapLevels() : 0;
         if (game.global.highestLevelCleared >= 209) {
-          const m = byId("advExtraMapLevelselect");
+          const m = byId("advExtraLevelSelect");
           if (!m)
             return;
           const n = byId("mapLevelInput").value;

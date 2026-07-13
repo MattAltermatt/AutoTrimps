@@ -116,17 +116,32 @@ function installCollaboratorStubs() {
   }
 }
 
+// #73/#74 — THIS FIXTURE USED TO MINT `advExtraMapLevelselect`, an element the GAME DOES NOT HAVE.
+// That is why eight years of tests never saw the bug: the harness manufactured the very element the
+// typo'd lookup needed, so production's `if (!m) return` (which always fired for real users) never
+// fired here. A harness that seeds state production cannot produce is not measuring production.
+// The two selects are NOT interchangeable and are now built to their real game shapes:
+//   advSpecialSelect     — index.html, options are the mapSpecialModifierConfig abvs.
+//   advExtraLevelSelect  — index.html:912, populated by setAdvExtraZoneText() (main.js:6236) with
+//                          eleven <option value="0..10">+N</option> entries. selectedIndex IS the
+//                          extra-zone count, which is what maps.ts writes advSpecialMapMod_numZones to.
+const ADV_SPECIAL_OPTIONS = ['0', 'lmc', 'hc', 'smc', 'lc', 'p', 'fa']
+const ADV_EXTRA_LEVEL_OPTIONS = Array.from({ length: 11 }, (_, x) => String(x))
+
 function mountMapDom() {
   document.body.innerHTML = ''
   const inputs = new Set(['mapLevelInput'])
-  const selects = new Set(['advSpecialSelect', 'advExtraMapLevelselect'])
+  const selectOptions: Record<string, string[]> = {
+    advSpecialSelect: ADV_SPECIAL_OPTIONS,
+    advExtraLevelSelect: ADV_EXTRA_LEVEL_OPTIONS,
+  }
   for (const id of ['autoMapStatus', 'hiderStatus', 'mapLevelInput', 'advSpecialSelect',
-    'advExtraMapLevelselect', 'advPerfectCheckbox', 'portalBtn', 'log']) {
+    'advExtraLevelSelect', 'advPerfectCheckbox', 'portalBtn', 'log']) {
     let el: HTMLElement
     if (inputs.has(id)) el = document.createElement('input')
-    else if (selects.has(id)) {
+    else if (selectOptions[id]) {
       const sel = document.createElement('select')
-      for (const v of ['0', 'lmc', 'hc', 'smc', 'lc', 'p', 'fa']) {
+      for (const v of selectOptions[id]) {
         const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o)
       }
       el = sel
@@ -400,6 +415,61 @@ describe('maps.testMapSpecialModController — L1b DOM select actuator', () => {
     expect(updateSpy).toHaveBeenCalled()
     expect((document.getElementById('advSpecialSelect') as HTMLSelectElement).value).toBe('lmc')
   })
+
+  // ── #73 regression: the extra-zones half of AdvMapSpecialModifier ────────────────────────────
+  // maps.ts looked up `advExtraMapLevelselect`; the game's id is `advExtraLevelSelect`. byId() missed,
+  // `if (!m) return` swallowed it, and this whole block has been dead since 2018 for every z209+ player.
+  // These pin the two halves of the restored behavior: the numZones write, and the affordability
+  // walk-down below it (which had NEVER executed).
+  function armExtraZones(fragments: number) {
+    ;(globalThis as any).autoTrimpSettings = { AdvMapSpecialModifier: { type: 'boolean', enabled: true } }
+    ;(globalThis as any).mapSpecialModifierConfig = { lmc: { unlocksAt: 1, abv: 'lmc', name: 'Loot Map Cache' } }
+    ;(globalThis as any).getExtraMapLevels = () => 0
+    ;(globalThis as any).game = makeMinimalGame({
+      global: { world: 250, highestLevelCleared: 250 }, // >= 209 → the extra-zones block is reached
+      resources: { fragments: { owned: fragments } },
+      options: { menu: { timestamps: { enabled: 0 } } },
+    })
+    ;(globalThis as any).enoughHealth = false
+    // mapLevelInput == game.global.world is the condition maps.ts uses to pick numZones over 0.
+    ;(document.getElementById('mapLevelInput') as HTMLInputElement).value = '250'
+  }
+  const extraSelect = () => document.getElementById('advExtraLevelSelect') as HTMLSelectElement
+
+  it('#73: z209+ with mapLevelInput == world sets advExtraLevelSelect to advSpecialMapMod_numZones', () => {
+    armExtraZones(1e9)
+    ;(globalThis as any).updateMapCost = vi.fn(() => 0) // everything affordable → no walk-down
+    maps.testMapSpecialModController()
+    // The element resolves for the first time, so the write lands. numZones is a game-balance value
+    // (maps.ts:100) — read it, never assert a hardcoded literal.
+    expect(extraSelect().selectedIndex).toBe((globalThis as any).MODULES.maps.advSpecialMapMod_numZones)
+  })
+
+  it('#73: mapLevelInput != world selects index 0 (no extra zones)', () => {
+    armExtraZones(1e9)
+    ;(globalThis as any).updateMapCost = vi.fn(() => 0)
+    ;(document.getElementById('mapLevelInput') as HTMLInputElement).value = '240' // != world (250)
+    maps.testMapSpecialModController()
+    expect(extraSelect().selectedIndex).toBe(0)
+  })
+
+  it('#73: the affordability walk-down runs — unaffordable extra zones step back to 0', () => {
+    // This loop is the half that has never once executed in production. Cost always exceeds fragments,
+    // so it must decrement selectedIndex all the way down to 0 rather than leaving an unaffordable pick.
+    armExtraZones(0)
+    ;(globalThis as any).updateMapCost = vi.fn(() => 1e9) // 1e9 > 0 fragments at every index
+    maps.testMapSpecialModController()
+    expect(extraSelect().selectedIndex).toBe(0)
+  })
+
+  it('#73: below z209 the extra-zones block is not reached at all', () => {
+    armExtraZones(1e9)
+    ;(globalThis as any).updateMapCost = vi.fn(() => 0)
+    ;(globalThis as any).game.global.highestLevelCleared = 208
+    extraSelect().selectedIndex = 5 // pre-set; must be left untouched
+    maps.testMapSpecialModController()
+    expect(extraSelect().selectedIndex).toBe(5)
+  })
 })
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -648,7 +718,11 @@ describe('maps.RautoMap — L1b actuator core (create-map buy + recycle cascade)
 // compare there are otherwise never executed.
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 describe('maps.testMapSpecialModController — L1b >=209 extra-map-level branch', () => {
-  it('sets advExtraMapLevelselect.selectedIndex via the n==world compare + for→while loop', () => {
+  // ⚠️ #73: this test PASSED for years against a lookup that resolved to null in production — the
+  // fixture above minted the typo'd `advExtraMapLevelselect` element, so the harness satisfied a
+  // lookup the real game never could. It now asserts against the real game id, and reads the zone
+  // count off MODULES rather than hardcoding it (that number is game balance, not a test constant).
+  it('sets advExtraLevelSelect.selectedIndex via the n==world compare + for→while loop', () => {
     ;(globalThis as any).autoTrimpSettings = { AdvMapSpecialModifier: { type: 'boolean', enabled: false } }
     ;(globalThis as any).mapSpecialModifierConfig = { lmc: { unlocksAt: 1, abv: 'lmc', name: 'Loot Map Cache' } }
     ;(globalThis as any).updateMapCost = () => 0 // decrement while-loop stays put
@@ -660,7 +734,9 @@ describe('maps.testMapSpecialModController — L1b >=209 extra-map-level branch'
     ;(document.getElementById('mapLevelInput') as HTMLInputElement).value = '100'
     ;(globalThis as any).enoughHealth = false
     expect(() => maps.testMapSpecialModController()).not.toThrow()
-    // advSpecialMapMod_numZones = 3; n("100") == world(100) loose-true → selectedIndex 3, kept (cost 0)
-    expect((document.getElementById('advExtraMapLevelselect') as HTMLSelectElement).selectedIndex).toBe(3)
+    // n("100") == world(100) loose-true → selectedIndex := advSpecialMapMod_numZones, kept (cost 0)
+    expect((document.getElementById('advExtraLevelSelect') as HTMLSelectElement).selectedIndex).toBe(
+      (globalThis as any).MODULES.maps.advSpecialMapMod_numZones,
+    )
   })
 })
