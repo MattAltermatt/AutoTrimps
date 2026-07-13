@@ -130,34 +130,83 @@ describe('#71b: Rdheirloomswap reads the real tribute-farm flag (was ReferenceEr
 })
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-// A SEPARATE, UNFILED DEFECT found while writing the above. NOT fixed here — pinned so it cannot be
-// fixed silently, and so the next person finds it already reproduced.
+// #97 — filed and FIXED. This block was committed as `FINDING (unfiled)` (a live reproduction of the
+// defect) precisely so it could not be closed silently; it is now the regression test.
+//
+// Rdheirloomswap GATED on the daily ids but CALLED the non-daily equip functions, which resolve the
+// heirloom by the non-daily ids. So a Daily player's daily staff/shield names acted only as on/off
+// gates and the heirloom actually equipped was whatever their NON-daily config named. The five daily
+// twins (Rdhsequip1/2, Rdhs{world,map,tribute}staffequip) already existed and had zero callers; the
+// fix re-points the five call sites at them.
+//
+// Every assertion below is written so it FAILS against the cross-wired version: the two setting
+// families are pointed at DIFFERENT heirlooms, so "which loom got equipped" is the discriminator.
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-describe('FINDING (unfiled): Rdheirloomswap is cross-wired to the NON-daily equip functions', () => {
-  it('gates on the DAILY ids but equips by the NON-DAILY ids', () => {
-    // Rdheirloomswap gates on Rdhsmapstaff/Rdhstributestaff, then calls Rhsmapstaffequip /
-    // Rhstributestaffequip — which resolve the heirloom by Rhsmapstaff / Rhstributestaff. So a Daily
-    // player's configured DAILY staff names are read only as on/off gates; the heirloom actually
-    // equipped is whichever their NON-DAILY config names. Proof: point the two families at different
-    // heirlooms and watch the non-daily one win.
+describe('#97: Rdheirloomswap equips by its OWN (daily) ids, not the non-daily ones', () => {
+  it('tribute staff: the DAILY id decides, even when the non-daily id names another loom', () => {
     ;(globalThis as any).Rshouldtributefarm = true
-    ;(globalThis as any).autoTrimpSettings.Rdhstributestaff.value = 'TributeStaff' // daily gate: on
-    ;(globalThis as any).autoTrimpSettings.Rhstributestaff.value = 'WorldStaff' // non-daily: elsewhere
+    ;(globalThis as any).autoTrimpSettings.Rdhstributestaff.value = 'TributeStaff' // daily config
+    ;(globalThis as any).autoTrimpSettings.Rhstributestaff.value = 'WorldStaff' // non-daily decoy
     heirlooms.Rdheirloomswap()
-    // If the daily block honored its own config this would be TRIBUTE. It equips WORLD.
-    expect(equippedIndex()).toBe(CARRIED.indexOf(WORLD))
-    expect(equippedIndex()).not.toBe(CARRIED.indexOf(TRIBUTE))
+    expect(equippedIndex()).toBe(CARRIED.indexOf(TRIBUTE)) // was WORLD before the fix
   })
 
-  it('the five real daily equip twins exist and have ZERO callers (dead code)', () => {
-    // Rdhsequip1/2, Rdhsworldstaffequip, Rdhsmapstaffequip, Rdhstributestaffequip are fully written and
-    // read the daily ids correctly — nothing calls any of them. They are what Rdheirloomswap SHOULD be
-    // calling. Exported (so they are reachable), so pin their existence: the fix is a five-line
-    // re-point, and this test is the reason it will not get lost.
+  it('map staff: the DAILY id decides, even when the non-daily id names another loom', () => {
+    ;(globalThis as any).Rshouldtributefarm = false // → the map-staff arm
+    ;(globalThis as any).autoTrimpSettings.Rdhsmapstaff.value = 'MapStaff' // daily config
+    ;(globalThis as any).autoTrimpSettings.Rhsmapstaff.value = 'WorldStaff' // non-daily decoy
+    heirlooms.Rdheirloomswap()
+    expect(equippedIndex()).toBe(CARRIED.indexOf(MAP)) // was WORLD before the fix
+  })
+
+  it('world staff: the DAILY id decides, even when the non-daily id names another loom', () => {
+    ;(globalThis as any).game.global.mapsActive = false // → the world-staff arm
+    ;(globalThis as any).autoTrimpSettings.Rdhsworldstaff.value = 'WorldStaff' // daily config
+    ;(globalThis as any).autoTrimpSettings.Rhsworldstaff.value = 'MapStaff' // non-daily decoy
+    heirlooms.Rdheirloomswap()
+    expect(equippedIndex()).toBe(CARRIED.indexOf(WORLD)) // was MAP before the fix
+  })
+
+  it('shields: the DAILY zone-split ids decide which shield is equipped, not Rhs1/Rhs2', () => {
+    // The shield arm was cross-wired the same way: gated on Rdhsz, but called Rhsequip1/Rhsequip2,
+    // which look the shield up by Rhs1/Rhs2. Below z50 the daily config names WORLD; the non-daily
+    // decoy names MAP. Above z50 they swap. Both directions are asserted so a half-fix fails.
+    const SHIELDS = {
+      Rdhsshield: { type: 'boolean', enabled: true },
+      Rdhsstaff: { type: 'boolean', enabled: false }, // staffs off — isolate the shield block
+      Rdhsz: { type: 'value', value: '50' },
+      Rdhs1: { type: 'textValue', value: 'WorldStaff' }, // daily: below z50
+      Rdhs2: { type: 'textValue', value: 'TributeStaff' }, // daily: from z50
+      Rhs1: { type: 'textValue', value: 'MapStaff' }, // non-daily decoys
+      Rhs2: { type: 'textValue', value: 'MapStaff' },
+    }
+    for (const [world, want] of [[10, WORLD], [80, TRIBUTE]] as const) {
+      ;(globalThis as any).selectHeirloom = vi.fn()
+      ;(globalThis as any).equipHeirloom = vi.fn()
+      ;(globalThis as any).autoTrimpSettings = { ...SHIELDS }
+      ;(globalThis as any).game.global.world = world
+      ;(globalThis as any).game.global.ShieldEquipped = { name: 'SomethingElse' }
+      heirlooms.Rdheirloomswap()
+      expect((globalThis as any).equipHeirloom, `z${world}`).toHaveBeenCalledOnce()
+      expect(equippedIndex(), `z${world}`).toBe(CARRIED.indexOf(want)) // was MAP before the fix
+    }
+  })
+
+  it('the five daily equip twins are the ones Rdheirloomswap calls — none is dead code any more', () => {
+    // The mechanical half of the pin: no `Rhs*equip` call may survive inside Rdheirloomswap. Reading
+    // the source keeps this honest even if someone re-points one call site back by hand.
+    const body = heirlooms.Rdheirloomswap.toString()
     for (const fn of [
       'Rdhsequip1', 'Rdhsequip2', 'Rdhsworldstaffequip', 'Rdhsmapstaffequip', 'Rdhstributestaffequip',
     ] as const) {
       expect(typeof heirlooms[fn], `${fn} should exist`).toBe('function')
+      expect(body, `Rdheirloomswap should call ${fn}`).toContain(fn)
+    }
+    // …and no non-daily equip call remains. (`\b` guards against Rdhsequip1 matching /Rhsequip1/.)
+    for (const fn of [
+      'Rhsequip1', 'Rhsequip2', 'Rhsworldstaffequip', 'Rhsmapstaffequip', 'Rhstributestaffequip',
+    ] as const) {
+      expect(new RegExp(`\\b${fn}\\b`).test(body), `Rdheirloomswap must NOT call ${fn}`).toBe(false)
     }
   })
 })

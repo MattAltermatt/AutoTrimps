@@ -572,15 +572,25 @@ export function Rheirloomswap() {
 	}
 }
 
+// #97 — every call this function made used to be the NON-daily equip twin. Each of those resolves
+// the heirloom to equip by the NON-daily setting ids (Rhs1/Rhs2/Rhsworldstaff/…), while every GATE
+// here reads the DAILY ids (Rdhsz/Rdhsmapstaff/Rdhstributestaff/…). So for a Daily player on
+// `Rdhs == 1` the daily heirloom names acted only as on/off switches, and the heirloom actually
+// equipped was whatever their NON-daily config named — silently, while appearing to work. That also
+// collapsed `Rdhs: 1` ("use the daily settings") onto `Rdhs: 2` ("DHS: Normal — use the non-daily
+// settings"), which is the option that exists precisely to opt OUT of this block.
+//
+// The five daily twins were already fully written and read the daily ids correctly; they simply had
+// zero callers. This is that re-point — no other behavior changes. Pinned by tests/heirlooms.dailyTributeFarm.
 export function Rdheirloomswap() {
-	
+
 	//Swapping Shields
 	if (getPageSetting('Rdhsshield') != false) {
 		if (getPageSetting('Rdhsz') > 0 && game.global.world < getPageSetting('Rdhsz')) {
-			Rhsequip1();
+			Rdhsequip1();
 		}
 		if (getPageSetting('Rdhsz') > 0 && game.global.world >= getPageSetting('Rdhsz')) {
-			Rhsequip2();
+			Rdhsequip2();
 		}
 	}
         //Swapping Staffs
@@ -597,13 +607,13 @@ export function Rdheirloomswap() {
 	// permanently-dead feature (the tribute-staff arm could never fire), which is the wrong fix.
 	if (getPageSetting('Rdhsstaff') != false) {
 		if (getPageSetting('Rdhsworldstaff') != "undefined" && game.global.mapsActive == false) {
-			Rhsworldstaffequip();
+			Rdhsworldstaffequip();
 		}
 		if (getPageSetting('Rdhsmapstaff') != "undefined" && (Rshouldtributefarm == false || getPageSetting('Rdhstributestaff') == "undefined") && game.global.mapsActive == true) {
-			Rhsmapstaffequip();
+			Rdhsmapstaffequip();
 		}
 		if (getPageSetting('Rdhstributestaff') != "undefined" && getPageSetting('Rdhsstaff') && Rshouldtributefarm == true && game.global.mapsActive == true) {
-			Rhstributestaffequip();
+			Rdhstributestaffequip();
 		}
 	}
 }

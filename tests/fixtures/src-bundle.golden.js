@@ -5417,21 +5417,21 @@
   function Rdheirloomswap() {
     if (getPageSetting2("Rdhsshield") != false) {
       if (getPageSetting2("Rdhsz") > 0 && game.global.world < getPageSetting2("Rdhsz")) {
-        Rhsequip1();
+        Rdhsequip1();
       }
       if (getPageSetting2("Rdhsz") > 0 && game.global.world >= getPageSetting2("Rdhsz")) {
-        Rhsequip2();
+        Rdhsequip2();
       }
     }
     if (getPageSetting2("Rdhsstaff") != false) {
       if (getPageSetting2("Rdhsworldstaff") != "undefined" && game.global.mapsActive == false) {
-        Rhsworldstaffequip();
+        Rdhsworldstaffequip();
       }
       if (getPageSetting2("Rdhsmapstaff") != "undefined" && (Rshouldtributefarm == false || getPageSetting2("Rdhstributestaff") == "undefined") && game.global.mapsActive == true) {
-        Rhsmapstaffequip();
+        Rdhsmapstaffequip();
       }
       if (getPageSetting2("Rdhstributestaff") != "undefined" && getPageSetting2("Rdhsstaff") && Rshouldtributefarm == true && game.global.mapsActive == true) {
-        Rhstributestaffequip();
+        Rdhstributestaffequip();
       }
     }
   }
