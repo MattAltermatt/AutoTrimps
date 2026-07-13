@@ -1014,4 +1014,12 @@ export function getDailyRnHrStats() {
     return a
 }
 
-export function settingsProfileMakeGUI() { }
+// #72: an empty `export function settingsProfileMakeGUI() { }` used to live here, and it SILENTLY BEAT
+// the real 36-line implementation in import-export.ts. legacy-bridge.ts publishes every module with one
+// wildcard `Object.assign(globalThis, {...importExport, …, ...settingsVisibility, …})`, and object spread
+// is last-write-wins — settingsVisibility is spread at #30, importExport at #23, so the STUB landed on
+// globalThis. settings-defs.ts:964 calls it as a bare identifier (resolving through that seam), and that
+// is the one call that happens after createTabs() builds the Import/Export tab. Result: the entire
+// Settings-Profile feature — the dropdown, the saved-profile list, the Delete button — never rendered.
+// No error, no warning, green typecheck. The stub is deleted; tests/nets/bridge-collision.test.ts now
+// fails on any duplicate export name so this cannot recur.

@@ -147,15 +147,25 @@ spreadOrder.forEach((alias, spreadIdx) => {
 
 type Collision = { name: string; winner: Def; losers: Def[]; critical: boolean }
 
+/**
+ * Resolve one name's competing definitions the way `Object.assign` actually does.
+ *
+ * Extracted so it can be exercised on a SYNTHETIC fixture. That matters: this rule used to be grounded
+ * in the live #72 bug, which meant fixing #72 destroyed the net's own proof that it models the bug
+ * correctly. A net whose correctness evidence disappears the moment the bug is fixed is a net that
+ * silently stops working exactly when you start relying on it.
+ */
+export function resolveCollision(name: string, defs: Def[]): Collision {
+  const sorted = [...defs].sort((a, b) => a.spreadIdx - b.spreadIdx)
+  const winner = sorted[sorted.length - 1]! // LAST spread wins — this is the whole bug.
+  const losers = sorted.slice(0, -1)
+  // CRITICAL := an empty definition shadowing a real one. The feature is silently dead.
+  return { name, winner, losers, critical: winner.empty && losers.some((l) => !l.empty) }
+}
+
 const collisions: Collision[] = [...byName.entries()]
   .filter(([, defs]) => defs.length > 1)
-  .map(([name, defs]) => {
-    const sorted = [...defs].sort((a, b) => a.spreadIdx - b.spreadIdx)
-    const winner = sorted[sorted.length - 1]! // LAST spread wins — this is the whole bug.
-    const losers = sorted.slice(0, -1)
-    // CRITICAL := an empty definition shadowing a real one. The feature is silently dead.
-    return { name, winner, losers, critical: winner.empty && losers.some((l) => !l.empty) }
-  })
+  .map(([name, defs]) => resolveCollision(name, defs))
 
 const describeCollision = (c: Collision) =>
   `${c.name}${c.critical ? ' [CRITICAL: EMPTY body wins over a REAL implementation]' : ''} — ` +
@@ -170,10 +180,10 @@ const describeCollision = (c: Collision) =>
 // so the net is green on `main` today while the fix lands behind it. It may only ever get SMALLER: the
 // guard test below goes red the moment an entry stops being a live collision, forcing its deletion.
 const KNOWN_COLLISION: Record<string, string> = {
-  settingsProfileMakeGUI:
-    '#72 — settings-visibility.ts (spread #30) exports an EMPTY stub that beats the real 36-line ' +
-    'implementation in import-export.ts (spread #23). The entire Settings-Profile feature is dead. ' +
-    'Fix = delete the empty stub; do NOT "fix" it by reordering the spread.',
+  // ✅ EMPTY — #72 is FIXED. settings-visibility.ts's empty `settingsProfileMakeGUI(){}` stub (spread
+  // #30) used to beat the real 36-line implementation in import-export.ts (spread #23), so the entire
+  // Settings-Profile feature never rendered. The stub is deleted. This baseline must stay empty: a new
+  // collision is a new bug, and the ceiling assertion below refuses to let one be parked here.
 }
 
 // Genuinely INTENTIONAL duplicate exports. Empty today, and that is the correct state: nothing in this
@@ -208,25 +218,31 @@ describe('legacy-bridge spread — no module may silently shadow another module 
     const contributing = new Set([...byName.values()].flat().map((d) => d.alias))
     expect(contributing.size).toBe(spreadOrder.length)
 
-    // And pin BOTH halves of the #72 collision. If either side stops being seen, the baseline entry
-    // below would start "passing" for the wrong reason.
-    expect(at('settingsProfileMakeGUI')).toEqual([
-      'src/modules/import-export.ts:8',
-      'src/modules/settings-visibility.ts:1017',
-    ])
+    // #72 FIXED: the empty stub in settings-visibility.ts is gone, so exactly ONE module may now export
+    // this name — the real implementation. If a stub ever comes back, this pin names it immediately.
+    expect(at('settingsProfileMakeGUI')).toEqual(['src/modules/import-export.ts:8'])
   })
 
-  it('the last-write-wins model is grounded in the real bridge (empty stub beats real impl)', () => {
-    const c = collisions.find((x) => x.name === 'settingsProfileMakeGUI')
-    expect(c, 'the #72 collision must still be detected').toBeDefined()
-    // The winner is decided by spread position, NOT by file order, NOT by import order. Assert that
-    // this net actually implements that rule — a net that picked the first definition would grade #72
-    // as harmless and report GREEN on a dead feature.
-    expect(c!.winner.file).toBe('src/modules/settings-visibility.ts')
-    expect(c!.winner.empty).toBe(true)
-    expect(c!.losers.map((l) => l.file)).toEqual(['src/modules/import-export.ts'])
-    expect(c!.losers[0]!.empty).toBe(false)
-    expect(c!.critical).toBe(true)
+  it('the last-write-wins model is correct (synthetic — survives the real bug being fixed)', () => {
+    // This used to be grounded in the LIVE #72 collision. That was a trap: fixing #72 deleted the net's
+    // only evidence that it models Object.assign correctly, so the net would have kept reporting green
+    // while silently losing the ability to grade a winner at all. Ground it in a fixture instead.
+    const mk = (file: string, spreadIdx: number, empty: boolean): Def =>
+      ({ name: 'f', line: 1, kind: 'function', empty, alias: file, file, spreadIdx }) as Def
+
+    // The winner is decided by SPREAD POSITION — not file order, not import order, not who is "real".
+    const c = resolveCollision('f', [mk('early.ts', 3, false), mk('late.ts', 30, true)])
+    expect(c.winner.file).toBe('late.ts') // last spread wins, even though it is the empty one
+    expect(c.losers.map((l) => l.file)).toEqual(['early.ts'])
+    expect(c.critical).toBe(true) // empty shadowing real ⇒ a silently dead feature
+
+    // Order of the input array must not matter — only spreadIdx.
+    expect(resolveCollision('f', [mk('late.ts', 30, true), mk('early.ts', 3, false)]).winner.file).toBe('late.ts')
+
+    // A real impl winning over an empty one is a collision, but NOT critical (nothing is silently dead).
+    expect(resolveCollision('f', [mk('early.ts', 3, true), mk('late.ts', 30, false)]).critical).toBe(false)
+    // Two real impls: still a collision worth failing on, but not the CRITICAL shape.
+    expect(resolveCollision('f', [mk('a.ts', 1, false), mk('b.ts', 2, false)]).critical).toBe(false)
   })
 
   it('no module export is shadowed by another module on the bridge', () => {
@@ -255,7 +271,7 @@ describe('legacy-bridge spread — no module may silently shadow another module 
       ).toBe(true)
     }
     // A ceiling, so a new bug cannot be parked here by appending a line.
-    expect(Object.keys(KNOWN_COLLISION).length).toBeLessThanOrEqual(1)
+    expect(Object.keys(KNOWN_COLLISION).length).toBe(0) // 1 → 0: #72 fixed
     expect(ALLOWLIST.size).toBe(0)
   })
 })

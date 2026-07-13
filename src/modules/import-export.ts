@@ -40,6 +40,11 @@ export function settingsProfileMakeGUI() {
     $ietab.insertBefore($settingsProfilesLabel, $ietab.childNodes[1]);
     $ietab.insertBefore($settingsProfiles, $ietab.childNodes[2]);
     $ietab.insertBefore($settingsProfilesButton, $ietab.childNodes[3]);
+    // #72: populate the dropdown HERE, now that it exists. The module-eval call at the bottom of this
+    // file runs before createTabs() has built the Import/Export tab, so it early-returns at the
+    // `$settingsProfiles == null` guard and the list stays empty. Chaining it to the builder keeps the
+    // two ordered by construction: whoever renders the control also fills it.
+    initializeSettingsProfiles();
 }   //self-executes at the bottom of the file.
 
 //Populate dropdown menu with list of AT SettingsProfiles

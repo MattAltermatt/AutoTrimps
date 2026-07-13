@@ -11346,6 +11346,7 @@
     $ietab.insertBefore($settingsProfilesLabel, $ietab.childNodes[1]);
     $ietab.insertBefore($settingsProfiles, $ietab.childNodes[2]);
     $ietab.insertBefore($settingsProfilesButton, $ietab.childNodes[3]);
+    initializeSettingsProfiles();
   }
   function initializeSettingsProfiles() {
     if ($settingsProfiles == null) return;
@@ -15316,7 +15317,6 @@
     checkPortalSettings: () => checkPortalSettings2,
     getDailyHeHrStats: () => getDailyHeHrStats,
     getDailyRnHrStats: () => getDailyRnHrStats,
-    settingsProfileMakeGUI: () => settingsProfileMakeGUI3,
     updateCustomButtons: () => updateCustomButtons2
   });
   function updateCustomButtons2() {
@@ -16120,8 +16120,6 @@
       b *= 100 + getDailyHeliumValue(countDailyWeight()), a = "<b>After Daily Rn/Hr: " + b.toFixed(3) + "%";
     }
     return a;
-  }
-  function settingsProfileMakeGUI3() {
   }
 
   // src/modules/settings-defs.ts
