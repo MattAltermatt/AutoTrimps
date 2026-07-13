@@ -96,6 +96,14 @@ beforeEach(() => {
   ;(globalThis as any).toggleAutoStorage = vi.fn()
   ;(globalThis as any).canAffordBuilding = () => false // let mostEfficientHousing run, then stop the do/while
   ;(globalThis as any).buyBuilding = vi.fn()
+  // #83 §1 wrapped RbuyBuildings in preBuy2()/postBuy2() and pinned game.global.buyAmt = 1, because the
+  // bare canAffordBuilding() gates were pricing the player's ambient UI buy-amount (10/25/100) and then
+  // buying ONE — so U2 housing died for anyone not on 1 or Max. These are free globals from the legacy
+  // seam; this fixture predates that fix and did not stub them.
+  ;(globalThis as any).preBuy2 = () => (globalThis as any).game.global.buyAmt
+  ;(globalThis as any).postBuy2 = (old: unknown) => {
+    ;(globalThis as any).game.global.buyAmt = old
+  }
   ;(globalThis as any).getMaxAffordable = () => 1
   ;(globalThis as any).isBuildingInQueue = () => false
   ;(globalThis as any).calcHeirloomBonus = (_a: unknown, _b: unknown, v: number) => v
