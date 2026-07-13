@@ -10,26 +10,37 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-// The full native-mutator seam recorder.mjs fingerprints. Mirror it (kept in sync deliberately).
-export const ALL_MUTATORS = ['buyJob', 'buyBuilding', 'buyUpgrade', 'runMap', 'selectMap', 'buyEquipment', 'setFormation', 'recycleMap']
+// The full native-mutator seam recorder.mjs fingerprints. Mirror it (kept in sync deliberately —
+// tests/sim/corpus-coverage.test.ts asserts the two lists are equal, so they cannot drift).
+export const ALL_MUTATORS = [
+  'buyJob', 'buyBuilding', 'buyUpgrade', 'buyEquipment',
+  'buyMap', 'selectMap', 'runMap', 'recycleMap', 'recycleBelow', 'setFormation',
+]
 
 /**
- * Read the committed oracle traces and report which mutators each save exercises, the corpus-wide
- * union, and the mutators NO save reaches. Computed from the committed traces (the oracle's frozen
- * behavior) so it is fast + deterministic and doubles as a degenerate-re-record guard at mutator
+ * Read the committed oracle traces and report which mutators each save exercises, how MANY times, the
+ * corpus-wide union, and the mutators NO save reaches. Computed from the committed traces (the oracle's
+ * frozen behavior) so it is fast + deterministic and doubles as a degenerate-re-record guard at mutator
  * granularity (a re-record that quietly drops a mutator shows up here).
+ *
+ * `counts` exists so the tripwire can pin VOLUME, not just presence (#90). Set-based assertions alone
+ * are satisfiable by a near-empty trace — every mutator NAME still appears if it fires once — so a
+ * degenerate re-record could pass "10/10 coverage" while proving nothing.
  * @param {string} [tracesDir]
- * @returns {{ perSave: Record<string,string[]>, union: string[], uncovered: string[] }}
+ * @returns {{ perSave: Record<string,string[]>, counts: Record<string,Record<string,number>>, union: string[], uncovered: string[] }}
  */
 export function coverageFromTraces(tracesDir = resolve('tests/fixtures/traces')) {
   const perSaveSets = {}
+  const counts = {}
   const union = new Set()
   for (const f of readdirSync(tracesDir).filter((x) => x.endsWith('.trace.json'))) {
     const save = f.replace(/\.\d+\.trace\.json$/, '')
     const trace = JSON.parse(readFileSync(resolve(tracesDir, f), 'utf8'))
     ;(perSaveSets[save] ||= new Set())
+    ;(counts[save] ||= {})
     for (const e of trace) {
       perSaveSets[save].add(e.fn)
+      counts[save][e.fn] = (counts[save][e.fn] || 0) + 1
       union.add(e.fn)
     }
   }
@@ -37,6 +48,7 @@ export function coverageFromTraces(tracesDir = resolve('tests/fixtures/traces'))
   for (const s of Object.keys(perSaveSets).sort()) perSave[s] = [...perSaveSets[s]].sort()
   return {
     perSave,
+    counts,
     union: [...union].sort(),
     uncovered: ALL_MUTATORS.filter((m) => !union.has(m)),
   }

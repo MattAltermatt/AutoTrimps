@@ -143,6 +143,40 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **👁️ #90 + #98 SHIPPED — THE NET CAN SEE THE BOT NOW** (2026-07-13) — the L0 proof net was structurally
+  blind to combat: a **1,000,000× damage multiplier passed the entire sim suite GREEN**. It now goes **RED
+  with 1542 divergences**, and that is enforced forever by `tests/sim/damage-sensitivity.test.ts` — a
+  **mutation self-test** that patches the built bundle on every CI run and demands the differential notice.
+  Corpus: 4 saves → **8**; recorded mutators: 8 → **10**; coverage **10/10, zero blind mutators**.
+  🎯 **THE LESSON THAT GENERALIZES — REACH ≠ SENSITIVITY, and this is the part that nearly shipped wrong.**
+  Fixing reach was NOT enough. After adding a deep save where AT maps, fights and sets formations every tick
+  — with `calcOurDmg` genuinely called — the 1e6× injection **still diffed to ZERO**. AT's damage decisions
+  are **threshold predicates** (`enoughDamage = (dmg * cutoff > enemyHealth)`, maps.ts:403) and on a healthy
+  save that predicate is **already true**, so multiplying its input by a million leaves it true. **Calling a
+  function is not the same as depending on its answer.** The fix is `08-starved-u1`: damage-STARVED but
+  PERKED, so the threshold sits **unsaturated** (`enoughDamage === false` on all 2000 ticks) and the value is
+  load-bearing. **When you add a fixture to cover a calculation, ask whether its result can still change an
+  outcome there — then prove it by mutation.**
+  🕳️ **#90 named the wrong cause.** It blamed corpus depth alone. The bigger half was that **the recorder was
+  watching the wrong functions**: AT creates every map via `buyMap()` (**38 callsites**) and mass-recycles via
+  `recycleBelow()` (**3**) — *neither was wrapped*. The `recycleMap` that WAS wrapped is only the fallback at
+  the game's **100-map cap** (`buyMap() == -2`, main.js:6597), so it was never going to fire on an ordinary
+  save; `07-map-cap-u1` sits on the cap deliberately and is the only fixture that reaches it. Wrapping the
+  wrong function and then blaming the saves is the #66 mistake in a new costume.
+  🔒 **The blindness had ONE mechanical cause, and it is worth knowing:** every save decoded to world=4 with
+  **`mapsUnlocked === false`**, and `maps.ts:253` opens `if (!game.global.mapsUnlocked || calcOurDmg(...) <= 0)
+  { enoughDamage = true; ... return }` — so the damage term was **short-circuited out of every decision**. Not
+  mysterious; arithmetic on dead code. Root cause of the shallowness: **`totalPortals = 0`** on every save ⇒ no
+  helium ⇒ no perks ⇒ `antiStacks` pinned at 0 forever (main.js:11682) ⇒ AT hits a damage wall at z6 and
+  **soft-locks inside a map it cannot clear** (measured: world 6 for 25,000 consecutive ticks). **jsdom was
+  never the obstacle** — the old "deep states need progression jsdom can't reach" note was a hypothesis
+  written down as a fact. Grant perks (what every post-portal player has) and AT advances immediately.
+  ✅ **ADDITIVE RE-RECORD, NOT A RE-PIN** — the oracle bundle is untouched (`oracle/v3-u2-autobuildings`). All
+  **10 pre-existing traces re-recorded BYTE-IDENTICAL** (cmp-clean). *That byte-identity is the check to repeat
+  on any future corpus growth* — it is what proves additivity rather than a laundered behavior change.
+  ⚠️ **Do not weaken `damage-sensitivity.test.ts`.** If it goes red, the net has lost its ability to see combat
+  regressions and every green baseline-zero for damage code is worthless. **Fix the corpus, not the test.**
+
 - **🕸️ THE `needs-net` CLUSTER SHIPPED — #68–#74 + #88, five permanent nets + every fix** (2026-07-12, `10494e92`…`bd0cc71d`)
   — 725 tests green, Pages deploy green. Each bug class is now closed by a **mechanical set-difference**, not by
   reading, and each net carries a **shrinking baseline**: fix a bug and the net goes RED until you delete its

@@ -1,11 +1,18 @@
 {
   "waivers": [],
   "oracle": {
-    "tag": "oracle/v2-post-bugfix",
-    "commit": "514b790d",
-    "supersedes": "oracle/phase1-faithful (5e51f56d)",
-    "repinned": "2026-07-12",
-    "issue": "#66",
+    "tag": "oracle/v3-u2-autobuildings",
+    "commit": "see scripts/sim/build-oracle.mjs TAG — this block had drifted and said v2 long after #69 re-pinned to v3; corrected 2026-07-13 (#90/#98)",
+    "supersedes": "oracle/v2-post-bugfix (514b790d) <- oracle/phase1-faithful (5e51f56d)",
+    "repinned": "2026-07-12 (#69 ship C)",
+    "issue": "#69 (current pin) / #66 (previous pin, rationale below)",
+    "lastRecord": {
+      "date": "2026-07-13",
+      "issue": "#90 + #98",
+      "kind": "ADDITIVE RE-RECORD — the oracle bundle did NOT change. This is not a re-pin.",
+      "what": "Added four corpus saves (05-maps-u1, 06-deep-u1, 07-map-cap-u1, 08-starved-u1) and two recorded mutators (buyMap, recycleBelow). Traces for the new saves were recorded fresh; traces for 01-04 were re-recorded and verified BYTE-IDENTICAL to their committed predecessors (all 10 files, cmp-clean). That byte-identity is the proof this was additive and not a laundered behavior change — it is the check to repeat on any future corpus growth.",
+      "why": "The net was structurally blind to the bot. It recorded only buy events, and every save decoded to world=4 with mapsUnlocked=false, so maps.ts:253 short-circuited calcOurDmg out of every decision: a 1,000,000x damage multiplier passed the whole sim suite GREEN (#98). Two DISTINCT fixes were needed, and the second is the one that is easy to miss. (1) REACH: the recorder was watching the wrong functions — AT creates maps via buyMap() (38 callsites) and mass-recycles via recycleBelow() (3), neither of which was wrapped, while the wrapped recycleMap is only the 100-map-cap fallback. Plus the corpus could not reach maps at all. (2) SATURATION: reach alone did NOT restore sensitivity. On 06 (deep, mapping, formations, calcOurDmg called every tick) the 1e6x injection STILL diffed to ZERO, because AT's damage decisions are threshold predicates — enoughDamage = (dmg * cutoff > enemyHealth) — and on 06 that predicate is already TRUE, so a buff cannot move it. 08-starved-u1 is damage-starved but perked, leaving the threshold UNSATURATED; the same injection now yields 1542 divergences there. Calling a function is not the same as depending on its answer. tests/sim/damage-sensitivity.test.ts makes this a permanent, self-checking mutation gate."
+    },
     "why": "TWO reasons, both load-bearing. (1) HARNESS WAS BLIND: until #66, scripts/sim/boot.mjs left `usingRealTimeOffline` stuck true after load() — the game's offline-progress replay sets it (main.js:2901) and normally clears it via a setTimeout loop the sim stubs out. AT's mainLoop gates `setScienceNeeded()` + `autoLevelEquipment()` on `!usingRealTimeOffline`, so EVERY trace recorded against phase1-faithful was recorded with all gear-buying and science tracking disabled: zero buyEquipment events, U1 buyBuilding nearly absent. The L0 net was comparing a crippled AT against a crippled AT. (2) THE OLD ORACLE ENSHRINED A SHIPPED BUG: phase1-faithful contains #63 (needGymystic hardcoded true → scienceNeeded permanently +5,000,000). On 02-mid-u1 the old oracle computes scienceNeeded=5,001,452 and gathers science where the fixed build computes 1,452 and gathers buildings; every downstream buy timing cascades from that one number. The (save,index,fn) waiver mechanism is built for a few LOCALIZED fix divergences, not a wholly shifted trajectory (~130 brittle entries). Re-pinning was the correct move, and the v2 traces are strictly RICHER than the old ones (they contain the buyEquipment/buyBuilding events the old ones structurally could not), so the net is more sensitive after the re-pin than before it. NOTE: re-pinning is NOT routine — a naked oracle change is exactly the accidental-drift alarm this net exists to raise. Only re-pin behind a root-caused, reviewed, intentional behavior change."
   },
   "notes": [

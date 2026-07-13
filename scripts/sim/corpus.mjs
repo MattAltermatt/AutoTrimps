@@ -12,6 +12,22 @@
 //     RbuyJobs call-sequence (the only fixture that reaches RbuyJobs at all — the U1 corpus never
 //     does), without committing ~1 MB of repetitive no-op JSON. Deeper U2 gear/map coverage needs
 //     real long-progression (jsdom can't cheaply reach it) and is where #58's live U2 drive comes in.
+//   - 05-maps-u1 is the honest play-forward to the first `mapsUnlocked` state. AT is damage-walled
+//     inside a map there, so its live behavior is a quiet, seed-insensitive buy loop — one seed, like
+//     04. Its job is not a rich trace; its job is to be the one fixture where maps.ts:253 evaluates
+//     calcOurDmg instead of short-circuiting past it.
+//   - 06-deep-u1 is the fixture that actually watches the bot (#90/#98): a post-portal state where AT
+//     sets formations every tick, buys/selects/runs maps at each zone transition, and ADVANCES. Three
+//     seeds, because every one of those decisions is combat-RNG-timed, and a 2000-tick window because
+//     the map events are the rare, valuable ones (~4 per 2000 ticks vs ~1800 setFormation).
+//   - 07-map-cap-u1 sits AT the game's 100-map cap, the sole gate behind every recycleBelow/recycleMap
+//     callsite in AT (buyMap() == -2, main.js:6597). One seed: the branch is a deterministic recovery
+//     sequence (buyMap -> recycleBelow -> buyMap -> recycleMap -> buyMap), not an RNG-timed decision.
+//   - 08-starved-u1 is the DAMAGE-SENSITIVITY fixture, and it is the one that makes a combat regression
+//     visible at all. AT's damage decisions are threshold predicates; on every other save they are
+//     SATURATED (enoughDamage is already true), so even a 1,000,000x damage buff moves nothing. 08 is
+//     starved-but-perked, so the threshold sits UNSATURATED and calcOurDmg's output is load-bearing.
+//     Two seeds — its trace is combat-RNG-timed, and this is the fixture where that timing matters most.
 const DEFAULT = { seeds: [1, 2, 3], ticks: 1500 }
 
 export const CORPUS = [
@@ -19,4 +35,8 @@ export const CORPUS = [
   { name: '02-mid-u1', ...DEFAULT },
   { name: '03-challenge-watch', ...DEFAULT },
   { name: '04-u2-radon', seeds: [1], ticks: 300 },
+  { name: '05-maps-u1', seeds: [1], ticks: 1500 },
+  { name: '06-deep-u1', seeds: [1, 2, 3], ticks: 2000 },
+  { name: '07-map-cap-u1', seeds: [1], ticks: 2000 },
+  { name: '08-starved-u1', seeds: [1, 2], ticks: 2000 },
 ]
