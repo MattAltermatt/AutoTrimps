@@ -143,6 +143,52 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **🕸️ THE `needs-net` CLUSTER SHIPPED — #68–#74 + #88, five permanent nets + every fix** (2026-07-12, `10494e92`…`bd0cc71d`)
+  — 725 tests green, Pages deploy green. Each bug class is now closed by a **mechanical set-difference**, not by
+  reading, and each net carries a **shrinking baseline**: fix a bug and the net goes RED until you delete its
+  entry. Nets: `tests/nets/{modules-fields,bridge-collision,ambient-vars,dom-ids,settings-reverse}.test.ts`.
+  🎯 **The nets caught MY OWN errors, repeatedly — that is the argument for them.** My first MODULES net was blind
+  to `const customVars = MODULES["maps"]` (31 reads hidden); my ambient-var mutation-check was inadequate and the
+  agent said so; my DOM-id resolution rule was over-broad in exactly the way that lets typos survive. Each would
+  have shipped a net that *certified a class as closed while it wasn't*. **Always mutation-check a net, and pin
+  anti-false-green counts — a walk that breaks collapses to ∅ and passes vacuously.**
+  🚨 **PHANTOM SETTINGS ARE NOT TYPOS — and "just add the missing createSetting" is a DATA-LOSS BUG.**
+  `RCapEquiparm`/`Rgearamounttobuy`/`Ronlystackedvoids` were REAL settings, added 2019 (`d33ea06b`), **deleted
+  upstream 2020 (`701faab4`)** with their reads left behind. `createSetting` applies its default **only when
+  nothing is stored**, while `loadPageVariables()` restores the whole localStorage blob and `serializeSettings()`
+  round-trips unknown keys **forever** (`cleanupAutoTrimps()` only runs on a manual click). ⇒ **Re-minting a
+  deleted id RESURRECTS the user's 2020 value.** Three dispositions, not two: **repoint** at an existing id (mints
+  nothing) · **delete** the read · **mint** only if `git log --all -S"createSetting.*<id>"` is EMPTY. Corollary:
+  `getPageSetting` returns **`undefined`, not `false`**, for a veteran user (`hasOwnProperty` succeeds on the stale
+  primitive). See [[reference-settings-stale-key-resurrection]].
+  ⚠️ **THE L0 NET IS BLIND TO `calcOurDmg` — a 1,000,000× damage multiplier PASSES THE SIM SUITE GREEN** (#98,
+  reproduced by two agents independently). The recorder emits only buy events (#90) **and every corpus save decodes
+  to HZE=3/world=4** — so combat/mapping/zone-gated paths are *structurally unreachable*, not merely uncovered.
+  **"I shipped it and the net stayed green" is a MEANINGLESS sentence for combat math.** Run the **positive
+  control** (break your own change, confirm the net can see it); if it can't, build the evidence by hand —
+  `tests/calc.damageTrio.test.ts` is the pattern. AT had been **under-rating its own damage 6×**.
+  📌 **ORACLE RE-PINNED `oracle/v2-post-bugfix` → `oracle/v3-u2-autobuildings`** (#69 ship C only). **COUNT THE
+  EVENTS BEFORE YOU BELIEVE A DIVERGENCE COUNT:** baseline-zero cried "1167 divergences", which looks like the
+  wholly-shifted trajectory the re-pin rule exists to refuse — but tallied *by event*, oracle 1201 → working 1204:
+  every pre-existing event **unchanged**, exactly **three inserted**. The 1167 is the index shift they cause. Only
+  `04-u2-radon` moved; the other nine reproduced byte-identically against a bundle containing the whole cluster —
+  an independent proof the rest is trace-neutral.
+  🔴 **U2 AutoBuildings had NEVER EXECUTED** (`RBuyBuildingsNew` = the STRING `'true'`; its only gate is `== true`).
+  In U2 the mainLoop never calls U1's `buyBuildings()`, so `RbuyBuildings()` is the *only* building automation —
+  and its `else` branch is what enables vanilla AutoStorage. U2 players got **neither housing nor storage**: every
+  resource pegged at 100% of cap, **permanently**. Enabling it: **+68% max population**. Blocker fixed first — the
+  never-run body **seized the player's AutoStorage button** (`toggleAutoStorage` is a **flip**, not a setter, so AT
+  forced it back on ~100ms after the player turned it off, forever). Now one-shot.
+  🧪 **New issues from this pass:** **#93** (🎚️ `mostEfficientHousing` scores EVERY housing type with
+  `Hut.increase.by` — a Collector (+5000 pop) graded as **+3**; AT would never buy one) · **#94** (`RbuyBuildings`
+  bypasses the #57 coordinator) · **#95** (`for..in` over an array → 7 phantom `RMax<idx>` reads) · **#96**
+  (`Rhypofarmstack` default is the *string* `'undefined'` → `[NaN×9]`) · **#97** (`Rdheirloomswap` gates on DAILY
+  ids but calls the NON-DAILY equip fns; five correct daily twins exist with **zero callers**) · **#98** (the net
+  blindness above).
+  🪤 **`oxlint` no-unused-vars does NOT count uses inside a comma-sequence expression** — a legacy one-liner will
+  report a genuinely-used local as unused. De-comma it (#92 sanctions this "behind the live net"); do **not** add a
+  suppression to hide a phantom warning.
+
 - **🚦 #67 SHIPPED — THE DEPLOY GATE IS REAL NOW** (2026-07-12, `79f96935`) — the proof net had never once
   run in the Pages gate. Fixed, and **verified end-to-end on the runner in both directions**: a clean tree
   gives **637 passed / 0 skipped** (was 587 passed / **34 silently skipped** / exit 0), and the injected
