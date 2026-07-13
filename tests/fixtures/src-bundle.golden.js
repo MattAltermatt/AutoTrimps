@@ -16572,7 +16572,7 @@
     createSetting("Rinsanityon", "Insanity", "Turn on Insanity settings. This also controls the entireity of IF. If you turn this off it will not Insanity Farm. ", "boolean", false, null, "Challenges");
     createSetting("Rinsanitymaz", "Insanity Settings", "Click to open the Insanity settings. <br> <b>Zone:</b> What zone to farm insanity stacks in.<br> <b>Cell:</b> What cell to start farming insanity stacks on.<br> <b>Stacks:</b> Number of stacks you want. <br> <b>Level:</b> How many map levels you want above zone. <br> <b>Example:</b> If you put Zone: 60, Cell: 50, Stacks: 500, Level: 5, you will farm at zone 60, on cell 50 until you have 500 insanity stacks, in a +5 map. ", "infoclick", false, null, "Challenges");
     createSetting("Rinsanityfarmzone", "Insanity Farming", "zone", "multiValue", [-1], null, "Challenges");
-    createSetting("Rinsanityfarmcell", "IF: Cell", "cell", "multiValue", "-1", null, "Challenges");
+    createSetting("Rinsanityfarmcell", "IF: Cell", "cell", "multiValue", [-1], null, "Challenges");
     createSetting("Rinsanityfarmstack", "IF: Stacks", "stacks", "multiValue", [-1], null, "Challenges");
     createSetting("Rinsanityfarmlevel", "IF: Map Level", "level", "multiValue", [0], null, "Challenges");
     createSetting("Rinsanityfarmfrag", "IF: Frags", "Turn this on to farm fragments if you cannot afford the map you have selected for IF. ", "boolean", false, null, "Challenges");
@@ -16586,7 +16586,7 @@
     createSetting("Ralchon", "Alchemy", "Turn on Alchemy settings. This also controls the entireity of AF. If you turn this off it will not Alchemy Farm. ", "boolean", false, null, "Challenges");
     createSetting("Ralchfarmmaz", "Alchemy Settings", "Click to open the Alchemy settings. Do not use vanilla autobrew AF will buy potions for you. <br> <b>Zone:</b> What zone to farm herbs and potions in.<br> <b>Cell:</b> What cell to start farming herbs and potions on.<br> <b>Potion:</b> You must pair a potion with a level here. Example: h15,g20,s15. This will farm Herby potion up to level 15 on the first AF zone, Gaseous potion to level 20 and so on. <br> <b>Level:</b> How many map levels you want above zone. <br> <b>Example:</b> If you put Zone: 81, Cell: 50, Potion: h15, Level: 5, Map: Farmlands, you will farm at zone 81, on cell 50 until you can afford 15 total herby potions, in a +5 map, using a farmlands map. ", "infoclick", false, null, "Challenges");
     createSetting("Ralchfarmzone", "Alchemy Farming", "zone", "multiValue", [-1], null, "Challenges");
-    createSetting("Ralchfarmcell", "AF: Cell", "cell", "multiValue", "[-1]", null, "Challenges");
+    createSetting("Ralchfarmcell", "AF: Cell", "cell", "multiValue", [-1], null, "Challenges");
     createSetting("Ralchfarmstack", "AF: Potion", "potion", "textValue", "undefined", null, "Challenges");
     createSetting("Ralchfarmlevel", "AF: Map Level", "level", "multiValue", [0], null, "Challenges");
     createSetting("Ralchfarmselection", "AF: Map Selection", "map", "textValue", "l", null, "Challenges");
@@ -16595,7 +16595,7 @@
     createSetting("Rhypofarmmaz", "Hypothermia Settings", "Click to open the Hypothermia settings. HF will not spend wood on zones you are farming bonfires or until you have achieved your bonfire goal. <br> <b>Zone:</b> What zone to farm bonfires in.<br> <b>Cell:</b> What cell to start farming bonfires on.<br> <b>Bonfire:</b> The number of total bonfires in the run you want at that zone.<br> <b>Level:</b> How many map levels you want above zone. <br> <b>Example:</b> If you put Zone: 17, Cell: 50, Bonfire: 5, Level: 5, you will farm at zone 17, on cell 50 until you can afford 5 total bonfires, in a +5 map. ", "infoclick", false, null, "Challenges");
     createSetting("Rhypofarmzone", "Hypothermia Farming", "zone", "multiValue", [-1], null, "Challenges");
     createSetting("Rhypofarmcell", "HF: Cell", "cell", "multiValue", [-1], null, "Challenges");
-    createSetting("Rhypofarmstack", "HF: Bonfire", "bonfire", "multiValue", "undefined", null, "Challenges");
+    createSetting("Rhypofarmstack", "HF: Bonfire", "bonfire", "multiValue", [-1], null, "Challenges");
     createSetting("Rhypofarmlevel", "HF: Map Level", "level", "multiValue", [0], null, "Challenges");
     createSetting("Rhypofarmfrag", "HF: Frags", "Turn this on to farm fragments if you cannot afford the map you have selected for HF. ", "boolean", false, null, "Challenges");
     createSetting("Rhypocastle", "Frozen Castle", "What zone you wish you run frozen castle on to complete the challenge. Will run castle after voids so make sure thats set up right. ", "value", "-1", null, "Challenges");
