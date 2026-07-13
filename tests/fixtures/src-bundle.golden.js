@@ -3343,6 +3343,8 @@
     }
   }
   function RbuyBuildings() {
+    const oldBuy = preBuy2();
+    game.global.buyAmt = 1;
     if (game.global.challengeActive === "Hypothermia" && getPageSetting2("Rhypostorage")) {
       let hypofarmzone;
       let hypofarmamount;
@@ -3412,6 +3414,7 @@
         buyBuilding("Laboratory", true, true, 1);
       }
     }
+    postBuy2(oldBuy);
   }
 
   // src/modules/jobs.ts
@@ -4955,11 +4958,11 @@
   function useScryerStance() {
     var scry = 4;
     var scryF = "S";
-    var x = 0;
+    var x = "0";
     if (game.global.uberNature == "Wind" && getEmpowerment() != "Wind") {
       scry = 5;
       scryF = "W";
-      x = 5;
+      x = "5";
     }
     var AutoStance = getPageSetting2("AutoStance");
     function autoStanceFunctionScryer() {
@@ -5746,100 +5749,99 @@
     var thisSetting = [];
     var error = "";
     var maxSettings = 30;
+    var zoneKey;
+    var cellKey;
+    var settingKey;
+    var levelKey;
+    var mapKey;
+    var specialKey;
+    var gatherKey;
+    if (titleText == "Time Farm") {
+      zoneKey = "Rtimefarmzone";
+      cellKey = "Rtimefarmcell";
+      settingKey = "Rtimefarmtime";
+      levelKey = "Rtimefarmlevel";
+      mapKey = "Rtimefarmmap";
+      specialKey = "Rtimefarmspecial";
+      gatherKey = "Rtimefarmgather";
+    } else if (titleText == "dTime Farm") {
+      zoneKey = "Rdtimefarmzone";
+      cellKey = "Rdtimefarmcell";
+      settingKey = "Rdtimefarmtime";
+      levelKey = "Rdtimefarmlevel";
+      mapKey = "Rdtimefarmmap";
+      specialKey = "Rdtimefarmspecial";
+      gatherKey = "Rdtimefarmgather";
+    } else if (titleText.includes("Smithy Farm")) {
+      zoneKey = "Rsmithyfarmzone";
+      cellKey = "Rsmithyfarmcell";
+      settingKey = "Rsmithyfarmamount";
+    } else if (titleText.includes("Tribute Farm")) {
+      zoneKey = "Rtributefarmzone";
+      cellKey = "Rtributefarmcell";
+      settingKey = "Rtributefarmamount";
+      levelKey = "Rtributefarmlevel";
+      mapKey = "Rtributemapselection";
+      specialKey = "Rtributespecialselection";
+      gatherKey = "Rtributegatherselection";
+    } else if (titleText == "Shrine - U1") {
+      zoneKey = "Hshrinezone";
+      cellKey = "Hshrinecell";
+      settingKey = "Hshrineamount";
+    } else if (titleText == "Shrine - U2") {
+      zoneKey = "Rshrinezone";
+      cellKey = "Rshrinecell";
+      settingKey = "Rshrineamount";
+    } else if (titleText == "Shrine - U1 (Daily)") {
+      zoneKey = "Hdshrinezone";
+      cellKey = "Hdshrinecell";
+      settingKey = "Hdshrineamount";
+    } else if (titleText == "Shrine - U2 (Daily)") {
+      zoneKey = "Rdshrinezone";
+      cellKey = "Rdshrinecell";
+      settingKey = "Rdshrineamount";
+    } else if (titleText.includes("Quagmire")) {
+      zoneKey = "Rblackbogzone";
+      settingKey = "Rblackbogamount";
+    } else if (titleText.includes("Insanity")) {
+      zoneKey = "Rinsanityfarmzone";
+      cellKey = "Rinsanityfarmcell";
+      settingKey = "Rinsanityfarmstack";
+      levelKey = "Rinsanityfarmlevel";
+    } else if (titleText.includes("Alch")) {
+      zoneKey = "Ralchfarmzone";
+      cellKey = "Ralchfarmcell";
+      settingKey = "Ralchfarmstack";
+      levelKey = "Ralchfarmlevel";
+      mapKey = "Ralchfarmselection";
+    } else if (titleText.includes("Hypo")) {
+      zoneKey = "Rhypofarmzone";
+      cellKey = "Rhypofarmcell";
+      settingKey = "Rhypofarmstack";
+      levelKey = "Rhypofarmlevel";
+    } else if (titleText == "Praid") {
+      zoneKey = "RAMPraidzone";
+      cellKey = "RAMPraidcell";
+      settingKey = "RAMPraidraid";
+    } else if (titleText == "dPraid") {
+      zoneKey = "RdAMPraidzone";
+      cellKey = "RdAMPraidcell";
+      settingKey = "RdAMPraidraid";
+    }
     for (var x = 0; x < maxSettings; x++) {
-      var zone;
-      var cell;
-      var setting;
-      var level;
-      var map;
-      var special;
-      var gather;
-      var world = [0];
-      zone = [0];
-      if (titleText == "Time Farm") {
-        zone = "Rtimefarmzone";
-        cell = "Rtimefarmcell";
-        setting = "Rtimefarmtime";
-        level = "Rtimefarmlevel";
-        map = "Rtimefarmmap";
-        special = "Rtimefarmspecial";
-        gather = "Rtimefarmgather";
-      } else if (titleText == "dTime Farm") {
-        zone = "Rdtimefarmzone";
-        cell = "Rdtimefarmcell";
-        setting = "Rdtimefarmtime";
-        level = "Rdtimefarmlevel";
-        map = "Rdtimefarmmap";
-        special = "Rdtimefarmspecial";
-        gather = "Rdtimefarmgather";
-      } else if (titleText.includes("Smithy Farm")) {
-        zone = "Rsmithyfarmzone";
-        cell = "Rsmithyfarmcell";
-        setting = "Rsmithyfarmamount";
-      } else if (titleText.includes("Tribute Farm")) {
-        zone = "Rtributefarmzone";
-        cell = "Rtributefarmcell";
-        setting = "Rtributefarmamount";
-        level = "Rtributefarmlevel";
-        map = "Rtributemapselection";
-        special = "Rtributespecialselection";
-        gather = "Rtributegatherselection";
-      } else if (titleText == "Shrine - U1") {
-        zone = "Hshrinezone";
-        cell = "Hshrinecell";
-        setting = "Hshrineamount";
-      } else if (titleText == "Shrine - U2") {
-        zone = "Rshrinezone";
-        cell = "Rshrinecell";
-        setting = "Rshrineamount";
-      } else if (titleText == "Shrine - U1 (Daily)") {
-        zone = "Hdshrinezone";
-        cell = "Hdshrinecell";
-        setting = "Hdshrineamount";
-      } else if (titleText == "Shrine - U2 (Daily)") {
-        zone = "Rdshrinezone";
-        cell = "Rdshrinecell";
-        setting = "Rdshrineamount";
-      } else if (titleText.includes("Quagmire")) {
-        zone = "Rblackbogzone";
-        setting = "Rblackbogamount";
-      } else if (titleText.includes("Insanity")) {
-        zone = "Rinsanityfarmzone";
-        cell = "Rinsanityfarmcell";
-        setting = "Rinsanityfarmstack";
-        level = "Rinsanityfarmlevel";
-      } else if (titleText.includes("Alch")) {
-        zone = "Ralchfarmzone";
-        cell = "Ralchfarmcell";
-        setting = "Ralchfarmstack";
-        level = "Ralchfarmlevel";
-        map = "Ralchfarmselection";
-      } else if (titleText.includes("Hypo")) {
-        zone = "Rhypofarmzone";
-        cell = "Rhypofarmcell";
-        setting = "Rhypofarmstack";
-        level = "Rhypofarmlevel";
-      } else if (titleText == "Praid") {
-        zone = "RAMPraidzone";
-        cell = "RAMPraidcell";
-        setting = "RAMPraidraid";
-      } else if (titleText == "dPraid") {
-        zone = "RdAMPraidzone";
-        cell = "RdAMPraidcell";
-        setting = "RdAMPraidraid";
-      }
       var zone2 = byId("windowZone" + x);
       if (!zone2 || zone2.value == "-1") {
         continue;
       }
       ;
-      zone = parseInt(byId("windowZone" + x).value, 10);
+      var zone = parseInt(byId("windowZone" + x).value, 10);
       var setting = 0;
       var level = 0;
       var map = 0;
       var special = 0;
       var gather = 0;
-      if (!titleText.includes("Quagmire")) var cell = parseInt(byId("windowCell" + x).value, 10);
+      var cell;
+      if (!titleText.includes("Quagmire")) cell = parseInt(byId("windowCell" + x).value, 10);
       if (titleText == "Time Farm") {
         setting = byId("windowSetting" + x).value;
         level = parseInt(byId("windowLevel" + x).value, 10);
@@ -5918,88 +5920,88 @@
       if (elem) elem.innerHTML = error;
       return;
     }
-    autoTrimpSettings[zone].value = [];
-    if (!titleText.includes("Quagmire")) autoTrimpSettings[cell].value = [];
+    autoTrimpSettings[zoneKey].value = [];
+    if (!titleText.includes("Quagmire")) autoTrimpSettings[cellKey].value = [];
     if (titleText == "Time Farm") {
-      autoTrimpSettings[level].value = [];
-      autoTrimpSettings[map].value = [];
-      autoTrimpSettings[setting].value = [];
-      autoTrimpSettings[special].value = [];
-      autoTrimpSettings[gather].value = [];
+      autoTrimpSettings[levelKey].value = [];
+      autoTrimpSettings[mapKey].value = [];
+      autoTrimpSettings[settingKey].value = [];
+      autoTrimpSettings[specialKey].value = [];
+      autoTrimpSettings[gatherKey].value = [];
     } else if (titleText == "dTime Farm") {
-      autoTrimpSettings[level].value = [];
-      autoTrimpSettings[map].value = [];
-      autoTrimpSettings[setting].value = [];
-      autoTrimpSettings[special].value = [];
-      autoTrimpSettings[gather].value = [];
+      autoTrimpSettings[levelKey].value = [];
+      autoTrimpSettings[mapKey].value = [];
+      autoTrimpSettings[settingKey].value = [];
+      autoTrimpSettings[specialKey].value = [];
+      autoTrimpSettings[gatherKey].value = [];
     } else if (titleText.includes("Smithy Farm")) {
-      autoTrimpSettings[setting].value = [];
+      autoTrimpSettings[settingKey].value = [];
     } else if (titleText.includes("Tribute Farm")) {
-      autoTrimpSettings[level].value = [];
-      autoTrimpSettings[map].value = [];
-      autoTrimpSettings[setting].value = [];
-      autoTrimpSettings[special].value = [];
-      autoTrimpSettings[gather].value = [];
+      autoTrimpSettings[levelKey].value = [];
+      autoTrimpSettings[mapKey].value = [];
+      autoTrimpSettings[settingKey].value = [];
+      autoTrimpSettings[specialKey].value = [];
+      autoTrimpSettings[gatherKey].value = [];
     } else if (titleText.includes("Shrine")) {
-      autoTrimpSettings[setting].value = [];
+      autoTrimpSettings[settingKey].value = [];
     } else if (titleText.includes("Quagmire")) {
-      autoTrimpSettings[setting].value = [];
+      autoTrimpSettings[settingKey].value = [];
     } else if (titleText.includes("Insanity")) {
-      autoTrimpSettings[level].value = [];
-      autoTrimpSettings[setting].value = [];
+      autoTrimpSettings[levelKey].value = [];
+      autoTrimpSettings[settingKey].value = [];
     } else if (titleText.includes("Alch")) {
-      autoTrimpSettings[level].value = [];
-      autoTrimpSettings[map].value = [];
-      autoTrimpSettings[setting].value = [];
+      autoTrimpSettings[levelKey].value = [];
+      autoTrimpSettings[mapKey].value = [];
+      autoTrimpSettings[settingKey].value = [];
     } else if (titleText.includes("Hypo")) {
-      autoTrimpSettings[level].value = [];
-      autoTrimpSettings[setting].value = [];
+      autoTrimpSettings[levelKey].value = [];
+      autoTrimpSettings[settingKey].value = [];
     } else if (titleText == "Praid") {
-      autoTrimpSettings[setting].value = [];
+      autoTrimpSettings[settingKey].value = [];
     } else if (titleText == "dPraid") {
-      autoTrimpSettings[setting].value = [];
+      autoTrimpSettings[settingKey].value = [];
     }
     for (var x = 0; x < thisSetting.length; x++) {
-      autoTrimpSettings[zone].value[x] = thisSetting[x].zone;
-      if (!titleText.includes("Quagmire")) autoTrimpSettings[cell].value[x] = thisSetting[x].cell;
+      autoTrimpSettings[zoneKey].value[x] = thisSetting[x].zone;
+      if (!titleText.includes("Quagmire")) autoTrimpSettings[cellKey].value[x] = thisSetting[x].cell;
       if (titleText == "Time Farm") {
-        autoTrimpSettings[level].value[x] = thisSetting[x].level;
-        autoTrimpSettings[map].value[x] = thisSetting[x].map;
-        autoTrimpSettings[setting].value[x] = thisSetting[x].setting;
-        autoTrimpSettings[special].value[x] = thisSetting[x].special;
-        autoTrimpSettings[gather].value[x] = thisSetting[x].gather;
+        autoTrimpSettings[levelKey].value[x] = thisSetting[x].level;
+        autoTrimpSettings[mapKey].value[x] = thisSetting[x].map;
+        autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting;
+        autoTrimpSettings[specialKey].value[x] = thisSetting[x].special;
+        autoTrimpSettings[gatherKey].value[x] = thisSetting[x].gather;
       } else if (titleText == "dTime Farm") {
-        autoTrimpSettings[level].value[x] = thisSetting[x].level;
-        autoTrimpSettings[map].value[x] = thisSetting[x].map;
-        autoTrimpSettings[setting].value[x] = thisSetting[x].setting;
-        autoTrimpSettings[special].value[x] = thisSetting[x].special;
-        autoTrimpSettings[gather].value[x] = thisSetting[x].gather;
+        autoTrimpSettings[levelKey].value[x] = thisSetting[x].level;
+        autoTrimpSettings[mapKey].value[x] = thisSetting[x].map;
+        autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting;
+        autoTrimpSettings[specialKey].value[x] = thisSetting[x].special;
+        autoTrimpSettings[gatherKey].value[x] = thisSetting[x].gather;
       } else if (titleText.includes("Smithy Farm")) {
-        autoTrimpSettings[setting].value[x] = thisSetting[x].setting;
+        autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting;
       } else if (titleText.includes("Tribute Farm")) {
-        autoTrimpSettings[level].value[x] = thisSetting[x].level;
-        autoTrimpSettings[map].value[x] = thisSetting[x].map;
-        autoTrimpSettings[setting].value[x] = thisSetting[x].setting;
-        autoTrimpSettings[special].value[x] = thisSetting[x].special;
-        autoTrimpSettings[gather].value[x] = thisSetting[x].gather;
+        autoTrimpSettings[levelKey].value[x] = thisSetting[x].level;
+        autoTrimpSettings[mapKey].value[x] = thisSetting[x].map;
+        autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting;
+        autoTrimpSettings[specialKey].value[x] = thisSetting[x].special;
+        autoTrimpSettings[gatherKey].value[x] = thisSetting[x].gather;
       } else if (titleText.includes("Shrine")) {
-        autoTrimpSettings[setting].value[x] = thisSetting[x].setting;
+        autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting;
       } else if (titleText.includes("Quagmire")) {
-        autoTrimpSettings[setting].value[x] = thisSetting[x].setting;
+        autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting;
       } else if (titleText.includes("Insanity")) {
-        autoTrimpSettings[level].value[x] = thisSetting[x].level;
-        autoTrimpSettings[setting].value[x] = thisSetting[x].setting;
+        autoTrimpSettings[levelKey].value[x] = thisSetting[x].level;
+        autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting;
       } else if (titleText.includes("Alch")) {
-        autoTrimpSettings[level].value[x] = thisSetting[x].level;
-        autoTrimpSettings[map].value[x] = thisSetting[x].map;
-        autoTrimpSettings[setting].value[x] = thisSetting[x].setting;
+        autoTrimpSettings[levelKey].value[x] = thisSetting[x].level;
+        autoTrimpSettings[mapKey].value[x] = thisSetting[x].map;
+        autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting;
       } else if (titleText.includes("Hypo")) {
-        autoTrimpSettings[level].value[x] = thisSetting[x].level;
-        autoTrimpSettings[setting].value[x] = thisSetting[x].setting;
+        autoTrimpSettings[levelKey].value[x] = thisSetting[x].level;
+        autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting;
       } else if (titleText == "Praid") {
-        autoTrimpSettings[setting].value[x] = thisSetting[x].setting;
+        autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting;
       } else if (titleText == "dPraid") {
-        autoTrimpSettings[setting].value[x] = thisSetting[x].setting;
+        autoTrimpSettings[settingKey].value[x] = thisSetting[x].setting;
       }
     }
     cancelTooltip(true);
@@ -6314,7 +6316,7 @@
         dhighHeirloom();
       }
     }
-    setFormation(stancey);
+    setFormation(String(stancey));
   }
 
   // src/modules/maps.ts
@@ -9154,7 +9156,7 @@
         repeatClicked();
         RdoMaxMapBonus = false;
       }
-      if (game.global.repeatMap && (Rshoulddoquest == 3 && game.global.mapBonus >= 4) || Rshoulddopraid && RAMPfragfarming && RAMPfrag(false) == true || Rdshoulddopraid && RdAMPfragfarming && RAMPfrag(true) == true || Rshouldinsanityfarm && Rinsanityfragfarming && RfragCheck("insanity") == true || Rshouldalchfarm && Ralchfragfarming && RfragCheck("alch") == true || Rshouldhypofarm && Rhypofragfarming && RfragCheck("hypo") == true || Rshouldshipfarm && Rshipfragfarming && RfragCheck("ship") == true) {
+      if (game.global.repeatMap && (Rshoulddoquest == 3 && game.global.mapBonus >= 4 || Rshoulddopraid && RAMPfragfarming && RAMPfrag(false) == true || Rdshoulddopraid && RdAMPfragfarming && RAMPfrag(true) == true || Rshouldinsanityfarm && Rinsanityfragfarming && RfragCheck("insanity") == true || Rshouldalchfarm && Ralchfragfarming && RfragCheck("alch") == true || Rshouldhypofarm && Rhypofragfarming && RfragCheck("hypo") == true || Rshouldshipfarm && Rshipfragfarming && RfragCheck("ship") == true)) {
         repeatClicked();
       }
     } else {
@@ -10200,37 +10202,36 @@
         var bestHeHrZone = game.stats.bestHeliumHourThisRun.atZone;
         var myHeliumHr = game.stats.heliumHour.value();
         var heliumHrBuffer = Math.abs(getPageSetting2("dHeliumHrBuffer"));
-        if (!aWholeNewWorld) {
+        if (!aWholeNewWorld)
           heliumHrBuffer *= MODULES["portal"].bufferExceedFactor;
-          var bufferExceeded = myHeliumHr < bestHeHr * (1 - heliumHrBuffer / 100);
-          if (bufferExceeded && game.global.world >= minZone) {
-            OKtoPortal = true;
-            if (aWholeNewWorld)
-              zonePostpone = 0;
-          }
-          if (heliumHrBuffer == 0 && !aWholeNewWorld)
-            OKtoPortal = false;
-          if (OKtoPortal && zonePostpone == 0) {
-            zonePostpone += 1;
-            debug2("My HeliumHr was: " + myHeliumHr + " & the Best HeliumHr was: " + bestHeHr + " at zone: " + bestHeHrZone, "portal");
-            cancelTooltip();
-            tooltip("confirm", null, "update", "<b>Auto Portaling NOW!</b><p>Hit Delay Portal to WAIT 1 more zone.", "zonePostpone+=1", "<b>NOTICE: Auto-Portaling in 5 seconds....</b>", "Delay Portal");
-            setTimeout(cancelTooltip, MODULES["portal"].timeout);
-            setTimeout(function() {
-              if (zonePostpone >= 2)
-                return;
-              if (OKtoPortal) {
-                abandonDaily();
-                document.getElementById("finishDailyBtnContainer").style.display = "none";
-              }
-              if (autoTrimpSettings.dHeliumHourChallenge.selected != "None" && getPageSetting2("u1daily") == false)
-                doPortal(autoTrimpSettings.dHeliumHourChallenge.selected);
-              else if (autoTrimpSettings.RdHeliumHourChallenge.selected != "None" && getPageSetting2("u1daily") == true)
-                doPortal(autoTrimpSettings.RdHeliumHourChallenge.selected);
-              else
-                doPortal();
-            }, MODULES["portal"].timeout + 100);
-          }
+        var bufferExceeded = myHeliumHr < bestHeHr * (1 - heliumHrBuffer / 100);
+        if (bufferExceeded && game.global.world >= minZone) {
+          OKtoPortal = true;
+          if (aWholeNewWorld)
+            zonePostpone = 0;
+        }
+        if (heliumHrBuffer == 0 && !aWholeNewWorld)
+          OKtoPortal = false;
+        if (OKtoPortal && zonePostpone == 0) {
+          zonePostpone += 1;
+          debug2("My HeliumHr was: " + myHeliumHr + " & the Best HeliumHr was: " + bestHeHr + " at zone: " + bestHeHrZone, "portal");
+          cancelTooltip();
+          tooltip("confirm", null, "update", "<b>Auto Portaling NOW!</b><p>Hit Delay Portal to WAIT 1 more zone.", "zonePostpone+=1", "<b>NOTICE: Auto-Portaling in 5 seconds....</b>", "Delay Portal");
+          setTimeout(cancelTooltip, MODULES["portal"].timeout);
+          setTimeout(function() {
+            if (zonePostpone >= 2)
+              return;
+            if (OKtoPortal) {
+              abandonDaily();
+              document.getElementById("finishDailyBtnContainer").style.display = "none";
+            }
+            if (autoTrimpSettings.dHeliumHourChallenge.selected != "None" && getPageSetting2("u1daily") == false)
+              doPortal(autoTrimpSettings.dHeliumHourChallenge.selected);
+            else if (autoTrimpSettings.RdHeliumHourChallenge.selected != "None" && getPageSetting2("u1daily") == true)
+              doPortal(autoTrimpSettings.RdHeliumHourChallenge.selected);
+            else
+              doPortal();
+          }, MODULES["portal"].timeout + 100);
         }
       }
     }
@@ -10480,38 +10481,37 @@
         var bestHeHrZone = game.stats.bestHeliumHourThisRun.atZone;
         var myHeliumHr = game.stats.heliumHour.value();
         var heliumHrBuffer = Math.abs(getPageSetting2("RdHeliumHrBuffer"));
-        if (!aWholeNewWorld) {
+        if (!aWholeNewWorld)
           heliumHrBuffer *= MODULES["portal"].bufferExceedFactor;
-          var bufferExceeded = myHeliumHr < bestHeHr * (1 - heliumHrBuffer / 100);
-          if (bufferExceeded && game.global.world >= minZone) {
-            OKtoPortal = true;
-            if (aWholeNewWorld)
-              zonePostpone = 0;
-          }
-          if (heliumHrBuffer == 0 && !aWholeNewWorld)
-            OKtoPortal = false;
-          if (OKtoPortal && zonePostpone == 0) {
-            RresetVars();
-            zonePostpone += 1;
-            debug2("My RadonHr was: " + myHeliumHr + " & the Best RadonHr was: " + bestHeHr + " at zone: " + bestHeHrZone, "portal");
-            cancelTooltip();
-            tooltip("confirm", null, "update", "<b>Auto Portaling NOW!</b><p>Hit Delay Portal to WAIT 1 more zone.", "zonePostpone+=1", "<b>NOTICE: Auto-Portaling in 5 seconds....</b>", "Delay Portal");
-            setTimeout(cancelTooltip, MODULES["portal"].Rtimeout);
-            setTimeout(function() {
-              if (zonePostpone >= 2)
-                return;
-              if (OKtoPortal) {
-                abandonDaily();
-                document.getElementById("finishDailyBtnContainer").style.display = "none";
-              }
-              if (autoTrimpSettings.RdHeliumHourChallenge.selected != "None" && getPageSetting2("u2daily") == false)
-                RdoPortal(autoTrimpSettings.RdHeliumHourChallenge.selected);
-              else if (autoTrimpSettings.dHeliumHourChallenge.selected != "None" && getPageSetting2("u2daily") == true)
-                RdoPortal(autoTrimpSettings.dHeliumHourChallenge.selected);
-              else
-                RdoPortal();
-            }, MODULES["portal"].timeout + 100);
-          }
+        var bufferExceeded = myHeliumHr < bestHeHr * (1 - heliumHrBuffer / 100);
+        if (bufferExceeded && game.global.world >= minZone) {
+          OKtoPortal = true;
+          if (aWholeNewWorld)
+            zonePostpone = 0;
+        }
+        if (heliumHrBuffer == 0 && !aWholeNewWorld)
+          OKtoPortal = false;
+        if (OKtoPortal && zonePostpone == 0) {
+          RresetVars();
+          zonePostpone += 1;
+          debug2("My RadonHr was: " + myHeliumHr + " & the Best RadonHr was: " + bestHeHr + " at zone: " + bestHeHrZone, "portal");
+          cancelTooltip();
+          tooltip("confirm", null, "update", "<b>Auto Portaling NOW!</b><p>Hit Delay Portal to WAIT 1 more zone.", "zonePostpone+=1", "<b>NOTICE: Auto-Portaling in 5 seconds....</b>", "Delay Portal");
+          setTimeout(cancelTooltip, MODULES["portal"].Rtimeout);
+          setTimeout(function() {
+            if (zonePostpone >= 2)
+              return;
+            if (OKtoPortal) {
+              abandonDaily();
+              document.getElementById("finishDailyBtnContainer").style.display = "none";
+            }
+            if (autoTrimpSettings.RdHeliumHourChallenge.selected != "None" && getPageSetting2("u2daily") == false)
+              RdoPortal(autoTrimpSettings.RdHeliumHourChallenge.selected);
+            else if (autoTrimpSettings.dHeliumHourChallenge.selected != "None" && getPageSetting2("u2daily") == true)
+              RdoPortal(autoTrimpSettings.dHeliumHourChallenge.selected);
+            else
+              RdoPortal();
+          }, MODULES["portal"].timeout + 100);
         }
       }
     }
@@ -13944,7 +13944,7 @@
         }
       }
     }
-    if (game.global.preMapsActive && (dmapbought1 || dmapbought2 || dmapbought3 || dmapbought4 || dmapbought5) && pMap1 == void 0 && dpMap2 == void 0 && dpMap3 == void 0 && dpMap4 == void 0 && dpMap5 == void 0 && !dprestraid && !dfailpraid) {
+    if (game.global.preMapsActive && (dmapbought1 || dmapbought2 || dmapbought3 || dmapbought4 || dmapbought5) && dpMap1 == void 0 && dpMap2 == void 0 && dpMap3 == void 0 && dpMap4 == void 0 && dpMap5 == void 0 && !dprestraid && !dfailpraid) {
       dprestraid = true;
       dfailpraid = false;
       dmapbought1 = false;
@@ -13978,7 +13978,7 @@
       }
       autoTrimpSettings["AutoMaps"].value = 1;
       game.options.menu.repeatUntil.enabled = 0;
-      pMap1 = void 0;
+      dpMap1 = void 0;
       dpMap2 = void 0;
       dpMap3 = void 0;
       dpMap4 = void 0;
@@ -13995,16 +13995,16 @@
       dmapbought3 = false;
       dmapbought4 = false;
       dmapbought5 = false;
-      pMap1 = void 0;
+      dpMap1 = void 0;
       dpMap2 = void 0;
       dpMap3 = void 0;
       dpMap4 = void 0;
       dpMap5 = void 0;
-      repMap1 = void 0;
-      repMap2 = void 0;
-      repMap3 = void 0;
-      repMap4 = void 0;
-      repMap5 = void 0;
+      drepMap1 = void 0;
+      drepMap2 = void 0;
+      drepMap3 = void 0;
+      drepMap4 = void 0;
+      drepMap5 = void 0;
       dpraidDone = false;
     }
   }
@@ -14269,7 +14269,7 @@
       renderControlFace2(elB, btn);
     }
     if (btn.type == "multitoggle") {
-      if (id == "AutoMagmiteSpender2" && btn.value == 1) {
+      if (id == "spendmagmite" && btn.value == 1) {
         magmiteSpenderChanged = true;
         setTimeout(function() {
           magmiteSpenderChanged = false;

@@ -274,8 +274,13 @@ function createUI() {
     game && (lastTheme = game.options.menu.darkTheme.enabled);
   }
 
-  MODULES.graphs.themeChanged();
+  // #83 §8: hydrate the checkbox from storage BEFORE the first themeChanged() call. themeChanged()
+  // calls toggleDarkGraphs(), which READS #blackCB.checked and PERSISTS it — and `lastTheme` starts at
+  // -1, so that first call always fires. The checkbox was created by the innerHTML above with no
+  // `checked` attribute, so toggleDarkGraphs() saw `false` and stomped the user's stored value on
+  // EVERY page load. The old ordering then set the box from the value it had just destroyed.
   document.querySelector("#blackCB").checked = GRAPHSETTINGS.darkTheme;
+  MODULES.graphs.themeChanged();
   document.querySelector("#portalCountTextBox").value = GRAPHSETTINGS.portalsDisplayed;
 }
 
@@ -307,7 +312,11 @@ function toggleDarkGraphs() {
   if (game) {
     var darkcss = document.getElementById("dark-graph.css")
     var dark = document.getElementById("blackCB").checked;
-    saveSetting("darkTheme", !dark)
+    // #83 §8: was saveSetting("darkTheme", !dark) — it persisted the INVERSE of the checkbox, while
+    // the read-back at the end of buildGraphMenu is straight (`#blackCB.checked = GRAPHSETTINGS.darkTheme`).
+    // So the CSS applied at click time used the correct `dark`, but storage got its negation: the box
+    // could never round-trip, and unticking Black Graphs re-ticked it on the next load.
+    saveSetting("darkTheme", dark)
     if ((!darkcss && (0 == game.options.menu.darkTheme.enabled || 2 == game.options.menu.darkTheme.enabled)) || MODULES.graphs.useDarkAlways || dark) {
       addDarkGraphs()
     }
