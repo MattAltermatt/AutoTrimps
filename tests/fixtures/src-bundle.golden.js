@@ -12675,7 +12675,7 @@
   }
   function armormagic() {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
-    if ((getPageSetting2("carmormagic") == 1 || getPageSetting2("darmormagic") == 1) && game.global.world >= armormagicworld && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("carmormagic") == 2 || getPageSetting2("darmormagic") == 2) && calcHDratio() >= MODULES["maps"].enoughDamageCutoff && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("carmormagic") == 3 || getPageSetting2("darmormagic") == 3) && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)
+    if ((getPageSetting2("carmormagic") == 1 || getPageSetting2("darmormagic") == 1) && game.global.world >= armormagicworld && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("carmormagic") == 2 || getPageSetting2("darmormagic") == 2) && calcHDratio() >= getPageSetting2("mapcuntoff") && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("carmormagic") == 3 || getPageSetting2("darmormagic") == 3) && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)
       buyArms();
   }
   globalThis.trapIndexs = ["", "Fire", "Frost", "Poison", "Lightning", "Strength", "Condenser", "Knowledge"];
@@ -12726,7 +12726,7 @@
   }
   function Rarmormagic() {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
-    if ((getPageSetting2("Rcarmormagic") == 1 || getPageSetting2("Rdarmormagic") == 1) && game.global.world >= armormagicworld && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("Rcarmormagic") == 2 || getPageSetting2("Rdarmormagic") == 2) && RcalcHDratio() >= MODULES["maps"].RenoughDamageCutoff && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("Rcarmormagic") == 3 || getPageSetting2("Rdarmormagic") == 3) && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)
+    if ((getPageSetting2("Rcarmormagic") == 1 || getPageSetting2("Rdarmormagic") == 1) && game.global.world >= armormagicworld && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("Rcarmormagic") == 2 || getPageSetting2("Rdarmormagic") == 2) && RcalcHDratio() >= getPageSetting2("Rmapcuntoff") && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("Rcarmormagic") == 3 || getPageSetting2("Rdarmormagic") == 3) && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)
       RbuyArms();
   }
   function questcheck2() {

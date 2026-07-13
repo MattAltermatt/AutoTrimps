@@ -174,8 +174,10 @@ const WRITTEN = new Set(writes.map(key))
 // so the net is green on `main` today while the fixes land one at a time behind it. It may only ever
 // get SMALLER: a new phantom field fails on arrival (see the guard test below).
 const KNOWN_PHANTOM: Record<string, string> = {
-  'maps.enoughDamageCutoff': '#70 — U1 armormagic() "CAM: H:D" branch dead; fix reads getPageSetting("mapcuntoff")',
-  'maps.RenoughDamageCutoff': '#70 — U2 Rarmormagic() "DAM: H:D" branch dead; fix reads getPageSetting("Rmapcuntoff")',
+  // ✅ maps.enoughDamageCutoff / maps.RenoughDamageCutoff — FIXED (#70). armormagic()/Rarmormagic() now
+  // read getPageSetting('mapcuntoff') / ('Rmapcuntoff'), the H:D thresholds their tooltips already
+  // promise. The fields were NOT given writers — inventing a threshold number would have been a new
+  // game-balance literal. They are simply no longer read, so the net drops them for free.
   'upgrades.autoGigas': '#70 (inst. 3) — buildings.ts:184 `== false` disjunct can never fire; real id is getPageSetting("AutoGigas")',
   // ✅ jobs.customRatio / jobs.RcustomRatio — FIXED (#88). They were bare member accesses with the
   // assignment dropped; now initialized to `null` at jobs.ts:22/:313. The net went red the moment they
@@ -227,7 +229,8 @@ describe('MODULES.<ns>.<field> — every field read must have a writer (#70, #88
         `${k} is no longer read — delete it from KNOWN_PHANTOM`,
       ).toBe(true)
     }
-    expect(Object.keys(KNOWN_PHANTOM).length).toBeLessThanOrEqual(5)
+    // Ratcheted 5 → 1 by the #70 fixes. Only ever tighten.
+    expect(Object.keys(KNOWN_PHANTOM).length).toBeLessThanOrEqual(1)
   })
 })
 
@@ -292,7 +295,10 @@ describe('a test fixture may only seed MODULES fields production can produce (#7
   // The same shrinking-baseline discipline as KNOWN_PHANTOM. Each of these is a test asserting a branch
   // that production cannot reach; each dies together with the production bug it is covering for.
   const KNOWN_TEST_LIE: Record<string, string> = {
-    'tests/other.rarmormagic.test.ts:19': '#70/#74 — injects maps.RenoughDamageCutoff to reach the dead "H:D" arm',
+    // ✅ tests/other.rarmormagic.test.ts — FIXED (#70/#74). It injected maps.RenoughDamageCutoff, a field
+    // production never writes, and that injection is exactly what kept the dead branch looking alive. The
+    // production bug is fixed and the injection is deleted; the test now reads production's real MODULES
+    // shape and drives the H:D arm through the setting it actually reads.
     'tests/buildings.characterization.test.ts:103': '#70 (inst. 3) — injects upgrades.autoGigas',
     'tests/buildings.characterization.test.ts:382': '#70 (inst. 3) — injects upgrades.autoGigas',
   }
@@ -313,6 +319,7 @@ describe('a test fixture may only seed MODULES fields production can produce (#7
     const live = new Set(injected.filter((i) => !WRITTEN.has(key(i))).map((i) => `${i.file}:${i.line}`))
     for (const k of Object.keys(KNOWN_TEST_LIE))
       expect(live.has(k), `${k} no longer injects a phantom field — delete it from KNOWN_TEST_LIE`).toBe(true)
-    expect(Object.keys(KNOWN_TEST_LIE).length).toBeLessThanOrEqual(3)
+    // Ratcheted 3 → 2 by the #70 fix. Only ever tighten.
+    expect(Object.keys(KNOWN_TEST_LIE).length).toBeLessThanOrEqual(2)
   })
 })

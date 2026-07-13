@@ -182,9 +182,24 @@ export function fightalways() {
         fightManual();
 }
 
+// #70 — the `== 2` arm ("CAM: H:D") compared against `MODULES["maps"].enoughDamageCutoff`, a field
+// NOTHING anywhere ever assigns. `n >= undefined` is always false, so the middle option of both Armor
+// Magic multitoggles has been a silent no-op since it was written — dead, but reading like working code
+// (no throw, no warning, green tsc: the ambient decl is `any`).
+//
+// The fix is to read the H:D threshold the tooltip already promises ("the H:D you have defined in
+// maps") — NOT to invent a number for the MODULES field, which would be a new game-balance literal.
+//
+// Same units, and this is not a guess. maps.ts:408 computes
+//     enoughDamage = (ourBaseDamage * mapcuntoff > enemyHealth)
+// which rearranges to `enemyHealth / ourBaseDamage < mapcuntoff`, i.e. `HD < mapcuntoff`. And
+// calcHDratio() IS `calcEnemyHealth() / ourBaseDamage` (calc.ts:901). So mapcuntoff already IS an H:D
+// threshold, and `calcHDratio() >= mapcuntoff` is exactly its complement: "not enough damage ⇒ buy
+// armor", which is the branch's stated intent. The U2 twin below needs no algebra at all — maps.ts:974
+// literally does `RenoughDamage = (RcalcHDratio() <= getPageSetting("Rmapcuntoff"))` in production.
 export function armormagic() {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
-    if (((getPageSetting('carmormagic') == 1 || getPageSetting('darmormagic') == 1) && game.global.world >= armormagicworld && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('carmormagic') == 2 || getPageSetting('darmormagic') == 2) && calcHDratio() >= MODULES["maps"].enoughDamageCutoff && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('carmormagic') == 3 || getPageSetting('darmormagic') == 3) && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)))
+    if (((getPageSetting('carmormagic') == 1 || getPageSetting('darmormagic') == 1) && game.global.world >= armormagicworld && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('carmormagic') == 2 || getPageSetting('darmormagic') == 2) && calcHDratio() >= getPageSetting('mapcuntoff') && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('carmormagic') == 3 || getPageSetting('darmormagic') == 3) && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)))
         buyArms();
 }
 
@@ -272,9 +287,13 @@ export function Rfightalways() {
         fightManual();
 }
 
+// #70 (U2 twin) — `MODULES["maps"].RenoughDamageCutoff` is likewise never assigned, so the "DAM: H:D"
+// arm was dead in both U2 multitoggles too. Repointed at `Rmapcuntoff`, the U2 H:D threshold the player
+// already configures. maps.ts:974 compares that exact setting to RcalcHDratio() in production, so the
+// units are confirmed by an existing call site — no new number is introduced.
 export function Rarmormagic() {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
-    if (((getPageSetting('Rcarmormagic') == 1 || getPageSetting('Rdarmormagic') == 1) && game.global.world >= armormagicworld && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('Rcarmormagic') == 2 || getPageSetting('Rdarmormagic') == 2) && RcalcHDratio() >= MODULES["maps"].RenoughDamageCutoff && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('Rcarmormagic') == 3 || getPageSetting('Rdarmormagic') == 3) && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)))
+    if (((getPageSetting('Rcarmormagic') == 1 || getPageSetting('Rdarmormagic') == 1) && game.global.world >= armormagicworld && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('Rcarmormagic') == 2 || getPageSetting('Rdarmormagic') == 2) && RcalcHDratio() >= getPageSetting('Rmapcuntoff') && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('Rcarmormagic') == 3 || getPageSetting('Rdarmormagic') == 3) && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)))
         RbuyArms();
 }
 
