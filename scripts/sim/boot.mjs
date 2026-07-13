@@ -16,10 +16,10 @@ const GAME_FILES = ['lz-string.js', 'decimal.min.js', 'config.js', 'updates.js',
 
 /**
  * Boot the Trimps clone (and optionally the AutoTrimps bundle) into jsdom.
- * @param {{ gameDir?: string, withAutoTrimps?: boolean, atBundlePath?: string, saveString?: string }} [opts]
+ * @param {{ gameDir?: string, withAutoTrimps?: boolean, atBundlePath?: string, saveString?: string, atSettings?: Record<string, unknown> }} [opts]
  * @returns {{ window: any, game: any, dom: any }}
  */
-export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, atBundlePath, saveString } = {}) {
+export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, atBundlePath, saveString, atSettings } = {}) {
   const html = readFileSync(resolve(gameDir, 'index.html'), 'utf8')
   const dom = new JSDOM(html, { runScripts: 'outside-only', pretendToBeVisual: true, url: 'http://localhost/' })
   const { window } = dom
@@ -78,6 +78,34 @@ export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, a
     // Skips the remote Graphs.js inject + changelog tooltip that initializeAutoTrimps() also does.
     window.loadPageVariables?.()
     window.bootSettingsUI?.()
+
+    // #105 — SEED AT SETTINGS. Until now the proof net could only ever run AT on its DEFAULT settings:
+    // loadPageVariables() reads localStorage, which is empty under jsdom, so every recorded trace was of
+    // a factory-default bot. That is a structural blind spot in its own right — most of AT's behaviour is
+    // settings-gated, and any feature behind a non-default setting was untestable by L0 by construction.
+    //
+    // Concretely, it is what makes a Hypothermia fixture impossible without this hook: Rhypo's bonfire
+    // clause is guarded by `hasBonfireTarget` (finalBonfireTarget > 0), and the default Rhypofarmstack is
+    // the [-1] "unset" sentinel — so the clause stays INERT no matter how good the save is. The fixture
+    // would reach the code and prove nothing. Cf. reach != sensitivity (#98).
+    //
+    // Seeded through AT's OWN setPageSetting rather than by poking autoTrimpSettings internals, so the
+    // per-type field mapping (enabled / value / selected) cannot drift away from getPageSetting's.
+    if (atSettings) {
+      for (const [id, value] of Object.entries(atSettings)) {
+        // ANTI-PHANTOM. setPageSetting returns false for an id production never createSetting's, and a
+        // typo would otherwise seed NOTHING, silently — the fixture would then "cover" a feature it never
+        // enabled and report a green as proof. That is the #58/#68 phantom-setting class, aimed at the
+        // net itself, so make it loud.
+        if (!window.autoTrimpSettings?.[id]) {
+          throw new Error(
+            `boot: atSettings names '${id}', which production never createSetting's. A phantom id seeds ` +
+              'nothing and would make this fixture silently prove nothing.',
+          )
+        }
+        window.setPageSetting(id, value)
+      }
+    }
   }
 
   // Anti-false-green tripwire (mirrors tests/harness/gameFixture.ts:44): a hydrated game keeps its

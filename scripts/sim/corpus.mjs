@@ -28,8 +28,17 @@
 //     SATURATED (enoughDamage is already true), so even a 1,000,000x damage buff moves nothing. 08 is
 //     starved-but-perked, so the threshold sits UNSATURATED and calcOurDmg's output is load-bearing.
 //     Two seeds — its trace is combat-RNG-timed, and this is the fixture where that timing matters most.
+//
+// `settings` (optional, #105): AT settings to seed for a fixture, via bootGame's atSettings hook.
+// Until that hook existed the net could only ever run AT on FACTORY DEFAULTS — loadPageVariables()
+// reads localStorage, and jsdom's is empty — so every recorded trace was of a default-configured bot,
+// and any behaviour behind a non-default setting was untestable by construction. No fixture uses it
+// yet; the two that need it (Hypothermia, deep-housing) are both U2-only and are deferred with #105.
 const DEFAULT = { seeds: [1, 2, 3], ticks: 1500 }
 
+/**
+ * @type {{ name: string, seeds: number[], ticks: number, settings?: Record<string, unknown> }[]}
+ */
 export const CORPUS = [
   { name: '01-early-u1', ...DEFAULT },
   { name: '02-mid-u1', ...DEFAULT },

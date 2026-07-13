@@ -35,7 +35,7 @@ describe('baseline-zero (current build reproduces the oracle traces)', () => {
     writeFileSync(workingBundle, await buildUserscript(), 'utf8')
   }, 60_000)
 
-  for (const { name, seeds, ticks } of CORPUS) {
+  for (const { name, seeds, ticks, settings } of CORPUS) {
     for (const seed of seeds) {
       it(`${name}.${seed}: current build reproduces the oracle trace`, () => {
         const oracle = JSON.parse(readFileSync(resolve(TRACES, `${name}.${seed}.trace.json`), 'utf8'))
@@ -44,7 +44,7 @@ describe('baseline-zero (current build reproduces the oracle traces)', () => {
         // an empty oracle; a working build that ALSO does nothing would then diff to ∅ and pass while
         // testing nothing. Reject an empty oracle outright (adversarial-review guardrail).
         expect(oracle.length, `oracle trace ${name}.${seed} is degenerate (0 events) — re-record produced nothing`).toBeGreaterThan(0)
-        const working = runTrace({ atBundlePath: workingBundle, saveString, seed, ticks })
+        const working = runTrace({ atBundlePath: workingBundle, saveString, seed, ticks, atSettings: settings })
         // On a divergence, append the recorded-vs-current runtime (#47). RNG + clock are pinned, so a
         // knife-edge timing boundary can still flip under a node/jsdom bump with ZERO src change. If the
         // runtimes MISMATCH the diff may be environmental — restore the pinned runtime (.nvmrc + npm ci)

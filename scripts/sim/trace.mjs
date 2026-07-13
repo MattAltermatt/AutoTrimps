@@ -9,11 +9,11 @@ import { installRecorder } from './recorder.mjs'
 import { stepWithAT } from './driver.mjs'
 
 /**
- * @param {{ atBundlePath: string, saveString: string, seed: number, ticks: number }} opts
+ * @param {{ atBundlePath: string, saveString: string, seed: number, ticks: number, atSettings?: Record<string, unknown> }} opts
  * @returns {{ tick: number, fn: string, args: unknown[] }[]}
  */
-export function runTrace({ atBundlePath, saveString, seed, ticks }) {
-  const { window } = bootGame({ withAutoTrimps: true, atBundlePath, saveString })
+export function runTrace({ atBundlePath, saveString, seed, ticks, atSettings }) {
+  const { window } = bootGame({ withAutoTrimps: true, atBundlePath, saveString, atSettings })
   installSeededRandom(window, seed)
   installFrozenClock(window)
   let tick = 0

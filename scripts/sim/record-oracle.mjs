@@ -20,10 +20,10 @@ const ORACLE = resolve('tests/fixtures/oracle/autotrimps.oracle.user.js')
 const SAVES_DIR = resolve('tests/fixtures/saves')
 const TRACES = resolve('tests/fixtures/traces')
 
-for (const { name: saveName, seeds, ticks } of CORPUS) {
+for (const { name: saveName, seeds, ticks, settings } of CORPUS) {
   const saveString = readFileSync(resolve(SAVES_DIR, `${saveName}.txt`), 'utf8')
   for (const seed of seeds) {
-    const trace = runTrace({ atBundlePath: ORACLE, saveString, seed, ticks })
+    const trace = runTrace({ atBundlePath: ORACLE, saveString, seed, ticks, atSettings: settings })
     const name = `${saveName}.${seed}.trace.json`
     writeFileSync(resolve(TRACES, name), JSON.stringify(trace), 'utf8')
     console.log('[record-oracle]', name, '·', trace.length, 'events')
