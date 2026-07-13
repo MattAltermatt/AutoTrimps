@@ -105,8 +105,15 @@ export function ABdustsimple() {
     }
 
     equips.sort(function(a, b) {
-        return a[1] - b[1]; 
+        return a[1] - b[1];
     });
+
+    // #77: the loop above FILTERS, so it can match nothing — the game permits a zero-item loadout
+    // (objects.js:3573 equip() guards only the MAXIMUM), and loadPreset() on a never-saved preset
+    // blanks the loadout outright (objects.js:930; presets default to []). Indexing equips[0][1] on
+    // an empty array threw a TypeError out of a mainLoop that has NO try/catch (#87), decapitating
+    // every automation dispatched after the AB block, every tick, forever.
+    if (equips.length === 0) return;
 
     if (autoBattle.dust >= equips[0][1]) autoBattle.upgrade(equips[0][0]);
 }
@@ -122,8 +129,12 @@ export function ABdustsimplenonhid() {
     }
 
     equips.sort(function(a, b) {
-        return a[1] - b[1]; 
+        return a[1] - b[1];
     });
+
+    // #77: same unguarded-first-element shape as ABdustsimple — this filter matches nothing once
+    // every item is equipped-or-hidden.
+    if (equips.length === 0) return;
 
     if (autoBattle.dust >= equips[0][1]) autoBattle.upgrade(equips[0][0]);
 }
@@ -467,10 +478,34 @@ export function ABsolver() {
 
     //Equip items
     
+    // #77: the dirty-check used to ask "is every TARGET item equipped?" while the apply loop below
+    // only equips items the player OWNS — so an unowned target (the level-7 list names Labcoat,
+    // zone 90) could never become equipped, needsEquipChange stayed true on every subsequent tick,
+    // and the block re-ran forever. Every autoBattle.equip() ends in resetCombat(true)
+    // (objects.js:3585), which rebuilds both combatants and zeroes battleTime (objects.js:3200-3204)
+    // — so the SA fight restarted from full enemy health every tick and never killed anything.
+    //
+    // Fix: ask instead "would applying the block below change the loadout?". The apply loop is
+    // deterministic — it blanks the loadout, then equips, in `items` order, the entries the player
+    // owns, and the game's equip() silently refuses past getMaxItems() (objects.js:3576). So the
+    // loadout it converges on is exactly `desired` below. Comparing against that is a fixpoint test:
+    // once applied, the next call is a no-op. The second half of the comparison (an equipped item
+    // that is NOT desired) is what still lets the block REMOVE a now-unwanted item.
     var needsEquipChange = false;
 
-    for (var item of items) {
-        if (autoBattle.items[item].equipped == false) { needsEquipChange = true;}
+    if (items.length > 0) {
+        var desired: string[] = [];
+        for (var item of items) {
+            if (autoBattle.items[item].owned && desired.length < autoBattle.getMaxItems()) {
+                desired.push(item);
+            }
+        }
+
+        for (var owned in autoBattle.items) {
+            if (autoBattle.items[owned].equipped !== (desired.indexOf(owned) !== -1)) {
+                needsEquipChange = true;
+            }
+        }
     }
 
     if (needsEquipChange) {

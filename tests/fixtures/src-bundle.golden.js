@@ -5770,6 +5770,7 @@
     equips.sort(function(a, b) {
       return a[1] - b[1];
     });
+    if (equips.length === 0) return;
     if (autoBattle.dust >= equips[0][1]) autoBattle.upgrade(equips[0][0]);
   }
   function ABdustsimplenonhid() {
@@ -5782,6 +5783,7 @@
     equips.sort(function(a, b) {
       return a[1] - b[1];
     });
+    if (equips.length === 0) return;
     if (autoBattle.dust >= equips[0][1]) autoBattle.upgrade(equips[0][0]);
   }
   function ABfarmsave() {
@@ -6055,9 +6057,17 @@
         break;
     }
     var needsEquipChange = false;
-    for (var item of items) {
-      if (autoBattle.items[item].equipped == false) {
-        needsEquipChange = true;
+    if (items.length > 0) {
+      var desired = [];
+      for (var item of items) {
+        if (autoBattle.items[item].owned && desired.length < autoBattle.getMaxItems()) {
+          desired.push(item);
+        }
+      }
+      for (var owned in autoBattle.items) {
+        if (autoBattle.items[owned].equipped !== (desired.indexOf(owned) !== -1)) {
+          needsEquipChange = true;
+        }
       }
     }
     if (needsEquipChange) {
