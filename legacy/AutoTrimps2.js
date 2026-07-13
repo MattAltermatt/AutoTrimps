@@ -129,7 +129,6 @@ var currentworld = 0;
 var lastrunworld = 0;
 var aWholeNewWorld = false;
 var heirloomFlag = false;
-var daily3 = false;
 var heirloomCache = game.global.heirloomsExtra.length;
 var magmiteSpenderChanged = false;
 var lastHeliumZone = 0;
@@ -405,10 +404,6 @@ function mainCleanup() {
         return true;
     }
     autoTrimpSettings.zonetracker = 1;
-}
-
-function throwErrorfromMain() {
-    throw new Error("We have successfully read the thrown error message out of the main file")
 }
 
 if (document.getElementById('tooltipDiv').classList.contains('tooltipExtraLg') === false)

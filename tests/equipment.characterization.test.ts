@@ -5,13 +5,13 @@ import { makeMinimalGame } from './harness/gameFixture'
 // Phase-2 characterization net for equipment.ts (proof-net #51) — the equipment-buyer actuator
 // module (auto-equip / prestige / equipment-efficiency, U1 + the parallel radon R* family).
 // Archetypes per the design spec (§4):
-//   L1a pure-predicate golden masters — equipEffect / equipCost / PrestigeValue (+ R* twins),
+//   L1a pure-predicate golden masters — equipEffect / equipCost / PrestigeValue,
 //     getMaxAffordable / getTotalMultiCost (closed-form math), mostEfficientEquipment (selector),
-//     equipfarmdynamicHD, evaluateEquipmentEfficiency / RevaluateEquipmentEfficiency (eval object),
+//     equipfarmdynamicHD, evaluateEquipmentEfficiency (eval object),
 //     buyPrestigeMaybe (bool), Rgetequips (count), areWeAttackLevelCapped (bool),
 //     estimateEquipsForZone (cost array), windstackingprestige (bool).
 //   L1b actuator spy-logs — orangewindstack / dorangewindstack / autoLevelEquipment /
-//     RautoEquip / Requipcalc. Their RETURN is (mostly) meaningless; the
+//     RautoEquip. Their RETURN is (mostly) meaningless; the
 //     CONTRACT is the ordered native-mutator call log: buyUpgrade(name,true,true) /
 //     buyEquipment(name,null,true[,amt]) captured in order, plus preBuy/postBuy state save/restore.
 // Every exported decision fn has >=1 assertion; every ==/!= the idiomatic pass converts to ===/!==
@@ -236,28 +236,6 @@ describe('equipment — L1a pure math golden masters', () => {
     expect(equipment.PrestigeValue('Supershield')).toBe(Math.round(4 * Math.pow(1.19, 2)))
   })
 
-  it('RequipEffect: Equip piece returns Stat+"Calculated"; non-Equip returns undefined', () => {
-    expect(equipment.RequipEffect({ attackCalculated: 7 }, { Equip: true, Stat: 'attack' })).toBe(7)
-    expect(equipment.RequipEffect({}, { Equip: false, Stat: 'block' })).toBeUndefined()
-  })
-
-  it('RequipCost: Artisanistry radLevel discount + Artisan one-timer + Pandemonium mult', () => {
-    ;(globalThis as any).game = fullGame({ global: { challengeActive: 'Pandemonium', prestige: { attack: 1, health: 1, block: 1 } } })
-    ;(globalThis as any).getBuildingItemPrice = () => 100
-    ;(globalThis as any).autoBattle = { oneTimers: { Artisan: { owned: true, getMult: () => 0.5 } } }
-    // ceil(100 * 1) = 100; *0.5 (artisan) = 50; *1 (pandemonium mult 1) = 50
-    expect(equipment.RequipCost({}, { Resource: 'metal', Equip: true })).toBe(50)
-  })
-
-  it('RPrestigeValue: health vs attack branch', () => {
-    ;(globalThis as any).game = makeMinimalGame({
-      upgrades: { Bootboost: { prestiges: 'Boots' } },
-      equipment: { Boots: { health: 6, prestige: 1 } },
-      global: { prestige: { health: 1, attack: 1, block: 1 } },
-    })
-    expect(equipment.RPrestigeValue('Bootboost')).toBe(Math.round(6 * Math.pow(1.19, 2)))
-  })
-
   it('getMaxAffordable: non-compounding closed form', () => {
     // baseCost 40, totalResource 1000, costScaling 10, non-compounding
     const expected = Math.floor((10 - 80 + Math.sqrt(Math.pow(80 - 10, 2) + 8 * 10 * 1000)) / 2)
@@ -424,42 +402,6 @@ describe('equipment.evaluateEquipmentEfficiency — L1a eval object', () => {
   })
 })
 
-describe('equipment.RevaluateEquipmentEfficiency — L1a eval object (radon)', () => {
-  it('locked path: white, Factor Effect/Cost', () => {
-    ;(globalThis as any).getBuildingItemPrice = () => 100
-    ;(globalThis as any).game = fullGame()
-    ;(globalThis as any).game.upgrades.Dagadder.locked = 1
-    ;(globalThis as any).game.equipment.Dagger.attackCalculated = 300
-    const r = equipment.RevaluateEquipmentEfficiency('Dagger')
-    expect(r.Factor).toBe(3)
-    expect(r.StatusBorder).toBe('white')
-  })
-
-  it('Transmute challenge does NOT zero a locked-Miner factor; other challenges do', () => {
-    ;(globalThis as any).getBuildingItemPrice = () => 100
-    ;(globalThis as any).game = fullGame({ global: { challengeActive: 'Transmute', world: 100, prestige: { attack: 1, health: 1, block: 1 } } })
-    ;(globalThis as any).game.upgrades.Dagadder.locked = 1
-    ;(globalThis as any).game.jobs.Miner.locked = 1
-    const r = equipment.RevaluateEquipmentEfficiency('Dagger')
-    expect(r.Factor).not.toBe(0) // Transmute exempts the resource-locked wall
-  })
-
-  it('#56.1: Cost uses the U2 RequipCost (Artisanistry .radLevel), not U1 equipCost (.level)', () => {
-    // The U2 evaluator now computes Cost via RequipCost (matches the game's U2 getEquipPriceMult).
-    // Fixture: Artisanistry modifier 0.5, level 0, radLevel 2; getBuildingItemPrice 100; Effect 300.
-    //   BEFORE (U1 equipCost, .level=0):    Cost = ceil(100 * 0.5^0) = 100 → Factor 300/100 = 3
-    //   AFTER  (U2 RequipCost, .radLevel=2): Cost = ceil(100 * 0.5^2) = 25  → Factor 300/25  = 12
-    ;(globalThis as any).getBuildingItemPrice = () => 100
-    ;(globalThis as any).autoBattle = { oneTimers: { Artisan: { owned: false, getMult: () => 1 } } }
-    ;(globalThis as any).game = fullGame()
-    ;(globalThis as any).game.portal.Artisanistry = { modifier: 0.5, level: 0, radLevel: 2 }
-    ;(globalThis as any).game.upgrades.Dagadder.locked = 1
-    ;(globalThis as any).game.equipment.Dagger.attackCalculated = 300
-    const r = equipment.RevaluateEquipmentEfficiency('Dagger')
-    expect(r.Factor).toBe(12)
-  })
-})
-
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // L1a — windstackingprestige (bool + side-effecting windstack) & areWeAttackLevelCapped
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -533,7 +475,7 @@ describe('equipment.orangewindstack / dorangewindstack — L1b spy-log', () => {
 describe('equipment.areWeAttackLevelCapped / R — L1a bool', () => {
   it('true when every attack piece is capped (Factor 0 + Wall)', () => {
     ;(globalThis as any).getBuildingItemPrice = () => 100
-    ;(globalThis as any).autoTrimpSettings = { CapEquip2: { type: 'value', value: 5 }, RCapEquip2: { type: 'value', value: 5 } }
+    ;(globalThis as any).autoTrimpSettings = { CapEquip2: { type: 'value', value: 5 } }
     ;(globalThis as any).game = fullGame()
     for (const w of ['Dagger', 'Mace', 'Polearm', 'Battleaxe', 'Greatsword', 'Arbalest']) {
       ;(globalThis as any).game.upgrades[({ Dagger: 'Dagadder', Mace: 'Megamace', Polearm: 'Polierarm', Battleaxe: 'Axeidic', Greatsword: 'Greatersword', Arbalest: 'Harmbalest' } as any)[w]].locked = 1
@@ -552,7 +494,7 @@ describe('equipment.areWeAttackLevelCapped / R — L1a bool', () => {
 })
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-// L1b — preBuy3 / postBuy3 (state save/restore) + R twins
+// L1b — preBuy3 / postBuy3 (state save/restore)
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 describe('equipment.preBuy3 / postBuy3 — L1b state save/restore', () => {
   it('preBuy3 snapshots game.global buy-state; postBuy3 restores it', () => {
@@ -568,16 +510,6 @@ describe('equipment.preBuy3 / postBuy3 — L1b state save/restore', () => {
     expect(g.global.maxSplit).toBe(3)
     expect(g.global.firstCustomAmt).toBe(4)
     expect(g.global.lastCustomAmt).toBe(5)
-  })
-
-  it('RpreBuy3 / RpostBuy3 twins do the same', () => {
-    ;(globalThis as any).game = makeMinimalGame({ global: { buyAmt: 2, firing: true, lockTooltip: false, maxSplit: 6, firstCustomAmt: 8, lastCustomAmt: 9 } })
-    equipment.RpreBuy3()
-    const g = (globalThis as any).game
-    g.global.buyAmt = -1; g.global.maxSplit = -1
-    equipment.RpostBuy3()
-    expect(g.global.buyAmt).toBe(2)
-    expect(g.global.maxSplit).toBe(6)
   })
 })
 
@@ -686,31 +618,6 @@ describe('equipment.RautoEquip — L1b spy-log', () => {
 })
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-// L1b — Requipcalc (single-slot radon buy with mostEfficient fan-out)
-// ════════════════════════════════════════════════════════════════════════════════════════════════
-describe('equipment.Requipcalc — L1b spy-log', () => {
-  it('buys the two most-efficient pieces when affordability + stat gate pass', () => {
-    ;(globalThis as any).canAffordBuilding = () => true
-    ;(globalThis as any).smithylogic = () => true
-    ;(globalThis as any).game = fullGame()
-    ;(globalThis as any).game.equipment.Dagger.attackCalculated = 1e6
-    ;(globalThis as any).game.equipment.Boots.healthCalculated = 1e6
-    // capattack 999, caphealth 999, level2 false, zonego true → the (zonego) override opens the buy
-    equipment.Requipcalc(999, 999, false, true, false, false, 'Dagger', 'metal', 'a', 100, 1, 0.5)
-    // mostEfficientEquipment fan-out: buyEquipment(weapon,...) then buyEquipment(armor,...)
-    expect(buyEquipmentCalls.length).toBe(2)
-    expect(buyEquipmentCalls[0][3]).toBe(1) // amount arg passed through
-  })
-
-  it('no buy when canAffordBuilding is false', () => {
-    ;(globalThis as any).canAffordBuilding = () => false
-    ;(globalThis as any).game = fullGame()
-    equipment.Requipcalc(999, 999, false, true, false, false, 'Dagger', 'metal', 'a', 100, 1, 0.5)
-    expect(buyEquipmentCalls).toEqual([])
-  })
-})
-
-// ════════════════════════════════════════════════════════════════════════════════════════════════
 // L1a — Rgetequips (special-map unlock counter) + estimateEquipsForZone
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 describe('equipment.Rgetequips — L1a count selector', () => {
@@ -764,12 +671,12 @@ describe('equipment.estimateEquipsForZone — L1a', () => {
 // HARD-GATE coverage: fixtures that drive each introduced ===/!== to a LIVE evaluation that the
 // earlier tests short-circuited past (Liquimp cap, Lead zone parity, Wind/loomswap arms, armor-
 // upgrade Resource==='wood', Rgetequips brokenPlanet/filterUpgrade/level-last/modulo arms,
-// Requipcalc level===1, RautoEquip !=='Pandemonium', equipfarmdynamicHD ===0).
+// RautoEquip !=='Pandemonium', equipfarmdynamicHD ===0).
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 describe('equipment — hard-gate branch coverage', () => {
-  it('Liquimp isLiquified cap drives evaluate + Revaluate `.name === "Liquimp"`', () => {
+  it('Liquimp isLiquified cap drives evaluate `.name === "Liquimp"`', () => {
     ;(globalThis as any).getBuildingItemPrice = () => 100
-    ;(globalThis as any).autoTrimpSettings = { CapEquip2: { type: 'value', value: 5 }, RCapEquip2: { type: 'value', value: 5 } }
+    ;(globalThis as any).autoTrimpSettings = { CapEquip2: { type: 'value', value: 5 } }
     const liq = () => fullGame({
       global: {
         world: 100, challengeActive: '', mapsActive: false, gridArray: [{ name: 'Liquimp' }],
@@ -782,10 +689,6 @@ describe('equipment — hard-gate branch coverage', () => {
     ;(globalThis as any).game.upgrades.Dagadder.locked = 1
     ;(globalThis as any).game.equipment.Dagger.level = 5 // >= cap/capDivisor (5/10)
     expect(equipment.evaluateEquipmentEfficiency('Dagger').Factor).toBe(0)
-    ;(globalThis as any).game = liq()
-    ;(globalThis as any).game.upgrades.Dagadder.locked = 1
-    ;(globalThis as any).game.equipment.Dagger.level = 5
-    expect(equipment.RevaluateEquipmentEfficiency('Dagger').Factor).toBe(0)
   })
 
   it('Lead challenge drives autoLevelEquipment `world % 2 === 1 && world !== 179`', () => {
@@ -849,19 +752,6 @@ describe('equipment — hard-gate branch coverage', () => {
     expect(buyUpgradeCalls).toEqual([['Supershield', true, true]])
   })
 
-  it('Requipcalc level2 path drives `game.equipment[name].level === 1`', () => {
-    ;(globalThis as any).canAffordBuilding = () => true
-    ;(globalThis as any).smithylogic = () => true
-    ;(globalThis as any).game = fullGame()
-    ;(globalThis as any).game.equipment.Dagger.level = 1
-    ;(globalThis as any).game.equipment.Dagger.attackCalculated = 1e6
-    ;(globalThis as any).game.equipment.Boots.healthCalculated = 1e6
-    // level2 true, Dagger.level 1 → the `(level2 && level === 1)` override + the lvl-2 buyEquipment
-    equipment.Requipcalc(999, 999, true, false, false, false, 'Dagger', 'metal', 'a', 100, 5, 0.5)
-    // first buyEquipment is the explicit lvl-2 (amount 1), then the two mostEfficient fan-out buys
-    expect(buyEquipmentCalls.length).toBe(3)
-    expect(buyEquipmentCalls[0]).toEqual(['Dagger', null, true, 1])
-  })
 
   it('RautoEquip Requip2 (always-2) drives line-1103 `challengeActive !== \'Pandemonium\'`', () => {
     installSpies({ buyEquipmentReturn: false, buyUpgradeReturn: false })

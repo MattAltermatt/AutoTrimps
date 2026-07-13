@@ -84,18 +84,6 @@ export function potencyMod() {
     return potencyMod.div(10).add(1);
 }
 
-export function breedTotalTime() {
-    //Init
-    var trimps = game.resources.trimps;
-    var trimpsMax = trimps.realMax();
-
-    //Calc
-    var maxBreedable = new DecimalBreed(trimpsMax).minus(trimpsEffectivelyEmployed());
-    var breeding = maxBreedable.minus(trimps.getCurrentSend());
-
-    return DecimalBreed.log10(maxBreedable.div(breeding)).div(DecimalBreed.log10(potencyMod())).div(10);
-}
-
 export function breedTimeRemaining() {
     //Init
     var trimps = game.resources.trimps;

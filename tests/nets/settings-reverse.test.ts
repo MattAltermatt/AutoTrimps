@@ -225,8 +225,12 @@ const DEFINED = new Set(declared.map((d) => d.id))
 const ALLOWED_DYNAMIC: Record<string, string> = {
   "'Max' + b": 'buildings.ts — MaxHut/MaxHouse/… , keyed by the building being considered',
   "'Max' + keysSorted[best]": 'buildings.ts — same family, keyed by the winning building',
-  "'RMax' + bb.name": 'buildings.ts — the U2 (RMax*) twin of the same family',
-  "'RMax' + keysSorted[best]": 'buildings.ts — U2 twin',
+  // ✅ #85 — `'RMax' + bb.name` and `'RMax' + keysSorted[best]` are both GONE. Their only sites were
+  // inside RbuyFoodEfficientHousing / RbuyGemEfficientHousing, U2 housing buyers with ZERO reachable
+  // callers (the live U2 path is RbuyBuildings → mostEfficientHousing). Both functions deleted, so the
+  // expressions no longer exist and the net demanded these entries be removed. Note how this list read
+  // before: FOUR RMax* dynamic forms, described as "the U2 twin of the same family" — as if all four
+  // were doing work. Two of them were in dead code the whole time.
   // ⚠️ #95: this entry USED TO BE A LIE. Two sites shared the expression text `'RMax' + house`; in one of
   // them `house` came from `for (const house IN HousingTypes)` — an INDEX string, so it read the phantoms
   // RMax0..RMax6, and this allowlist waved it through on the strength of a comment. The buggy site is
@@ -273,17 +277,13 @@ describe('every setting id the code READS must have been createSetting\'d (#68)'
 
     // ── MISSING U2 / DAILY TWIN: the non-prefixed sibling is defined; the prefixed one never was. The
     //    repair is a choice (define the twin, or read the sibling) — hence TRIAGE, not a default define.
-    RCapEquip2: "MISSING U2 TWIN of 'CapEquip2' — equipment.ts:668, cap = false (TRIAGE)",
-    // ✅ #68 — the LIVE site (other.ts, RbuyArms) is FIXED: it now reads 'Requipcaphealth', the real
-    // U2 armour cap. RCapEquiparm stays listed only because equipment.ts:668 still reads it inside
-    // RevaluateEquipmentEfficiency — a function with ZERO production callers. Dead code reading a dead
-    // id; harmless, and deleting it is its own (bundle-moving) change. NOT re-minted: it was deleted
-    // upstream in 2020, so createSetting'ing it would resurrect users' five-year-old stored values.
-    RCapEquiparm:
-      "DEAD-CODE-ONLY now — equipment.ts:668 in RevaluateEquipmentEfficiency (0 callers). The LIVE " +
-      'RbuyArms site was repaired in #68 by repointing at Requipcaphealth (TRIAGE: delete the dead fn)',
-    RDynamicPrestige2: "MISSING U2 TWIN of 'DynamicPrestige2' — dynprestige.ts:15 (TRIAGE)",
-    Ralways2: "MISSING U2 TWIN of 'always2' — equipment.ts:676 (TRIAGE)",
+    // ✅ #85 — RCapEquip2 / RCapEquiparm / Ralways2 / RDynamicPrestige2 ARE GONE FROM THIS LIST, and not
+    // because anything was defined: the only code that still read them was UNREACHABLE, and #85's
+    // reachability net proved it, so the dead functions (RevaluateEquipmentEfficiency, RprestigeChanging2)
+    // were DELETED and the reads went with them. That is the third disposition this list's header asks
+    // for — not "define the twin", not "read the sibling", but "delete the reader". It is the only one of
+    // the three that mints nothing, and re-minting a 2020-deleted id would have resurrected users' stored
+    // values (see the header). Deleting the dead reader was always the right answer here.
     // ✅ Rgearamounttobuy — FIXED (#68). smithylogic now reads 'Requipamount', the live U2 gear-amount
     // setting, which until now was a rendered ORPHAN no code read. Default 1 == the old `: 1` fallback,
     // so behavior is unchanged. The net went red the moment the last read vanished; that is the design.
@@ -292,18 +292,14 @@ describe('every setting id the code READS must have been createSetting\'d (#68)'
     dMaxMapBonushealth: "MISSING DAILY TWIN of 'MaxMapBonushealth' — upgrades.ts:105 (TRIAGE)",
     dVoidMaps: "MISSING DAILY TWIN of 'VoidMaps' — settings-visibility.ts:990 (TRIAGE)",
 
-    // ── DEAD/UNSHIPPED FEATURE: the nuloom (Nullifium loom) settings block has ZERO createSetting calls
-    //    anywhere in the tree, so every guard reading it is dead. Either ship the settings or delete the
-    //    code; do not half-define it.
-    heirloomnu: 'DEAD — nuloom settings block was never createSetting\'d (heirlooms.ts:368,377,612,659)',
-    autonu: 'DEAD — nuloom block (heirlooms.ts:368,377)',
-    rationu: 'DEAD — nuloom block (heirlooms.ts:368,377)',
-    slot1nu: 'DEAD — nuloom block (heirlooms.ts:369)',
-    slot2nu: 'DEAD — nuloom block (heirlooms.ts:370)',
-    slot3nu: 'DEAD — nuloom block (heirlooms.ts:371)',
-    slot4nu: 'DEAD — nuloom block (heirlooms.ts:372)',
-    slot5nu: 'DEAD — nuloom block (heirlooms.ts:373)',
-    slot6nu: 'DEAD — nuloom block (heirlooms.ts:374)',
+    // ── DEAD/UNSHIPPED FEATURE.
+    // ✅ #85 — the nine nuloom ids (heirloomnu / autonu / rationu / slot1nu…slot6nu) ARE GONE FROM THIS
+    // LIST. "Either ship the settings or delete the code" — we deleted the code. The whole nu-loom
+    // subsystem was a six-function dead CYCLE whose sole entry point, spendNu(), had both of its call
+    // sites commented out in portal.ts. Nothing reads these ids any more because nothing exists to read
+    // them.
+    // loomswap/dloomswap SURVIVE: unlike the nu ids, their readers (equipment.ts, maps.ts) are LIVE code
+    // on a reachable path — a genuinely phantom-gated feature, which is #68's problem, not #85's.
     loomswap: 'DEAD — loom-swap settings never createSetting\'d (equipment.ts:358, maps.ts:398)',
     dloomswap: 'DEAD — daily loom-swap, same (equipment.ts:360, maps.ts:400, settings-visibility.ts:155-157)',
 
@@ -476,12 +472,15 @@ describe('a test may only seed setting ids that production defines (#74)', () =>
   // may be legitimately seeded elsewhere once its production bug is fixed). Each entry dies together with
   // the KNOWN_PHANTOM entry it is covering for.
   const KNOWN_TEST_LIE: Record<string, string> = {
-    'tests/buildings.characterization.test.ts:349': "#68/#74 — seeds phantom 'GatewayWall'",
-    'tests/buildings.characterization.test.ts:454': "#68/#74 — seeds phantom 'GemEfficiencyIgnoresMax'",
-    'tests/equipment.characterization.test.ts:536': "#68/#74 — seeds phantom 'RCapEquip2'",
-    'tests/equipment.characterization.test.ts:772': "#68/#74 — seeds phantom 'RCapEquip2'",
-    'tests/equipment.characterization.test.ts:807': "#68/#74 — seeds phantom 'loomswap' (dead nuloom feature)",
-    'tests/equipment.characterization.test.ts:825': "#68/#74 — seeds phantom 'dloomswap' (dead nuloom feature)",
+    'tests/buildings.characterization.test.ts:321': "#68/#74 — seeds phantom 'GatewayWall'",
+    'tests/buildings.characterization.test.ts:426': "#68/#74 — seeds phantom 'GemEfficiencyIgnoresMax'",
+    // ✅ #85 — the two "seeds phantom 'RCapEquip2'" entries are GONE. Nothing repointed them: the tests
+    // that seeded the id were tests OF DEAD CODE (RevaluateEquipmentEfficiency), and they were deleted
+    // along with the function. This is the exact loop #85 exists to break — a test seeds a phantom id so
+    // that a dead function can be exercised, the seed makes the test pass, and the passing test is then
+    // cited as evidence the function works. Three nets were each carrying an entry for one symptom of it.
+    'tests/equipment.characterization.test.ts:710': "#68/#74 — seeds phantom 'loomswap' (dead nuloom feature)",
+    'tests/equipment.characterization.test.ts:728': "#68/#74 — seeds phantom 'dloomswap' (dead nuloom feature)",
   }
 
   it('finds the test-side settings seeds (anti-false-green)', () => {

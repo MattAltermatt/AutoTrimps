@@ -219,9 +219,12 @@ const KNOWN_DEAD: Record<string, string> = {
   // ✅ advExtraMapLevelselect — FIXED (#73). maps.ts now looks up the real game id `advExtraLevelSelect`.
   // The net went red the moment the typo resolved and would not go green again until this entry was
   // deleted. That is the design: the baseline is a fix queue, never an allowlist.
-  RPrestige:
-    '#73 dead-but-harmless — dynprestige.ts:12,:31, inside RprestigeChanging2(), which has ZERO ' +
-    'callers. The U2 twin of the `Prestige` dropdown was never rendered.',
+  // ✅ RPrestige — FIXED (#85), by DELETION. This entry used to read "dead-but-harmless … inside
+  // RprestigeChanging2(), which has ZERO callers". A dead lookup inside a dead function is not a thing to
+  // allowlist, it is a thing to remove: #85's reachability net proved RprestigeChanging2 unreachable and
+  // the function is gone, so the lookup is gone with it. Note what the old entry conceded and then filed
+  // anyway — "ZERO callers" was written down here, in this repo, and nothing acted on it for a year. The
+  // net now fails on that fact instead of recording it.
   ATModuleListDropdown:
     '#73 dead-but-harmless — import-export.ts:281,:293. Reachable only from tooltip branches that ' +
     'nothing calls.',

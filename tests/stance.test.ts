@@ -1,13 +1,12 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { maxOneShotPower, autoStanceNew, directDamage, challengeDamage, survive, debugStance } from '../src/modules/stance'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { maxOneShotPower, directDamage, challengeDamage, survive } from '../src/modules/stance'
 import { makeMinimalGame } from './harness/gameFixture'
 
 // Phase 1 · Wave 1 characterization net for stance.ts (issue #26). These golden masters pin the
 // current faithful-port behaviour BEFORE @ts-nocheck is removed, so the strict-TS conversion is
 // provably behaviour-preserving. Two archetypes, matching the design spec:
 //   - maxOneShotPower  → pure predicate (game+settings → int), return == golden master
-//   - autoStanceNew    → actuator decision, spy-log the native setFormation call (fn + args)
 
 describe('stance.maxOneShotPower — Layer-1 golden master (pure predicate)', () => {
   beforeEach(() => {
@@ -42,51 +41,6 @@ describe('stance.maxOneShotPower — Layer-1 golden master (pure predicate)', ()
       empowerments: { Ice: { getLevel: () => 100 } }, // >=50 +1 → 6, >=100 +1 → 7
     })
     expect(maxOneShotPower(false)).toBe(7)
-  })
-})
-
-describe('stance.autoStanceNew — Layer-1 spy-log (actuator decision)', () => {
-  let formationCalls: string[]
-  beforeEach(() => {
-    formationCalls = []
-    ;(globalThis as any).setFormation = vi.fn((f: string) => formationCalls.push(f))
-  })
-
-  it('switches formation 0 → 1 (defensive) when soldier health drops to a quarter', () => {
-    ;(globalThis as any).game = makeMinimalGame({
-      global: {
-        gridArray: [{}],
-        soldierHealth: 10,
-        soldierHealthMax: 100, // 10 <= 25 → low-health branch
-        formation: 0,
-      },
-      upgrades: { Formations: { done: true } },
-    })
-    autoStanceNew()
-    expect(formationCalls).toEqual(['1'])
-  })
-
-  it('switches formation 1 → 2 (offensive) when back to full health', () => {
-    ;(globalThis as any).game = makeMinimalGame({
-      global: {
-        gridArray: [{}],
-        soldierHealth: 100,
-        soldierHealthMax: 100, // health == max
-        formation: 1,
-      },
-      upgrades: { Formations: { done: true } },
-    })
-    autoStanceNew()
-    expect(formationCalls).toEqual(['2'])
-  })
-
-  it('does nothing when the grid is empty (no fight in progress)', () => {
-    ;(globalThis as any).game = makeMinimalGame({
-      global: { gridArray: [], soldierHealth: 100, soldierHealthMax: 100, formation: 0 },
-      upgrades: { Formations: { done: true } },
-    })
-    autoStanceNew()
-    expect(formationCalls).toEqual([])
   })
 })
 
@@ -175,7 +129,7 @@ describe('stance.challengeDamage — Layer-1 golden master (branch-dense fn)', (
 })
 
 // survive() is the branch-densest survival predicate and the actual combat-formation decision
-// (autoStance/debugStance loop over it). It composes directDamage + challengeDamage for real, so
+// (autoStance loops over it). It composes directDamage + challengeDamage for real, so
 // this is an end-to-end golden master: base* combat globals set on globalThis, leaf deps stubbed,
 // enemy fully at/under our damage. Pins the true/false survival verdict — the highest-value guard
 // against silent balance drift in the formation picker.
@@ -216,35 +170,5 @@ describe('stance.survive — Layer-1 golden master (formation-decision predicate
     // enemyDamage 100000 ≫ block; not a one-shot boundary → harm huge; healthier path also fails
     setupCombat(100000)
     expect(survive('H', 2, true)).toBe(false)
-  })
-})
-
-// debugStance() wraps survive() in a critPower/formation search, returning the first surviving
-// "<formation><critPower>" label or false — the other rewritten-signature decision entry point.
-describe('stance.debugStance — Layer-1 golden master', () => {
-  it('returns the strongest surviving stance label (D at critPower 2)', () => {
-    ;(globalThis as any).baseHealth = 1000
-    ;(globalThis as any).baseBlock = 100
-    ;(globalThis as any).baseMinDamage = 1000
-    ;(globalThis as any).baseMaxDamage = 2000
-    ;(globalThis as any).addPoison = () => 0
-    ;(globalThis as any).getPierceAmt = () => 0
-    ;(globalThis as any).calcOurBlock = () => 50
-    ;(globalThis as any).getCurrentEnemy = () => ({ health: 500, corrupted: '', name: 'Turtlimp', mutation: '' })
-    ;(globalThis as any).calcSpecificEnemyAttack = () => 50
-    ;(globalThis as any).challengeActive = () => false
-    ;(globalThis as any).game = makeMinimalGame({
-      global: {
-        voidBuff: '', challengeActive: '', brokenPlanet: false, mapsActive: false, spireActive: false,
-        soldierHealthMax: 1000, soldierHealth: 1000, formation: 0, lastLowGen: 0, dailyChallenge: {},
-      },
-      upgrades: { Formations: { done: true }, Dominance: { done: true }, Barrier: { done: true } },
-      badGuys: { Turtlimp: { fast: false } },
-      jobs: { Geneticist: { owned: 0 } },
-      resources: { trimps: { owned: 0, realMax: () => 0 } },
-      challenges: { Electricity: { stacks: 0 }, Lead: { stacks: 0 } },
-    })
-    // survive("D", 2) is checked first and passes (harm 0) → "D2"
-    expect(debugStance(true, true)).toBe('D2')
   })
 })

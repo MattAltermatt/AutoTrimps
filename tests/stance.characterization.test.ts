@@ -1,24 +1,20 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import {
-  calcBaseDamageinX,
-  calcBaseDamageinX2,
   calcBaseDamageInX,
   autoStance,
   autoStance2,
   windStance,
-  oneShotZone,
   oneShotPower,
 } from '../src/modules/stance'
 import { makeMinimalGame } from './harness/gameFixture'
 
 // Phase-2 characterization net for stance.ts (proof-net #51). Complements the pre-existing
-// tests/stance.test.ts (which pins maxOneShotPower / autoStanceNew / directDamage / challengeDamage
-// / survive / debugStance) by pinning the functions that file leaves UNtouched — the two minified
-// base-damage setters being un-minified here, plus the balance-sensitive decision entry points
-// (autoStance formation-selector, autoStance2/windStance world+stance thresholds, oneShot overkill
-// loops). These golden masters lock current behaviour BEFORE the idiomatic un-minify so any
-// transcription slip fails loudly.
+// tests/stance.test.ts (which pins maxOneShotPower / directDamage / challengeDamage / survive) by
+// pinning the functions that file leaves UNtouched — the calcBaseDamageInX base-damage setter, plus
+// the balance-sensitive decision entry points (autoStance formation-selector, autoStance2/windStance
+// world+stance thresholds, oneShot overkill loops). These golden masters lock current behaviour
+// BEFORE the idiomatic un-minify so any transcription slip fails loudly.
 
 // Track calcOurDmg call args so the un-minify of the two setters is provably arg-faithful.
 let dmgCalls: unknown[][]
@@ -49,34 +45,6 @@ afterEach(() => {
     'lowHeirloom', 'highHeirloom', 'dlowHeirloom', 'dhighHeirloom',
     'baseDamage', 'baseBlock', 'baseHealth', 'baseMinDamage', 'baseMaxDamage',
   ]) delete (globalThis as any)[k]
-})
-
-// ── The two minified setters being un-minified (transcription-risk guards) ──────────────────────
-describe('stance.calcBaseDamageinX — minified setter being un-minified', () => {
-  it('sets baseDamage from calcOurDmg("avg",false,true), block from soldierCurrentBlock, health from soldierHealthMax', () => {
-    stubCombatLeaves()
-    ;(globalThis as any).game = makeMinimalGame({
-      global: { soldierCurrentBlock: 42, soldierHealthMax: 777 },
-    })
-    calcBaseDamageinX()
-    expect((globalThis as any).baseDamage).toBe(1500)
-    expect((globalThis as any).baseBlock).toBe(42)
-    expect((globalThis as any).baseHealth).toBe(777)
-    // exact arg tuple to calcOurDmg (the only dmg call this fn makes)
-    expect(dmgCalls).toEqual([['avg', false, true]])
-  })
-})
-
-describe('stance.calcBaseDamageinX2 — minified setter being un-minified', () => {
-  it('sets baseDamage from calcOurDmg("avg",false,true), block from calcOurBlock(), health from calcOurHealth()', () => {
-    stubCombatLeaves({ block: 55, health: 888 })
-    ;(globalThis as any).game = makeMinimalGame({})
-    calcBaseDamageinX2()
-    expect((globalThis as any).baseDamage).toBe(1500)
-    expect((globalThis as any).baseBlock).toBe(55)
-    expect((globalThis as any).baseHealth).toBe(888)
-    expect(dmgCalls).toEqual([['avg', false, true]])
-  })
 })
 
 describe('stance.calcBaseDamageInX (capital I) — the 5-field setter', () => {
@@ -239,28 +207,7 @@ describe('stance.windStance — stance-tier mapping', () => {
   })
 })
 
-// ── oneShotZone / oneShotPower: overkill loop math ──────────────────────────────────────────────
-describe('stance.oneShotZone — overkill one-shot count', () => {
-  beforeEach(() => {
-    ;(globalThis as any).addPoison = () => 0
-    ;(globalThis as any).getCurrentEnemy = () => ({ health: 1, level: 1 })
-    ;(globalThis as any).getEmpowerment = () => ''
-    ;(globalThis as any).calcEnemyHealth = () => 100
-  })
-
-  it('one-shots exactly the enemies our damage covers before overkill decay drains it', () => {
-    stubCombatLeaves({ min: 250 }) // maxOrMin falsy → "min" = 250 damage
-    ;(globalThis as any).game = makeMinimalGame({
-      portal: { Overkill: { level: 30 } }, // maxOneShotPower: level>0 & no bonuses → 2
-      talents: { overkill: { purchased: false } },
-      global: { uberNature: '', world: 100 },
-    })
-    // power1: 250-100=150 (>=0). leftover *= 0.005*30 = 0.15 → 150*0.15=22.5
-    // power2: 22.5-100=-77.5 (<0) → return power-1 = 1
-    expect(oneShotZone(100)).toBe(1)
-  })
-})
-
+// ── oneShotPower: overkill loop math ────────────────────────────────────────────────────────────
 describe('stance.oneShotPower — overkill one-shot count vs current enemy chain', () => {
   it('returns 0 when the current enemy is not one-shot', () => {
     stubCombatLeaves({ min: 50 })

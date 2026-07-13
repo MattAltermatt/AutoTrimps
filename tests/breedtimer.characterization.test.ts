@@ -166,13 +166,6 @@ describe('breedtimer — pure breed-timing math (golden masters)', () => {
     neutralBreed({ resources: { trimps: { owned: 500000 } } })
     expect(str(breedtimer.breedTimeRemaining())).toBe('81.5931510469252228824874459418')
   })
-
-  it('breedTotalTime: uses getCurrentSend for the breeding denominator', () => {
-    neutralBreed() // getCurrentSend=0 → breeding == maxBreedable → log10(1) == 0 (degenerate but pinned)
-    expect(str(breedtimer.breedTotalTime())).toBe('0')
-    neutralBreed({ resources: { trimps: { owned: 500000, getCurrentSend: () => 300000 } } })
-    expect(str(breedtimer.breedTotalTime())).toBe('41.9846341042023282232932715212')
-  })
 })
 
 // The #44 surface: force-abandon actuators. Spy-log the ordered mapsClicked/runMap calls so a change

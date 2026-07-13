@@ -9,21 +9,11 @@
 // Auto-stance / one-shot / survival combat math (65 game.* touches). getPageSetting from
 // converted utils; calc functions (calcOurDmg/calcOurBlock/calcOurHealth/etc.) resolve via
 // the bridge at runtime (no top-level calls). SEAM: baseMinDamage/baseMaxDamage -> globalThis
-// (read by calc.ts). calcBaseDamageInX is intentionally still duplicated with calc.ts; the
-// bridge spreads stance AFTER calc, so stance wins at global scope, matching the original
-// load order (calc before stance). baseDamage/baseBlock/baseHealth stay bare (AutoTrimps2 vars).
+// (read by calc.ts). calcBaseDamageInX (capital I, :31) is the SOLE definition — calc.ts's copy
+// went in Phase 3 (#51), and the two lowercase-`in` halves it superseded (calcBaseDamageinX /
+// calcBaseDamageinX2) went in #85 as unreachable dead code.
+// baseDamage/baseBlock/baseHealth stay bare (AutoTrimps2 vars).
 import { getPageSetting } from './utils'
-
-export function calcBaseDamageinX() {
-    baseDamage = calcOurDmg('avg', false, true);
-    baseBlock = game.global.soldierCurrentBlock;
-    baseHealth = game.global.soldierHealthMax;
-}
-export function calcBaseDamageinX2() {
-    baseDamage = calcOurDmg('avg', false, true);
-    baseBlock = calcOurBlock();
-    baseHealth = calcOurHealth();
-}
 
 globalThis.baseMinDamage = 0;
 globalThis.baseMaxDamage = 0;
@@ -34,30 +24,6 @@ export function calcBaseDamageInX() {
     baseDamage = calcOurDmg("avg", false, true);
     baseHealth = calcOurHealth(false);
     baseBlock  = calcOurBlock(false);
-}
-
-export function autoStanceNew() {
-    if (game.global.gridArray.length === 0) return;
-    if (game.global.soldierHealth <= 0) return;
-    if (!game.upgrades.Formations.done) return;
-	
-    if (game.global.formation === 2 && game.global.soldierHealth <= game.global.soldierHealthMax * 0.25)      setFormation('0');
-    else if (game.global.formation === 0 && game.global.soldierHealth <= game.global.soldierHealthMax * 0.25) setFormation('1');
-    else if (game.global.formation === 1 && game.global.soldierHealth === game.global.soldierHealthMax)       setFormation('2');
-}
-
-export function debugStance(maxPower?: boolean, ignoreArmy?: boolean): string | false {
-    //Returns what stance we should be using right now, or false if none grants survival
-    for (let critPower=2; critPower >= -2; critPower--) {
-        if      (survive("D",  critPower, ignoreArmy)) {return "D"  + critPower}
-        else if (survive("XB", critPower, ignoreArmy)) {return "XB" + critPower}
-        else if (survive("B",  critPower, ignoreArmy)) {return "B"  + critPower}
-        else if (survive("X",  critPower, ignoreArmy)) {return "X"  + critPower}
-        else if (survive("H",  critPower, ignoreArmy)) {return "H"  + critPower}
-        else if (maxPower) break;
-    }
-
-    return false;
 }
 
 export function maxOneShotPower(considerEdges?: boolean): number {
@@ -81,27 +47,6 @@ export function maxOneShotPower(considerEdges?: boolean): number {
     if (considerEdges) for (let i=power; i > 1 && !getCurrentEnemy(i); i--);
 
     return power;
-}
-
-export function oneShotZone(zone: number, type?: string, specificStance?: unknown, maxOrMin?: boolean): number {
-    //Calculates our minimum damage
-    const baseDamage = calcOurDmg(maxOrMin ? "max" : "min", false, true);
-    let damageLeft = baseDamage + addPoison(false, (type === "world") ? zone : game.global.world);
-
-    //Calculates how many enemies we can one shot + overkill
-    let power = 1;
-    for (; power <= maxOneShotPower(); power++) {
-        //Enemy Health: A C99 Dragimp (worstCase)
-        damageLeft -= calcEnemyHealth();
-
-        //Check if we can one-shot the next enemy
-        if (damageLeft < 0) return power-1;
-
-        //Calculates our minimum "left over" damage, which will be used by the Overkill
-        damageLeft *= 0.005 * game.portal.Overkill.level;
-    }
-
-    return power-1;
 }
 
 export function oneShotPower(specificStance?: unknown, offset: number = 0, maxOrMin?: boolean): number {

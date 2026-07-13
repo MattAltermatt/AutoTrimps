@@ -8,7 +8,6 @@ import {
   getScienceCostToUpgrade,
   getCurrentEnemy,
   getPerSecBeforeManual,
-  checkJobPercentageCost,
   setScienceNeeded,
   RsetScienceNeeded,
   getPotencyMod,
@@ -329,51 +328,6 @@ describe('query getPerSecBeforeManual (per-branch multiplier arming)', () => {
     ;(globalThis as any).calcHeirloomBonus = (_t: string, _s: string, v: number) => v * 4
     setGame(baseGame())
     expect(getPerSecBeforeManual(JOB)).toBeCloseTo(80, 6) // 20·4
-  })
-})
-
-describe('query checkJobPercentageCost', () => {
-  it('geometric cost, affordable → [true, percent-of-owned]', () => {
-    setGame({
-      global: { buyAmt: 2 },
-      jobs: { Farmer: { owned: 0, cost: { food: [10, 2] } } },
-      resources: { food: { owned: 100 } },
-    })
-    // f = floor(10·2^0·((2^2-1)/(2-1))) = 30; 100 ≥ 30 → [true, (100·30/100).toFixed(1)]
-    expect(checkJobPercentageCost('Farmer')).toEqual([true, '30.0'])
-  })
-
-  it('linear cost (cost[1] undefined) → cost = base·amount', () => {
-    setGame({
-      global: { buyAmt: 2 },
-      jobs: { Farmer: { owned: 0, cost: { food: 5 } } },
-      resources: { food: { owned: 100 } },
-    })
-    // f = 5·2 = 10; affordable → [true, (100·10/100).toFixed(1)]
-    expect(checkJobPercentageCost('Farmer')).toEqual([true, '10.0'])
-  })
-
-  it('not affordable → [false, timeToMax] via getPsString/calculateTimeToMax', () => {
-    ;(globalThis as any).getPsString = () => 5
-    ;(globalThis as any).calculateTimeToMax = () => '99s'
-    setGame({
-      global: { buyAmt: 2 },
-      jobs: { Farmer: { owned: 0, cost: { food: [10, 2] } } },
-      resources: { food: { owned: 10 } },
-    })
-    expect(checkJobPercentageCost('Farmer')).toEqual([false, '99s'])
-    delete (globalThis as any).getPsString
-    delete (globalThis as any).calculateTimeToMax
-  })
-
-  it('explicit amount arg overrides game.global.buyAmt', () => {
-    setGame({
-      global: { buyAmt: 99 },
-      jobs: { Farmer: { owned: 0, cost: { food: 5 } } },
-      resources: { food: { owned: 100 } },
-    })
-    // amount=1 override → f = 5·1 = 5 → [true, '5.0']
-    expect(checkJobPercentageCost('Farmer', 1)).toEqual([true, '5.0'])
   })
 })
 

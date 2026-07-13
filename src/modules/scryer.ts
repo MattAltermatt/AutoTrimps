@@ -1,6 +1,6 @@
 // TRUE TS (Phase 1 · #30): converted from the faithful port under strict.
 // Was: relocated verbatim from legacy/modules/scryer.js.
-// Scryer-stance automation (scryingCorruption, readyToSwitch, useScryerStance). 25 game.*
+// Scryer-stance automation (readyToSwitch, useScryerStance). 25 game.*
 // touches. Module vars wantToScry/transitionRequired are scryer-internal (no readers
 // outside this module). Free identifiers (survive/oneShotPower/setFormation/autoStance*/
 // getCurrentEnemy/getCurrentMapObject/getEmpowerment/countRemainingEssenceDrops/etc.)
@@ -12,17 +12,6 @@ import { getPageSetting } from './utils'
 // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
 var wantToScry = false;
 var transitionRequired = false;
-
-export function scryingCorruption() {
-    //Defines if it should be scrying vs corrupted enemies at this moment
-    var minZoneOK = game.global.world >= getPageSetting('ScryerMinZone');
-    var maxZoneOK = game.global.world < getPageSetting('ScryerMaxZone') || getPageSetting('ScryerMaxZone') < 1;
-    var scryZone = minZoneOK && maxZoneOK || getPageSetting('onlyminmaxworld') >= 2;
-    var scryCorrupt = scryZone && getPageSetting('ScryerSkipCorrupteds2') != 0 || getPageSetting('ScryerSkipCorrupteds2') == 1;
-    var essenceLeft = getPageSetting('screwessence') == false || countRemainingEssenceDrops() >= 1;
-    var die = getPageSetting('ScryerDieZ') != -1 && game.global.world >= getPageSetting('ScryerDieZ')
-    return (die || scryCorrupt) && essenceLeft && getPageSetting('UseScryerStance') == true;
-}
 
 export function readyToSwitch(stance = "S") {
     //Suicide to Scry

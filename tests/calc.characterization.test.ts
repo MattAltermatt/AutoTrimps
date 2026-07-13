@@ -5,7 +5,6 @@ import {
   calcOurDmg,
   highDamageShield,
   calcDailyAttackMod,
-  badGuyChallengeMult,
   calcEnemyAttackCore,
   calcSpecificEnemyAttack,
   calcSpire,
@@ -28,7 +27,6 @@ import {
   RcalcDailyHealthMod,
   RcalcBadGuyDmg,
   RcalcEnemyHealth,
-  RcalcEnemyHealthMod,
   RcalcHDratio,
 } from '../src/modules/calc'
 import { makeMinimalGame } from './harness/gameFixture'
@@ -263,25 +261,6 @@ describe('calc.calcDailyAttackMod', () => {
     G.dailyModifiers = { badStrength: { getMult: () => 2 }, badMapStrength: { getMult: () => 1 }, bloodthirst: { getMult: () => 1 } }
     G.game = makeMinimalGame({ global: { challengeActive: 'Daily', mapsActive: false, dailyChallenge: { badStrength: { strength: 1 } } } })
     expect(calcDailyAttackMod(100)).toBe(200)
-  })
-})
-
-describe('calc.badGuyChallengeMult — challenge arm selector', () => {
-  beforeEach(() => neutralCombat())
-  function g(challengeActive: string, over: Record<string, unknown> = {}) {
-    G.game = makeMinimalGame({ global: { challengeActive, world: 100 }, challenges: {}, ...over })
-  }
-  it('returns 1 with no challenge active', () => { g(''); expect(badGuyChallengeMult()).toBe(1) })
-  it('Meditate → ×1.5', () => { G.challengeActive = (n: string) => n === 'Meditate'; g(''); expect(badGuyChallengeMult()).toBe(1.5) })
-  it('Watch → ×1.25', () => { G.challengeActive = (n: string) => n === 'Watch'; g(''); expect(badGuyChallengeMult()).toBe(1.25) })
-  it('Corrupted → ×3', () => { g('Corrupted'); expect(badGuyChallengeMult()).toBe(3) })
-  it('Domination → ×2.5', () => { g('Domination'); expect(badGuyChallengeMult()).toBe(2.5) })
-  it('Coordinate → ×getBadCoordLevel()', () => { G.getBadCoordLevel = () => 8; g('Coordinate'); expect(badGuyChallengeMult()).toBe(8) })
-  it('Scientist L5 → ×10', () => { G.getScientistLevel = () => 5; g('Scientist'); expect(badGuyChallengeMult()).toBe(10) })
-  it('Eradicated → oblitMult (scaleModifier × zoneScaling^zoneModifier)', () => {
-    g('Eradicated', { challenges: { Eradicated: { scaleModifier: 2, zoneScaleFreq: 50, zoneScaling: 10 } } })
-    // zoneModifier floor(100/50)=2 → 2 × 10^2 = 200
-    expect(badGuyChallengeMult()).toBe(200)
   })
 })
 
@@ -624,7 +603,7 @@ describe('calc.RcalcBadGuyDmg', () => {
   })
 })
 
-describe('calc.RcalcEnemyHealth / RcalcEnemyHealthMod', () => {
+describe('calc.RcalcEnemyHealth', () => {
   beforeEach(() => neutralCombat())
   it('RcalcEnemyHealth == RcalcEnemyBaseHealth(world,50,Snimp) with no challenge', () => {
     G.game = u2CombatGame({ global: { world: 30, universe: 1, challengeActive: '', mapsActive: false, dailyChallenge: {} } })
@@ -634,10 +613,6 @@ describe('calc.RcalcEnemyHealth / RcalcEnemyHealthMod', () => {
   it('Unbalance doubles health', () => {
     G.game = u2CombatGame({ global: { world: 30, universe: 1, challengeActive: 'Unbalance', mapsActive: false, dailyChallenge: {} } })
     expect(RcalcEnemyHealth(30)).toBe(15870854667 * 2)
-  })
-  it('RcalcEnemyHealthMod computes base at an explicit cell/name', () => {
-    G.game = u2CombatGame({ global: { world: 30, universe: 1, challengeActive: '', mapsActive: false, dailyChallenge: {} } })
-    expect(RcalcEnemyHealthMod(30, 50, 'Snimp')).toBe(15870854667)
   })
 })
 

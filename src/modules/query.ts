@@ -50,25 +50,6 @@ export function getPerSecBeforeManual(a: string): number {
     }
     return b;
 }
-export function checkJobPercentageCost(a: string, b?: any) {
-    const c = 'food';
-    const d = game.jobs[a];
-    const e = d.cost[c];
-    let f = 0;
-    if (!b) b = game.global.buyAmt;
-    f =
-        typeof e[1] === 'undefined'
-            ? e * b
-            : Math.floor(e[0] * Math.pow(e[1], d.owned) * ((Math.pow(e[1], b) - 1) / (e[1] - 1)));
-    let g;
-    if (game.resources[c].owned < f) {
-        const h = getPsString(c, true);
-        if (h > 0) g = calculateTimeToMax(null, h, f - game.resources[c].owned);
-        return [false, g];
-    }
-    g = game.resources[c].owned > 0 ? (100 * (f / game.resources[c].owned)).toFixed(1) : 0;
-    return [true, g];
-}
 export function getScienceCostToUpgrade(a: string) {
     const science = game.upgrades[a].cost.resources.science;
     if (science !== undefined && science[0] !== undefined)

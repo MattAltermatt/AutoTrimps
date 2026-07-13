@@ -211,7 +211,7 @@ describe('legacy-bridge spread — no module may silently shadow another module 
     // const / let / class / enum / `export {}` so that a future form arrives INSIDE the net, not around
     // it. Those paths are unexercised by the current corpus, which is why the counts are pinned too.)
     const at = (n: string) => (byName.get(n) ?? []).map((d) => `${d.file}:${d.line}`)
-    expect(at('byId')).toContain('src/modules/utils.ts:181')
+    expect(at('byId')).toContain('src/modules/utils.ts:179')
     expect(at('createSetting')).toContain('src/modules/settings-engine.ts:81')
     // Every bridged module must have contributed at least one export; a module whose walk returned
     // nothing is a module this net is not watching at all.

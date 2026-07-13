@@ -101,7 +101,15 @@ export function landingHtml() {
 
 // De-loaderize AutoTrimps2.js: modules are already bundled, so its remote
 // script-injection must not run. Three anchored, deterministic transforms.
-function deLoaderize(src) {
+//
+// EXPORTED because it is part of the definition of "the shipped bundle", and a net that reasons about
+// what actually runs has to read the text that actually ships. tests/nets/reachability.test.ts walks the
+// call graph from the real entry points; against the RAW legacy/AutoTrimps2.js it would report
+// bootSettingsUI() and the whole settings-menu boot subtree (automationMenuInit, autoPlusSettingsMenu,
+// toggleAutoMaps, getDailyHeHrStats, getDailyRnHrStats) as DEAD — because the only call to bootSettingsUI
+// in the entire codebase is the one T3 *introduces*. Six false positives, and the fix would have been to
+// allowlist them, i.e. to teach the net to ignore the settings menu. Read the shipped text instead.
+export function deLoaderize(src) {
   // T1: ATscriptLoad body -> no-op
   src = src.replace(
     /function ATscriptLoad\(pathname, modulename\) \{[\s\S]*?\n\}/,

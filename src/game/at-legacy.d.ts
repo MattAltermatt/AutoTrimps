@@ -331,7 +331,6 @@ declare global {
   var abandonVoidMap: typeof import('../modules/breedtimer').abandonVoidMap
   // Prestige-raid map-family + misc globals: globalThis-assigned at other.ts load,
   // read cross-module by maps.ts / mapfunctions.ts / Graphs.js. Pragmatic `any`.
-  var daily3: any
   var praidSetting: any
   var prestraid: any
   var failpraid: any

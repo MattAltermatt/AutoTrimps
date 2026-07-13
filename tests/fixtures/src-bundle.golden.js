@@ -21,8 +21,7 @@
     serializeSettings550: () => serializeSettings5502,
     serializeSettings60: () => serializeSettings602,
     setPageSetting: () => setPageSetting2,
-    setTitle: () => setTitle,
-    throwErrorfromModule: () => throwErrorfromModule
+    setTitle: () => setTitle
   });
 
   // src/modules/time.ts
@@ -236,9 +235,6 @@
     var g = ["Message: " + b, "URL: " + c, "Line: " + d, "Column: " + e, "Error object: " + JSON.stringify(f)].join(" - ");
     0 != d && console.log("AT logged error: " + g);
   };
-  function throwErrorfromModule() {
-    throw new Error("We have successfully read the thrown error message out of a module");
-  }
   function byId2(id) {
     return document.getElementById(id);
   }
@@ -271,7 +267,6 @@
   // src/modules/dynprestige.ts
   var dynprestige_exports = {};
   __export(dynprestige_exports, {
-    RprestigeChanging2: () => RprestigeChanging2,
     prestigeChanging2: () => prestigeChanging2
   });
   function prestigeChanging2() {
@@ -290,41 +285,6 @@
       return 0 == d ? void (autoTrimpSettings.Prestige.selected = byId("Prestige").value) : void (h = Math.ceil(d / a), game.global.world > b - h && (game.global.mapBonus < a ? true == game.global.slowDone ? autoTrimpSettings.Prestige.selected = "GambesOP" : autoTrimpSettings.Prestige.selected = "Bestplate" : game.global.mapBonus > a && (autoTrimpSettings.Prestige.selected = "Dagadder")), (game.global.world <= b - h || 10 == game.global.mapBonus) && (autoTrimpSettings.Prestige.selected = "Dagadder"));
     }
   }
-  function RprestigeChanging2() {
-    var maxPrestigeIndex = byId("RPrestige").selectedIndex;
-    if (maxPrestigeIndex <= 2)
-      return;
-    var lastzone = getPageSetting2("RDynamicPrestige2");
-    var extra = maxPrestigeIndex > 10 ? maxPrestigeIndex - 10 : 0;
-    var neededPrestige = 0;
-    for (var i = 1; i <= maxPrestigeIndex; i++) {
-      var lastp = game.mapUnlocks[autoTrimpSettings.RPrestige.list[i]].last;
-      if (lastp <= lastzone - 5) {
-        var rem = lastzone - lastp;
-        var addto = Math.floor(rem / 5);
-        if (game.global.sLevel >= 4)
-          addto = Math.ceil(addto / 2);
-        neededPrestige += addto;
-      }
-    }
-    var zonesToFarm = 0;
-    if (neededPrestige == 0) {
-      autoTrimpSettings.RPrestige.selected = byId("RPrestige").value;
-      return;
-    }
-    zonesToFarm = Math.ceil(neededPrestige / maxPrestigeIndex);
-    if (game.global.world > lastzone - zonesToFarm) {
-      if (game.global.mapBonus < maxPrestigeIndex) {
-        if (game.global.slowDone == true)
-          autoTrimpSettings.RPrestige.selected = "GambesOP";
-        else
-          autoTrimpSettings.RPrestige.selected = "Bestplate";
-      } else if (game.global.mapBonus > maxPrestigeIndex)
-        autoTrimpSettings.RPrestige.selected = "Dagadder";
-    }
-    if (game.global.world <= lastzone - zonesToFarm || game.global.mapBonus == 10)
-      autoTrimpSettings.RPrestige.selected = "Dagadder";
-  }
 
   // src/modules/breedtimer.ts
   var breedtimer_exports = {};
@@ -334,7 +294,6 @@
     addBreedingBoxTimers: () => addBreedingBoxTimers,
     addToolTipToArmyCount: () => addToolTipToArmyCount,
     breedTimeRemaining: () => breedTimeRemaining2,
-    breedTotalTime: () => breedTotalTime,
     breedingPS: () => breedingPS2,
     forceAbandonTrimps: () => forceAbandonTrimps2,
     potencyMod: () => potencyMod,
@@ -380,13 +339,6 @@
     if (game.jobs.Geneticist.owned > 0)
       potencyMod2 = potencyMod2.mul(Math.pow(0.98, game.jobs.Geneticist.owned));
     return potencyMod2.div(10).add(1);
-  }
-  function breedTotalTime() {
-    var trimps = game.resources.trimps;
-    var trimpsMax = trimps.realMax();
-    var maxBreedable = new DecimalBreed(trimpsMax).minus(trimpsEffectivelyEmployed2());
-    var breeding = maxBreedable.minus(trimps.getCurrentSend());
-    return DecimalBreed.log10(maxBreedable.div(breeding)).div(DecimalBreed.log10(potencyMod())).div(10);
   }
   function breedTimeRemaining2() {
     var trimps = game.resources.trimps;
@@ -908,13 +860,11 @@
     RcalcDailyHealthMod: () => RcalcDailyHealthMod,
     RcalcEnemyBaseHealth: () => RcalcEnemyBaseHealth,
     RcalcEnemyHealth: () => RcalcEnemyHealth2,
-    RcalcEnemyHealthMod: () => RcalcEnemyHealthMod,
     RcalcHDratio: () => RcalcHDratio2,
     RcalcOurDmg: () => RcalcOurDmg2,
     RcalcOurHealth: () => RcalcOurHealth2,
     RgetCritMulti: () => RgetCritMulti,
     addPoison: () => addPoison2,
-    badGuyChallengeMult: () => badGuyChallengeMult,
     badGuyCritMult: () => badGuyCritMult,
     calcBadGuyDmg: () => calcBadGuyDmg2,
     calcCorruptionScale: () => calcCorruptionScale,
@@ -1281,22 +1231,6 @@
       if (typeof game.global.dailyChallenge.bloodthirst !== "undefined") {
         number *= dailyModifiers.bloodthirst.getMult(game.global.dailyChallenge.bloodthirst.strength, game.global.dailyChallenge.bloodthirst.stacks);
       }
-    }
-    return number;
-  }
-  function badGuyChallengeMult() {
-    let number = 1;
-    if (challengeActive("Meditate")) number *= 1.5;
-    else if (challengeActive("Watch")) number *= 1.25;
-    else if (game.global.challengeActive === "Corrupted") number *= 3;
-    else if (game.global.challengeActive === "Domination") number *= 2.5;
-    else if (game.global.challengeActive === "Coordinate") number *= getBadCoordLevel();
-    else if (game.global.challengeActive === "Scientist" && getScientistLevel() === 5) number *= 10;
-    else if (game.global.challengeActive === "Obliterated" || game.global.challengeActive === "Eradicated") {
-      let oblitMult = game.global.challengeActive === "Eradicated" ? game.challenges.Eradicated.scaleModifier : 1e12;
-      const zoneModifier = Math.floor(game.global.world / game.challenges[game.global.challengeActive].zoneScaleFreq);
-      oblitMult *= Math.pow(game.challenges[game.global.challengeActive].zoneScaling, zoneModifier);
-      number *= oblitMult;
     }
     return number;
   }
@@ -2194,70 +2128,6 @@
     }
     return health;
   }
-  function RcalcEnemyHealthMod(world, cell, name) {
-    const highest = 1;
-    let mute = false;
-    let health;
-    if (game.global.world > 200 && getPageSetting2("Rmutecalc") > 0 && game.global.world >= getPageSetting2("Rmutecalc")) {
-      mute = true;
-      health = rCalcMutationHealth();
-    }
-    if (world == false) world = game.global.world;
-    if (!mute) health = RcalcEnemyBaseHealth(world, cell, name);
-    if (game.global.challengeActive === "Daily") {
-      health = RcalcDailyHealthMod(health);
-    }
-    if (game.global.challengeActive === "Unbalance") {
-      health *= 2;
-    }
-    if (game.global.challengeActive === "Quest") {
-      health *= game.challenges.Quest.getHealthMult();
-    }
-    if (game.global.challengeActive === "Revenge" && game.global.world % 2 === 0) {
-      health *= 10;
-    }
-    if (game.global.challengeActive === "Archaeology") {
-    }
-    if (game.global.challengeActive === "Mayhem") {
-      health *= game.challenges.Mayhem.getEnemyMult();
-      health *= game.challenges.Mayhem.getBossMult();
-    }
-    if (game.global.challengeActive === "Pandemonium") {
-      health *= game.challenges.Pandemonium.getBossMult();
-    }
-    if (game.global.challengeActive === "Desolation") {
-      health *= game.challenges.Desolation.getEnemyMult();
-    }
-    if (game.global.challengeActive === "Storm") {
-      health *= game.challenges.Storm.getHealthMult();
-    }
-    if (game.global.challengeActive === "Berserk") {
-      health *= 1.5;
-    }
-    if (game.global.challengeActive === "Exterminate") {
-      health *= game.challenges.Exterminate.getSwarmMult();
-    }
-    if (game.global.challengeActive === "Nurture") {
-      health *= 2;
-      if (game.buildings.Laboratory.owned > 0) {
-        health *= game.buildings.Laboratory.getEnemyMult();
-      }
-    }
-    if (game.global.challengeActive === "Alchemy") {
-      health *= alchObj.getEnemyStats(false, false) + 1;
-    }
-    if (game.global.challengeActive === "Hypothermia") {
-      health *= game.challenges.Hypothermia.getEnemyMult();
-    }
-    if (game.global.challengeActive === "Glass") {
-      health *= 0.01;
-      health *= game.challenges.Glass.healthMult();
-    }
-    if (game.global.challengeActive === "Smithless") {
-      if (game.challenges.Smithless.fakeSmithies > 0) health *= Math.pow(1.25, game.challenges.Smithless.fakeSmithies);
-    }
-    return health;
-  }
   function RcalcHDratio2() {
     let ratio = 0;
     const ourBaseDamage = RcalcOurDmg2("avg", false, true);
@@ -2331,15 +2201,8 @@
   var equipment_exports = {};
   __export(equipment_exports, {
     PrestigeValue: () => PrestigeValue,
-    RPrestigeValue: () => RPrestigeValue,
     RautoEquip: () => RautoEquip,
-    RequipCost: () => RequipCost,
-    RequipEffect: () => RequipEffect,
-    Requipcalc: () => Requipcalc,
-    RevaluateEquipmentEfficiency: () => RevaluateEquipmentEfficiency,
     Rgetequips: () => Rgetequips2,
-    RpostBuy3: () => RpostBuy3,
-    RpreBuy3: () => RpreBuy3,
     areWeAttackLevelCapped: () => areWeAttackLevelCapped2,
     autoLevelEquipment: () => autoLevelEquipment,
     buyPrestigeMaybe: () => buyPrestigeMaybe,
@@ -2850,109 +2713,6 @@
       Equip: true
     }
   };
-  var Rmapresourcetojob = { "food": "Farmer", "wood": "Lumberjack", "metal": "Miner", "science": "Scientist" };
-  function RequipEffect(gameResource, equip) {
-    if (equip.Equip) {
-      return gameResource[equip.Stat + "Calculated"];
-    }
-  }
-  function RequipCost(gameResource, equip) {
-    let price = parseFloat(getBuildingItemPrice(gameResource, equip.Resource, equip.Equip, 1));
-    if (equip.Equip)
-      price = Math.ceil(price * Math.pow(1 - game.portal.Artisanistry.modifier, game.portal.Artisanistry.radLevel));
-    price *= autoBattle.oneTimers.Artisan.owned ? autoBattle.oneTimers.Artisan.getMult() : 1;
-    if (game.global.challengeActive === "Pandemonium") price *= game.challenges.Pandemonium.getEnemyMult();
-    return price;
-  }
-  function RPrestigeValue(what) {
-    const name = game.upgrades[what].prestiges;
-    const equipment = game.equipment[name];
-    const stat = typeof equipment.health !== "undefined" ? "health" : "attack";
-    return Math.round(equipment[stat] * Math.pow(1.19, equipment.prestige * game.global.prestige[stat] + 1));
-  }
-  function RevaluateEquipmentEfficiency(equipName) {
-    const equip = RequipmentList[equipName];
-    const gameResource = equip.Equip ? game.equipment[equipName] : game.buildings[equipName];
-    const Effect = RequipEffect(gameResource, equip);
-    const Cost = RequipCost(gameResource, equip);
-    let Factor = Effect / Cost;
-    let StatusBorder = "white";
-    let Wall = false;
-    let NextEffect;
-    let NextCost;
-    if (!game.upgrades[equip.Upgrade].locked) {
-      const CanAfford = canAffordTwoLevel(game.upgrades[equip.Upgrade]);
-      if (equip.Equip) {
-        NextEffect = PrestigeValue(equip.Upgrade);
-        NextCost = Math.ceil(getNextPrestigeCost(equip.Upgrade) * Math.pow(1 - game.portal.Artisanistry.modifier, game.portal.Artisanistry.radLevel));
-        Wall = NextEffect / NextCost > Factor;
-      }
-      if (!CanAfford) {
-        StatusBorder = "yellow";
-      } else {
-        if (!equip.Equip) {
-          StatusBorder = "red";
-        } else {
-          const CurrEffect = gameResource.level * Effect;
-          const NeedLevel = Math.ceil(CurrEffect / NextEffect);
-          const Ratio = gameResource.cost[equip.Resource][1];
-          const NeedResource = NextCost * (Math.pow(Ratio, NeedLevel) - 1) / (Ratio - 1);
-          if (game.resources[equip.Resource].owned > NeedResource) {
-            StatusBorder = "red";
-          } else {
-            StatusBorder = "orange";
-          }
-        }
-      }
-    }
-    if (game.jobs[Rmapresourcetojob[equip.Resource]].locked && game.global.challengeActive !== "Transmute") {
-      Factor = 0;
-      Wall = true;
-    }
-    const isLiquified = game.options.menu.liquification.enabled && game.talents.liquification.purchased && !game.global.mapsActive && game.global.gridArray && game.global.gridArray[0] && game.global.gridArray[0].name === "Liquimp";
-    let cap = 100;
-    if (RequipmentList[equipName].Stat === "health") cap = getPageSetting2("RCapEquiparm");
-    if (RequipmentList[equipName].Stat === "attack") cap = getPageSetting2("RCapEquip2");
-    if (isLiquified && cap > 0 && gameResource.level >= cap / MODULES["equipment"].RcapDivisor) {
-      Factor = 0;
-      Wall = true;
-    } else if (cap > 0 && gameResource.level >= cap) {
-      Factor = 0;
-      Wall = true;
-    }
-    if (gameResource.level < 2 && getPageSetting2("Ralways2")) {
-      Factor = 999 - gameResource.prestige;
-    }
-    return {
-      Stat: equip.Stat,
-      Factor,
-      StatusBorder,
-      Wall,
-      Cost
-    };
-  }
-  var RpreBuyAmt2 = 1;
-  var RpreBuyFiring2 = 1;
-  var RpreBuyTooltip2 = false;
-  var RpreBuymaxSplit2 = 1;
-  var RpreBuyCustomFirst2 = 1;
-  var RpreBuyCustomLast2 = 1;
-  function RpreBuy3() {
-    RpreBuyAmt2 = game.global.buyAmt;
-    RpreBuyFiring2 = game.global.firing;
-    RpreBuyTooltip2 = game.global.lockTooltip;
-    RpreBuymaxSplit2 = game.global.maxSplit;
-    RpreBuyCustomFirst2 = game.global.firstCustomAmt;
-    RpreBuyCustomLast2 = game.global.lastCustomAmt;
-  }
-  function RpostBuy3() {
-    game.global.buyAmt = RpreBuyAmt2;
-    game.global.firing = RpreBuyFiring2;
-    game.global.lockTooltip = RpreBuyTooltip2;
-    game.global.maxSplit = RpreBuymaxSplit2;
-    game.global.firstCustomAmt = RpreBuyCustomFirst2;
-    game.global.lastCustomAmt = RpreBuyCustomLast2;
-  }
   function Rgetequips2(map, special) {
     let specialCount = 0;
     const prestigeArray = [];
@@ -3054,20 +2814,6 @@
       }
     }
     return [mostEfficient[0].name, mostEfficient[1].name];
-  }
-  function Requipcalc(capattack, caphealth, level2, zonego, attack, health, name, resource, stat, source, amount, percent) {
-    if (canAffordBuilding(name, null, null, true, false, amount) && smithylogic(name, resource, true) && (stat === "a" && game.equipment[name].level < capattack || stat === "h" && game.equipment[name].level < caphealth) && (level2 && game.equipment[name].level === 1 || zonego || Rgetequipcost(name, resource, amount) <= percent * source || (stat === "a" && !attack || stat === "h" && !health))) {
-      RpreBuy3();
-      if (level2 && game.equipment[name].level === 1) {
-        buyEquipment(name, null, true, 1);
-      }
-      const mostEfficientStuff = mostEfficientEquipment();
-      if (mostEfficientStuff != void 0) {
-        buyEquipment(mostEfficientStuff[0], null, true, amount);
-        buyEquipment(mostEfficientStuff[1], null, true, amount);
-      }
-      RpostBuy3();
-    }
   }
   function getMaxAffordable2(baseCost, totalResource, costScaling, isCompounding) {
     if (!isCompounding) {
@@ -3253,10 +2999,7 @@
   var buildings_exports = {};
   __export(buildings_exports, {
     RbuyBuildings: () => RbuyBuildings,
-    RbuyFoodEfficientHousing: () => RbuyFoodEfficientHousing,
-    RbuyGemEfficientHousing: () => RbuyGemEfficientHousing,
     RbuyStorage: () => RbuyStorage,
-    RsafeBuyBuilding: () => RsafeBuyBuilding,
     __syncAutoStorageOnce: () => __syncAutoStorageOnce,
     buyBuildings: () => buyBuildings,
     buyFoodEfficientHousing: () => buyFoodEfficientHousing,
@@ -3505,104 +3248,6 @@
           safeBuyBuilding2(B);
         }
       }
-    }
-  }
-  function RsafeBuyBuilding(building) {
-    if (isBuildingInQueue(building))
-      return false;
-    if (game.buildings[building].locked)
-      return false;
-    const oldBuy = preBuy2();
-    if (bwRewardUnlocked("DecaBuild")) {
-      game.global.buyAmt = 10;
-      if (!canAffordBuilding(building)) {
-        game.global.buyAmt = 2;
-        if (!canAffordBuilding(building))
-          game.global.buyAmt = 1;
-      }
-    } else if (bwRewardUnlocked("DoubleBuild")) {
-      game.global.buyAmt = 2;
-      if (!canAffordBuilding(building))
-        game.global.buyAmt = 1;
-    } else game.global.buyAmt = 1;
-    if (!canAffordBuilding(building)) {
-      postBuy2(oldBuy);
-      return false;
-    }
-    game.global.firing = false;
-    debug2("Building " + building, "buildings", "*hammer2");
-    if (!game.buildings[building].locked && canAffordBuilding(building)) {
-      buyBuilding(building, true, true);
-    }
-    postBuy2(oldBuy);
-    return true;
-  }
-  function RbuyFoodEfficientHousing() {
-    const foodHousing = ["Hut", "House", "Mansion", "Hotel", "Resort"];
-    const unlockedHousing = [];
-    for (const house in foodHousing) {
-      if (game.buildings[foodHousing[house]].locked === 0) {
-        unlockedHousing.push(foodHousing[house]);
-      }
-    }
-    const buildorder = [];
-    if (unlockedHousing.length > 0) {
-      for (const house in unlockedHousing) {
-        const building = game.buildings[unlockedHousing[house]];
-        const cost = getBuildingItemPrice(building, "food", false, 1);
-        const ratio = cost / building.increase.by;
-        buildorder.push({
-          "name": unlockedHousing[house],
-          "ratio": ratio
-        });
-        document.getElementById(unlockedHousing[house]).style.border = "1px solid #FFFFFF";
-      }
-      buildorder.sort(function(a, b) {
-        return a.ratio - b.ratio;
-      });
-      let bestfoodBuilding = null;
-      const bb = buildorder[0];
-      const max = getPageSetting2("RMax" + bb.name);
-      if (game.buildings[bb.name].owned < max || max == -1) {
-        bestfoodBuilding = bb.name;
-      }
-      if (smithylogic(bestfoodBuilding, "wood", false) && bestfoodBuilding) {
-        document.getElementById(bestfoodBuilding).style.border = "1px solid #00CC01";
-        RsafeBuyBuilding(bestfoodBuilding);
-      }
-    }
-  }
-  function RbuyGemEfficientHousing() {
-    const gemHousing = ["Mansion", "Hotel", "Resort", "Gateway", "Collector"];
-    const unlockedHousing = [];
-    for (const house in gemHousing) {
-      if (game.buildings[gemHousing[house]].locked === 0) {
-        unlockedHousing.push(gemHousing[house]);
-      }
-    }
-    const obj = {};
-    for (const house in unlockedHousing) {
-      const building = game.buildings[unlockedHousing[house]];
-      const cost = getBuildingItemPrice(building, "gems", false, 1);
-      const ratio = cost / building.increase.by;
-      obj[unlockedHousing[house]] = ratio;
-      document.getElementById(unlockedHousing[house]).style.border = "1px solid #FFFFFF";
-    }
-    const keysSorted = Object.keys(obj).sort(function(a, b) {
-      return obj[a] - obj[b];
-    });
-    bestBuilding = null;
-    for (const best in keysSorted) {
-      let max = getPageSetting2("RMax" + keysSorted[best]);
-      if (max === false) max = -1;
-      if (game.buildings[keysSorted[best]].owned < max || max == -1) {
-        bestBuilding = keysSorted[best];
-        document.getElementById(bestBuilding).style.border = "1px solid #00CC00";
-        break;
-      }
-    }
-    if (smithylogic(bestBuilding, "gems", false) && bestBuilding) {
-      RsafeBuyBuilding(bestBuilding);
     }
   }
   var smithybought = 0;
@@ -4854,9 +4499,6 @@
     Rhsworldstaff: () => Rhsworldstaff,
     Rhsworldstaffequip: () => Rhsworldstaffequip,
     autoheirlooms3: () => autoheirlooms32,
-    calcAutoNuRatio: () => calcAutoNuRatio,
-    calcLoomNu: () => calcLoomNu,
-    calcLoomNuInfinity: () => calcLoomNuInfinity,
     dhighHeirloom: () => dhighHeirloom2,
     dhighdmgshield: () => dhighdmgshield,
     dlowHeirloom: () => dlowHeirloom2,
@@ -4869,10 +4511,7 @@
     lowHeirloom: () => lowHeirloom2,
     lowdmgshield: () => lowdmgshield,
     newSelectHeirloom: () => newSelectHeirloom,
-    nuRatio: () => nuRatio,
-    nuloom: () => nuloom,
     protectHeirloom: () => protectHeirloom,
-    spendNu: () => spendNu,
     worthOfHeirlooms3: () => worthOfHeirlooms3
   });
   var animated = game.options.menu.showHeirloomAnimations.enabled ? "animated " : "";
@@ -5097,181 +4736,6 @@
       equipHeirloom();
     }
   }
-  function calcLoomNu(slot) {
-    nuloom();
-    var heirloom = getSelectedHeirloom();
-    var tot = 0;
-    var thisMod = heirloom.mods[slot];
-    var dummyHeirloom = setupDummyHeirloom(heirloom, thisMod);
-    tot = countPriceOfUpgrades(dummyHeirloom, heirloom.mods[slot][3]);
-    var result = Math.floor(tot) + Math.floor(game.heirlooms.values[heirloom.rarity] / 2);
-    if (isNumberBad(result)) return 0;
-    return result;
-  }
-  function calcLoomNuInfinity(slot) {
-    nuloom();
-    var heirloom = getSelectedHeirloom();
-    if (Math.ceil(getModUpgradeCost(heirloom, slot, 1)) != Infinity) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-  function calcAutoNuRatio(slot) {
-    nuloom();
-    var heirloom = getSelectedHeirloom();
-    if (heirloom.mods[slot][0] == "critChance")
-      return 100;
-    else if (heirloom.mods[slot][0] == "voidMaps")
-      return 95;
-    else if (heirloom.mods[slot][0] == "plaguebringer")
-      return 85;
-    else if (heirloom.mods[slot][0] == "trimpAttack")
-      return 75;
-    else if (heirloom.mods[slot][0] == "critDamage")
-      return 54;
-    else if (heirloom.mods[slot][0] == "trimpHealth")
-      return 50;
-    else if (heirloom.mods[slot][0] == "storageSize")
-      return 7;
-    else if (heirloom.mods[slot][0] == "trimpBlock")
-      return 4;
-    else if (heirloom.mods[slot][0] == "trainerEfficiency")
-      return 2.8;
-    else if (heirloom.mods[slot][0] == "breedSpeed")
-      return 2;
-    else if (heirloom.mods[slot][0] == "playerEfficiency")
-      return 0.3;
-    else if (heirloom.mods[slot][0] == "prismatic")
-      return 50;
-    else if (heirloom.mods[slot][0] == "gammaBurst")
-      return 25;
-    else if (heirloom.mods[slot][0] == "FluffyExp")
-      return 100;
-    else if (heirloom.mods[slot][0] == "fragmentsDrop")
-      return 8;
-    else if (heirloom.mods[slot][0] == "ExplorerSpeed")
-      return 7;
-    else if (heirloom.mods[slot][0] == "metalDrop")
-      return 6;
-    else if (heirloom.mods[slot][0] == "minerSpeed")
-      return 5;
-    else if (heirloom.mods[slot][0] == "woodDrop")
-      return 1;
-    else if (heirloom.mods[slot][0] == "LumberjackSpeed")
-      return 0.8;
-    else if (heirloom.mods[slot][0] == "foodDrop")
-      return 0.2;
-    else if (heirloom.mods[slot][0] == "FarmerSpeed")
-      return 0.05;
-    else if (heirloom.mods[slot][0] == "DragimpSpeed")
-      return 0.04;
-    else if (heirloom.mods[slot][0] == "gemsDrop")
-      return 0.03;
-    else if (heirloom.mods[slot][0] == "ScientistSpeed")
-      return 0.03;
-    else if (heirloom.mods[slot][0] == "fireTrap")
-      return 50;
-    else if (heirloom.mods[slot][0] == "poisonTrap")
-      return 50;
-    else if (heirloom.mods[slot][0] == "lightningTrap")
-      return 100;
-    else if (heirloom.mods[slot][0] == "runestones")
-      return 85;
-    else if (heirloom.mods[slot][0] == "strengthEffect")
-      return 50;
-    else if (heirloom.mods[slot][0] == "condenserEffect")
-      return 150;
-  }
-  function nuRatio() {
-    var slot1, slot1r, slot2, slot2r, slot3, slot3r, slot4, slot4r, slot5, slot6, slot5r, slot6r, slot1spend, slot1spendr, slot2spend, slot2spendr, slot3spend, slot3spendr, slot4spend, slot4spendr, slot5spend, slot5spendr, slot6spend, slot6spendr;
-    slot1 = calcLoomNuInfinity(0) ? calcLoomNu(0) : 0;
-    slot2 = calcLoomNuInfinity(1) ? calcLoomNu(1) : 0;
-    slot3 = calcLoomNuInfinity(2) ? calcLoomNu(2) : 0;
-    slot4 = calcLoomNuInfinity(3) ? calcLoomNu(3) : 0;
-    slot5 = calcLoomNuInfinity(4) ? calcLoomNu(4) : 0;
-    slot6 = calcLoomNuInfinity(5) ? calcLoomNu(5) : 0;
-    var total = slot1 + slot2 + slot3 + slot4 + slot5 + slot6;
-    slot1r = slot1 != 0 && calcLoomNuInfinity(0) ? slot1 / total * 100 : 1;
-    slot2r = slot2 != 0 && calcLoomNuInfinity(1) ? slot2 / total * 100 : 1;
-    slot3r = slot3 != 0 && calcLoomNuInfinity(2) ? slot3 / total * 100 : 1;
-    slot4r = slot4 != 0 && calcLoomNuInfinity(3) ? slot4 / total * 100 : 1;
-    slot5r = slot5 != 0 && calcLoomNuInfinity(4) ? slot5 / total * 100 : 1;
-    slot6r = slot6 != 0 && calcLoomNuInfinity(5) ? slot6 / total * 100 : 1;
-    if (getPageSetting2("autonu") == true && getPageSetting2("rationu") == 0 && getPageSetting2("heirloomnu") != void 0) {
-      slot1spend = getPageSetting2("slot1nu") > 0 && calcLoomNuInfinity(0) ? getPageSetting2("slot1nu") : 0;
-      slot2spend = getPageSetting2("slot2nu") > 0 && calcLoomNuInfinity(1) ? getPageSetting2("slot2nu") : 0;
-      slot3spend = getPageSetting2("slot3nu") > 0 && calcLoomNuInfinity(2) ? getPageSetting2("slot3nu") : 0;
-      slot4spend = getPageSetting2("slot4nu") > 0 && calcLoomNuInfinity(3) ? getPageSetting2("slot4nu") : 0;
-      slot5spend = getPageSetting2("slot5nu") > 0 && calcLoomNuInfinity(4) ? getPageSetting2("slot5nu") : 0;
-      slot6spend = getPageSetting2("slot6nu") > 0 && calcLoomNuInfinity(5) ? getPageSetting2("slot6nu") : 0;
-    }
-    if (getPageSetting2("autonu") == true && getPageSetting2("rationu") == 1 && getPageSetting2("heirloomnu") != void 0) {
-      slot1spend = calcLoomNuInfinity(0) ? calcAutoNuRatio(0) : 0;
-      slot2spend = calcLoomNuInfinity(1) ? calcAutoNuRatio(1) : 0;
-      slot3spend = calcLoomNuInfinity(2) ? calcAutoNuRatio(2) : 0;
-      slot4spend = calcLoomNuInfinity(3) ? calcAutoNuRatio(3) : 0;
-      slot5spend = calcLoomNuInfinity(4) ? calcAutoNuRatio(4) : 0;
-      slot6spend = calcLoomNuInfinity(5) ? calcAutoNuRatio(5) : 0;
-    }
-    var totalspend = slot1spend + slot2spend + slot3spend + slot4spend + slot5spend + slot6spend;
-    slot1spendr = slot1spend > 0 ? slot1spend / totalspend * 100 : 0;
-    slot2spendr = slot2spend > 0 ? slot2spend / totalspend * 100 : 0;
-    slot3spendr = slot3spend > 0 ? slot3spend / totalspend * 100 : 0;
-    slot4spendr = slot4spend > 0 ? slot4spend / totalspend * 100 : 0;
-    slot5spendr = slot5spend > 0 ? slot5spend / totalspend * 100 : 0;
-    slot6spendr = slot6spend > 0 ? slot6spend / totalspend * 100 : 0;
-    var slot1final = slot1spendr - slot1r;
-    var slot2final = slot2spendr - slot2r;
-    var slot3final = slot3spendr - slot3r;
-    var slot4final = slot4spendr - slot4r;
-    var slot5final = slot5spendr - slot5r;
-    var slot6final = slot6spendr - slot6r;
-    var ratios = [];
-    if (slot1final != -1) {
-      ratios.push(slot1final);
-    }
-    if (slot2final != -1) {
-      ratios.push(slot2final);
-    }
-    if (slot3final != -1) {
-      ratios.push(slot3final);
-    }
-    if (slot4final != -1) {
-      ratios.push(slot4final);
-    }
-    if (slot5final != -1) {
-      ratios.push(slot5final);
-    }
-    if (slot6final != -1) {
-      ratios.push(slot6final);
-    }
-    if (ratios.length > 0) {
-      ratios.sort(function(a, b) {
-        return b - a;
-      });
-    }
-    if (ratios[0] == slot1final)
-      return 0;
-    if (ratios[0] == slot2final)
-      return 1;
-    if (ratios[0] == slot3final)
-      return 2;
-    if (ratios[0] == slot4final)
-      return 3;
-    if (ratios[0] == slot5final)
-      return 4;
-    if (ratios[0] == slot6final)
-      return 5;
-  }
-  function spendNu() {
-    nuloom();
-    var slot = nuRatio();
-    if (game.global.nullifium >= getModUpgradeCost(getSelectedHeirloom(), slot, 1)) {
-      selectMod(slot);
-      upgradeMod(true, 1);
-    }
-  }
   function generateHeirloomIcon(heirloom, location, number) {
     if (typeof heirloom.name === "undefined") return "<span class='icomoon icon-sad3'></span>";
     var icon = getHeirloomIcon(heirloom);
@@ -5432,76 +4896,6 @@
     gammaBurstPct = getHeirloomBonus("Shield", "gammaBurst") / 100 > 0 ? getHeirloomBonus("Shield", "gammaBurst") / 100 : 1;
     shieldEquipped = game.global.ShieldEquipped.id;
   }
-  function nuloom(slot) {
-    var nuloom2 = getPageSetting2("heirloomnu");
-    if (game.global.ShieldEquipped.name == nuloom2) {
-      selectHeirloom(-1, "ShieldEquipped", true);
-      if (slot == 0) {
-        return game.global.ShieldEquipped.mods[0][0];
-      }
-      if (slot == 1) {
-        return game.global.ShieldEquipped.mods[1][0];
-      }
-      if (slot == 2) {
-        return game.global.ShieldEquipped.mods[2][0];
-      }
-      if (slot == 3) {
-        return game.global.ShieldEquipped.mods[3][0];
-      }
-      if (slot == 4) {
-        return game.global.ShieldEquipped.mods[4][0];
-      }
-      if (slot == 5) {
-        return game.global.ShieldEquipped.mods[5][0];
-      }
-    }
-    if (game.global.StaffEquipped.name == nuloom2) {
-      selectHeirloom(-1, "StaffEquipped", true);
-      if (slot == 0) {
-        return game.global.StaffEquipped.mods[0][0];
-      }
-      if (slot == 1) {
-        return game.global.StaffEquipped.mods[1][0];
-      }
-      if (slot == 2) {
-        return game.global.StaffEquipped.mods[2][0];
-      }
-      if (slot == 3) {
-        return game.global.StaffEquipped.mods[3][0];
-      }
-      if (slot == 4) {
-        return game.global.StaffEquipped.mods[4][0];
-      }
-      if (slot == 5) {
-        return game.global.StaffEquipped.mods[5][0];
-      }
-    }
-    if (game.global.StaffEquipped.name != nuloom2 && game.global.ShieldEquipped.name != nuloom2) {
-      for (var loom of game.global.heirloomsCarried) {
-        if (loom.name == getPageSetting2("heirloomnu")) {
-          selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
-          if (slot == 0) {
-            return loom.mods[0][0];
-          }
-          if (slot == 1) {
-            return loom.mods[1][0];
-          }
-          if (slot == 2) {
-            return loom.mods[2][0];
-          }
-          if (slot == 3) {
-            return loom.mods[3][0];
-          }
-          if (slot == 4) {
-            return loom.mods[4][0];
-          }
-          if (slot == 5) {
-            return loom.mods[5][0];
-          }
-        }
-      }
-    }
-  }
 
   // src/modules/fight.ts
   var fight_exports = {};
@@ -5542,20 +4936,10 @@
   var scryer_exports = {};
   __export(scryer_exports, {
     readyToSwitch: () => readyToSwitch,
-    scryingCorruption: () => scryingCorruption,
     useScryerStance: () => useScryerStance
   });
   var wantToScry = false;
   var transitionRequired = false;
-  function scryingCorruption() {
-    var minZoneOK = game.global.world >= getPageSetting2("ScryerMinZone");
-    var maxZoneOK = game.global.world < getPageSetting2("ScryerMaxZone") || getPageSetting2("ScryerMaxZone") < 1;
-    var scryZone = minZoneOK && maxZoneOK || getPageSetting2("onlyminmaxworld") >= 2;
-    var scryCorrupt = scryZone && getPageSetting2("ScryerSkipCorrupteds2") != 0 || getPageSetting2("ScryerSkipCorrupteds2") == 1;
-    var essenceLeft = getPageSetting2("screwessence") == false || countRemainingEssenceDrops() >= 1;
-    var die = getPageSetting2("ScryerDieZ") != -1 && game.global.world >= getPageSetting2("ScryerDieZ");
-    return (die || scryCorrupt) && essenceLeft && getPageSetting2("UseScryerStance") == true;
-  }
   function readyToSwitch(stance = "S") {
     var essenceLeft = getPageSetting2("screwessence") == false || countRemainingEssenceDrops() >= 1;
     var die = getPageSetting2("ScryerDieZ") != -1 && game.global.world >= getPageSetting2("ScryerDieZ") && essenceLeft;
@@ -6663,29 +6047,14 @@
   __export(stance_exports, {
     autoStance: () => autoStance3,
     autoStance2: () => autoStance22,
-    autoStanceNew: () => autoStanceNew,
     calcBaseDamageInX: () => calcBaseDamageInX2,
-    calcBaseDamageinX: () => calcBaseDamageinX,
-    calcBaseDamageinX2: () => calcBaseDamageinX2,
     challengeDamage: () => challengeDamage,
-    debugStance: () => debugStance,
     directDamage: () => directDamage,
     maxOneShotPower: () => maxOneShotPower,
     oneShotPower: () => oneShotPower2,
-    oneShotZone: () => oneShotZone,
     survive: () => survive2,
     windStance: () => windStance2
   });
-  function calcBaseDamageinX() {
-    baseDamage = calcOurDmg("avg", false, true);
-    baseBlock = game.global.soldierCurrentBlock;
-    baseHealth = game.global.soldierHealthMax;
-  }
-  function calcBaseDamageinX2() {
-    baseDamage = calcOurDmg("avg", false, true);
-    baseBlock = calcOurBlock();
-    baseHealth = calcOurHealth();
-  }
   globalThis.baseMinDamage = 0;
   globalThis.baseMaxDamage = 0;
   function calcBaseDamageInX2() {
@@ -6694,30 +6063,6 @@
     baseDamage = calcOurDmg("avg", false, true);
     baseHealth = calcOurHealth(false);
     baseBlock = calcOurBlock(false);
-  }
-  function autoStanceNew() {
-    if (game.global.gridArray.length === 0) return;
-    if (game.global.soldierHealth <= 0) return;
-    if (!game.upgrades.Formations.done) return;
-    if (game.global.formation === 2 && game.global.soldierHealth <= game.global.soldierHealthMax * 0.25) setFormation("0");
-    else if (game.global.formation === 0 && game.global.soldierHealth <= game.global.soldierHealthMax * 0.25) setFormation("1");
-    else if (game.global.formation === 1 && game.global.soldierHealth === game.global.soldierHealthMax) setFormation("2");
-  }
-  function debugStance(maxPower, ignoreArmy) {
-    for (let critPower = 2; critPower >= -2; critPower--) {
-      if (survive2("D", critPower, ignoreArmy)) {
-        return "D" + critPower;
-      } else if (survive2("XB", critPower, ignoreArmy)) {
-        return "XB" + critPower;
-      } else if (survive2("B", critPower, ignoreArmy)) {
-        return "B" + critPower;
-      } else if (survive2("X", critPower, ignoreArmy)) {
-        return "X" + critPower;
-      } else if (survive2("H", critPower, ignoreArmy)) {
-        return "H" + critPower;
-      } else if (maxPower) break;
-    }
-    return false;
   }
   function maxOneShotPower(considerEdges) {
     let power = 2;
@@ -6729,17 +6074,6 @@
     if (getEmpowerment() === "Ice" && game.empowerments.Ice.getLevel() >= 100) power++;
     if (considerEdges) for (let i = power; i > 1 && !getCurrentEnemy(i); i--) ;
     return power;
-  }
-  function oneShotZone(zone, type, specificStance, maxOrMin) {
-    const baseDamage2 = calcOurDmg(maxOrMin ? "max" : "min", false, true);
-    let damageLeft = baseDamage2 + addPoison(false, type === "world" ? zone : game.global.world);
-    let power = 1;
-    for (; power <= maxOneShotPower(); power++) {
-      damageLeft -= calcEnemyHealth();
-      if (damageLeft < 0) return power - 1;
-      damageLeft *= 5e-3 * game.portal.Overkill.level;
-    }
-    return power - 1;
   }
   function oneShotPower2(specificStance, offset = 0, maxOrMin) {
     const baseDamage2 = calcOurDmg(maxOrMin ? "max" : "min", false, true);
@@ -10776,8 +10110,7 @@
     dailyAutoPortal: () => dailyAutoPortal,
     doPortal: () => doPortal,
     findOutCurrentPortalLevel: () => findOutCurrentPortalLevel2,
-    finishChallengeSquared: () => finishChallengeSquared,
-    isNextU1DailyWind: () => isNextU1DailyWind
+    finishChallengeSquared: () => finishChallengeSquared
   });
   MODULES["portal"] = {};
   var challengeSquaredMode;
@@ -11270,49 +10603,6 @@
     lastRadonZone = 0;
     RzonePostpone = 0;
     RresetVars();
-  }
-  function isNextU1DailyWind() {
-    var currWindCost = game.empowerments.Wind.nextUberCost;
-    var windCostChange = Math.max(currWindCost * 0.33, 50);
-    var nextWindCost = currWindCost - (windCostChange < 100 ? windCostChange : 100);
-    var currPoisonCost = game.empowerments.Poison.nextUberCost;
-    var poisonCostChange = Math.max(currPoisonCost * 0.33, 50);
-    var nextPoisonCost = currPoisonCost - (poisonCostChange < 100 ? poisonCostChange : 100);
-    var currIceCost = game.empowerments.Ice.nextUberCost;
-    var iceCostChange = Math.max(currIceCost * 0.33, 50);
-    var nextIceCost = currIceCost - (iceCostChange < 100 ? iceCostChange : 100);
-    var dnature = "None";
-    var dailynature = [], dpoison, dpoisondiff, dwind, dwinddiff, dice, dicediff;
-    if (getPageSetting2("pdailyenlightthresh") >= 0) {
-      dpoison = nextPoisonCost <= getPageSetting2("pdailyenlightthresh") && nextPoisonCost <= game.empowerments.Poison.tokens;
-      if (dpoison) {
-        dpoisondiff = getPageSetting2("pdailyenlightthresh") - nextPoisonCost;
-      } else dpoisondiff = -999999;
-    } else dpoisondiff = -999999;
-    if (getPageSetting2("wdailyenlightthresh") >= 0) {
-      dwind = nextWindCost <= getPageSetting2("wdailyenlightthresh") && nextWindCost <= game.empowerments.Wind.tokens;
-      if (dwind) {
-        dwinddiff = getPageSetting2("wdailyenlightthresh") - nextWindCost;
-      } else dwinddiff = -999999;
-    } else dwinddiff = -999999;
-    if (getPageSetting2("idailyenlightthresh") >= 0) {
-      dice = nextIceCost <= getPageSetting2("idailyenlightthresh") && nextIceCost <= game.empowerments.Ice.tokens;
-      if (dice) {
-        dicediff = getPageSetting2("idailyenlightthresh") - nextIceCost;
-      } else dicediff = -999999;
-    } else dicediff = -999999;
-    dailynature = [{ nature: "Poison", cost: dpoisondiff }, { nature: "Wind", cost: dwinddiff }, { nature: "Ice", cost: dicediff }].sort(function(a, b) {
-      return a.cost > b.cost ? -1 : a.cost < b.cost ? 1 : 0;
-    });
-    if (dailynature[0].cost > 0) {
-      dnature = dailynature[0].nature;
-    } else {
-      dnature = "None";
-    }
-    if (dnature == "Wind")
-      return true;
-    else
-      return false;
   }
 
   // src/modules/import-export.ts
@@ -12250,7 +11540,6 @@
     RgetEnemyMaxAttack: () => RgetEnemyMaxAttack2,
     RgetEnemyMaxHealth: () => RgetEnemyMaxHealth2,
     RsetScienceNeeded: () => RsetScienceNeeded,
-    checkJobPercentageCost: () => checkJobPercentageCost,
     getArmyTime: () => getArmyTime,
     getCorruptScale: () => getCorruptScale2,
     getCorruptedCellsNum: () => getCorruptedCellsNum2,
@@ -12299,22 +11588,6 @@
       b = calcHeirloomBonus("Staff", a + "Speed", b);
     }
     return b;
-  }
-  function checkJobPercentageCost(a, b) {
-    const c = "food";
-    const d = game.jobs[a];
-    const e = d.cost[c];
-    let f = 0;
-    if (!b) b = game.global.buyAmt;
-    f = typeof e[1] === "undefined" ? e * b : Math.floor(e[0] * Math.pow(e[1], d.owned) * ((Math.pow(e[1], b) - 1) / (e[1] - 1)));
-    let g;
-    if (game.resources[c].owned < f) {
-      const h = getPsString(c, true);
-      if (h > 0) g = calculateTimeToMax(null, h, f - game.resources[c].owned);
-      return [false, g];
-    }
-    g = game.resources[c].owned > 0 ? (100 * (f / game.resources[c].owned)).toFixed(1) : 0;
-    return [true, g];
   }
   function getScienceCostToUpgrade(a) {
     const science = game.upgrades[a].cost.resources.science;
@@ -12552,10 +11825,8 @@
     questcheck: () => questcheck2,
     smithylogic: () => smithylogic2,
     tdStringCode2: () => tdStringCode2,
-    trimpcide: () => trimpcide,
-    usedaily3: () => usedaily3
+    trimpcide: () => trimpcide
   });
-  globalThis.daily3 = void 0;
   MODULES["other"] = {};
   MODULES["other"].enableRoboTrimpSpam = true;
   globalThis.prestraid = false;
@@ -12614,9 +11885,6 @@
   }
   function helptrimpsnotdie() {
     if (!game.global.preMapsActive && !game.global.fighting) buyArms();
-  }
-  function usedaily3() {
-    true != getPageSetting2("use3daily") || "Daily" != game.global.challengeActive || daily3 || (daily3 = true), false == getPageSetting2("use3daily") && "Daily" != game.global.challengeActive && daily3 && (daily3 = false), true == getPageSetting2("use3daily") && "Daily" != game.global.challengeActive && daily3 && (daily3 = false);
   }
   function buyshitspire() {
     true == getPageSetting2("spireshitbuy") && game.global.spireActive && game.global.world >= getPageSetting2("IgnoreSpiresUntil") && (buyWeps(), buyArms());
@@ -14716,7 +13984,6 @@
     autoSetTextToolTip: () => autoSetTextToolTip,
     autoSetValue: () => autoSetValue,
     autoSetValueToolTip: () => autoSetValueToolTip,
-    createInput: () => createInput,
     createSetting: () => createSetting2,
     onKeyPressSetting: () => onKeyPressSetting,
     parseNum: () => parseNum,
@@ -14921,22 +14188,6 @@
     if (autoTrimpSettings[id].description != description)
       autoTrimpSettings[id].description = description;
     autoTrimpSettings["ATversion"] = ATversion;
-  }
-  function createInput(id, name, description) {
-    var $btnParent = document.createElement("DIV");
-    $btnParent.setAttribute("style", "display: inline-block; vertical-align: top; margin-left: 0.5vw; margin-bottom: 0.5vw; width: 6.5vw;");
-    $btnParent.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
-    $btnParent.setAttribute("onmouseout", 'tooltip("hide")');
-    var $input = document.createElement("input");
-    $input.type = "checkbox";
-    $input.setAttribute("id", id);
-    $input.setAttribute("style", "text-align: left; width: 0.8vw; ");
-    $btnParent.appendChild($input);
-    var $label = document.createElement("label");
-    $label.setAttribute("style", "text-align: left; margin-left: 0.2vw; font-size: 0.6vw");
-    $label.innerHTML = name;
-    $btnParent.appendChild($label);
-    document.getElementById("autoSettings").appendChild($btnParent);
   }
   function settingChanged2(id) {
     var btn = autoTrimpSettings[id];

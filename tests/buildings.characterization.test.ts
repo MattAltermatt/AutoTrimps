@@ -4,9 +4,9 @@ import { makeMinimalGame } from './harness/gameFixture'
 
 // Phase-2 characterization net for buildings.ts (proof-net #51) — the building-buyer actuator module.
 // Archetypes per the design spec (§4):
-//   L1b actuator spy-logs — safeBuyBuilding / RsafeBuyBuilding / buyFoodEfficientHousing /
-//     buyGemEfficientHousing / buyBuildings / buyStorage / RbuyFoodEfficientHousing /
-//     RbuyGemEfficientHousing / RbuyStorage / RbuyBuildings. Their RETURN is (mostly) meaningless;
+//   L1b actuator spy-logs — safeBuyBuilding / buyFoodEfficientHousing /
+//     buyGemEfficientHousing / buyBuildings / buyStorage / RbuyStorage / RbuyBuildings.
+//     Their RETURN is (mostly) meaningless;
 //     the CONTRACT is the ordered native-mutator call log: buyBuilding(name,true,true[,amt]) WITH the
 //     smuggled decision state (game.global.buyAmt / firing / maxSplit) captured AT CALL TIME (the
 //     jobs.ts:41,48 precedent — safeBuyBuilding smuggles buyAmt then calls native buyBuilding).
@@ -254,34 +254,6 @@ describe('buildings.safeBuyBuilding — L1b actuator spy-log', () => {
     ;(globalThis as any).game = game({ buildings: bld({ Trap: { locked: 0, owned: 0 } }) })
     expect(buildings.safeBuyBuilding('Trap')).toBe(true)
     expect(buyCalls[0].building).toBe('Trap')
-  })
-})
-
-// ════════════════════════════════════════════════════════════════════════════════════════════════
-// L1b — RsafeBuyBuilding
-// ════════════════════════════════════════════════════════════════════════════════════════════════
-describe('buildings.RsafeBuyBuilding — L1b actuator spy-log', () => {
-  function game(over: Record<string, unknown> = {}) {
-    return makeMinimalGame({ global: { buyAmt: 1, firing: true, maxSplit: 1 }, buildings: bld(), ...over })
-  }
-
-  it('buys an unlocked, affordable building, returns true', () => {
-    ;(globalThis as any).game = game()
-    expect(buildings.RsafeBuyBuilding('Hut')).toBe(true)
-    expect(buyCalls).toEqual([{ building: 'Hut', buyAmt: 1, firing: false, maxSplit: 1, args: ['Hut', true, true] }])
-  })
-
-  it('locked: returns false, no buy', () => {
-    ;(globalThis as any).game = game({ buildings: bld({ Hut: { locked: 1 } }) })
-    expect(buildings.RsafeBuyBuilding('Hut')).toBe(false)
-    expect(buyCalls).toEqual([])
-  })
-
-  it('unaffordable: returns false, no buy', () => {
-    ;(globalThis as any).canAffordBuilding = () => false
-    ;(globalThis as any).game = game()
-    expect(buildings.RsafeBuyBuilding('Hut')).toBe(false)
-    expect(buyCalls).toEqual([])
   })
 })
 
@@ -640,49 +612,6 @@ describe('buildings.buyStorage — L1b actuator spy-log', () => {
     ;(globalThis as any).game = g
     buildings.buyStorage()
     expect(buyCalls).toEqual([])
-  })
-})
-
-// ════════════════════════════════════════════════════════════════════════════════════════════════
-// L1b — RbuyFoodEfficientHousing / RbuyGemEfficientHousing
-// ════════════════════════════════════════════════════════════════════════════════════════════════
-describe('buildings.RbuyFoodEfficientHousing — L1b actuator spy-log', () => {
-  it('buys the lowest food-ratio housing when smithylogic passes', () => {
-    ;(globalThis as any).autoTrimpSettings = { RMaxHut: { type: 'valueNegative', value: -1 } }
-    ;(globalThis as any).getBuildingItemPrice = (b: any) => (b.__name === 'Hut' ? 30 : 300)
-    const buildingsObj = bld({
-      House: { locked: 1 }, Mansion: { locked: 1 }, Hotel: { locked: 1 }, Resort: { locked: 1 },
-    })
-    buildingsObj.Hut.__name = 'Hut'
-    ;(globalThis as any).game = makeMinimalGame({ global: { buyAmt: 1, firing: false, maxSplit: 1 }, buildings: buildingsObj })
-    buildings.RbuyFoodEfficientHousing()
-    expect(buyCalls.map((c) => c.building)).toEqual(['Hut'])
-  })
-
-  it('smithylogic false → no buy', () => {
-    ;(globalThis as any).smithylogic = () => false
-    ;(globalThis as any).autoTrimpSettings = { RMaxHut: { type: 'valueNegative', value: -1 } }
-    ;(globalThis as any).game = makeMinimalGame({
-      global: { buyAmt: 1, firing: false, maxSplit: 1 },
-      buildings: bld({ House: { locked: 1 }, Mansion: { locked: 1 }, Hotel: { locked: 1 }, Resort: { locked: 1 } }),
-    })
-    buildings.RbuyFoodEfficientHousing()
-    expect(buyCalls).toEqual([])
-  })
-})
-
-describe('buildings.RbuyGemEfficientHousing — L1b actuator spy-log', () => {
-  it('buys the lowest gem-ratio housing and sets bestBuilding', () => {
-    ;(globalThis as any).autoTrimpSettings = { RMaxMansion: { type: 'valueNegative', value: -1 } }
-    ;(globalThis as any).getBuildingItemPrice = (b: any) => (b.__name === 'Mansion' ? 30 : 300)
-    const buildingsObj = bld({
-      Hotel: { locked: 1 }, Resort: { locked: 1 }, Gateway: { locked: 1 }, Collector: { locked: 1 },
-    })
-    buildingsObj.Mansion.__name = 'Mansion'
-    ;(globalThis as any).game = makeMinimalGame({ global: { buyAmt: 1, firing: false, maxSplit: 1 }, buildings: buildingsObj })
-    buildings.RbuyGemEfficientHousing()
-    expect(buyCalls.map((c) => c.building)).toEqual(['Mansion'])
-    expect((globalThis as any).bestBuilding).toBe('Mansion')
   })
 })
 

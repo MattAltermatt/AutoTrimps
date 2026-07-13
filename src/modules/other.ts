@@ -6,12 +6,10 @@
 // Registers MODULES["other"]. getPageSetting/debug from converted utils. EVERY top-level var
 // (incl. multi-var blocks) was a global originally and the raid-map families (pMap*/repMap*/
 // mapbought*/...) are read cross-module, so all are published to globalThis. Top-level implicit
-// globals nextWorld (read by Graphs.js) + trapIndexs also -> globalThis; daily3 inited below
-// (praidSetting moved with the raid cluster to other-praiding.ts).
+// globals nextWorld (read by Graphs.js) + trapIndexs also -> globalThis.
+// (praidSetting moved with the raid cluster to other-praiding.ts.)
 // Free identifiers resolve via the bridge at runtime, typed ambient. Behaviour-preserving: any body edits are TYPE-ONLY.
 import { getPageSetting, debug, byId } from './utils'
-
-globalThis.daily3 = undefined;
 
 MODULES["other"] = {};
 MODULES["other"].enableRoboTrimpSpam = true;
@@ -91,11 +89,6 @@ export function dailyexitSpireCell() {
 
 export function helptrimpsnotdie() {
     if (!game.global.preMapsActive && !game.global.fighting) buyArms();
-}
-
-export function usedaily3() {
-    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-    !0 != getPageSetting('use3daily') || 'Daily' != game.global.challengeActive || daily3 || (daily3 = !0), !1 == getPageSetting('use3daily') && 'Daily' != game.global.challengeActive && daily3 && (daily3 = !1), !0 == getPageSetting('use3daily') && 'Daily' != game.global.challengeActive && daily3 && (daily3 = !1)
 }
 
 export function buyshitspire() {

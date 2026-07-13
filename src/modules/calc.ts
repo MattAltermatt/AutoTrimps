@@ -411,29 +411,6 @@ export function calcDailyAttackMod(number: number): number {
     return number;
 }
 
-export function badGuyChallengeMult(): number {
-    let number=1;
-
-    //WARNING! Something is afoot!
-    //A few challenges
-    if      (challengeActive("Meditate"))   number *= 1.5;
-    else if (challengeActive("Watch"))      number *= 1.25;
-    else if (game.global.challengeActive === "Corrupted")  number *= 3;
-    else if (game.global.challengeActive === "Domination") number *= 2.5;
-    else if (game.global.challengeActive === "Coordinate") number *= getBadCoordLevel();
-    else if (game.global.challengeActive === "Scientist" && getScientistLevel() === 5) number *= 10;
-
-    //Obliterated and Eradicated
-    else if (game.global.challengeActive === "Obliterated" || game.global.challengeActive === "Eradicated"){
-        let oblitMult = (game.global.challengeActive === "Eradicated") ? game.challenges.Eradicated.scaleModifier : 1e12;
-        const zoneModifier = Math.floor(game.global.world / game.challenges[game.global.challengeActive].zoneScaleFreq);
-        oblitMult *= Math.pow(game.challenges[game.global.challengeActive].zoneScaling, zoneModifier);
-        number *= oblitMult
-    }
-
-    return number;
-}
-
 export function badGuyCritMult(enemy?: any, critPower: number = 2, block?: any, health?: any): number {
     //Pre-Init
     if (getPageSetting('IgnoreCrits') == 2) return 1;
@@ -1652,77 +1629,6 @@ export function RcalcEnemyHealth(world?: any): number | undefined {
 	if (game.challenges.Smithless.fakeSmithies > 0) health *= Math.pow(1.25, game.challenges.Smithless.fakeSmithies);
     }
 
-    return health;
-}
-
-export function RcalcEnemyHealthMod(world?: any, cell?: any, name?: any): number | undefined {
-	
-    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-    const highest = 1;
-    let mute = false;
-    let health: any;
-    if (game.global.world > 200 && getPageSetting('Rmutecalc') > 0 && game.global.world >= getPageSetting('Rmutecalc')) {
-        mute = true;
-        health = rCalcMutationHealth();
-    }
-
-    if (world == false) world = game.global.world;
-
-    if (!mute) health = RcalcEnemyBaseHealth(world, cell, name);
-    
-    if (game.global.challengeActive === "Daily") {
-        health = RcalcDailyHealthMod(health);
-    }
-    if (game.global.challengeActive === "Unbalance") {
-        health *= 2;
-    }
-    if (game.global.challengeActive === "Quest") {
-        health *= game.challenges.Quest.getHealthMult();
-    }
-    if (game.global.challengeActive === "Revenge" && game.global.world % 2 === 0) {
-        health *= 10;
-    }
-    if (game.global.challengeActive === "Archaeology") {
-
-    }
-    if (game.global.challengeActive === "Mayhem") {
-        health *= game.challenges.Mayhem.getEnemyMult();
-        health *= game.challenges.Mayhem.getBossMult();
-    }
-    if (game.global.challengeActive === "Pandemonium") {
-        health *= game.challenges.Pandemonium.getBossMult();
-    }
-    if (game.global.challengeActive === "Desolation") {
-	health *= game.challenges.Desolation.getEnemyMult();
-    }
-    if (game.global.challengeActive === "Storm") {
-        health *= game.challenges.Storm.getHealthMult();
-    }
-    if (game.global.challengeActive === "Berserk") {
-        health *= 1.5;
-    }
-    if (game.global.challengeActive === "Exterminate") {
-        health *= game.challenges.Exterminate.getSwarmMult();
-    }
-    if (game.global.challengeActive === "Nurture") {
-        health *= 2;
-        if (game.buildings.Laboratory.owned > 0) {
-            health *= game.buildings.Laboratory.getEnemyMult();
-        }
-    }
-    if (game.global.challengeActive === "Alchemy") {
-        health *= ((alchObj.getEnemyStats(false, false)) + 1);
-    }
-    if (game.global.challengeActive === "Hypothermia") {
-        health *= game.challenges.Hypothermia.getEnemyMult();
-    }
-    if (game.global.challengeActive === "Glass") {
-        health *= 0.01;
-        health *= game.challenges.Glass.healthMult();
-    }
-    if (game.global.challengeActive === 'Smithless') {
-	if (game.challenges.Smithless.fakeSmithies > 0) health *= Math.pow(1.25, game.challenges.Smithless.fakeSmithies);
-    }
     return health;
 }
 

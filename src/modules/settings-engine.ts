@@ -257,23 +257,6 @@ export function createSetting(id: any, name: any, description: any, type: any, d
     autoTrimpSettings["ATversion"] = ATversion;
 }
 
-export function createInput(id: any, name: any, description: any) {
-    var $btnParent = document.createElement("DIV");
-    $btnParent.setAttribute('style', 'display: inline-block; vertical-align: top; margin-left: 0.5vw; margin-bottom: 0.5vw; width: 6.5vw;');
-    $btnParent.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
-    $btnParent.setAttribute("onmouseout", 'tooltip("hide")');
-    var $input = document.createElement("input");
-    $input.type = 'checkbox';
-    $input.setAttribute('id', id);
-    $input.setAttribute('style', 'text-align: left; width: 0.8vw; ');
-    $btnParent.appendChild($input);
-    var $label = document.createElement("label");
-    $label.setAttribute('style', 'text-align: left; margin-left: 0.2vw; font-size: 0.6vw');
-    $label.innerHTML = name;
-    $btnParent.appendChild($label);
-    document.getElementById("autoSettings")!.appendChild($btnParent);
-}
-
 export function settingChanged(id: any) {
     var btn = autoTrimpSettings[id];
     if (btn.type == 'boolean') {
