@@ -1622,7 +1622,10 @@ export function dailyPraiding() {
             }
         }
     }
-    if (game.global.preMapsActive && (dmapbought1 || dmapbought2 || dmapbought3 || dmapbought4 || dmapbought5) && pMap1 == undefined && dpMap2 == undefined && dpMap3 == undefined && dpMap4 == undefined && dpMap5 == undefined && !dprestraid && !dfailpraid) {
+    // #83 §5: the first conjunct tested pMap1 — the U1 global — instead of dpMap1. A daily raid could
+    // therefore declare itself complete before its first map had even launched (pMap1 is undefined
+    // whenever the non-daily machine is idle), while dpMap1 was still pending.
+    if (game.global.preMapsActive && (dmapbought1 || dmapbought2 || dmapbought3 || dmapbought4 || dmapbought5) && dpMap1 == undefined && dpMap2 == undefined && dpMap3 == undefined && dpMap4 == undefined && dpMap5 == undefined && !dprestraid && !dfailpraid) {
         dprestraid = true;
         dfailpraid = false;
         dmapbought1 = false;
@@ -1656,7 +1659,7 @@ export function dailyPraiding() {
         }
         autoTrimpSettings["AutoMaps"].value = 1;
         game.options.menu.repeatUntil.enabled = 0;
-        pMap1 = undefined;
+        dpMap1 = undefined; // #83 §5: was pMap1 — the U1 global (copy-paste from Praiding)
         dpMap2 = undefined;
         dpMap3 = undefined;
         dpMap4 = undefined;
@@ -1673,16 +1676,23 @@ export function dailyPraiding() {
         dmapbought3 = false;
         dmapbought4 = false;
         dmapbought5 = false;
-        pMap1 = undefined;
+        // #83 §5: this whole reset block wrote the U1 Praiding globals instead of its own daily
+        // twins. Consequences: it yanked pMap1/repMap1..5 out from under the CONCURRENT non-daily
+        // state machine, and — worse — drepMap1..drepMap5 were NEVER reset, so stale map ids from a
+        // previous daily survived into the next one and were handed to recycleMap(getMapIndex(stale)).
+        // getMapIndex returns undefined for an id that no longer exists (main.js:8187), and recycleMap
+        // treats undefined as "recycle the map I'm currently looking at" (main.js:10694) — so it
+        // recycled the WRONG map.
+        dpMap1 = undefined;
         dpMap2 = undefined;
         dpMap3 = undefined;
         dpMap4 = undefined;
         dpMap5 = undefined;
-        repMap1 = undefined;
-        repMap2 = undefined;
-        repMap3 = undefined;
-        repMap4 = undefined;
-        repMap5 = undefined;
+        drepMap1 = undefined;
+        drepMap2 = undefined;
+        drepMap3 = undefined;
+        drepMap4 = undefined;
+        drepMap5 = undefined;
         dpraidDone = false;
     }
 }
