@@ -81,7 +81,23 @@ export function miRatio() {
 
 export function autoMagmiteSpender() {
     if (getPageSetting('ratiospend') == true) {
-        const tospend = miRatio() as string;
+        const tospend = miRatio();
+        // #87/#15: miRatio() returns undefined when the player has configured NO ratio — and that is the
+        // FACTORY DEFAULT. All four ratio settings default to -1 ("Use -1 or 0 to not spend on this"), so
+        // every `*final` computes to exactly -1, the `!== -1` push guard never fires, `ratios` is empty,
+        // and none of the four `ratios[0] === …` comparisons match. The old code then did
+        // `game.generatorUpgrades[undefined].cost()` → TypeError.
+        //
+        // That throw is dispatched near the TOP of mainLoop's U1 block (AutoTrimps2.js:200), and mainLoop
+        // has no try/catch (#87) — so ticking "Ratio Spending" on a fresh install killed buildings, jobs,
+        // portal, combat, stance, spire and golden upgrades, EVERY TICK, until reload. Gathering survived
+        // (it is dispatched earlier), so the player just watched resources pile up against the cap with
+        // every toggle still showing ON.
+        //
+        // The repair is at the CALLER, deliberately: "no ratio configured" means "spend on nothing", which
+        // is exactly what -1 and 0 are documented to mean. Inventing a fallback pick inside miRatio() would
+        // be choosing which upgrade to buy for a player who chose none — a balance decision, not a fix.
+        if (!tospend) return;
         const upgrader = game.generatorUpgrades[tospend];
         if (game.global.magmite >= upgrader.cost()) {
             debug("Auto Spending " + upgrader.cost() + " Magmite on: " + tospend + " #" + (game.generatorUpgrades[tospend].upgrades + 1), "magmite");

@@ -793,6 +793,7 @@
   function autoMagmiteSpender2() {
     if (getPageSetting2("ratiospend") == true) {
       const tospend = miRatio();
+      if (!tospend) return;
       const upgrader = game.generatorUpgrades[tospend];
       if (game.global.magmite >= upgrader.cost()) {
         debug2("Auto Spending " + upgrader.cost() + " Magmite on: " + tospend + " #" + (game.generatorUpgrades[tospend].upgrades + 1), "magmite");
