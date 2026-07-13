@@ -587,8 +587,6 @@ const RequipmentList: Record<string, any> = {
 
 export function Rgetequips(map: any, special: any) { //(level, p b or false)
     let specialCount = 0;
-    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-    const prestigeArray = [];
     const unlocksObj = game.mapUnlocks;
     // The `special` param is polymorphic ('p' | 'b' | false) → KEEP these compares LOOSE.
     let Rlocation;
@@ -600,8 +598,6 @@ export function Rgetequips(map: any, special: any) { //(level, p b or false)
     }
     const world = map;
     let canLast = 1;
-    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-    const prestigeItemsAvailable = [];
     for (const item in unlocksObj) {
         // inner `special` shadows the param — here it is the unlock object (typed fields → strict).
         const special = unlocksObj[item];

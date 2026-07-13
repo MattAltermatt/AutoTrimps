@@ -3,7 +3,7 @@
 // Auto-portal / helium-per-hour logic. Registers MODULES["portal"]. getPageSetting/debug from
 // converted utils (portal.js line 4 reads getPageSetting at load — now imported, resolves).
 // zonePostpone -> globalThis (read by AutoTrimps2); challengeSquaredMode declared module-level
-// (was a sloppy implicit global, portal-internal). portalzone/Rportalzone/RzonePostpone stay
+// (was a sloppy implicit global, portal-internal). The dead module-level portalzone/Rportalzone/
 // module vars (internal). AutoPerks.clickAllocate() etc. resolve via the bridge at runtime,
 // typed ambient. Behaviour-preserving: any body edits are TYPE-ONLY.
 import { getPageSetting, debug } from './utils'
@@ -12,8 +12,6 @@ MODULES["portal"] = {};
 var challengeSquaredMode: any;
 MODULES["portal"].timeout = 5000;
 MODULES["portal"].bufferExceedFactor = 5;
-// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-var portalzone = getPageSetting('CustomAutoPortal');
 globalThis.zonePostpone = 0;
 
 export function autoPortal() {
@@ -312,19 +310,36 @@ export function doPortal(challenge?: any) {
     lastHeliumZone = 0; zonePostpone = 0;
 }
 
-// oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-export function finishChallengeSquared(){var a=getPageSetting("FinishC2");game.global.world>=a&&(abandonChallenge(),debug("Finished challenge2 because we are on zone "+game.global.world,"other","oil"))}
-// oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-export function findOutCurrentPortalLevel(){var a=-1,b=!1,d=getPageSetting("AutoPortal");switch(d){case"Off":break;case"Custom":"Daily"!=game.global.challengeActive&&(a=getPageSetting("CustomAutoPortal")+1),"Daily"==game.global.challengeActive&&(a=getPageSetting("Dailyportal")+1),b=!("Lead"!=getPageSetting("HeliumHourChallenge"));break;default:var e=({Balance:41,Decay:56,Electricity:82,Crushed:126,Nom:146,Toxicity:166,Lead:181,Watch:181,Corrupted:191} as any)[d];e&&(a=e);}return{level:a,lead:b}}
+export function finishChallengeSquared() {
+    var a = getPageSetting("FinishC2");
+    if (game.global.world >= a) {
+        abandonChallenge();
+        debug("Finished challenge2 because we are on zone " + game.global.world, "other", "oil");
+    }
+}
+export function findOutCurrentPortalLevel() {
+    var a = -1;
+    var b = !1;
+    var d = getPageSetting("AutoPortal");
+    switch (d) {
+        case "Off":
+            break;
+        case "Custom":
+            if ("Daily" != game.global.challengeActive) a = getPageSetting("CustomAutoPortal") + 1;
+            if ("Daily" == game.global.challengeActive) a = getPageSetting("Dailyportal") + 1;
+            b = !("Lead" != getPageSetting("HeliumHourChallenge"));
+            break;
+        default:
+            var e = ({ Balance: 41, Decay: 56, Electricity: 82, Crushed: 126, Nom: 146, Toxicity: 166, Lead: 181, Watch: 181, Corrupted: 191 } as any)[d];
+            if (e) a = e;
+    }
+    return { level: a, lead: b };
+}
 
 //Radon
 
 MODULES["portal"].Rtimeout = 5000;
 MODULES["portal"].RbufferExceedFactor = 5;
-// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-var Rportalzone = getPageSetting('RCustomAutoPortal');
-// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-var RzonePostpone = 0;
 
 export function RautoPortal() {
     if (!game.global.portalActive) return;
@@ -537,6 +552,6 @@ export function RdoPortal(challenge?: any) {
     }
     RresetVars();
     activatePortal();
-    lastRadonZone = 0; RzonePostpone = 0;
+    lastRadonZone = 0;
     RresetVars();
 }

@@ -978,8 +978,6 @@ export function updateCustomButtons() {
 export function checkPortalSettings() {
     var result = findOutCurrentPortalLevel();
     var portalLevel = result.level;
-    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-    var leadCheck = result.lead;
     if (portalLevel == -1)
         return portalLevel;
     var voidmaps = 0;
@@ -998,8 +996,8 @@ export function getDailyHeHrStats() {
     var a = "";
     if ("Daily" == game.global.challengeActive) {
         var b = game.stats.heliumHour.value() / (game.global.totalHeliumEarned - (game.global.heliumLeftover + game.resources.helium.owned));
-        // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-        b *= 100 + getDailyHeliumValue(countDailyWeight()), a = "<b>After Daily He/Hr: " + b.toFixed(3) + "%"
+        b *= 100 + getDailyHeliumValue(countDailyWeight());
+        a = "<b>After Daily He/Hr: " + b.toFixed(3) + "%";
     }
     return a
 }
@@ -1008,8 +1006,8 @@ export function getDailyRnHrStats() {
     var a = "";
     if ("Daily" == game.global.challengeActive) {
         var b = game.stats.heliumHour.value() / (game.global.totalRadonEarned - (game.global.radonLeftover + game.resources.radon.owned));
-        // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-        b *= 100 + getDailyHeliumValue(countDailyWeight()), a = "<b>After Daily Rn/Hr: " + b.toFixed(3) + "%"
+        b *= 100 + getDailyHeliumValue(countDailyWeight());
+        a = "<b>After Daily Rn/Hr: " + b.toFixed(3) + "%";
     }
     return a
 }

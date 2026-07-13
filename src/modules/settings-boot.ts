@@ -22,8 +22,10 @@ export function bootSettingsUI() {
     automationMenuInit();
     automationMenuSettingsInit();
     var link1 = document.createElement("link");
-    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-    link1.rel = "stylesheet", link1.type = "text/css", link1.href = basepath + "tabs.css", document.head.appendChild(link1);
+    link1.rel = "stylesheet";
+    link1.type = "text/css";
+    link1.href = basepath + "tabs.css";
+    document.head.appendChild(link1);
     initializeAllTabs();
     initializeAllSettings();
 }

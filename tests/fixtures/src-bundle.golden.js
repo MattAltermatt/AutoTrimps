@@ -213,27 +213,56 @@
   }
   var lastmessagecount = 1;
   function message2(a, b, c, d) {
-    var e = document.getElementById("log"), f = e.scrollTop + 10 > e.scrollHeight - e.clientHeight, g = ATmessageLogTabVisible ? "block" : "none", h = "";
-    c && "*" == c.charAt(0) ? (c = c.replace("*", ""), h = "icomoon icon-") : h = "glyphicon glyphicon-", game.options.menu.timestamps.enabled && (a = (1 == game.options.menu.timestamps.enabled ? getCurrentTime() : updatePortalTimer(true)) + " " + a), c && (a = '<span class="' + h + c + '"></span> ' + a), a = '<span class="glyphicon glyphicon-superscript"></span> ' + a, a = '<span class="icomoon icon-text-color"></span>' + a;
-    var i = "<span class='" + b + "Message message " + d + "' style='display: " + g + "'>" + a + "</span>", j = document.getElementsByClassName(b + "Message");
+    var e = document.getElementById("log");
+    var f = e.scrollTop + 10 > e.scrollHeight - e.clientHeight;
+    var g = ATmessageLogTabVisible ? "block" : "none";
+    var h = "";
+    if (c && "*" == c.charAt(0)) {
+      c = c.replace("*", "");
+      h = "icomoon icon-";
+    } else h = "glyphicon glyphicon-";
+    if (game.options.menu.timestamps.enabled) a = (1 == game.options.menu.timestamps.enabled ? getCurrentTime() : updatePortalTimer(true)) + " " + a;
+    if (c) a = '<span class="' + h + c + '"></span> ' + a;
+    a = '<span class="glyphicon glyphicon-superscript"></span> ' + a;
+    a = '<span class="icomoon icon-text-color"></span>' + a;
+    var i = "<span class='" + b + "Message message " + d + "' style='display: " + g + "'>" + a + "</span>";
+    var j = document.getElementsByClassName(b + "Message");
     if (1 < j.length && -1 < j[j.length - 1].innerHTML.indexOf(a)) {
       var k = j[j.length - 1].innerHTML;
       lastmessagecount++;
       var l = k.lastIndexOf(" x");
-      -1 != l && (j[j.length - 1].innerHTML = k.slice(0, l)), j[j.length - 1].innerHTML += " x" + lastmessagecount;
-    } else lastmessagecount = 1, e.innerHTML += i;
-    f && (e.scrollTop = e.scrollHeight), trimMessages(b);
+      if (-1 != l) j[j.length - 1].innerHTML = k.slice(0, l);
+      j[j.length - 1].innerHTML += " x" + lastmessagecount;
+    } else {
+      lastmessagecount = 1;
+      e.innerHTML += i;
+    }
+    if (f) e.scrollTop = e.scrollHeight;
+    trimMessages(b);
   }
   var ATbutton = document.createElement("button");
-  ATbutton.innerHTML = "AutoTrimps", ATbutton.setAttribute("id", "AutoTrimpsFilter"), ATbutton.setAttribute("type", "button"), ATbutton.setAttribute("onclick", "filterMessage2('AutoTrimps')"), ATbutton.setAttribute("class", "btn btn-success logFlt");
+  ATbutton.innerHTML = "AutoTrimps";
+  ATbutton.setAttribute("id", "AutoTrimpsFilter");
+  ATbutton.setAttribute("type", "button");
+  ATbutton.setAttribute("onclick", "filterMessage2('AutoTrimps')");
+  ATbutton.setAttribute("class", "btn btn-success logFlt");
   var tab = document.createElement("DIV");
-  tab.setAttribute("class", "btn-group"), tab.setAttribute("role", "group"), tab.appendChild(ATbutton), document.getElementById("logBtnGroup").appendChild(tab);
+  tab.setAttribute("class", "btn-group");
+  tab.setAttribute("role", "group");
+  tab.appendChild(ATbutton);
+  document.getElementById("logBtnGroup").appendChild(tab);
   function filterMessage2(a) {
     var displayed;
     var b = document.getElementById("log");
-    displayed = !ATmessageLogTabVisible, ATmessageLogTabVisible = displayed;
-    var c = document.getElementsByClassName(a + "Message"), d = displayed ? a : a + " off", e = document.getElementById(a + "Filter");
-    e.innerHTML = d, e.className = "", e.className = getTabClass(displayed), displayed = displayed ? "block" : "none";
+    displayed = !ATmessageLogTabVisible;
+    ATmessageLogTabVisible = displayed;
+    var c = document.getElementsByClassName(a + "Message");
+    var d = displayed ? a : a + " off";
+    var e = document.getElementById(a + "Filter");
+    e.innerHTML = d;
+    e.className = "";
+    e.className = getTabClass(displayed);
+    displayed = displayed ? "block" : "none";
     for (var f = 0; f < c.length; f++) c[f].style.display = displayed;
     b.scrollTop = b.scrollHeight;
   }
@@ -258,16 +287,25 @@
   var preBuyTooltip;
   var preBuymaxSplit;
   function preBuy3() {
-    preBuyAmt = game.global.buyAmt, preBuyFiring = game.global.firing, preBuyTooltip = game.global.lockTooltip, preBuymaxSplit = game.global.maxSplit;
+    preBuyAmt = game.global.buyAmt;
+    preBuyFiring = game.global.firing;
+    preBuyTooltip = game.global.lockTooltip;
+    preBuymaxSplit = game.global.maxSplit;
   }
   function postBuy3() {
-    game.global.buyAmt = preBuyAmt, game.global.firing = preBuyFiring, game.global.lockTooltip = preBuyTooltip, game.global.maxSplit = preBuymaxSplit;
+    game.global.buyAmt = preBuyAmt;
+    game.global.firing = preBuyFiring;
+    game.global.lockTooltip = preBuyTooltip;
+    game.global.maxSplit = preBuymaxSplit;
   }
   function preBuy22() {
     return [game.global.buyAmt, game.global.firing, game.global.lockTooltip, game.global.maxSplit];
   }
   function postBuy22(a) {
-    game.global.buyAmt = a[0], game.global.firing = a[1], game.global.lockTooltip = a[2], game.global.maxSplit = a[3];
+    game.global.buyAmt = a[0];
+    game.global.firing = a[1];
+    game.global.lockTooltip = a[2];
+    game.global.maxSplit = a[3];
   }
 
   // src/modules/dynprestige.ts
@@ -278,17 +316,33 @@
   function prestigeChanging2() {
     var a = byId("Prestige").selectedIndex;
     if (!(2 >= a)) {
-      var b = getPageSetting2("DynamicPrestige2"), c = 10 < a ? a - 10 : 0, d = 0;
+      var b = getPageSetting2("DynamicPrestige2");
+      var d = 0;
       for (var i = 1; i <= a; i++) {
         var e = game.mapUnlocks[autoTrimpSettings.Prestige.list[i]].last;
         if (e <= b - 5) {
           var g = Math.floor((b - e) / 5);
-          4 <= game.global.sLevel && (g = Math.ceil(g / 2)), d += g;
+          if (4 <= game.global.sLevel) g = Math.ceil(g / 2);
+          d += g;
         }
       }
-      challengeActive("Lead") && (d *= 2);
+      if (challengeActive("Lead")) d *= 2;
       var h = 0;
-      return 0 == d ? void (autoTrimpSettings.Prestige.selected = byId("Prestige").value) : void (h = Math.ceil(d / a), game.global.world > b - h && (game.global.mapBonus < a ? true == game.global.slowDone ? autoTrimpSettings.Prestige.selected = "GambesOP" : autoTrimpSettings.Prestige.selected = "Bestplate" : game.global.mapBonus > a && (autoTrimpSettings.Prestige.selected = "Dagadder")), (game.global.world <= b - h || 10 == game.global.mapBonus) && (autoTrimpSettings.Prestige.selected = "Dagadder"));
+      if (0 == d) {
+        autoTrimpSettings.Prestige.selected = byId("Prestige").value;
+        return;
+      }
+      h = Math.ceil(d / a);
+      if (game.global.world > b - h) {
+        if (game.global.mapBonus < a) {
+          if (true == game.global.slowDone) autoTrimpSettings.Prestige.selected = "GambesOP";
+          else autoTrimpSettings.Prestige.selected = "Bestplate";
+        } else if (game.global.mapBonus > a) {
+          autoTrimpSettings.Prestige.selected = "Dagadder";
+        }
+      }
+      if (game.global.world <= b - h || 10 == game.global.mapBonus) autoTrimpSettings.Prestige.selected = "Dagadder";
+      return;
     }
   }
 
@@ -465,10 +519,13 @@
   addBreedingBoxTimers();
   function addToolTipToArmyCount() {
     var a = document.getElementById("trimpsFighting");
-    "tooltipadded" != a.className && (a.setAttribute("onmouseover", 'tooltip("Army Count", "customText", event, "To Fight now would add: " + prettify(getArmyTime()) + " seconds to the breed timer.")'), a.setAttribute("onmouseout", 'tooltip("hide")'), a.setAttribute("class", "tooltipadded"));
+    if ("tooltipadded" != a.className) {
+      a.setAttribute("onmouseover", 'tooltip("Army Count", "customText", event, "To Fight now would add: " + prettify(getArmyTime()) + " seconds to the breed timer.")');
+      a.setAttribute("onmouseout", 'tooltip("hide")');
+      a.setAttribute("class", "tooltipadded");
+    }
   }
   function abandonVoidMap2() {
-    var customVars = MODULES["breedtimer"];
     if (!getPageSetting2("ForceAbandon")) return;
     if (game.global.mapsActive && getCurrentMapObject().location == "Void") {
       if (game.portal.Anticipation.level) {
@@ -985,7 +1042,6 @@
     }
     if (mutations.Magma.active()) {
       const mult = mutations.Magma.getTrimpDecay();
-      const lvls = game.global.world - mutations.Magma.start() + 1;
       health *= mult;
     }
     const heirloomBonus = calcHeirloomBonus("Shield", "trimpHealth", 0, true);
@@ -1968,14 +2024,11 @@
   }
   function RcalcBadGuyDmg2(enemy, attack, equality) {
     let number;
-    const highest = 1;
-    let mute = false;
     if (enemy)
       number = enemy.attack;
     else
       number = attack;
     if (game.global.world > 200 && getPageSetting2("Rmutecalc") > 0 && game.global.world >= getPageSetting2("Rmutecalc")) {
-      mute = true;
       number = rCalcMutationAttack();
     }
     if (game.global.challengeActive === "Extermination" && getPageSetting2("Rexterminateon") == true && getPageSetting2("Rexterminatecalc") == true) {
@@ -2068,7 +2121,6 @@
     return Math.floor(amt);
   }
   function RcalcEnemyHealth2(world) {
-    const highest = 1;
     let mute = false;
     let health;
     if (game.global.world > 200 && getPageSetting2("Rmutecalc") > 0 && game.global.world >= getPageSetting2("Rmutecalc")) {
@@ -2721,7 +2773,6 @@
   };
   function Rgetequips2(map, special) {
     let specialCount = 0;
-    const prestigeArray = [];
     const unlocksObj = game.mapUnlocks;
     let Rlocation;
     if (special == "p" || special == false) {
@@ -2732,7 +2783,6 @@
     }
     const world = map;
     let canLast = 1;
-    const prestigeItemsAvailable = [];
     for (const item in unlocksObj) {
       const special2 = unlocksObj[item];
       if (!special2.prestige) continue;
@@ -3144,8 +3194,6 @@
           const toTip = game.buildings.Warpstation;
           if (canAffordBuilding("Warpstation")) {
             const howMany = calculateMaxAfford(game.buildings["Warpstation"], true);
-            const needCoord = game.upgrades.Coordination.allowed - game.upgrades.Coordination.done > 0;
-            const coordReplace = game.portal.Coordinated.level ? (25 * Math.pow(game.portal.Coordinated.modifier, game.portal.Coordinated.level)).toFixed(3) : 25;
             if (!canAffordCoordinationTrimps()) {
               const nextCount = game.portal.Coordinated.level ? game.portal.Coordinated.currentSend : game.resources.trimps.maxSoldiers;
               const amtToGo = nextCount * 3 - game.resources.trimps.realMax();
@@ -3166,7 +3214,6 @@
     }
   }
   function buyBuildings() {
-    const customVars = MODULES["buildings"];
     const oldBuy = preBuy2();
     const hidebuild = getPageSetting2("BuyBuildingsNew") === 0 && getPageSetting2("hidebuildings") == true;
     game.global.buyAmt = 1;
@@ -3180,7 +3227,6 @@
     if (!game.buildings.Gym.locked && (getPageSetting2("MaxGym") > game.buildings.Gym.owned || getPageSetting2("MaxGym") == -1)) {
       let skipGym = false;
       if (getPageSetting2("DynamicGyms")) {
-        const targetZone = game.global.world;
         const block = calcOurBlock() / (game.global.brokenPlanet ? 2 : 1);
         const pierce = game.global.brokenPlanet ? getPierceAmt() * (game.global.formation === 3 ? 2 : 1) : 0;
         const nextGym = game.upgrades.Gymystic.modifier + Math.max(0, game.upgrades.Gymystic.done - 1) / 100;
@@ -4359,7 +4405,6 @@
   }
   MODULES["gather"].RminScienceAmount = 200;
   function RmanualLabor2() {
-    const lowOnTraps = game.buildings.Trap.owned < 5;
     const trapTrimpsOK = getPageSetting2("RTrapTrimps");
     const hasTurkimp = game.talents.turkimp2.purchased || game.global.turkimpTimer > 0;
     const needToTrap = game.resources.trimps.max - game.resources.trimps.owned >= game.resources.trimps.max * 0.05 || game.resources.trimps.getCurrentSend() > game.resources.trimps.owned - trimpsEffectivelyEmployed();
@@ -4523,20 +4568,40 @@
     protectHeirloom: () => protectHeirloom,
     worthOfHeirlooms3: () => worthOfHeirlooms3
   });
-  var animated = game.options.menu.showHeirloomAnimations.enabled ? "animated " : "";
   var hrlmProtBtn1 = document.createElement("DIV");
-  hrlmProtBtn1.setAttribute("class", "noselect heirloomBtnActive heirBtn"), hrlmProtBtn1.setAttribute("onclick", "protectHeirloom(this, true)"), hrlmProtBtn1.innerHTML = "Protect/Unprotect", hrlmProtBtn1.id = "protectHeirloomBTN1";
+  hrlmProtBtn1.setAttribute("class", "noselect heirloomBtnActive heirBtn");
+  hrlmProtBtn1.setAttribute("onclick", "protectHeirloom(this, true)");
+  hrlmProtBtn1.innerHTML = "Protect/Unprotect";
+  hrlmProtBtn1.id = "protectHeirloomBTN1";
   var hrlmProtBtn2 = document.createElement("DIV");
-  hrlmProtBtn2.setAttribute("class", "noselect heirloomBtnActive heirBtn"), hrlmProtBtn2.setAttribute("onclick", "protectHeirloom(this, true)"), hrlmProtBtn2.innerHTML = "Protect/Unprotect", hrlmProtBtn2.id = "protectHeirloomBTN2";
+  hrlmProtBtn2.setAttribute("class", "noselect heirloomBtnActive heirBtn");
+  hrlmProtBtn2.setAttribute("onclick", "protectHeirloom(this, true)");
+  hrlmProtBtn2.innerHTML = "Protect/Unprotect";
+  hrlmProtBtn2.id = "protectHeirloomBTN2";
   var hrlmProtBtn3 = document.createElement("DIV");
-  hrlmProtBtn3.setAttribute("class", "noselect heirloomBtnActive heirBtn"), hrlmProtBtn3.setAttribute("onclick", "protectHeirloom(this, true)"), hrlmProtBtn3.innerHTML = "Protect/Unprotect", hrlmProtBtn3.id = "protectHeirloomBTN3", document.getElementById("equippedHeirloomsBtnGroup").appendChild(hrlmProtBtn1), document.getElementById("carriedHeirloomsBtnGroup").appendChild(hrlmProtBtn2), document.getElementById("extraHeirloomsBtnGroup").appendChild(hrlmProtBtn3);
+  hrlmProtBtn3.setAttribute("class", "noselect heirloomBtnActive heirBtn");
+  hrlmProtBtn3.setAttribute("onclick", "protectHeirloom(this, true)");
+  hrlmProtBtn3.innerHTML = "Protect/Unprotect";
+  hrlmProtBtn3.id = "protectHeirloomBTN3";
+  document.getElementById("equippedHeirloomsBtnGroup").appendChild(hrlmProtBtn1);
+  document.getElementById("carriedHeirloomsBtnGroup").appendChild(hrlmProtBtn2);
+  document.getElementById("extraHeirloomsBtnGroup").appendChild(hrlmProtBtn3);
   function protectHeirloom(a, b) {
-    var c = game.global.selectedHeirloom, d = c[1], e = game.global[d];
+    var c = game.global.selectedHeirloom;
+    var d = c[1];
+    var e = game.global[d];
     if (-1 != c[0]) var e = e[c[0]];
-    b && (e.protected = !e.protected), a || (d.includes("Equipped") ? a = document.getElementById("protectHeirloomBTN1") : "heirloomsCarried" == d ? a = document.getElementById("protectHeirloomBTN2") : "heirloomsExtra" == d && (a = document.getElementById("protectHeirloomBTN3"))), a && (a.innerHTML = e.protected ? "UnProtect" : "Protect");
+    if (b) e.protected = !e.protected;
+    if (!a) {
+      if (d.includes("Equipped")) a = document.getElementById("protectHeirloomBTN1");
+      else if ("heirloomsCarried" == d) a = document.getElementById("protectHeirloomBTN2");
+      else if ("heirloomsExtra" == d) a = document.getElementById("protectHeirloomBTN3");
+    }
+    if (a) a.innerHTML = e.protected ? "UnProtect" : "Protect";
   }
   function newSelectHeirloom(a, b, c) {
-    selectHeirloom(a, b, c), protectHeirloom();
+    selectHeirloom(a, b, c);
+    protectHeirloom();
   }
   function highdmgshield2() {
     for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("highdmg")) return loom;
@@ -4578,7 +4643,6 @@
     }
   }
   function evaluateHeirloomMods2(loom, location) {
-    var index = loom;
     var eff = 0;
     var name;
     var type;
@@ -4748,8 +4812,8 @@
   function generateHeirloomIcon(heirloom, location, number) {
     if (typeof heirloom.name === "undefined") return "<span class='icomoon icon-sad3'></span>";
     var icon = getHeirloomIcon(heirloom);
-    var animated2 = game.options.menu.showHeirloomAnimations.enabled ? "animated " : "";
-    var html = '<span class="heirloomThing ' + animated2 + "heirloomRare" + heirloom.rarity;
+    var animated = game.options.menu.showHeirloomAnimations.enabled ? "animated " : "";
+    var html = '<span class="heirloomThing ' + animated + "heirloomRare" + heirloom.rarity;
     if (location == "Equipped") html += " equipped";
     var locText = "";
     if (location == "Equipped") locText += "-1,'" + heirloom.type + "Equipped'";
@@ -4917,7 +4981,6 @@
   MODULES["fight"].breedTimerCutoff2 = 0.5;
   MODULES["fight"].enableDebug = true;
   function betterAutoFight() {
-    var customVars = MODULES["fight"];
     if (game.global.autoBattle && !game.global.pauseFight)
       pauseFight();
     if (game.global.gridArray.length === 0 || game.global.preMapsActive || !game.upgrades.Battle.done) return;
@@ -4931,7 +4994,6 @@
     }
   }
   function betterAutoFight3() {
-    var customVars = MODULES["fight"];
     if (game.global.autoBattle && game.global.pauseFight && !game.global.spireActive)
       pauseFight();
     if (game.global.gridArray.length === 0 || game.global.preMapsActive || !game.upgrades.Battle.done || game.global.fighting || game.global.spireActive)
@@ -4947,7 +5009,6 @@
     readyToSwitch: () => readyToSwitch,
     useScryerStance: () => useScryerStance
   });
-  var wantToScry = false;
   var transitionRequired = false;
   function readyToSwitch(stance = "S") {
     var essenceLeft = getPageSetting2("screwessence") == false || countRemainingEssenceDrops() >= 1;
@@ -4998,7 +5059,6 @@
     var isHealthy = curEnemyHealth && curEnemyHealth.mutation == "Healthy";
     if (never_scry || getPageSetting2("UseScryerStance") == true && !game.global.mapsActive && (isHealthy && getPageSetting2("ScryerSkipHealthy") == 0)) {
       autoStanceFunctionScryer();
-      wantToScry = false;
       return;
     }
     var use_scryer = getPageSetting2("UseScryerStance") == true && game.global.mapsActive && getPageSetting2("ScryerUseinMaps2") == 1;
@@ -5009,12 +5069,10 @@
     use_scryer |= !game.global.mapsActive && getPageSetting2("UseScryerStance") == true && (getEmpowerment() == "Poison" && getPageSetting2("ScryUseinPoison") > 0 && game.global.world < getPageSetting2("ScryUseinPoison") || getEmpowerment() == "Wind" && getPageSetting2("ScryUseinWind") > 0 && game.global.world < getPageSetting2("ScryUseinWind") || getEmpowerment() == "Ice" && getPageSetting2("ScryUseinIce") > 0 && game.global.world < getPageSetting2("ScryUseinIce"));
     if (isCorrupt && getPageSetting2("ScryerSkipCorrupteds2") == 1 && getPageSetting2("UseScryerStance") == true || use_scryer) {
       setFormation(scry);
-      wantToScry = true;
       return;
     }
     if (isHealthy && getPageSetting2("ScryerSkipHealthy") == 1 && getPageSetting2("UseScryerStance") == true || use_scryer) {
       setFormation(scry);
-      wantToScry = true;
       return;
     }
     if (AutoStance >= 1) calcBaseDamageInX();
@@ -5032,7 +5090,6 @@
     }
     if (USS && !MA && getPageSetting2("screwessence") == true && countRemainingEssenceDrops() < 1) {
       autoStanceFunctionScryer();
-      wantToScry = false;
       return;
     }
     var min_zone = getPageSetting2("ScryerMinZone");
@@ -5061,11 +5118,9 @@
         }
       }
       setFormation(scry);
-      wantToScry = true;
       return;
     }
     autoStanceFunctionScryer();
-    wantToScry = false;
   }
 
   // src/modules/ab.ts
@@ -5488,7 +5543,7 @@
     settingsWindowSave: () => settingsWindowSave,
     updateWindowPreset: () => updateWindowPreset
   });
-  function MAZLookalike(titleText, isItIn, event2) {
+  function MAZLookalike(titleText, _isItIn, _event) {
     var zone;
     var cell;
     var setting;
@@ -6046,8 +6101,7 @@
     var btnElem = byId("windowAddRowBtn");
     btnElem.style.display = "inline-block";
   }
-  function updateWindowPreset(index) {
-    var special = document.getElementById("windowSpecial" + index);
+  function updateWindowPreset(_index) {
   }
 
   // src/modules/stance.ts
@@ -6471,11 +6525,6 @@
           e = game.resources.fragments.owned;
           if (c.value !== "0") debug2("Set the map special modifier to: " + mapSpecialModifierConfig[c.value].name + ". Cost: " + (100 * (d / e)).toFixed(2) + "% of your fragments.");
         }
-        const g = getSpecialModifierSetting();
-        const h = game.global.highestLevelCleared >= 109;
-        const i = checkPerfectChecked();
-        const j = document.getElementById("advPerfectCheckbox");
-        const k = getPageSetting2("AdvMapSpecialModifier") ? getExtraMapLevels() : 0;
         if (game.global.highestLevelCleared >= 209) {
           const m = byId("advExtraLevelSelect");
           if (!m)
@@ -6621,7 +6670,6 @@
       doVoids = false;
     }
     if (getPageSetting2("ForcePresZ") >= 0 && game.global.world + extraMapLevels >= getPageSetting2("ForcePresZ")) {
-      const prestigeList = ["Supershield", "Dagadder", "Megamace", "Polierarm", "Axeidic", "Greatersword", "Harmbalest", "Bootboost", "Hellishmet", "Pantastic", "Smoldershoulder", "Bestplate", "GambesOP"];
       needPrestige = offlineProgress.countMapItems(game.global.world) !== 0;
     } else
       needPrestige = prestige != "Off" && game.mapUnlocks[prestige] && game.mapUnlocks[prestige].last <= game.global.world + extraMapLevels - 5 && game.global.challengeActive != "Frugal";
@@ -6938,7 +6986,6 @@
         }
       }
     } else if (game.global.preMapsActive) {
-      const minFragmentsNeeded = Math.floor(game.global.world / 150 * Math.pow(1.14, game.global.world - 1) * game.global.world * 2 * Math.pow(1.03 + game.global.world / 5e4, game.global.world)) * 2;
       if (selectedMap2 == "world") {
         mapsClicked();
       } else if (selectedMap2 == "create") {
@@ -10124,7 +10171,6 @@
   var challengeSquaredMode;
   MODULES["portal"].timeout = 5e3;
   MODULES["portal"].bufferExceedFactor = 5;
-  var portalzone = getPageSetting2("CustomAutoPortal");
   globalThis.zonePostpone = 0;
   function autoPortal() {
     if (!game.global.portalActive) return;
@@ -10166,8 +10212,8 @@
         }
         break;
       case "Custom":
-        var portalzone2 = getPageSetting2("CustomAutoPortal");
-        if (game.global.world > portalzone2) {
+        var portalzone = getPageSetting2("CustomAutoPortal");
+        if (game.global.world > portalzone) {
           if (autoTrimpSettings.HeliumHourChallenge.selected != "None")
             doPortal(autoTrimpSettings.HeliumHourChallenge.selected);
           else
@@ -10241,8 +10287,8 @@
       }
     }
     if (getPageSetting2("AutoPortalDaily") == 2) {
-      var portalzone2 = getPageSetting2("dCustomAutoPortal");
-      if (game.global.world > portalzone2) {
+      var portalzone = getPageSetting2("dCustomAutoPortal");
+      if (game.global.world > portalzone) {
         abandonDaily();
         document.getElementById("finishDailyBtnContainer").style.display = "none";
         if (autoTrimpSettings.dHeliumHourChallenge.selected != "None" && getPageSetting2("u1daily") == false)
@@ -10390,26 +10436,31 @@
   }
   function finishChallengeSquared() {
     var a = getPageSetting2("FinishC2");
-    game.global.world >= a && (abandonChallenge(), debug2("Finished challenge2 because we are on zone " + game.global.world, "other", "oil"));
+    if (game.global.world >= a) {
+      abandonChallenge();
+      debug2("Finished challenge2 because we are on zone " + game.global.world, "other", "oil");
+    }
   }
   function findOutCurrentPortalLevel2() {
-    var a = -1, b = false, d = getPageSetting2("AutoPortal");
+    var a = -1;
+    var b = false;
+    var d = getPageSetting2("AutoPortal");
     switch (d) {
       case "Off":
         break;
       case "Custom":
-        "Daily" != game.global.challengeActive && (a = getPageSetting2("CustomAutoPortal") + 1), "Daily" == game.global.challengeActive && (a = getPageSetting2("Dailyportal") + 1), b = !("Lead" != getPageSetting2("HeliumHourChallenge"));
+        if ("Daily" != game.global.challengeActive) a = getPageSetting2("CustomAutoPortal") + 1;
+        if ("Daily" == game.global.challengeActive) a = getPageSetting2("Dailyportal") + 1;
+        b = !("Lead" != getPageSetting2("HeliumHourChallenge"));
         break;
       default:
         var e = { Balance: 41, Decay: 56, Electricity: 82, Crushed: 126, Nom: 146, Toxicity: 166, Lead: 181, Watch: 181, Corrupted: 191 }[d];
-        e && (a = e);
+        if (e) a = e;
     }
     return { level: a, lead: b };
   }
   MODULES["portal"].Rtimeout = 5e3;
   MODULES["portal"].RbufferExceedFactor = 5;
-  var Rportalzone = getPageSetting2("RCustomAutoPortal");
-  var RzonePostpone = 0;
   function RautoPortal() {
     if (!game.global.portalActive) return;
     switch (autoTrimpSettings.RAutoPortal.selected) {
@@ -10451,8 +10502,8 @@
         }
         break;
       case "Custom":
-        var portalzone2 = getPageSetting2("RCustomAutoPortal");
-        if (game.global.world > portalzone2) {
+        var portalzone = getPageSetting2("RCustomAutoPortal");
+        if (game.global.world > portalzone) {
           if (autoTrimpSettings.RadonHourChallenge.selected != "None")
             RdoPortal(autoTrimpSettings.RadonHourChallenge.selected);
           else
@@ -10521,8 +10572,8 @@
       }
     }
     if (getPageSetting2("RAutoPortalDaily") == 2) {
-      var portalzone2 = getPageSetting2("RdCustomAutoPortal");
-      if (game.global.world > portalzone2) {
+      var portalzone = getPageSetting2("RdCustomAutoPortal");
+      if (game.global.world > portalzone) {
         abandonDaily();
         document.getElementById("finishDailyBtnContainer").style.display = "none";
         if (autoTrimpSettings.RdHeliumHourChallenge.selected != "None" && getPageSetting2("u2daily") == false)
@@ -10607,7 +10658,6 @@
     RresetVars();
     activatePortal();
     lastRadonZone = 0;
-    RzonePostpone = 0;
     RresetVars();
   }
 
@@ -10697,7 +10747,7 @@
     var profname = $settingsProfiles.options[index].text;
     var loadLastProfiles = JSON.parse(localStorage.getItem("ATSelectedSettingsProfile"));
     if (loadLastProfiles != null) {
-      var results = loadLastProfiles.filter(function(elem, i) {
+      var results = loadLastProfiles.filter(function(elem, _i) {
         return elem.name == profname;
       });
       if (results.length > 0) {
@@ -10767,7 +10817,7 @@
         costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
         ondisplay = function() {
           byId("exportArea").select();
-          byId("clipBoardBtn").addEventListener("click", function(event3) {
+          byId("clipBoardBtn").addEventListener("click", function(_event) {
             byId("exportArea").select();
             try {
               document.execCommand("copy");
@@ -10789,7 +10839,7 @@
         costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
         ondisplay = function() {
           byId("exportArea").select();
-          byId("clipBoardBtn").addEventListener("click", function(event3) {
+          byId("clipBoardBtn").addEventListener("click", function(_event) {
             byId("exportArea").select();
             try {
               document.execCommand("copy");
@@ -10806,7 +10856,7 @@
         costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
         ondisplay = function() {
           byId("exportArea").select();
-          byId("clipBoardBtn").addEventListener("click", function(event3) {
+          byId("clipBoardBtn").addEventListener("click", function(_event) {
             byId("exportArea").select();
             try {
               document.execCommand("copy");
@@ -10851,7 +10901,7 @@
         costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
         ondisplay = function() {
           byId("exportArea").select();
-          byId("clipBoardBtn").addEventListener("click", function(event3) {
+          byId("clipBoardBtn").addEventListener("click", function(_event) {
             byId("exportArea").select();
             try {
               document.execCommand("copy");
@@ -11485,20 +11535,41 @@
       ondisplay();
   }
   function resetAutoTrimps(a, b) {
-    ATrunning = false, setTimeout((function(d) {
-      localStorage.removeItem("autoTrimpSettings"), autoTrimpSettings = d ? d : {};
+    ATrunning = false;
+    setTimeout((function(d) {
+      localStorage.removeItem("autoTrimpSettings");
+      autoTrimpSettings = d ? d : {};
       var e = document.getElementById("settingsRow");
-      e.removeChild(document.getElementById("autoSettings")), e.removeChild(document.getElementById("autoTrimpsTabBarMenu")), automationMenuSettingsInit(), initializeAllTabs(), initializeAllSettings(), initializeSettingsProfiles(), updateCustomButtons(), saveSettings2(), checkPortalSettings(), ATrunning = true;
-    })(a), 101), a ? (debug2("Successfully imported new AT settings...", "profile"), b ? ImportExportTooltip("message", "Successfully Imported Autotrimps Settings File!: " + b) : ImportExportTooltip("NameSettingsProfiles")) : (debug2("Successfully reset AT settings to Defaults...", "profile"), ImportExportTooltip("message", "Autotrimps has been successfully reset to its defaults!"));
+      e.removeChild(document.getElementById("autoSettings"));
+      e.removeChild(document.getElementById("autoTrimpsTabBarMenu"));
+      automationMenuSettingsInit();
+      initializeAllTabs();
+      initializeAllSettings();
+      initializeSettingsProfiles();
+      updateCustomButtons();
+      saveSettings2();
+      checkPortalSettings();
+      ATrunning = true;
+    })(a), 101);
+    if (a) {
+      debug2("Successfully imported new AT settings...", "profile");
+      if (b) ImportExportTooltip("message", "Successfully Imported Autotrimps Settings File!: " + b);
+      else ImportExportTooltip("NameSettingsProfiles");
+    } else {
+      debug2("Successfully reset AT settings to Defaults...", "profile");
+      ImportExportTooltip("message", "Autotrimps has been successfully reset to its defaults!");
+    }
   }
   function loadAutoTrimps() {
     try {
-      var a = byId("importBox").value.replace(/[\n\r]/gm, ""), b = JSON.parse(a);
+      var a = byId("importBox").value.replace(/[\n\r]/gm, "");
+      var b = JSON.parse(a);
       if (null == b) return void debug2("Error importing AT settings, the string is empty.", "profile");
     } catch (c) {
       return void debug2("Error importing AT settings, the string is bad." + c.message, "profile");
     }
-    debug2("Importing new AT settings file...", "profile"), resetAutoTrimps(b);
+    debug2("Importing new AT settings file...", "profile");
+    resetAutoTrimps(b);
   }
   var NON_SETTING_KEYS = /* @__PURE__ */ new Set(["ATversion"]);
   function cleanupCandidates() {
@@ -11939,16 +12010,36 @@
   function autoRoboTrimp() {
     if (!(0 < game.global.roboTrimpCooldown) && game.global.roboTrimpLevel) {
       var a = parseInt(getPageSetting2("AutoRoboTrimp"));
-      0 == a || game.global.world >= a && (game.global.world - a) % 5 == 0 && !checkIfLiquidZone() && !game.global.useShriek && (magnetoShriek(), MODULES.other.enableRoboTrimpSpam && debug2("Activated Robotrimp MagnetoShriek Ability @ z" + game.global.world, "graphs", "*podcast"));
+      if (0 != a && game.global.world >= a && (game.global.world - a) % 5 == 0 && !checkIfLiquidZone() && !game.global.useShriek) {
+        magnetoShriek();
+        if (MODULES.other.enableRoboTrimpSpam) debug2("Activated Robotrimp MagnetoShriek Ability @ z" + game.global.world, "graphs", "*podcast");
+      }
     }
   }
   function buyWeps() {
     if (!(getPageSetting2("BuyWeaponsNew") == 1 || getPageSetting2("BuyWeaponsNew") == 3)) return;
-    preBuy(), game.global.buyAmt = getPageSetting2("gearamounttobuy"), game.equipment.Dagger.level < getPageSetting2("CapEquip2") && canAffordBuilding("Dagger", null, null, true) && buyEquipment("Dagger", true, true), game.equipment.Mace.level < getPageSetting2("CapEquip2") && canAffordBuilding("Mace", null, null, true) && buyEquipment("Mace", true, true), game.equipment.Polearm.level < getPageSetting2("CapEquip2") && canAffordBuilding("Polearm", null, null, true) && buyEquipment("Polearm", true, true), game.equipment.Battleaxe.level < getPageSetting2("CapEquip2") && canAffordBuilding("Battleaxe", null, null, true) && buyEquipment("Battleaxe", true, true), game.equipment.Greatsword.level < getPageSetting2("CapEquip2") && canAffordBuilding("Greatsword", null, null, true) && buyEquipment("Greatsword", true, true), !game.equipment.Arbalest.locked && game.equipment.Arbalest.level < getPageSetting2("CapEquip2") && canAffordBuilding("Arbalest", null, null, true) && buyEquipment("Arbalest", true, true), postBuy();
+    preBuy();
+    game.global.buyAmt = getPageSetting2("gearamounttobuy");
+    if (game.equipment.Dagger.level < getPageSetting2("CapEquip2") && canAffordBuilding("Dagger", null, null, true)) buyEquipment("Dagger", true, true);
+    if (game.equipment.Mace.level < getPageSetting2("CapEquip2") && canAffordBuilding("Mace", null, null, true)) buyEquipment("Mace", true, true);
+    if (game.equipment.Polearm.level < getPageSetting2("CapEquip2") && canAffordBuilding("Polearm", null, null, true)) buyEquipment("Polearm", true, true);
+    if (game.equipment.Battleaxe.level < getPageSetting2("CapEquip2") && canAffordBuilding("Battleaxe", null, null, true)) buyEquipment("Battleaxe", true, true);
+    if (game.equipment.Greatsword.level < getPageSetting2("CapEquip2") && canAffordBuilding("Greatsword", null, null, true)) buyEquipment("Greatsword", true, true);
+    if (!game.equipment.Arbalest.locked && game.equipment.Arbalest.level < getPageSetting2("CapEquip2") && canAffordBuilding("Arbalest", null, null, true)) buyEquipment("Arbalest", true, true);
+    postBuy();
   }
   function buyArms() {
     if (!(getPageSetting2("BuyArmorNew") == 1 || getPageSetting2("BuyArmorNew") == 3)) return;
-    preBuy(), game.global.buyAmt = 10, game.equipment.Shield.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Shield", null, null, true) && buyEquipment("Shield", true, true), game.equipment.Boots.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Boots", null, null, true) && buyEquipment("Boots", true, true), game.equipment.Helmet.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Helmet", null, null, true) && buyEquipment("Helmet", true, true), game.equipment.Pants.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Pants", null, null, true) && buyEquipment("Pants", true, true), game.equipment.Shoulderguards.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Shoulderguards", null, null, true) && buyEquipment("Shoulderguards", true, true), game.equipment.Breastplate.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Breastplate", null, null, true) && buyEquipment("Breastplate", true, true), !game.equipment.Gambeson.locked && game.equipment.Gambeson.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Gambeson", null, null, true) && buyEquipment("Gambeson", true, true), postBuy();
+    preBuy();
+    game.global.buyAmt = 10;
+    if (game.equipment.Shield.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Shield", null, null, true)) buyEquipment("Shield", true, true);
+    if (game.equipment.Boots.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Boots", null, null, true)) buyEquipment("Boots", true, true);
+    if (game.equipment.Helmet.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Helmet", null, null, true)) buyEquipment("Helmet", true, true);
+    if (game.equipment.Pants.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Pants", null, null, true)) buyEquipment("Pants", true, true);
+    if (game.equipment.Shoulderguards.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Shoulderguards", null, null, true)) buyEquipment("Shoulderguards", true, true);
+    if (game.equipment.Breastplate.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Breastplate", null, null, true)) buyEquipment("Breastplate", true, true);
+    if (!game.equipment.Gambeson.locked && game.equipment.Gambeson.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Gambeson", null, null, true)) buyEquipment("Gambeson", true, true);
+    postBuy();
   }
   function isActiveSpireAT2() {
     return game.global.challengeActive != "Daily" && game.global.spireActive && game.global.world >= getPageSetting2("IgnoreSpiresUntil");
@@ -11966,7 +12057,10 @@
     if (!game.global.preMapsActive && !game.global.fighting) buyArms();
   }
   function buyshitspire() {
-    true == getPageSetting2("spireshitbuy") && game.global.spireActive && game.global.world >= getPageSetting2("IgnoreSpiresUntil") && (buyWeps(), buyArms());
+    if (true == getPageSetting2("spireshitbuy") && game.global.spireActive && game.global.world >= getPageSetting2("IgnoreSpiresUntil")) {
+      buyWeps();
+      buyArms();
+    }
   }
   function autoGoldenUpgradesAT(setting) {
     var num = getAvailableGoldenUpgrades();
@@ -12065,7 +12159,7 @@
   }
   globalThis.oldPlayerSpireDrawInfo = playerSpire.drawInfo;
   playerSpire.drawInfo = function(drawArgs) {
-    var ret = oldPlayerSpireDrawInfo.apply(this, drawArgs);
+    oldPlayerSpireDrawInfo.apply(this, drawArgs);
     var elem = document.getElementById("spireTrapsWindow");
     if (!elem) return drawArgs;
     var importBtn = `<div onclick='ImportExportTooltip("spireImport")' class='spireControlBox'>Import</div>`;
@@ -12377,7 +12471,6 @@
     if (getPageSetting2("AutoBoneChargeMax") === 2 && !(game.global.challengeActive == "Daily")) {
       return;
     }
-    const autoBoneChargeEnabled = getPageSetting2("AutoBoneChargeMax") > 0 ? true : false;
     const autoBoneChargeZoneSet = getPageSetting2("AutoBoneChargeMaxStartZone") > 0 ? true : false;
     const highestZoneCleared = game.global.highestLevelCleared;
     const percentOfHZC = Math.round(10 / 100 * highestZoneCleared);
@@ -12447,7 +12540,15 @@
     return a != game.global.world;
   }
   function plusPres() {
-    byId2("biomeAdvMapsSelect").value = "Random", byId2("advExtraLevelSelect").value = String(plusMapToRun(game.global.world)), byId2("advSpecialSelect").value = "p", byId2("lootAdvMapsRange").value = "0", byId2("difficultyAdvMapsRange").value = "9", byId2("sizeAdvMapsRange").value = "9", byId2("advPerfectCheckbox").checked = false, byId2("mapLevelInput").value = String(game.global.world), updateMapCost();
+    byId2("biomeAdvMapsSelect").value = "Random";
+    byId2("advExtraLevelSelect").value = String(plusMapToRun(game.global.world));
+    byId2("advSpecialSelect").value = "p";
+    byId2("lootAdvMapsRange").value = "0";
+    byId2("difficultyAdvMapsRange").value = "9";
+    byId2("sizeAdvMapsRange").value = "9";
+    byId2("advPerfectCheckbox").checked = false;
+    byId2("mapLevelInput").value = String(game.global.world);
+    updateMapCost();
   }
   function plusMapToRun(a) {
     return 9 == a % 10 ? 6 : 5 > a % 10 ? 5 - a % 10 : 11 - a % 10;
@@ -14514,22 +14615,43 @@
   }
   function automationMenuSettingsInit2() {
     var a = document.getElementById("settingsRow"), b = document.createElement("DIV");
-    b.id = "autoSettings", b.setAttribute("style", "display: none; max-height: 92.5vh;overflow: auto;"), b.setAttribute("class", "niceScroll"), a.appendChild(b);
+    b.id = "autoSettings";
+    b.setAttribute("style", "display: none; max-height: 92.5vh;overflow: auto;");
+    b.setAttribute("class", "niceScroll");
+    a.appendChild(b);
   }
   function createTabs(a, b) {
     var c = document.createElement("li"), d = document.createElement("a");
-    d.className = "tablinks", d.setAttribute("onclick", "toggleTab(event, '" + a + "')"), d.href = "#", d.appendChild(document.createTextNode(a)), c.id = "tab" + a, c.appendChild(d), addtabsUL.appendChild(c), createTabContents(a, b);
+    d.className = "tablinks";
+    d.setAttribute("onclick", "toggleTab(event, '" + a + "')");
+    d.href = "#";
+    d.appendChild(document.createTextNode(a));
+    c.id = "tab" + a;
+    c.appendChild(d);
+    addtabsUL.appendChild(c);
+    createTabContents(a, b);
   }
   function createTabContents(a, b) {
     var c = document.createElement("div");
-    c.className = "tabcontent", c.id = a;
+    c.className = "tabcontent";
+    c.id = a;
     var d = document.createElement("div");
     d.setAttribute("style", "margin-left: 1vw; margin-right: 1vw;");
     var e = document.createElement("h4");
-    e.setAttribute("style", "font-size: 1.2vw;"), e.appendChild(document.createTextNode(b)), d.appendChild(e), c.appendChild(d), addTabsDiv.appendChild(c);
+    e.setAttribute("style", "font-size: 1.2vw;");
+    e.appendChild(document.createTextNode(b));
+    d.appendChild(e);
+    c.appendChild(d);
+    addTabsDiv.appendChild(c);
   }
   function toggleTab(a, b) {
-    -1 < a.currentTarget.className.indexOf(" active") ? (document.getElementById(b).style.display = "none", a.currentTarget.className = a.currentTarget.className.replace(" active", "")) : (document.getElementById(b).style.display = "block", a.currentTarget.className += " active");
+    if (-1 < a.currentTarget.className.indexOf(" active")) {
+      document.getElementById(b).style.display = "none";
+      a.currentTarget.className = a.currentTarget.className.replace(" active", "");
+    } else {
+      document.getElementById(b).style.display = "block";
+      a.currentTarget.className += " active";
+    }
   }
   function minimizeAllTabs() {
     for (var a = document.getElementsByClassName("tabcontent"), b = 0, c = a.length; b < c; b++) a[b].style.display = "none";
@@ -14537,7 +14659,10 @@
   }
   function maximizeAllTabs() {
     for (var a = document.getElementsByClassName("tabcontent"), b = 0, c = a.length; b < c; b++) a[b].style.display = "block";
-    for (var d = document.getElementsByClassName("tablinks"), b = 0, c = d.length; b < c; b++) d[b].style.display = "block", d[b].className.includes(" active") || (d[b].className += " active");
+    for (var d = document.getElementsByClassName("tablinks"), b = 0, c = d.length; b < c; b++) {
+      d[b].style.display = "block";
+      if (!d[b].className.includes(" active")) d[b].className += " active";
+    }
   }
   function initializeAllTabs2() {
     addTabsDiv = document.createElement("div");
@@ -15449,7 +15574,6 @@
   function checkPortalSettings2() {
     var result = findOutCurrentPortalLevel();
     var portalLevel = result.level;
-    var leadCheck = result.lead;
     if (portalLevel == -1)
       return portalLevel;
     var voidmaps = 0;
@@ -15467,7 +15591,8 @@
     var a = "";
     if ("Daily" == game.global.challengeActive) {
       var b = game.stats.heliumHour.value() / (game.global.totalHeliumEarned - (game.global.heliumLeftover + game.resources.helium.owned));
-      b *= 100 + getDailyHeliumValue(countDailyWeight()), a = "<b>After Daily He/Hr: " + b.toFixed(3) + "%";
+      b *= 100 + getDailyHeliumValue(countDailyWeight());
+      a = "<b>After Daily He/Hr: " + b.toFixed(3) + "%";
     }
     return a;
   }
@@ -15475,7 +15600,8 @@
     var a = "";
     if ("Daily" == game.global.challengeActive) {
       var b = game.stats.heliumHour.value() / (game.global.totalRadonEarned - (game.global.radonLeftover + game.resources.radon.owned));
-      b *= 100 + getDailyHeliumValue(countDailyWeight()), a = "<b>After Daily Rn/Hr: " + b.toFixed(3) + "%";
+      b *= 100 + getDailyHeliumValue(countDailyWeight());
+      a = "<b>After Daily Rn/Hr: " + b.toFixed(3) + "%";
     }
     return a;
   }
@@ -16155,7 +16281,10 @@
     automationMenuInit();
     automationMenuSettingsInit();
     var link1 = document.createElement("link");
-    link1.rel = "stylesheet", link1.type = "text/css", link1.href = basepath + "tabs.css", document.head.appendChild(link1);
+    link1.rel = "stylesheet";
+    link1.type = "text/css";
+    link1.href = basepath + "tabs.css";
+    document.head.appendChild(link1);
     initializeAllTabs();
     initializeAllSettings();
   }

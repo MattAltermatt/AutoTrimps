@@ -106,31 +106,47 @@ export function modifyParentNode(setting: any, id: any) {
 export function automationMenuSettingsInit() {
     var a: any = document.getElementById("settingsRow"),
         b = document.createElement("DIV");
-    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-    b.id = "autoSettings", b.setAttribute("style", "display: none; max-height: 92.5vh;overflow: auto;"), b.setAttribute("class", "niceScroll"), a.appendChild(b)
+    b.id = "autoSettings";
+    b.setAttribute("style", "display: none; max-height: 92.5vh;overflow: auto;");
+    b.setAttribute("class", "niceScroll");
+    a.appendChild(b);
 }
 
 export function createTabs(a: any, b: any) {
     var c = document.createElement("li"),
         d = document.createElement("a");
-    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-    d.className = "tablinks", d.setAttribute("onclick", "toggleTab(event, '" + a + "')"), d.href = "#", d.appendChild(document.createTextNode(a)), c.id = "tab" + a, c.appendChild(d), addtabsUL.appendChild(c), createTabContents(a, b)
+    d.className = "tablinks";
+    d.setAttribute("onclick", "toggleTab(event, '" + a + "')");
+    d.href = "#";
+    d.appendChild(document.createTextNode(a));
+    c.id = "tab" + a;
+    c.appendChild(d);
+    addtabsUL.appendChild(c);
+    createTabContents(a, b);
 }
 
 export function createTabContents(a: any, b: any) {
     var c = document.createElement('div');
-    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-    c.className = 'tabcontent', c.id = a;
+    c.className = 'tabcontent';
+    c.id = a;
     var d = document.createElement('div');
     d.setAttribute('style', 'margin-left: 1vw; margin-right: 1vw;');
     var e = document.createElement('h4');
-    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-    e.setAttribute('style', 'font-size: 1.2vw;'), e.appendChild(document.createTextNode(b)), d.appendChild(e), c.appendChild(d), addTabsDiv.appendChild(c)
+    e.setAttribute('style', 'font-size: 1.2vw;');
+    e.appendChild(document.createTextNode(b));
+    d.appendChild(e);
+    c.appendChild(d);
+    addTabsDiv.appendChild(c);
 }
 
 export function toggleTab(a: any, b: any) {
-    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-    -1 < a.currentTarget.className.indexOf(" active") ? (document.getElementById(b)!.style.display = "none", a.currentTarget.className = a.currentTarget.className.replace(" active", "")) : (document.getElementById(b)!.style.display = "block", a.currentTarget.className += " active")
+    if (-1 < a.currentTarget.className.indexOf(" active")) {
+        document.getElementById(b)!.style.display = "none";
+        a.currentTarget.className = a.currentTarget.className.replace(" active", "");
+    } else {
+        document.getElementById(b)!.style.display = "block";
+        a.currentTarget.className += " active";
+    }
 }
 
 export function minimizeAllTabs() {
@@ -140,8 +156,10 @@ export function minimizeAllTabs() {
 
 export function maximizeAllTabs() {
     for (var a = document.getElementsByClassName("tabcontent"), b = 0, c = a.length; b < c; b++) (a[b] as any).style.display = "block";
-    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-    for (var d = document.getElementsByClassName("tablinks"), b = 0, c = d.length; b < c; b++) (d[b] as any).style.display = "block", d[b].className.includes(" active") || (d[b].className += " active")
+    for (var d = document.getElementsByClassName("tablinks"), b = 0, c = d.length; b < c; b++) {
+        (d[b] as any).style.display = "block";
+        if (!d[b].className.includes(" active")) d[b].className += " active";
+    }
 }
 
 export function initializeAllTabs() {

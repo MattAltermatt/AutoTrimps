@@ -125,8 +125,6 @@ export function calcOurHealth(stance?: boolean): number {
     }
     if (mutations.Magma.active()) {
         const mult = mutations.Magma.getTrimpDecay();
-        // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-        const lvls = game.global.world - mutations.Magma.start() + 1;
         health *= mult;
     }
     const heirloomBonus = calcHeirloomBonus("Shield", "trimpHealth", 0, true);
@@ -1452,10 +1450,6 @@ export function RcalcDailyHealthMod(number: number): number {
 
 export function RcalcBadGuyDmg(enemy?: any, attack?: number, equality?: boolean): number {
     let number;
-    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-    const highest = 1;
-    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-    let mute = false;
 
     if (enemy)
         number = enemy.attack;
@@ -1463,7 +1457,6 @@ export function RcalcBadGuyDmg(enemy?: any, attack?: number, equality?: boolean)
         number = attack;
 	
     if (game.global.world > 200 && getPageSetting('Rmutecalc') > 0 && game.global.world >= getPageSetting('Rmutecalc')) {
-        mute = true;
         number = rCalcMutationAttack();
     }
     if (game.global.challengeActive === "Extermination" && getPageSetting('Rexterminateon') == true && getPageSetting('Rexterminatecalc') == true) {
@@ -1559,8 +1552,6 @@ export function RcalcEnemyBaseHealth(world: number, level: number, name: string)
 }
 
 export function RcalcEnemyHealth(world?: any): number | undefined {
-    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-    const highest = 1;
     let mute = false;
     let health: any;
     if (game.global.world > 200 && getPageSetting('Rmutecalc') > 0 && game.global.world >= getPageSetting('Rmutecalc')) {

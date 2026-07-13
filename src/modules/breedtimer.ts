@@ -219,12 +219,16 @@ export function addBreedingBoxTimers() {
 }
 addBreedingBoxTimers();
 
-// oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-export function addToolTipToArmyCount(){var a=document.getElementById("trimpsFighting")!;"tooltipadded"!=a.className&&(a.setAttribute("onmouseover","tooltip(\"Army Count\", \"customText\", event, \"To Fight now would add: \" + prettify(getArmyTime()) + \" seconds to the breed timer.\")"),a.setAttribute("onmouseout","tooltip(\"hide\")"),a.setAttribute("class","tooltipadded"))}
+export function addToolTipToArmyCount() {
+    var a = document.getElementById("trimpsFighting")!;
+    if ("tooltipadded" != a.className) {
+        a.setAttribute("onmouseover", "tooltip(\"Army Count\", \"customText\", event, \"To Fight now would add: \" + prettify(getArmyTime()) + \" seconds to the breed timer.\")");
+        a.setAttribute("onmouseout", "tooltip(\"hide\")");
+        a.setAttribute("class", "tooltipadded");
+    }
+}
 
 export function abandonVoidMap() {
-    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-    var customVars = MODULES["breedtimer"];
     if (!getPageSetting('ForceAbandon')) return;
     if (game.global.mapsActive && getCurrentMapObject().location == "Void") {
             if (game.portal.Anticipation.level) {

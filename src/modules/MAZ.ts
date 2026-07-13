@@ -7,8 +7,7 @@
 // ambient. Behaviour-preserving: any body edits are TYPE-ONLY.
 import { saveSettings } from './utils'
 
-// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-export function MAZLookalike(titleText: any, isItIn?: any, event?: any) {
+export function MAZLookalike(titleText: any, _isItIn?: any, _event?: any) {
 
     var zone: any;
     var cell: any;
@@ -648,7 +647,10 @@ export function removeRow(index: any) {
     btnElem.style.display = 'inline-block';
 }
 
-export function updateWindowPreset(index: any) {
-    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-    var special = document.getElementById('windowSpecial' + index);
+// #92: an upstream vestige — the body was a single dead `getElementById` even in the 2016 original.
+// It must KEEP EXISTING: ~12 MAZ `<select onchange='updateWindowPreset(N)'>` attributes and addRow()
+// call it by name, and an inline handler resolves through the globalThis bridge — deleting the export
+// would turn every MAZ dropdown change into a ReferenceError. The dropdowns are read at confirm time
+// (MAZLookalike), not on change, so a no-op handler is correct.
+export function updateWindowPreset(_index: any) {
 }

@@ -27,8 +27,6 @@
 //     - `housing != null` (RbuyBuildings do/while) — a loose null-guard on mostEfficientHousing's
 //       string|null return (never undefined, but the loose form is the faithful null check).
 //   Every numeric literal + formula shape is preserved exactly (balance is sacrosanct).
-//   Pre-existing DEAD CODE (unchanged): housingList + RhousingList are declared but read nowhere in
-//   src/ or legacy/.
 import { getPageSetting, debug } from './utils'
 
 MODULES["buildings"] = {};
@@ -37,8 +35,6 @@ MODULES["buildings"].storageLowlvlCutoff1 = 0.7;
 MODULES["buildings"].storageLowlvlCutoff2 = 0.5;
 
 //Helium
-// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-const housingList = ['Hut', 'House', 'Mansion', 'Hotel', 'Resort', 'Gateway', 'Collector', 'Warpstation'];
 
 
 export function safeBuyBuilding(building: string) {
@@ -198,10 +194,6 @@ export function buyGemEfficientHousing() {
                 const toTip = game.buildings.Warpstation;
                 if (canAffordBuilding("Warpstation")) {
                     const howMany = calculateMaxAfford(game.buildings["Warpstation"], true);
-                    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-                    const needCoord = game.upgrades.Coordination.allowed - game.upgrades.Coordination.done > 0;
-                    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-                    const coordReplace = (game.portal.Coordinated.level) ? (25 * Math.pow(game.portal.Coordinated.modifier, game.portal.Coordinated.level)).toFixed(3) : 25;
                     if (!canAffordCoordinationTrimps()) {
                         const nextCount = (game.portal.Coordinated.level) ? game.portal.Coordinated.currentSend : game.resources.trimps.maxSoldiers;
                         const amtToGo = ((nextCount * 3) - game.resources.trimps.realMax());
@@ -223,8 +215,6 @@ export function buyGemEfficientHousing() {
 }
 
 export function buyBuildings() {
-    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-    const customVars = MODULES["buildings"];
     const oldBuy = preBuy2();
     const hidebuild = (getPageSetting('BuyBuildingsNew') === 0 && getPageSetting('hidebuildings') == true);
     game.global.buyAmt = 1;
@@ -242,10 +232,6 @@ export function buyBuildings() {
 
         //Dynamic Gyms
         if (getPageSetting('DynamicGyms')) {
-            //Target Zone
-            // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-            const targetZone = game.global.world;
-
             //Enemy stats
             const block = calcOurBlock() / (game.global.brokenPlanet ? 2 : 1);
             const pierce = game.global.brokenPlanet ? (getPierceAmt() * (game.global.formation === 3 ? 2 : 1)) : 0;
@@ -350,9 +336,6 @@ export function buyStorage() {
 }
 
 //Radon
-
-// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-const RhousingList = ['Hut', 'House', 'Mansion', 'Hotel', 'Resort', 'Gateway', 'Collector'];
 
 let smithybought = 0;
 

@@ -127,19 +127,10 @@ export function testMapSpecialModController() {
                 e = game.resources.fragments.owned;
                 if (c.value !== "0") debug("Set the map special modifier to: " + mapSpecialModifierConfig[c.value].name + ". Cost: " + (100 * (d / e)).toFixed(2) + "% of your fragments.");
             }
-            // g/h/i/j/k are pre-existing dead assignments (results never read) — kept as declarations to
-            // preserve the collaborators' call order + side effects (byte-faithful; same unused-var lint
-            // profile as before).
-            // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-            const g = getSpecialModifierSetting();
-            // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-            const h = game.global.highestLevelCleared >= 109;
-            // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-            const i = checkPerfectChecked();
-            // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-            const j = document.getElementById("advPerfectCheckbox");
-            // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-            const k = getPageSetting("AdvMapSpecialModifier") ? getExtraMapLevels() : 0;
+            // #92: five dead locals (g/h/i/j/k) lived here — dead in the 2016 upstream original too.
+            // Every RHS is a PURE game getter, and updateMapCost() (called on the lines above and
+            // below) already calls checkPerfectChecked()/getExtraMapLevels() itself, so dropping
+            // them cannot remove a side effect or introduce a throw.
             if (game.global.highestLevelCleared >= 209) {
                 // #73: the id was `advExtraMapLevelselect` — an element that does not exist. The game's
                 // id is `advExtraLevelSelect` (no `Map`, capital `S`), and the ~17 other lookups in the
@@ -356,8 +347,6 @@ export function autoMap() {
 
     //Prestige
     if ((getPageSetting('ForcePresZ') >= 0) && ((game.global.world + extraMapLevels) >= getPageSetting('ForcePresZ'))) {
-        // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-        const prestigeList = ['Supershield', 'Dagadder', 'Megamace', 'Polierarm', 'Axeidic', 'Greatersword', 'Harmbalest', 'Bootboost', 'Hellishmet', 'Pantastic', 'Smoldershoulder', 'Bestplate', 'GambesOP'];
         needPrestige = (offlineProgress.countMapItems(game.global.world) !== 0);
     } else
         needPrestige = prestige != "Off" && game.mapUnlocks[prestige] && game.mapUnlocks[prestige].last <= (game.global.world + extraMapLevels) - 5 && game.global.challengeActive != "Frugal";
@@ -714,8 +703,6 @@ export function autoMap() {
             }
         }
     } else if (game.global.preMapsActive) {
-        // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-        const minFragmentsNeeded = Math.floor((((game.global.world / 150) * (Math.pow(1.14, game.global.world - 1))) * game.global.world * 2) * Math.pow((1.03 + (game.global.world / 50000)), game.global.world)) * 2;
         if (selectedMap == "world") {
             mapsClicked();
         } else if (selectedMap == "create") {

@@ -1,7 +1,7 @@
 // TRUE TS (Phase 1 · #30): converted from the faithful port under strict.
 // Was: relocated verbatim from legacy/modules/scryer.js.
 // Scryer-stance automation (readyToSwitch, useScryerStance). 25 game.*
-// touches. Module vars wantToScry/transitionRequired are scryer-internal (no readers
+// touches. Module var transitionRequired is scryer-internal (no readers
 // outside this module). Free identifiers (survive/oneShotPower/setFormation/autoStance*/
 // getCurrentEnemy/getCurrentMapObject/getEmpowerment/countRemainingEssenceDrops/etc.)
 // resolve via the bridge at runtime, typed ambient in trimps.d.ts + at-legacy.d.ts.
@@ -9,8 +9,6 @@
 // TYPE-ONLY; zero logic or numeric-literal changes.
 import { getPageSetting } from './utils'
 
-// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-var wantToScry = false;
 var transitionRequired = false;
 
 export function readyToSwitch(stance = "S") {
@@ -81,7 +79,6 @@ export function useScryerStance() {
     var isHealthy = curEnemyHealth && curEnemyHealth.mutation == "Healthy";
     if (never_scry || getPageSetting('UseScryerStance') == true && !game.global.mapsActive && (isHealthy && getPageSetting('ScryerSkipHealthy') == 0)) {
         autoStanceFunctionScryer();
-        wantToScry = false;
         return;
     }
 
@@ -96,13 +93,11 @@ export function useScryerStance() {
     //check Corrupted Force
     if ((isCorrupt && getPageSetting('ScryerSkipCorrupteds2') == 1 && getPageSetting('UseScryerStance') == true) || (use_scryer)) {
         setFormation(scry);
-        wantToScry = true;
         return;
     }
     //check healthy force
     if ((isHealthy && getPageSetting('ScryerSkipHealthy') == 1 && getPageSetting('UseScryerStance') == true) || (use_scryer)) {
         setFormation(scry);
-        wantToScry = true;
         return;
     }
 
@@ -129,7 +124,6 @@ export function useScryerStance() {
     //No Essence
     if (USS && !MA && getPageSetting('screwessence') == true && countRemainingEssenceDrops() < 1) {
         autoStanceFunctionScryer();
-        wantToScry = false;
         return;
     }
 
@@ -153,11 +147,9 @@ export function useScryerStance() {
 
         //Set to scry if it won't kill us, or we are willing to die for it
         setFormation(scry);
-        wantToScry = true;
         return;
     }
 
     //No reason to Scry
     autoStanceFunctionScryer();
-    wantToScry = false;
 }
