@@ -390,10 +390,9 @@ export function autoMap() {
         enemyDamage = calcSpire(99, game.global.gridArray[99].name, 'attack');
     }
     highDamageShield();
-    if (getPageSetting('loomswap') > 0 && game.global.challengeActive != "Daily" && game.global.ShieldEquipped.name != getPageSetting('highdmg'))
-        ourBaseDamage *= trimpAA;
-    if (getPageSetting('dloomswap') > 0 && game.global.challengeActive == "Daily" && game.global.ShieldEquipped.name != getPageSetting('dhighdmg'))
-        ourBaseDamage *= trimpAA;
+    // #68: the 'loomswap'/'dloomswap' `ourBaseDamage *= trimpAA` pair is DELETED here for the same
+    // reason as the identical pair in equipment.ts — both settings were deleted upstream, so the guards
+    // were permanently false. Re-arming the multiplier is a balance change, not a mechanism fix.
     const mapbonusmulti = 1 + (0.20 * game.global.mapBonus);
     let ourBaseDamage2 = ourBaseDamage;
     ourBaseDamage2 /= mapbonusmulti;

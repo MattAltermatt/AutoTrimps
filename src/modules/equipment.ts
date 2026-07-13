@@ -354,11 +354,14 @@ export function autoLevelEquipment() {
     }
     //Shield
     highDamageShield();
-    // ShieldEquipped.name != getPageSetting(...) stays LOOSE (getPageSetting polymorphic).
-    if (getPageSetting('loomswap') > 0 && game.global.challengeActive !== "Daily" && game.global.ShieldEquipped.name != getPageSetting('highdmg'))
-        ourDamage *= trimpAA;
-    if (getPageSetting('dloomswap') > 0 && game.global.challengeActive === "Daily" && game.global.ShieldEquipped.name != getPageSetting('dhighdmg'))
-        ourDamage *= trimpAA;
+    // #68: two `if (getPageSetting('loomswap') > 0 && …) ourDamage *= trimpAA;` statements (and the
+    // 'dloomswap' daily twin) stood here. 'loomswap'/'dloomswap' are upstream-DELETED settings, so
+    // getPageSetting returns false and `false > 0` is false: these multipliers have not fired in years.
+    // Deleted rather than repaired, deliberately. Re-arming them (by dropping the dead conjunct) would
+    // start scaling ourDamage by trimpAA on every tick where we are not already wearing the high-damage
+    // heirloom, which feeds enoughDamage and therefore every farm/map decision downstream — a live
+    // balance change, not a mechanism repair, and so not mine to make. Deleting is exactly
+    // behaviour-preserving; re-arming is a tuning decision for the user (reported, not taken).
 
 
     const enemyDamage = calcBadGuyDmg(null, getEnemyMaxAttack(game.global.world + 1, 50, 'Snimp', 1.0), true, true);

@@ -69,8 +69,15 @@ export function autoPortal() {
         case "Crushed":
         case "Nom":
         case "Toxicity":
-            if (getPageSetting('MaxTox'))
-                settingChanged("MaxTox");
+            // #68: the `if (getPageSetting('MaxTox')) settingChanged("MaxTox");` that stood here is
+            // DELETED, not defined. 'MaxTox' was a real setting (it is still carried in the frozen
+            // serializeSettings blobs) that upstream deleted, leaving this read behind. getPageSetting
+            // returns false for it, so the guard never fires — but it is a LANDMINE, not merely dead:
+            // settingChanged("MaxTox") does a getElementById on a control that no longer exists, so
+            // minting the setting to "fix" the phantom would turn a dead guard into a THROW inside the
+            // portal path (and, with no mainLoop error boundary (#87), take out every automation after
+            // it). Deleting the reader is the only disposition that mints nothing and disarms it.
+            // The empty case falls through to "Watch" exactly as before.
         case "Watch":
         case "Lead":
         case "Corrupted":
@@ -235,18 +242,17 @@ export function doPortal(challenge?: any) {
     if (getPageSetting('autoheirlooms') == true && getPageSetting('typetokeep') != 0) {
 	autoheirlooms3();
     }
-    if (game.global.ShieldEquipped.name != getPageSetting('highdmg') || game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {
-        // #79: was `if (highdmgshield() != undefined) { ...indexOf(loom)... }` — `loom` is bound
-        // nowhere, so the indexOf argument was a strict-mode ReferenceError that aborted doPortal
-        // (and every mainLoop automation ordered after it) for anyone whose 'highdmg' names a
-        // carried heirloom. Capture the finder's return value, exactly as highHeirloom()
-        // (heirlooms.ts:234) does — the same seam bug was already fixed there in #22.
-        var loom = highdmgshield();
-        if (loom != undefined) {
-	    selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
-	    equipHeirloom();
-	}
-    }
+    // #79: the guard here WAS `name != getPageSetting('highdmg') || name != getPageSetting('dhighdmg')`
+    // — a TAUTOLOGY (a name cannot equal two distinct settings at once, so at least one `!=` always
+    // holds), which then always ran a body hard-wired to the NON-daily 'highdmg' finder. The `||` is a
+    // mangled Daily DISPATCH, and the codebase says so in three independent places:
+    //   • heirlooms.ts highHeirloom()/dhighHeirloom() are this exact body, one per run type;
+    //   • stance.ts:274/307 picks between them with `challengeActive !== "Daily"` / `=== "Daily"`;
+    //   • equipment.ts + maps.ts dispatch this very setting PAIR ('highdmg' vs 'dhighdmg') the same way.
+    // dhighdmgshield() existed all along for the daily half that was never wired up here. Calling the
+    // two twins IS the intended code — their bodies are byte-identical to the block this replaces.
+    if (game.global.challengeActive === "Daily") dhighHeirloom();
+    else highHeirloom();
     if (getPageSetting('AutoAllocatePerks')==2) {
         viewPortalUpgrades();
 	numTab(6, true)
@@ -326,7 +332,13 @@ export function findOutCurrentPortalLevel() {
             break;
         case "Custom":
             if ("Daily" != game.global.challengeActive) a = getPageSetting("CustomAutoPortal") + 1;
-            if ("Daily" == game.global.challengeActive) a = getPageSetting("Dailyportal") + 1;
+            // #68: was getPageSetting("Dailyportal") — a setting upstream DELETED (it is still carried
+            // in the frozen serializeSettings blobs, so it must be REPOINTED, never re-minted: minting
+            // would resurrect the value a veteran user stored years ago). getPageSetting returns false
+            // for it, so this computed `false + 1` === 1 — i.e. on a Daily, AutoPortal="Custom" thought
+            // the target zone was 1 and reported "portal at zone 1". 'dCustomAutoPortal' ("Daily Custom
+            // Portal", default 999) is the live daily twin of the CustomAutoPortal read directly above.
+            if ("Daily" == game.global.challengeActive) a = getPageSetting("dCustomAutoPortal") + 1;
             b = !("Lead" != getPageSetting("HeliumHourChallenge"));
             break;
         default:
@@ -478,14 +490,16 @@ export function RdoPortal(challenge?: any) {
     if (getPageSetting('autoheirlooms') == true && getPageSetting('typetokeep') != 0) {
 	autoheirlooms3();
     }
-    if (game.global.ShieldEquipped.name != getPageSetting('highdmg') || game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {
-        // #79: identical bare-`loom` ReferenceError to doPortal (portal.ts:237). Same fix.
-        var loom = highdmgshield();
-        if (loom != undefined) {
-	    selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
-	    equipHeirloom();
-	}
-    }
+    // #79: the same mangled Daily dispatch as doPortal (see the note there); same fix, same twins.
+    // ⚠️ SEPARATE, UNRESOLVED: this is the U2 (radon) portal, yet the block it replaces read the U1
+    // heirloom ids ('highdmg'/'dhighdmg'). U2 has its own heirloom-swap subsystem — Rheirloomswap() /
+    // Rdheirloomswap(), driven by the Rhs*/Rdhs* settings and called from AutoTrimps2.js:368/371 — so
+    // this looks like a copy-paste from doPortal that was never adapted. Whether RdoPortal should equip
+    // via the U2 settings instead is a BEHAVIOR question no in-tree evidence settles, and inventing an
+    // answer is exactly the failure mode #68/#58 keep repeating. Filed rather than guessed; this fix
+    // repairs ONLY the tautology and changes not one id this function reads.
+    if (game.global.challengeActive === "Daily") dhighHeirloom();
+    else highHeirloom();
     if (getPageSetting('RAutoAllocatePerks')==2) {
         viewPortalUpgrades();
 	numTab(6, true)

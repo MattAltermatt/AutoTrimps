@@ -235,7 +235,12 @@ function mainLoop() {
         if (getPageSetting('c2runnerstart') == true && getPageSetting('c2runnerportal') > 0 && game.global.runningChallengeSquared && game.global.world > getPageSetting('c2runnerportal')) c2runnerportal();
 
         //Combat
-        if (getPageSetting('ForceAbandon') == true || getPageSetting('fuckanti') > 0) trimpcide();
+        // #68: the `|| getPageSetting('fuckanti') > 0` disjunct is DELETED, not repaired. 'fuckanti' is
+        // an upstream-deleted setting (still carried in the frozen serializeSettings blobs, hence
+        // NOT re-mintable — minting resurrects a stored value); getPageSetting returns false for it, so
+        // `false > 0` was always false and the disjunct could never contribute. Removing it is exactly
+        // behaviour-preserving, and it takes the resurrection hazard with it.
+        if (getPageSetting('ForceAbandon') == true) trimpcide();
         if (getPageSetting('trimpsnotdie') == true && game.global.world > 1) helptrimpsnotdie();
         if (!game.global.fighting) {
             if (getPageSetting('fightforever') == 0) fightalways();
@@ -274,8 +279,15 @@ function mainLoop() {
         if (((getPageSetting('BWraid') && game.global.challengeActive != "Daily") || (getPageSetting('Dailybwraid') && game.global.challengeActive == "Daily"))) {
             BWraiding();
         }
-        if ((getPageSetting('BWraid') == true || getPageSetting('DailyBWraid') == true) && bwraidon) buyWeps();
-        if (game.global.mapsActive && getPageSetting('game.global.universe == 1 && BWraid') == true && game.global.world == getPageSetting('BWraidingz') && getCurrentMapObject().level <= getPageSetting('BWraidingmax')) buyWeps();
+        // #68: 'DailyBWraid' -> 'Dailybwraid'. A CASE typo, not a deleted setting: the live id is
+        // lowercase-b, and the line directly above spells it correctly. getPageSetting('DailyBWraid')
+        // returned false, so a Daily BW raid never bought weapons — buyWeps() only fired if the U1
+        // 'BWraid' toggle happened to be on too.
+        if ((getPageSetting('BWraid') == true || getPageSetting('Dailybwraid') == true) && bwraidon) buyWeps();
+        // #68: the id argument here WAS the string "game.global.universe == 1 && BWraid" — an entire
+        // expression pasted inside the quotes. No such setting exists, so getPageSetting returned false,
+        // `false == true` was false, and this line NEVER ran. Restored to what the string plainly says.
+        if (game.global.mapsActive && game.global.universe == 1 && getPageSetting('BWraid') == true && game.global.world == getPageSetting('BWraidingz') && getCurrentMapObject().level <= getPageSetting('BWraidingmax')) buyWeps();
 
         //Golden
         var agu = getPageSetting('AutoGoldenUpgrades');

@@ -152,9 +152,15 @@ export function updateCustomButtons() {
     !radonon && getPageSetting('use3daily') == true ? turnOn("dwsmaxhd") : turnOff("dwsmaxhd");
 
     //DLoom
-    !radonon && getPageSetting('dloomswap') > 0 ? turnOn('dloomswaphd') : turnOff('dloomswaphd');
-    !radonon && getPageSetting('dloomswap') > 0 ? turnOn('dhighdmg') : turnOff('dhighdmg');
-    !radonon && getPageSetting('dloomswap') > 0 ? turnOn('dlowdmg') : turnOff('dlowdmg');
+    // #68: this block gated 'dloomswaphd' / 'dhighdmg' / 'dlowdmg' on getPageSetting('dloomswap') > 0.
+    // 'dloomswap' is an upstream-DELETED setting, so that read is false and `false > 0` is false — which
+    // means all three ternaries always took the turnOff branch and the daily heirloom-swap settings were
+    // PERMANENTLY HIDDEN: a user could not set 'dhighdmg'/'dlowdmg' at all, so every daily loom swap
+    // (dhighHeirloom/dlowHeirloom from stance.ts, and now doPortal per #79) matched against an empty
+    // string and did nothing. Their non-daily twins 'highdmg'/'lowdmg' have NO visibility line at all —
+    // they are simply always shown — so deleting the block gives the daily pair exactly the twins'
+    // treatment, and mints nothing. ('dloomswaphd' is not even a real id — no createSetting anywhere —
+    // so its turnOn/turnOff was toggling an element that does not exist; it dies with the block.)
 
     //DPortal
     !radonon ? turnOn("AutoStartDaily") : turnOff("AutoStartDaily");
@@ -215,8 +221,14 @@ export function updateCustomButtons() {
     radonon && dhson && dhsshieldon ? turnOn('Rdhs2') : turnOff('Rdhs2');
 
     //RDStaffs
-    // @ts-ignore -- faithful legacy quirk: `hson` (var) is read here before its later assignment (hoisted, so undefined at runtime)
-    radonon && hson ? turnOn('Rdhsstaff') : turnOff('Rdhsstaff');
+    // #79: was `radonon && hson` — the wrong variable. This is the DAILY U2 block; every other line in
+    // it gates on `dhson` (= Rdhs), and the non-daily twin of THIS line gates on `hson` (= Rhs). `hson`
+    // is a `var` declared ~620 lines below, in the same 976-line function, so it hoists: at this point
+    // it is `undefined`, never a ReferenceError — which is why nothing ever crashed and the bug went
+    // unnoticed. `radonon && undefined` is falsy, so this ALWAYS took turnOff: 'Rdhsstaff' was
+    // permanently hidden, which forced `dhsstaffon` false, which permanently hid 'Rdhsworldstaff',
+    // 'Rdhsmapstaff' and 'Rdhstributestaff' too. Four daily U2 staff-swap settings, unreachable.
+    radonon && dhson ? turnOn('Rdhsstaff') : turnOff('Rdhsstaff');
     var dhsstaffon = (getPageSetting('Rdhsstaff') == true);
     radonon && dhson && dhsstaffon ? turnOn('Rdhsworldstaff') : turnOff('Rdhsworldstaff');
     radonon && dhson && dhsstaffon ? turnOn('Rdhsmapstaff') : turnOff('Rdhsmapstaff');
@@ -985,7 +997,13 @@ export function checkPortalSettings() {
         voidmaps = getPageSetting('VoidMaps');
     }
     if (game.global.challengeActive == "Daily") {
-        voidmaps = getPageSetting('dVoidMaps');
+        // #68: was getPageSetting('dVoidMaps') — an id that has NEVER been createSetting'd anywhere in
+        // this repo's history, so it read false and `false >= portalLevel` was false: this "your voids
+        // are set to run after your autoPortal" warning could never fire on a Daily. 'DailyVoidMod'
+        // ("Daily Void Zone") is the live daily twin, and upgrades.ts:35 already performs this exact
+        // dispatch correctly — `daily ? getPageSetting('DailyVoidMod') : getPageSetting('VoidMaps')` —
+        // which is the same pairing, spelled right. Repointed at it; mints nothing.
+        voidmaps = getPageSetting('DailyVoidMod');
     }
     if (voidmaps >= portalLevel)
         tooltip('confirm', null, 'update', 'WARNING: Your void maps are set to complete after your autoPortal, and therefore will not be done at all! Please Change Your Settings Now. This Box Will Not Go away Until You do. Remember you can choose \'Custom\' autoPortal along with challenges for complete control over when you portal. <br><br> Estimated autoPortal level: ' + portalLevel, 'cancelTooltip()', 'Void Maps Conflict');

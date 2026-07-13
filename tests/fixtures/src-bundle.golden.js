@@ -2567,10 +2567,6 @@
       }
     }
     highDamageShield();
-    if (getPageSetting2("loomswap") > 0 && game.global.challengeActive !== "Daily" && game.global.ShieldEquipped.name != getPageSetting2("highdmg"))
-      ourDamage *= trimpAA;
-    if (getPageSetting2("dloomswap") > 0 && game.global.challengeActive === "Daily" && game.global.ShieldEquipped.name != getPageSetting2("dhighdmg"))
-      ourDamage *= trimpAA;
     const enemyDamage = calcBadGuyDmg(null, getEnemyMaxAttack(game.global.world + 1, 50, "Snimp", 1), true, true);
     const enemyHealth = calcEnemyHealth();
     const pierceMod = game.global.brokenPlanet && !game.global.mapsActive ? getPierceAmt() : 0;
@@ -4148,7 +4144,7 @@
     return +(Math.round(delta + "e+2") + "e-2");
   }
   function firstGiga(forced) {
-    const maxHealthMaps = game.global.challengeActive === "Daily" ? getPageSetting2("dMaxMapBonushealth") : getPageSetting2("MaxMapBonushealth");
+    const maxHealthMaps = getPageSetting2("MaxMapBonushealth");
     const s = !(getPageSetting2("CustomDeltaFactor") > 20);
     const a = game.buildings.Warpstation.owned >= 2;
     const b = !canAffordCoordinationTrimps() || game.global.world >= 230 && !canAffordTwoLevel(game.upgrades.Coordination);
@@ -4558,7 +4554,7 @@
     generateHeirloomIcon: () => generateHeirloomIcon,
     getHeirloomEff: () => getHeirloomEff,
     highHeirloom: () => highHeirloom2,
-    highdmgshield: () => highdmgshield2,
+    highdmgshield: () => highdmgshield,
     lowHeirloom: () => lowHeirloom2,
     lowdmgshield: () => lowdmgshield,
     newSelectHeirloom: () => newSelectHeirloom,
@@ -4600,7 +4596,7 @@
     selectHeirloom(a, b, c);
     protectHeirloom();
   }
-  function highdmgshield2() {
+  function highdmgshield() {
     for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("highdmg")) return loom;
   }
   function lowdmgshield() {
@@ -4793,7 +4789,7 @@
     }
   }
   function highHeirloom2() {
-    var loom = highdmgshield2();
+    var loom = highdmgshield();
     if (loom != void 0 && game.global.ShieldEquipped.name != getPageSetting2("highdmg")) {
       selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
@@ -6705,10 +6701,6 @@
       enemyDamage = calcSpire(99, game.global.gridArray[99].name, "attack");
     }
     highDamageShield();
-    if (getPageSetting2("loomswap") > 0 && game.global.challengeActive != "Daily" && game.global.ShieldEquipped.name != getPageSetting2("highdmg"))
-      ourBaseDamage *= trimpAA;
-    if (getPageSetting2("dloomswap") > 0 && game.global.challengeActive == "Daily" && game.global.ShieldEquipped.name != getPageSetting2("dhighdmg"))
-      ourBaseDamage *= trimpAA;
     const mapbonusmulti = 1 + 0.2 * game.global.mapBonus;
     let ourBaseDamage2 = ourBaseDamage;
     ourBaseDamage2 /= mapbonusmulti;
@@ -10224,8 +10216,15 @@
       case "Crushed":
       case "Nom":
       case "Toxicity":
-        if (getPageSetting2("MaxTox"))
-          settingChanged("MaxTox");
+      // #68: the `if (getPageSetting('MaxTox')) settingChanged("MaxTox");` that stood here is
+      // DELETED, not defined. 'MaxTox' was a real setting (it is still carried in the frozen
+      // serializeSettings blobs) that upstream deleted, leaving this read behind. getPageSetting
+      // returns false for it, so the guard never fires — but it is a LANDMINE, not merely dead:
+      // settingChanged("MaxTox") does a getElementById on a control that no longer exists, so
+      // minting the setting to "fix" the phantom would turn a dead guard into a THROW inside the
+      // portal path (and, with no mainLoop error boundary (#87), take out every automation after
+      // it). Deleting the reader is the only disposition that mints nothing and disarms it.
+      // The empty case falls through to "Watch" exactly as before.
       case "Watch":
       case "Lead":
       case "Corrupted":
@@ -10366,13 +10365,8 @@
     if (getPageSetting2("autoheirlooms") == true && getPageSetting2("typetokeep") != 0) {
       autoheirlooms3();
     }
-    if (game.global.ShieldEquipped.name != getPageSetting2("highdmg") || game.global.ShieldEquipped.name != getPageSetting2("dhighdmg")) {
-      var loom = highdmgshield();
-      if (loom != void 0) {
-        selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
-        equipHeirloom();
-      }
-    }
+    if (game.global.challengeActive === "Daily") dhighHeirloom();
+    else highHeirloom();
     if (getPageSetting2("AutoAllocatePerks") == 2) {
       viewPortalUpgrades();
       numTab(6, true);
@@ -10447,7 +10441,7 @@
         break;
       case "Custom":
         if ("Daily" != game.global.challengeActive) a = getPageSetting2("CustomAutoPortal") + 1;
-        if ("Daily" == game.global.challengeActive) a = getPageSetting2("Dailyportal") + 1;
+        if ("Daily" == game.global.challengeActive) a = getPageSetting2("dCustomAutoPortal") + 1;
         b = !("Lead" != getPageSetting2("HeliumHourChallenge"));
         break;
       default:
@@ -10587,13 +10581,8 @@
     if (getPageSetting2("autoheirlooms") == true && getPageSetting2("typetokeep") != 0) {
       autoheirlooms3();
     }
-    if (game.global.ShieldEquipped.name != getPageSetting2("highdmg") || game.global.ShieldEquipped.name != getPageSetting2("dhighdmg")) {
-      var loom = highdmgshield();
-      if (loom != void 0) {
-        selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
-        equipHeirloom();
-      }
-    }
+    if (game.global.challengeActive === "Daily") dhighHeirloom();
+    else highHeirloom();
     if (getPageSetting2("RAutoAllocatePerks") == 2) {
       viewPortalUpgrades();
       numTab(6, true);
@@ -14174,7 +14163,7 @@
     onKeyPressSetting: () => onKeyPressSetting,
     parseNum: () => parseNum,
     renderControlFace: () => renderControlFace2,
-    settingChanged: () => settingChanged2
+    settingChanged: () => settingChanged
   });
   var ranstring = "";
   function renderControlFace2(el, rec) {
@@ -14377,7 +14366,7 @@
       autoTrimpSettings[id].description = description;
     autoTrimpSettings["ATversion"] = ATversion;
   }
-  function settingChanged2(id) {
+  function settingChanged(id) {
     var btn = autoTrimpSettings[id];
     if (btn.type == "boolean") {
       btn.enabled = !btn.enabled;
@@ -14921,9 +14910,6 @@
     !radonon && getPageSetting("use3daily") == true ? turnOn("dwindcutoffmap") : turnOff("dwindcutoffmap");
     !radonon && getPageSetting("use3daily") == true ? turnOn("dwsmax") : turnOff("dwsmax");
     !radonon && getPageSetting("use3daily") == true ? turnOn("dwsmaxhd") : turnOff("dwsmaxhd");
-    !radonon && getPageSetting("dloomswap") > 0 ? turnOn("dloomswaphd") : turnOff("dloomswaphd");
-    !radonon && getPageSetting("dloomswap") > 0 ? turnOn("dhighdmg") : turnOff("dhighdmg");
-    !radonon && getPageSetting("dloomswap") > 0 ? turnOn("dlowdmg") : turnOff("dlowdmg");
     !radonon ? turnOn("AutoStartDaily") : turnOff("AutoStartDaily");
     !radonon ? turnOn("u2daily") : turnOff("u2daily");
     !radonon ? turnOn("AutoPortalDaily") : turnOff("AutoPortalDaily");
@@ -14967,7 +14953,7 @@
     radonon && dhson && dhsshieldon ? turnOn("Rdhsz") : turnOff("Rdhsz");
     radonon && dhson && dhsshieldon ? turnOn("Rdhs1") : turnOff("Rdhs1");
     radonon && dhson && dhsshieldon ? turnOn("Rdhs2") : turnOff("Rdhs2");
-    radonon && hson ? turnOn("Rdhsstaff") : turnOff("Rdhsstaff");
+    radonon && dhson ? turnOn("Rdhsstaff") : turnOff("Rdhsstaff");
     var dhsstaffon = getPageSetting("Rdhsstaff") == true;
     radonon && dhson && dhsstaffon ? turnOn("Rdhsworldstaff") : turnOff("Rdhsworldstaff");
     radonon && dhson && dhsstaffon ? turnOn("Rdhsmapstaff") : turnOff("Rdhsmapstaff");
@@ -15586,7 +15572,7 @@
       voidmaps = getPageSetting("VoidMaps");
     }
     if (game.global.challengeActive == "Daily") {
-      voidmaps = getPageSetting("dVoidMaps");
+      voidmaps = getPageSetting("DailyVoidMod");
     }
     if (voidmaps >= portalLevel)
       tooltip("confirm", null, "update", "WARNING: Your void maps are set to complete after your autoPortal, and therefore will not be done at all! Please Change Your Settings Now. This Box Will Not Go away Until You do. Remember you can choose 'Custom' autoPortal along with challenges for complete control over when you portal. <br><br> Estimated autoPortal level: " + portalLevel, "cancelTooltip()", "Void Maps Conflict");

@@ -154,6 +154,18 @@ for (const rel of SRC_CORPUS) {
         refs.push({ id: a0.text, file: rel, line: lineOf(n), via: 'settingChanged' })
     }
 
+    // Idiom 3b (#68): settingChanged("<id>") written INSIDE a string — the handler-attribute form,
+    //     setAttribute('onclick', 'settingChanged("Rchallengehidearch"), modifyParentNode(…)')
+    // These are real references, by literal id, that the game evaluates on click — but they are string
+    // literals, not call expressions, so the AST idiom above never saw them. The net had been blind to
+    // all nine (settings-defs.ts), i.e. a typo'd id in an onclick handler was a silent phantom.
+    // Found because deleting portal.ts's dead `settingChanged("MaxTox")` (#68) took the LAST call-expression
+    // site with it and tripped the anti-false-green assertion below — the tripwire did its job: rather than
+    // relax it, widen the idiom it was guarding. A vacuous channel is exactly what it exists to refuse.
+    if (ts.isStringLiteralLike(n))
+      for (const m of n.text.matchAll(/settingChanged\(\s*["']([A-Za-z0-9_]+)["']\s*\)/g))
+        refs.push({ id: m[1], file: rel, line: lineOf(n), via: 'settingChanged' })
+
     // Idiom 4: a BARE string comparison against a setting id. settings-engine.ts's settingChanged(id)
     // does `if (id == 'AutoMagmiteSpender2' && btn.value == 1)` — no getPageSetting anywhere, so a
     // call-site-only scan is blind to it. (It is a phantom: the live id is 'spendmagmite'.)
@@ -277,57 +289,61 @@ describe('every setting id the code READS must have been createSetting\'d (#68)'
   // allowlist. It may only ever get smaller (guard test below). Dispositions marked TRIAGE are the ones
   // whose correct repair is not yet decided; do NOT default them to "createSetting it" (see MaxTox).
   const KNOWN_PHANTOM: Record<string, string> = {
-    // ── TYPOs: the intended id exists, spelled differently. ────────────────────────────────────────────
-    DailyBWraid: "TYPO → 'Dailybwraid' (case) — AutoTrimps2.js:272, the daily BW-raid toggle never fires",
-    // AutoMagmiteSpender2 — FIXED (#83 §7). settings-engine.ts now compares against the live id
-    // 'spendmagmite', so magmiteSpenderChanged is really set and AutoTrimps2.js:200's 5-second
-    // suppression engages. Repointed, NOT re-minted. Entry deleted per the shrinking-baseline rule.
-    'game.global.universe == 1 && BWraid':
-      "BUG — an entire EXPRESSION was pasted inside the string argument (AutoTrimps2.js:273). Intended: " +
-      "game.global.universe == 1 && getPageSetting('BWraid')",
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    // 14 → 5. The nine that left, and by which of the three legal dispositions (#68 is now CLOSED):
+    //
+    //   REPOINTED at an already-defined id (mints nothing, so nothing can be resurrected):
+    //     DailyBWraid                        → 'Dailybwraid'      (case typo; AutoTrimps2.js)
+    //     'game.global.universe == 1 && BWraid' → a real expression + getPageSetting('BWraid')
+    //     Dailyportal                        → 'dCustomAutoPortal' (portal.ts; was `false + 1` === 1)
+    //     dVoidMaps                          → 'DailyVoidMod'     (settings-visibility.ts)
+    //     dMaxMapBonushealth                 → 'MaxMapBonushealth' (upgrades.ts; no daily twin ever existed)
+    //
+    //   READER DELETED (the code was dead; deleting is the only disposition that also disarms the
+    //   resurrection landmine, since every one of these ids is still carried in the frozen blobs):
+    //     MaxTox      — portal.ts. See below: defining it was never merely useless, it was a THROW.
+    //     fuckanti    — AutoTrimps2.js. `false > 0` disjunct; deleting is behaviour-identical.
+    //     loomswap    — equipment.ts + maps.ts `*= trimpAA`. Guards permanently false.
+    //     dloomswap   — same, + the settings-visibility block that PERMANENTLY HID 'dhighdmg'/'dlowdmg'.
+    //
+    // What is left is exactly the set where every legal disposition would CHANGE PRODUCT BEHAVIOUR, so
+    // the fix is a decision, not a repair. Each has its reasoning below. Do not "clear" these by minting.
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
-    // ── MISSING U2 / DAILY TWIN: the non-prefixed sibling is defined; the prefixed one never was. The
-    //    repair is a choice (define the twin, or read the sibling) — hence TRIAGE, not a default define.
-    // ✅ #85 — RCapEquip2 / RCapEquiparm / Ralways2 / RDynamicPrestige2 ARE GONE FROM THIS LIST, and not
-    // because anything was defined: the only code that still read them was UNREACHABLE, and #85's
-    // reachability net proved it, so the dead functions (RevaluateEquipmentEfficiency, RprestigeChanging2)
-    // were DELETED and the reads went with them. That is the third disposition this list's header asks
-    // for — not "define the twin", not "read the sibling", but "delete the reader". It is the only one of
-    // the three that mints nothing, and re-minting a 2020-deleted id would have resurrected users' stored
-    // values (see the header). Deleting the dead reader was always the right answer here.
-    // ✅ Rgearamounttobuy — FIXED (#68). smithylogic now reads 'Requipamount', the live U2 gear-amount
-    // setting, which until now was a rendered ORPHAN no code read. Default 1 == the old `: 1` fallback,
-    // so behavior is unchanged. The net went red the moment the last read vanished; that is the design.
-    Rnovmsc2: "MISSING U2 TWIN of 'novmsc2' — maps.ts:1023 (TRIAGE)",
-    Ronlystackedvoids: "MISSING U2 TWIN of 'onlystackedvoids' — maps.ts:1011,1024 (TRIAGE)",
-    dMaxMapBonushealth: "MISSING DAILY TWIN of 'MaxMapBonushealth' — upgrades.ts:105 (TRIAGE)",
-    dVoidMaps: "MISSING DAILY TWIN of 'VoidMaps' — settings-visibility.ts:990 (TRIAGE)",
+    // ── ⚠️ DO NOT MINT — RESURRECTION HAZARD. Deferred deliberately; see the issue-68 thread. ─────────
+    Ronlystackedvoids:
+      'DO NOT MINT — this was a REAL setting (createSetting`d 2019 in d33ea06b, deleted upstream 2020 in ' +
+      '701faab4) whose reads were left behind (maps.ts). createSetting applies its default ONLY when ' +
+      'nothing is stored, and serializeSettings round-trips unknown keys forever — so re-minting it hands ' +
+      'a returning U2 player back whatever they ticked five years ago, silently suppressing void running ' +
+      'with no visible cause. There is no U2 id to repoint at. Needs a stale-key purge FIRST; until then ' +
+      'the dead read is the safe state. Reachable, but harmless while it reads false.',
+    Rnovmsc2:
+      "DO NOT MINT (yet) — the one id here that genuinely never existed (`git log --all -S` is empty), so " +
+      "minting is SAFE from resurrection. But 'novmsc2' (No VMs for C2s) has no U2 twin because nobody ever " +
+      'built one: minting it is a U2 FEATURE ADD with a new default, not a bug fix, and belongs to whoever ' +
+      'owns U2 C2 behaviour. maps.ts reads it; it returns false; U2 C2 runs do voids. That is the status quo, ' +
+      'not a regression.',
 
-    // ── DEAD/UNSHIPPED FEATURE.
-    // ✅ #85 — the nine nuloom ids (heirloomnu / autonu / rationu / slot1nu…slot6nu) ARE GONE FROM THIS
-    // LIST. "Either ship the settings or delete the code" — we deleted the code. The whole nu-loom
-    // subsystem was a six-function dead CYCLE whose sole entry point, spendNu(), had both of its call
-    // sites commented out in portal.ts. Nothing reads these ids any more because nothing exists to read
-    // them.
-    // loomswap/dloomswap SURVIVE: unlike the nu ids, their readers (equipment.ts, maps.ts) are LIVE code
-    // on a reachable path — a genuinely phantom-gated feature, which is #68's problem, not #85's.
-    loomswap: 'DEAD — loom-swap settings never createSetting\'d (equipment.ts:358, maps.ts:398)',
-    dloomswap: 'DEAD — daily loom-swap, same (equipment.ts:360, maps.ts:400, settings-visibility.ts:155-157)',
-
-    // ── TRIAGE: no obvious target id; needs a decision. ────────────────────────────────────────────────
-    Dailyportal: 'TRIAGE — portal.ts:310 `getPageSetting("Dailyportal")+1` → always 1',
-    FoodEfficiencyIgnoresMax: 'TRIAGE — buildings.ts:111, ignoresLimit is always false',
-    GemEfficiencyIgnoresMax: 'TRIAGE — buildings.ts:170, the Gateway carve-out never applies',
+    // ── REACHABLE, but repair REQUIRES minting a new user-facing setting = a product decision. ────────
+    //    All three are `git log --all -S` EMPTY (never existed here — the code arrived without its
+    //    settings), so minting carries NO resurrection risk, and the behaviour-preserving defaults are
+    //    already known (false / false / -1). What stops me is only that each mint is a new control, a new
+    //    default and a new UI row — scope that belongs to a feature slice, not a phantom sweep. Reachability
+    //    is CONFIRMED: buildings.ts:222-223 calls both functions unconditionally.
+    FoodEfficiencyIgnoresMax:
+      'MINT-OR-DELETE (product decision) — buildings.ts:107. `ignoresLimit` is permanently false, so ' +
+      'buyFoodEfficientHousing always enforces the Max<building> caps and never takes its ignore-caps ' +
+      'path. Behaviour-preserving mint = boolean, default false.',
+    GemEfficiencyIgnoresMax:
+      'MINT-OR-DELETE (product decision) — buildings.ts:166. The `&& keysSorted[best] !== "Gateway"` ' +
+      'carve-out in buyGemEfficientHousing can never apply. Behaviour-preserving mint = boolean, default false.',
     GatewayWall:
-      'TRIAGE — buildings.ts:175-176. Siblings GymWall/NurseryWall/WarpstationWall3 exist; note the ' +
-      'divide-by-false at :176 (x / false = Infinity)',
-    fuckanti: "TRIAGE — AutoTrimps2.js:233 `> 0` never true; only 'fuckjobs' is defined",
-
-    // ── ⚠️ DO NOT DEFINE. ─────────────────────────────────────────────────────────────────────────────
-    MaxTox:
-      'DO NOT DEFINE — ACCIDENTALLY PROTECTIVE. portal.ts:74 reads it and, if truthy, calls ' +
-      'settingChanged("MaxTox"); the control does not exist, so defining the setting turns a dead guard ' +
-      'into a THROW inside the portal path. Delete the read instead.',
+      'MINT-OR-DELETE (product decision) — buildings.ts:171-172. `false > 1` is false, so the Gateway ' +
+      'fragment-wall block is unreachable — which is ALSO what keeps the divide-by-false on the next line ' +
+      '(`fragments / false` = Infinity) from ever evaluating. Mint and that latent Infinity goes live, so a ' +
+      'mint MUST use a default that keeps the guard false (-1, matching the GymWall/WarpstationWall3 ' +
+      'siblings) and must fix the divisor at the same time. Do not mint it casually.',
   }
 
   it('no setting id is read but never defined', () => {
@@ -362,7 +378,10 @@ describe('every setting id the code READS must have been createSetting\'d (#68)'
         `'${id}' is no longer read anywhere — delete it from KNOWN_PHANTOM`,
       ).toBe(true)
     }
-    expect(Object.keys(KNOWN_PHANTOM).length).toBeLessThanOrEqual(28) // 29 → 28: Rgearamounttobuy fixed (#68)
+    // 29 → 28: Rgearamounttobuy repointed. 28 → 14: #85 deleted the dead nu-loom + RevaluateEquipmentEfficiency
+    // readers. 14 → 5: #68 CLOSED — five ids repointed, four dead readers deleted (see the header above).
+    // The five that remain are all "the repair changes product behaviour", not "nobody looked yet".
+    expect(Object.keys(KNOWN_PHANTOM).length).toBeLessThanOrEqual(5)
   })
 
   it('the ALLOWED_DYNAMIC allowlist stays honest — every entry must still be a live call site', () => {

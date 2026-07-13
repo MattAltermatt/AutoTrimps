@@ -102,7 +102,18 @@ export function autoGiga(targetZone?: number, metalRatio = 0.5, slowDown = 10, c
 
 export function firstGiga(forced?: boolean) {
     //Build our first giga if: A) Has more than 2 Warps & B) Can't afford more Coords & C)* Lacking Health or Damage & D)* Has run at least 1 map stack or if forced to
-    const maxHealthMaps = game.global.challengeActive === "Daily" ? getPageSetting('dMaxMapBonushealth') : getPageSetting('MaxMapBonushealth');
+    // #68: was `challengeActive === "Daily" ? getPageSetting('dMaxMapBonushealth') : getPageSetting('MaxMapBonushealth')`.
+    // 'dMaxMapBonushealth' has NEVER been createSetting'd — not in this repo's whole history — so on a
+    // Daily this evaluated to false, and the `game.global.mapBonus >= maxHealthMaps` test below became
+    // `mapBonus >= 0`: ALWAYS TRUE. The map-bonus-health gate on firstGiga was therefore entirely absent
+    // on dailies. Collapsed onto the setting that does exist rather than minting a daily twin: the very
+    // next disjunct reads 'MaxMapBonuslimit' — the sibling map-bonus cap, in this same expression —
+    // with no daily variant at all, so unconditional is this code's own convention. Minting
+    // 'dMaxMapBonushealth' would be a new user-facing setting with a new default: a product decision,
+    // not a phantom fix. ⚠️ This DOES change daily behaviour (that is the bug): firstGiga is no longer
+    // force-allowed at mapBonus 0-1 on a Daily. No balance literal changed — 'MaxMapBonushealth' keeps
+    // its own default of 10.
+    const maxHealthMaps = getPageSetting('MaxMapBonushealth');
     const s = !(getPageSetting('CustomDeltaFactor') > 20);
     const a = game.buildings.Warpstation.owned >= 2;
     const b = !canAffordCoordinationTrimps() || game.global.world >= 230 && !canAffordTwoLevel(game.upgrades.Coordination);
