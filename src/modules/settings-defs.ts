@@ -296,9 +296,20 @@ export function initializeAllSettings() {
     createSetting('fuckjobs', 'Hide Jobs', 'Hides obsolete settings when you have obtained the AutoJobs Mastery. It should be far better to use than AT, Especially on c2 Challenges like Watch. ', 'boolean', false, null, "Jobs");
     createSetting('BuyJobsNew', ['Don\'t Buy Jobs', 'Auto Worker Ratios', 'Manual Worker Ratios'], 'Manual Worker Ratios buys jobs for your trimps according to the ratios below, <b>Make sure they are all different values, if two of them are the same it might causing an infinite loop of hiring and firing!</b> Auto Worker ratios automatically changes these ratios based on current progress, <u>overriding your ratio settings</u>.<br>AutoRatios: 1/1/1 up to 300k trimps, 3/3/5 up to 3mil trimps, then 3/1/4 above 3 mil trimps, then 1/1/10 above 1000 tributes, then 1/2/22 above 1500 tributes, then 1/12/12 above 3000 tributes.<br>CAUTION: You cannot manually assign jobs with this, turn it off if you have to', 'multitoggle', 1, null, "Jobs");
     createSetting('AutoMagmamancers', 'Auto Magmamancers', 'Auto Magmamancer Management. Hires Magmamancers when the Current Zone time goes over 10 minutes. Does a one-time spend of at most 10% of your gem resources. Every increment of 10 minutes after that repeats the 10% hiring process. Magmamancery mastery is accounted for, with that it hires them at 5 minutes instead of 10. Disclaimer: May negatively impact Gem count.', 'boolean', true, null, 'Jobs');
-    createSetting('FarmerRatio', 'Farmer Ratio', '', 'value', '1', null, "Jobs");
-    createSetting('LumberjackRatio', 'Lumberjack Ratio', '', 'value', '1', null, "Jobs");
-    createSetting('MinerRatio', 'Miner Ratio', '', 'value', '1', null, "Jobs");
+    // #106: these three had an EMPTY description. Only the PROPORTIONS matter — the bot divides each by
+    // the sum of all three — so 1.1/1.15/1.2 and 110/115/120 are the same setting. And in "Auto Worker
+    // Ratios" mode (the default) AutoTrimps OVERWRITES these boxes every tick with its own preset table,
+    // so anything typed here is discarded within ~100ms. Say both things out loud.
+    const RATIO_TIP = 'Share of your Farmer/Lumberjack/Miner workforce. <b>Only the proportions matter</b> — the bot divides each by the sum of all three, so <b>1/1/1</b>, <b>10/10/10</b> and <b>33/33/33</b> are identical. The live percentage is shown on the button.<br><br>⚠️ In <b>Auto Worker Ratios</b> mode (the default) AutoTrimps rewrites these every tick and your value is ignored — switch <b>Buy Jobs</b> to <b>Manual Worker Ratios</b> to set them yourself.';
+    createSetting('FarmerRatio', 'Farmer Ratio', RATIO_TIP, 'value', '1', null, "Jobs");
+    createSetting('LumberjackRatio', 'Lumberjack Ratio', RATIO_TIP, 'value', '1', null, "Jobs");
+    createSetting('MinerRatio', 'Miner Ratio', RATIO_TIP, 'value', '1', null, "Jobs");
+    // #106 — the scientist share was a HIDDEN constant (MODULES.jobs.scientistRatio = 25, i.e. ~4%) with
+    // no setting at all; MaxScientists is a CAP and can only ever LOWER the count. Worse, no fixed value
+    // can be right: your manual-gather rate DOUBLES with every Speedbook while a scientist's output is
+    // flat, so the "correct" share climbs exponentially through a run. Hence a percentage, not a constant.
+    const SCI_TIP = 'What share of your Farmer/Lumberjack/Miner workforce should be Scientists.<br><br><b>-1</b> = Auto (the built-in table: ~4% normally, ~9% before 100 Farmers, ~1% past zone 300).<br><b>0</b> = hire no more Scientists (any you already have will stay — see below).<br><b>1-90</b> = that percent. The rest is split between Farmer/Lumberjack/Miner by their ratios.<br><br>⚠️ <b>This can only ADD scientists, never remove them</b> — AutoTrimps never fires them, so a value BELOW what you already have does nothing. (Auto gives ~9% until you have 100 Farmers, so setting 5% early on will look like it did nothing. It did — you already had more.)<br><br>⚠️ <b>Control only.</b> This does not make your run faster: measured over 8 seeds on a real save, even <i>infinite free science</i> made no difference beyond noise. Science is not the bottleneck. Use this to decide where your workers go, not to go faster.';
+    createSetting('ScientistPercent', 'Scientist %', SCI_TIP, 'valueNegative', '-1', null, "Jobs");
     createSetting('MaxScientists', 'Max Scientists', 'Advanced. Cap your scientists (This is an absolute number not a ratio). recommend: -1 (infinite still controls itself)', 'value', '-1', null, "Jobs");
     createSetting('MaxExplorers', 'Max Explorers', 'Advanced. Cap your explorers (This is an absolute number not a ratio). recommend: -1', 'value', '-1', null, "Jobs");
 
@@ -310,9 +321,12 @@ export function initializeAllSettings() {
 
     //Line 1
     createSetting('RBuyJobsNew', ['Don\'t Buy Jobs', 'Auto Worker Ratios', 'Manual Worker Ratios'], 'Manual Worker Ratios buys jobs for your trimps according to the ratios below, <b>Make sure they are all different values, if two of them are the same it might causing an infinite loop of hiring and firing!</b> Auto Worker ratios automatically changes these ratios based on current progress, <u>overriding your ratio settings</u>.<br>AutoRatios: 1/1/1 up to 300k trimps, 3/3/5 up to 3mil trimps, then 3/1/4 above 3 mil trimps, then 1/1/10 above 1000 tributes, then 1/2/22 above 1500 tributes, then 1/12/12 above 3000 tributes.<br>CAUTION: You cannot manually assign jobs with this, turn it off if you have to', 'multitoggle', 1, null, "Jobs");
-    createSetting('RFarmerRatio', 'Farmer Ratio', '', 'value', '1', null, "Jobs");
-    createSetting('RLumberjackRatio', 'Lumberjack Ratio', '', 'value', '1', null, "Jobs");
-    createSetting('RMinerRatio', 'Miner Ratio', '', 'value', '1', null, "Jobs");
+    createSetting('RFarmerRatio', 'Farmer Ratio', RATIO_TIP, 'value', '1', null, "Jobs");
+    createSetting('RLumberjackRatio', 'Lumberjack Ratio', RATIO_TIP, 'value', '1', null, "Jobs");
+    createSetting('RMinerRatio', 'Miner Ratio', RATIO_TIP, 'value', '1', null, "Jobs");
+    // #106 — the U2 twin. RbuyJobs uses a DIFFERENT allocator (a weight vector, not a divisor), so its
+    // built-in share is ~4% via `1 / (1 + mod*(Rf+Rl+Rm))` rather than TDW/25. Same setting semantics.
+    createSetting('RScientistPercent', 'Scientist %', SCI_TIP, 'valueNegative', '-1', null, "Jobs");
     createSetting('RMaxExplorers', 'Max Explorers', 'Advanced. Cap your explorers (This is an absolute number not a ratio). recommend: -1', 'value', '-1', null, "Jobs");
 
     //Ships

@@ -6,6 +6,63 @@
 // via the global bridge / pre-existing globals. Exported so the bridge republishes them for
 // the every-tick caller and the settings reset path (import-export.ts).
 
+/**
+ * #106 — the live "(32%)" suffix on the four Jobs allocation controls.
+ *
+ * WHY: the three worker-ratio boxes show numbers like `1.10 / 1.15 / 1.20`, which are meaningless in
+ * isolation. They are UNNORMALISED WEIGHTS: `ratiobuy` (jobs.ts) computes
+ * `floor((jobratio / totalRatio) * workers)`, so only the PROPORTIONS matter — 1.1/1.15/1.2 and
+ * 110/115/120 are the same setting. Showing the normalised share is the whole fix for "I don't
+ * understand the ratios", and it costs nothing: this is DOM text only, so it is trace-neutral (the L0
+ * oracle records actions, not labels) and it mints/migrates nothing.
+ *
+ * Scientists are shown too, because the four numbers together are what actually determines where a
+ * worker goes. Note the scientist share is taken from the SAME pool but is NOT part of `totalRatio`
+ * (jobs.ts excludes Scientist from totalDistributableWorkers), so we render its share of the whole
+ * allocation — i.e. the four printed percentages sum to 100, which is what a reader expects and what
+ * the bot effectively does.
+ *
+ * Returns '' for every other setting, so the value-face path is otherwise untouched.
+ */
+export function jobRatioSuffix(id: string): string {
+    // ⚠️ Every getPageSetting below is a QUOTED LITERAL, deliberately. tests/nets/settings-reverse.test.ts
+    // proves that every id the code READS was actually createSetting'd, and it does so by grepping for
+    // quoted literals — a dynamically-composed `getPageSetting('R' + x + 'Ratio')` is INVISIBLE to it and
+    // has to be added to an allowlist instead. Given this whole feature exists because a hidden knob had
+    // no setting, hiding its reads from the net that polices exactly that would be a poor joke. Two
+    // explicit branches; no cleverness.
+    let f: number, l: number, m: number, sPct: number;
+    if (id === 'FarmerRatio' || id === 'LumberjackRatio' || id === 'MinerRatio' || id === 'ScientistPercent') {
+        f = parseFloat(getPageSetting('FarmerRatio'));
+        l = parseFloat(getPageSetting('LumberjackRatio'));
+        m = parseFloat(getPageSetting('MinerRatio'));
+        sPct = getPageSetting('ScientistPercent');
+    } else if (id === 'RFarmerRatio' || id === 'RLumberjackRatio' || id === 'RMinerRatio' || id === 'RScientistPercent') {
+        f = parseFloat(getPageSetting('RFarmerRatio'));
+        l = parseFloat(getPageSetting('RLumberjackRatio'));
+        m = parseFloat(getPageSetting('RMinerRatio'));
+        sPct = getPageSetting('RScientistPercent');
+    } else {
+        return '';
+    }
+
+    const total = f + l + m;
+    if (!Number.isFinite(total) || total <= 0) return '';
+
+    // The scientist slice. -1 (Auto) means the built-in table is in charge, and that table depends on
+    // farmer count and zone — so there is no single honest number to print. Say "(auto)" rather than
+    // invent one.
+    const sci = (Number.isFinite(sPct) && sPct >= 0) ? Math.min(sPct, 90) : NaN;
+    if (id === 'ScientistPercent' || id === 'RScientistPercent') return Number.isNaN(sci) ? ' (auto)' : '';
+
+    // Workers split whatever the scientists leave, so with a scientist share set the four printed numbers
+    // sum to 100. On Auto we can only honestly show the workers' shares of each other.
+    const workerShare = Number.isNaN(sci) ? 100 : (100 - sci);
+    const own = (id === 'FarmerRatio' || id === 'RFarmerRatio') ? f
+        : (id === 'LumberjackRatio' || id === 'RLumberjackRatio') ? l : m;
+    return ' (' + ((own / total) * workerShare).toFixed(1) + '%)';
+}
+
 export function updateCustomButtons() {
 	const isGraphModuleDefined = typeof MODULES.graphs !== 'undefined';
 	const isLastThemeDefined = isGraphModuleDefined && typeof MODULES.graphs._lastTheme !== 'undefined';
@@ -322,6 +379,10 @@ export function updateCustomButtons() {
     (!radonon && !fuckjobbies) ? turnOn("FarmerRatio") : turnOff("FarmerRatio");
     (!radonon && !fuckjobbies) ? turnOn("LumberjackRatio") : turnOff("LumberjackRatio");
     (!radonon && !fuckjobbies) ? turnOn("MinerRatio") : turnOff("MinerRatio");
+    // #106: unlike the three ratio boxes above, ScientistPercent is NOT overwritten by "Auto Worker
+    // Ratios" — workerRatios() only rewrites Farmer/Lumberjack/Miner — so it is a live control in every
+    // BuyJobsNew mode, and stays visible whenever the Jobs panel is.
+    (!radonon && !fuckjobbies) ? turnOn("ScientistPercent") : turnOff("ScientistPercent");
     (!radonon && !fuckjobbies) ? turnOn("MaxScientists") : turnOff("MaxScientists");
     (!radonon && !fuckjobbies) ? turnOn("MaxExplorers") : turnOff("MaxExplorers");
     (!radonon && !fuckjobbies) ? turnOn("MaxTrainers") : turnOff("MaxTrainers");
@@ -979,7 +1040,7 @@ export function updateCustomButtons() {
                     else
                         elem.textContent = item.name + ': ' + item.value.substring(0, 21);
                 } else if (item.value > -1 || item.type == 'valueNegative')
-                    elem.textContent = item.name + ': ' + prettify(item.value);
+                    elem.textContent = item.name + ': ' + prettify(item.value) + jobRatioSuffix(item.id);
                 else
                     elem.innerHTML = item.name + ': ' + "<span class='icomoon icon-infinity'></span>";
             }

@@ -3497,6 +3497,7 @@
     buyJobs: () => buyJobs,
     safeBuyJob: () => safeBuyJob,
     safeFireJob: () => safeFireJob,
+    scientistDivisor: () => scientistDivisor,
     workerRatios: () => workerRatios
   });
   MODULES["jobs"] = {};
@@ -3512,6 +3513,12 @@
   MODULES["jobs"].autoRatio2 = [3, 3.1, 5];
   MODULES["jobs"].autoRatio1 = [1.1, 1.15, 1.2];
   MODULES["jobs"].customRatio = null;
+  function scientistDivisor(pct, legacy) {
+    if (!Number.isFinite(pct) || pct < 0) return legacy;
+    if (pct === 0) return Infinity;
+    const s = Math.min(pct, 90);
+    return (100 - s) / s;
+  }
   function freeWorkerSlots() {
     return Math.ceil(game.resources.trimps.realMax() / 2) - game.resources.trimps.employed;
   }
@@ -3576,13 +3583,14 @@
     let lumberjackRatio = parseFloat(getPageSetting2("LumberjackRatio"));
     let minerRatio = parseFloat(getPageSetting2("MinerRatio"));
     let totalRatio = farmerRatio + lumberjackRatio + minerRatio;
-    let scientistRatio = totalRatio / MODULES["jobs"].scientistRatio;
+    let legacyDivisor = MODULES["jobs"].scientistRatio;
     if (game.jobs.Farmer.owned < 100) {
-      scientistRatio = totalRatio / MODULES["jobs"].scientistRatio2;
+      legacyDivisor = MODULES["jobs"].scientistRatio2;
     }
     if (game.global.world >= 300) {
-      scientistRatio = totalRatio / MODULES["jobs"].scientistRatio3;
+      legacyDivisor = MODULES["jobs"].scientistRatio3;
     }
+    let scientistRatio = totalRatio / scientistDivisor(getPageSetting2("ScientistPercent"), legacyDivisor);
     if (game.global.world === 1 && game.global.totalHeliumEarned <= 5e3) {
       if (game.resources.trimps.owned < game.resources.trimps.realMax() * 0.9) {
         if (game.resources.food.owned > 5 && freeWorkers > 0) {
@@ -3600,13 +3608,13 @@
       return;
     } else if (game.jobs.Farmer.owned === 0 && game.jobs.Lumberjack.locked && freeWorkers > 0) {
       safeBuyJob("Farmer", 1);
-    } else if (getPageSetting2("MaxScientists") != 0 && game.jobs.Scientist.owned < 10 && scienceNeeded > 100 && freeWorkers > 0 && game.jobs.Farmer.owned >= 10) {
+    } else if (getPageSetting2("MaxScientists") != 0 && getPageSetting2("ScientistPercent") != 0 && game.jobs.Scientist.owned < 10 && scienceNeeded > 100 && freeWorkers > 0 && game.jobs.Farmer.owned >= 10) {
       safeBuyJob("Scientist", 1);
     }
     freeWorkers = freeWorkerSlots();
     totalDistributableWorkers = freeWorkers + game.jobs.Farmer.owned + game.jobs.Miner.owned + game.jobs.Lumberjack.owned;
     if (challengeActive("Watch")) {
-      scientistRatio = totalRatio / MODULES["jobs"].scientistRatio2;
+      scientistRatio = totalRatio / scientistDivisor(getPageSetting2("ScientistPercent"), MODULES["jobs"].scientistRatio2);
       if (game.resources.trimps.owned < game.resources.trimps.realMax() * 0.9 && !breedFire) {
         let buyScientists = Math.floor(scientistRatio / totalRatio * totalDistributableWorkers - game.jobs.Scientist.owned);
         if (game.jobs.Scientist.owned < buyScientists && game.resources.trimps.owned > game.resources.trimps.realMax() * 0.1) {
@@ -4062,14 +4070,21 @@
       if (game.global.world >= 65) {
         scientistMod = MODULES["jobs"].RscientistRatio4;
       }
+      const rPct = getPageSetting2("RScientistPercent");
+      const rPctSet = Number.isFinite(rPct) && rPct >= 0;
       for (let worker of ratioWorkers) {
         if (!game.jobs[worker].locked) {
           if (worker === "Scientist") {
             desiredRatios[ratioWorkers.indexOf(worker)] = 1;
             continue;
           }
-          desiredRatios[ratioWorkers.indexOf(worker)] = scientistMod * parseFloat(getPageSetting2("R" + worker + "Ratio"));
+          desiredRatios[ratioWorkers.indexOf(worker)] = (rPctSet ? 1 : scientistMod) * parseFloat(getPageSetting2("R" + worker + "Ratio"));
         }
+      }
+      if (rPctSet && !game.jobs.Scientist.locked) {
+        const s = Math.min(rPct, 90);
+        const W = desiredRatios[0] + desiredRatios[1] + desiredRatios[2];
+        desiredRatios[3] = s === 0 ? 0 : W * s / (100 - s);
       }
     }
     let totalFraction = desiredRatios.reduce((a, b) => {
@@ -14830,8 +14845,32 @@
     checkPortalSettings: () => checkPortalSettings2,
     getDailyHeHrStats: () => getDailyHeHrStats,
     getDailyRnHrStats: () => getDailyRnHrStats,
+    jobRatioSuffix: () => jobRatioSuffix,
     updateCustomButtons: () => updateCustomButtons2
   });
+  function jobRatioSuffix(id) {
+    let f, l, m, sPct;
+    if (id === "FarmerRatio" || id === "LumberjackRatio" || id === "MinerRatio" || id === "ScientistPercent") {
+      f = parseFloat(getPageSetting("FarmerRatio"));
+      l = parseFloat(getPageSetting("LumberjackRatio"));
+      m = parseFloat(getPageSetting("MinerRatio"));
+      sPct = getPageSetting("ScientistPercent");
+    } else if (id === "RFarmerRatio" || id === "RLumberjackRatio" || id === "RMinerRatio" || id === "RScientistPercent") {
+      f = parseFloat(getPageSetting("RFarmerRatio"));
+      l = parseFloat(getPageSetting("RLumberjackRatio"));
+      m = parseFloat(getPageSetting("RMinerRatio"));
+      sPct = getPageSetting("RScientistPercent");
+    } else {
+      return "";
+    }
+    const total = f + l + m;
+    if (!Number.isFinite(total) || total <= 0) return "";
+    const sci = Number.isFinite(sPct) && sPct >= 0 ? Math.min(sPct, 90) : NaN;
+    if (id === "ScientistPercent" || id === "RScientistPercent") return Number.isNaN(sci) ? " (auto)" : "";
+    const workerShare = Number.isNaN(sci) ? 100 : 100 - sci;
+    const own = id === "FarmerRatio" || id === "RFarmerRatio" ? f : id === "LumberjackRatio" || id === "RLumberjackRatio" ? l : m;
+    return " (" + (own / total * workerShare).toFixed(1) + "%)";
+  }
   function updateCustomButtons2() {
     const isGraphModuleDefined = typeof MODULES.graphs !== "undefined";
     const isLastThemeDefined = isGraphModuleDefined && typeof MODULES.graphs._lastTheme !== "undefined";
@@ -15063,6 +15102,7 @@
     !radonon && !fuckjobbies ? turnOn("FarmerRatio") : turnOff("FarmerRatio");
     !radonon && !fuckjobbies ? turnOn("LumberjackRatio") : turnOff("LumberjackRatio");
     !radonon && !fuckjobbies ? turnOn("MinerRatio") : turnOff("MinerRatio");
+    !radonon && !fuckjobbies ? turnOn("ScientistPercent") : turnOff("ScientistPercent");
     !radonon && !fuckjobbies ? turnOn("MaxScientists") : turnOff("MaxScientists");
     !radonon && !fuckjobbies ? turnOn("MaxExplorers") : turnOff("MaxExplorers");
     !radonon && !fuckjobbies ? turnOn("MaxTrainers") : turnOff("MaxTrainers");
@@ -15591,7 +15631,7 @@
             else
               elem.textContent = item.name + ": " + item.value.substring(0, 21);
           } else if (item.value > -1 || item.type == "valueNegative")
-            elem.textContent = item.name + ": " + prettify(item.value);
+            elem.textContent = item.name + ": " + prettify(item.value) + jobRatioSuffix(item.id);
           else
             elem.innerHTML = item.name + ": <span class='icomoon icon-infinity'></span>";
         }
@@ -15840,16 +15880,20 @@
     createSetting("fuckjobs", "Hide Jobs", "Hides obsolete settings when you have obtained the AutoJobs Mastery. It should be far better to use than AT, Especially on c2 Challenges like Watch. ", "boolean", false, null, "Jobs");
     createSetting("BuyJobsNew", ["Don't Buy Jobs", "Auto Worker Ratios", "Manual Worker Ratios"], "Manual Worker Ratios buys jobs for your trimps according to the ratios below, <b>Make sure they are all different values, if two of them are the same it might causing an infinite loop of hiring and firing!</b> Auto Worker ratios automatically changes these ratios based on current progress, <u>overriding your ratio settings</u>.<br>AutoRatios: 1/1/1 up to 300k trimps, 3/3/5 up to 3mil trimps, then 3/1/4 above 3 mil trimps, then 1/1/10 above 1000 tributes, then 1/2/22 above 1500 tributes, then 1/12/12 above 3000 tributes.<br>CAUTION: You cannot manually assign jobs with this, turn it off if you have to", "multitoggle", 1, null, "Jobs");
     createSetting("AutoMagmamancers", "Auto Magmamancers", "Auto Magmamancer Management. Hires Magmamancers when the Current Zone time goes over 10 minutes. Does a one-time spend of at most 10% of your gem resources. Every increment of 10 minutes after that repeats the 10% hiring process. Magmamancery mastery is accounted for, with that it hires them at 5 minutes instead of 10. Disclaimer: May negatively impact Gem count.", "boolean", true, null, "Jobs");
-    createSetting("FarmerRatio", "Farmer Ratio", "", "value", "1", null, "Jobs");
-    createSetting("LumberjackRatio", "Lumberjack Ratio", "", "value", "1", null, "Jobs");
-    createSetting("MinerRatio", "Miner Ratio", "", "value", "1", null, "Jobs");
+    const RATIO_TIP = "Share of your Farmer/Lumberjack/Miner workforce. <b>Only the proportions matter</b> \u2014 the bot divides each by the sum of all three, so <b>1/1/1</b>, <b>10/10/10</b> and <b>33/33/33</b> are identical. The live percentage is shown on the button.<br><br>\u26A0\uFE0F In <b>Auto Worker Ratios</b> mode (the default) AutoTrimps rewrites these every tick and your value is ignored \u2014 switch <b>Buy Jobs</b> to <b>Manual Worker Ratios</b> to set them yourself.";
+    createSetting("FarmerRatio", "Farmer Ratio", RATIO_TIP, "value", "1", null, "Jobs");
+    createSetting("LumberjackRatio", "Lumberjack Ratio", RATIO_TIP, "value", "1", null, "Jobs");
+    createSetting("MinerRatio", "Miner Ratio", RATIO_TIP, "value", "1", null, "Jobs");
+    const SCI_TIP = "What share of your Farmer/Lumberjack/Miner workforce should be Scientists.<br><br><b>-1</b> = Auto (the built-in table: ~4% normally, ~9% before 100 Farmers, ~1% past zone 300).<br><b>0</b> = hire no more Scientists (any you already have will stay \u2014 see below).<br><b>1-90</b> = that percent. The rest is split between Farmer/Lumberjack/Miner by their ratios.<br><br>\u26A0\uFE0F <b>This can only ADD scientists, never remove them</b> \u2014 AutoTrimps never fires them, so a value BELOW what you already have does nothing. (Auto gives ~9% until you have 100 Farmers, so setting 5% early on will look like it did nothing. It did \u2014 you already had more.)<br><br>\u26A0\uFE0F <b>Control only.</b> This does not make your run faster: measured over 8 seeds on a real save, even <i>infinite free science</i> made no difference beyond noise. Science is not the bottleneck. Use this to decide where your workers go, not to go faster.";
+    createSetting("ScientistPercent", "Scientist %", SCI_TIP, "valueNegative", "-1", null, "Jobs");
     createSetting("MaxScientists", "Max Scientists", "Advanced. Cap your scientists (This is an absolute number not a ratio). recommend: -1 (infinite still controls itself)", "value", "-1", null, "Jobs");
     createSetting("MaxExplorers", "Max Explorers", "Advanced. Cap your explorers (This is an absolute number not a ratio). recommend: -1", "value", "-1", null, "Jobs");
     createSetting("MaxTrainers", "Max Trainers", "Advanced. Cap your trainers (This is an absolute number not a ratio). recommend: -1", "value", "-1", null, "Jobs");
     createSetting("RBuyJobsNew", ["Don't Buy Jobs", "Auto Worker Ratios", "Manual Worker Ratios"], "Manual Worker Ratios buys jobs for your trimps according to the ratios below, <b>Make sure they are all different values, if two of them are the same it might causing an infinite loop of hiring and firing!</b> Auto Worker ratios automatically changes these ratios based on current progress, <u>overriding your ratio settings</u>.<br>AutoRatios: 1/1/1 up to 300k trimps, 3/3/5 up to 3mil trimps, then 3/1/4 above 3 mil trimps, then 1/1/10 above 1000 tributes, then 1/2/22 above 1500 tributes, then 1/12/12 above 3000 tributes.<br>CAUTION: You cannot manually assign jobs with this, turn it off if you have to", "multitoggle", 1, null, "Jobs");
-    createSetting("RFarmerRatio", "Farmer Ratio", "", "value", "1", null, "Jobs");
-    createSetting("RLumberjackRatio", "Lumberjack Ratio", "", "value", "1", null, "Jobs");
-    createSetting("RMinerRatio", "Miner Ratio", "", "value", "1", null, "Jobs");
+    createSetting("RFarmerRatio", "Farmer Ratio", RATIO_TIP, "value", "1", null, "Jobs");
+    createSetting("RLumberjackRatio", "Lumberjack Ratio", RATIO_TIP, "value", "1", null, "Jobs");
+    createSetting("RMinerRatio", "Miner Ratio", RATIO_TIP, "value", "1", null, "Jobs");
+    createSetting("RScientistPercent", "Scientist %", SCI_TIP, "valueNegative", "-1", null, "Jobs");
     createSetting("RMaxExplorers", "Max Explorers", "Advanced. Cap your explorers (This is an absolute number not a ratio). recommend: -1", "value", "-1", null, "Jobs");
     document.getElementById("RMaxExplorers").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("Rshipfarmon", "Ship Farming", "Turn Ship Farming off or on. You need to have unlocked Large Savory Cache to use this. If you have not I would recommend Time Farm instead. ", "boolean", false, null, "Jobs");
