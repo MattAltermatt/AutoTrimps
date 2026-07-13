@@ -258,59 +258,31 @@ by CI on every push — never committed).
   **not worker-allocation-limited** (F/L/M spans ~2.5%; miner-heavy is *worse*; 5× scientists = +0.9%), and
   `scientistRatio2` is **inert for divisors ≥5** (hardcoded `<10` floor at jobs.ts:118) — see
   [[reference-early-game-not-worker-limited]]. 621 tests green.
-- **Phase 3 — Divergence milestone (#7) CLOSED** (2026-07-11) — wrapped the whole milestone in one session.
-  Shipped + deployed live: **#43** (`04f60f13`, Efficiency Metal-priority — opt-in `MetalEfficiencyPriority`
-  default OFF + `MetalEfficiencyZone` default 6; `buyUpgrades()` rushes Efficiency before all other upgrades
-  during the Metal challenge below the cutoff; OFF = byte-identical) and **#44** (`df61dbd0`, U2 void
-  discoverability). Closed **#45/#46/#47** as bookkeeping (sim harness delivered, byte-golden retired where it
-  matters, proof-net done bar the jsdom-unreachable deep-zone U2 save); moved **#41** to a new **Phase 4 — UI
-  Streamline** milestone (#8). **#44's requested force-abandon actuator = a sim+duel NO-GO:** a sim repro
-  falsified the audit's `maps.ts:686` fix (that's U1 `autoMap`; U2 runs `RautoMap`, gated by different
-  settings), then a 2-champion+adversary duel showed mid-map force-abandon is a net loss (forfeits map
-  bonus/fragments), collides with breedtimer's anti-stack abandon path, and is unverifiable (Bubble absent
-  from the v5.10.1 clone). Real fix = discoverability (PowerSaving flagged U1-only; RVoidMaps documents the
-  rush recipe: set RVoidMaps=zone, Rvoidscell=1, RRunNewVoidsUntilNew=-1). **GOTCHA:** the Pages deploy had
-  been silently RED since `f73aa718` last session (a breed decimal golden asserted 21 digits of a native
-  `Math.pow(0.98,n)` value → libm drift local↔CI); fixed `a3cee184` by pinning 15 sig figs, filed **#62** to
-  pin the sibling breed goldens. Always verify `gh run list --branch main` is green after pushing main.
-- **Purchase Coordinator #57 Phase 2 PAUSED** (2026-07-11) — a three-round dueling-agent + live-Chrome
-  brainstorm falsified every Phase-2 direction. (1) The spec's **economy-income look-ahead is
-  misconceived**: Trimps has no Mine, metal income is the food-costed Miner *job*, and `getPsString`
-  excludes buildings, so a building's "extra income" is unreadable; Smithy is actually direct power
-  (`getMult()`), storage is capacity. (2) A pivot to **U1 Smithy automation is IMPOSSIBLE** — U1 cannot
-  build Smithy (`blockU1: true`/`locked: 1`, config.js:11703; unlock skipped when `universe==1`,
-  main.js:10275; only source is the free z50 `SmithFree` map reward). All three U2 Smithy systems are
-  R-prefixed by necessity, not omission — see [[reference-u1-smithy-blocku1]]. (3) A broader power scorer
-  is marginal (disjoint pools; equipment already best-`Factor`-first; Phase 1 subsumed the one real
-  save-up case). **#57's real value landed in Phase 1; #57 stays open but has no compelling next slice.**
-  Postmortem in the spec §"Phase 2 Feasibility Postmortem". GOTCHA recorded: a live "verification" that
-  force-sets a game flag you haven't understood (`Smithy.locked = 0`) masks the real rule AND auto-saves
-  the mutation to contaminate later checks — [[feedback-verify-without-mutating-game-state]].
-- **Purchase Coordinator #57 Phase 1 shipped** (2026-07-10) — opt-in priority-aware spending. New module
-  `src/modules/coordinator.ts`: a `MODULES["coordinator"]` context + a `coordinatorAllows(name,res,cost)`
-  reservation guard dropped at the `safeBuyBuilding` chokepoint (buildings.ts, gated on
-  `cost?.metal !== undefined`) + a `computeTopTarget()` per-tick pre-pass wired into `mainLoop`
-  (AutoTrimps2.js). Setting `PurchaseCoordinator` (default off) — **OFF is byte-identical** (proof-net L0
-  traces reproduce); ON saves up for Coordination (reserve metal so lesser buys defer, then delegate the
-  Warpstation buy to `safeBuyBuilding` so it self-forces its own buyAmt — never gate on a bare
-  `canAffordBuilding()`, which reads the ambient UI buyAmt and re-stalls). Architecture (**priority-injection
-  hybrid**) + objective (progression-speed) chosen via dueling agents; the load-bearing finding is that
-  buyer resource pools are largely **disjoint** (only metal is contended), which is why a lightweight guard
-  beats a full propose/execute allocator. 3 review passes caught real bugs (non-metal crash, non-accumulating
-  scorer, ambient-buyAmt coupling). Spec `docs/superpowers/specs/2026-07-10-purchase-coordinator-design.md`.
-  Phases 2–4 (economy scoring, broader buyers, U2) remain; **#57 stays open**. GOTCHA: a new `createSetting`
-  updates BOTH the settings-inventory `.snap` AND an inline `toMatchInlineSnapshot` count in
-  `tests/settings-inventory.test.ts` — commit the `.ts` too or CI goes red + blocks deploy.
-- **Proof-net Phase 3 giant-splits shipped** (2026-07-10) — the two biggest modules split behind the
-  proof net as pure byte-faithful moves: `mapfunctions.ts` 2799→1963 (extracted `mapfunctions-amp.ts`,
-  the 9-fn Radon AMP engine) and `other.ts` 2378→621 (extracted `other-praiding.ts`, the 30-fn U1
-  Prestige/BW-Raid state machine). Also: removed the dead `calcBaseDamageInX` calc.ts copy (stance's
-  wins at global scope), the dead `dailyBWraiding` + 20-name `Rprestraid` block, and added a
-  bridge import-order guard test. Rejected the `RcalcOurHealth↔calcOurHealth` "dedupe" (distinct
-  U1/U2 models = tuning). Method (see spec `docs/superpowers/specs/2026-07-10-proof-net-phase-3-giant-splits.md`):
-  **split-first** (a move is verified by golden pure-relocation + the src-bundle-parity net — no
-  behavioral net needed), refactor of the moved code deferred to a later per-module pass. Filed #57
-  (purchase-coordinator idea).
+- **Phase 3 — Divergence milestone (#7) CLOSED** (2026-07-11) — #43 (opt-in Efficiency Metal-priority,
+  OFF = byte-identical) + #44 (U2 void discoverability) shipped; #41 moved to Phase 4 UI (#8). #44's
+  force-abandon actuator was a **sim+duel NO-GO** (net loss: forfeits map bonus/fragments; collides with
+  breedtimer's abandon path; Bubble absent from the clone so it's unverifiable) — resolved as
+  discoverability instead. 🚨 **GOTCHA — the Pages deploy was silently RED for a whole session**
+  (`f73aa718`→`a3cee184`): a breed golden asserted 21 digits of a native `Math.pow` value → libm drift
+  local↔CI. **Always verify `gh run list --branch main` is green after pushing main.**
+- **Purchase Coordinator (#57) — Phase 1 shipped, Phase 2 PAUSED, no compelling next slice** (2026-07-10/11)
+  — `src/modules/coordinator.ts`: a `coordinatorAllows(name,res,cost)` reservation guard at the
+  `safeBuyBuilding` chokepoint + a per-tick `computeTopTarget()`. Setting `PurchaseCoordinator` (default
+  off); **OFF is byte-identical**. The load-bearing finding: buyer resource pools are largely **disjoint**
+  (only metal is contended), which is why a lightweight guard beats a full allocator. Three dueling-agent
+  rounds then falsified *every* Phase-2 direction — economy look-ahead is misconceived (a building's "extra
+  income" is unreadable), and **U1 literally cannot build Smithy** (`blockU1`, config.js:11703) so all
+  Smithy automation is U2-only by necessity — see [[reference-u1-smithy-blocku1]]. **#57 stays open but has
+  no next slice.** GOTCHAS: never gate a buy on a bare `canAffordBuilding()` — it reads the *ambient UI
+  buyAmt* and re-stalls; a live "verification" that force-sets a game flag you don't understand
+  (`Smithy.locked = 0`) masks the real rule *and* auto-saves the mutation into later checks
+  ([[feedback-verify-without-mutating-game-state]]); a new `createSetting` updates BOTH the settings-inventory
+  `.snap` AND an inline `toMatchInlineSnapshot` count — commit both or CI goes red and blocks the deploy.
+- **Proof-net Phase 3 giant-splits shipped** (2026-07-10) — `mapfunctions.ts` 2799→1963 and `other.ts`
+  2378→621 via pure byte-faithful extractions (`mapfunctions-amp.ts`, `other-praiding.ts`). Method:
+  **split-first** — a pure move is verified by the golden + src-bundle-parity net alone (no behavioral net
+  needed); refactor the moved code in a later pass. Rejected the `RcalcOurHealth`↔`calcOurHealth` "dedupe"
+  (distinct U1/U2 models = tuning, not duplication).
 - **Planning is 100% GitHub-native** (2026-07-08) — ROADMAP/CHANGELOG/HISTORY deleted; Issues +
   Milestones + issue #23 (frozen Phases 0–2) are canonical. In-repo docs point at GitHub, never
   duplicate it.
@@ -320,19 +292,10 @@ by CI on every push — never committed).
 - **Phase Bugs (#22) shipped** (2026-07-08) — an adversarial multi-agent review found 26 confirmed bugs,
   all fixed HIGH→LOW + pushed to `gh-pages`. Also landed the **true-TS modernization** design spec + a
   proven Phase-0 characterization harness (see Conventions), and the `other.ts` missing-setting fix.
-- **Phase 1 true-TS (milestone #5) — COMPLETE** (2026-07-09) — all 31 modules `@ts-nocheck` → strict
-  TS via the esbuild byte-diff gate (emitted JS byte-identical to `gh-pages`; every fix is type-only).
-  Wave 1 (#26 stance / #27 calc / #28 jobs+heirlooms+fight-info), Wave 2 (#29
-  buildings/upgrades/magmite/gather/equipment), Wave 3 (#30 the nine orchestrators:
-  scryer/nature/breedtimer/ab/portal/MAZ/maps/other/mapfunctions), **#31 fill (the last 12:
-  utils/query/perks/fight/dynprestige/performance/import-export/settings-boot/defs/engine/menu/
-  visibility)**. **ZERO `// @ts-nocheck` directives remain in `src/`.** The ambient seam
-  (`trimps.d.ts` game API + `at-legacy.d.ts` AT globals) is now stable. Byte-diff gate invocation:
-  `npx esbuild <file> --tsconfig-raw='{}'` on BOTH sides (the `--tsconfig-raw='{}'` normalizes the
-  strict-mode `"use strict";` esbuild otherwise emits only for in-tree files; NEVER pass `--loader=ts`
-  with a file arg — it errors and emits nothing = false green). **#32** tracks latent faithful-port
-  bugs surfaced by strict mode + preserved byte-faithfully via `@ts-expect-error`/`@ts-ignore` (e.g.
-  portal `loom` undefined ref, mapfunctions `recyle` typo, settings-visibility `hson` read-before-
-  assign); fixes are tuning-gated + post-Phase-1.
+- **Phase 1 true-TS (milestone #5) — COMPLETE** (2026-07-09) — all 31 modules `@ts-nocheck` → strict TS;
+  **ZERO `@ts-nocheck` remain in `src/`**, and the ambient seam (`trimps.d.ts` + `at-legacy.d.ts`) is
+  stable. **GOTCHA — the byte-diff gate invocation:** `npx esbuild <file> --tsconfig-raw='{}'` on BOTH
+  sides (`--tsconfig-raw='{}'` normalizes the `"use strict";` esbuild otherwise emits only for in-tree
+  files); **NEVER pass `--loader=ts` with a file arg — it errors and emits nothing = a false green.**
 - **A prior from-scratch rewrite was abandoned** — refactor in place via the strangler, don't
   reinvent the wheel.
