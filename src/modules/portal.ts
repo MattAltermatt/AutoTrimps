@@ -98,37 +98,40 @@ export function dailyAutoPortal() {
             var bestHeHrZone = game.stats.bestHeliumHourThisRun.atZone;
             var myHeliumHr = game.stats.heliumHour.value();
             var heliumHrBuffer = Math.abs(getPageSetting('dHeliumHrBuffer'));
-            if (!aWholeNewWorld) {
+            // #83 §2: NO BRACE. The guard covers only the buffer scale-up, exactly as the correct
+            // siblings autoPortal() and RautoPortal() do. A brace here swallowed the whole body, so
+            // the zone-boundary path (aWholeNewWorld true) — the one that was supposed to portal —
+            // was skipped entirely, and the mid-zone path self-cancelled at the default buffer of 0.
+            if (!aWholeNewWorld)
                 heliumHrBuffer *= MODULES["portal"].bufferExceedFactor;
-                var bufferExceeded = myHeliumHr < bestHeHr * (1 - (heliumHrBuffer / 100));
-                if (bufferExceeded && game.global.world >= minZone) {
-                    OKtoPortal = true;
-                    if (aWholeNewWorld)
-                        zonePostpone = 0;
-                }
-                if (heliumHrBuffer == 0 && !aWholeNewWorld)
-                    OKtoPortal = false;
-                if (OKtoPortal && zonePostpone == 0) {
-                    zonePostpone += 1;
-                    debug("My HeliumHr was: " + myHeliumHr + " & the Best HeliumHr was: " + bestHeHr + " at zone: " + bestHeHrZone, "portal");
-                    cancelTooltip();
-                    tooltip('confirm', null, 'update', '<b>Auto Portaling NOW!</b><p>Hit Delay Portal to WAIT 1 more zone.', 'zonePostpone+=1', '<b>NOTICE: Auto-Portaling in 5 seconds....</b>', 'Delay Portal');
-                    setTimeout(cancelTooltip, MODULES["portal"].timeout);
-                    setTimeout(function() {
-                        if (zonePostpone >= 2)
-                            return;
-                        if (OKtoPortal) {
-                            abandonDaily();
-                            document.getElementById('finishDailyBtnContainer')!.style.display = 'none';
-                        }
-                        if (autoTrimpSettings.dHeliumHourChallenge.selected != 'None' && getPageSetting('u1daily') == false)
-                            doPortal(autoTrimpSettings.dHeliumHourChallenge.selected);
-			else if (autoTrimpSettings.RdHeliumHourChallenge.selected != 'None' && getPageSetting('u1daily') == true)
-                            doPortal(autoTrimpSettings.RdHeliumHourChallenge.selected);
-                        else
-                            doPortal();
-                    }, MODULES["portal"].timeout + 100);
-                }
+            var bufferExceeded = myHeliumHr < bestHeHr * (1 - (heliumHrBuffer / 100));
+            if (bufferExceeded && game.global.world >= minZone) {
+                OKtoPortal = true;
+                if (aWholeNewWorld)
+                    zonePostpone = 0;
+            }
+            if (heliumHrBuffer == 0 && !aWholeNewWorld)
+                OKtoPortal = false;
+            if (OKtoPortal && zonePostpone == 0) {
+                zonePostpone += 1;
+                debug("My HeliumHr was: " + myHeliumHr + " & the Best HeliumHr was: " + bestHeHr + " at zone: " + bestHeHrZone, "portal");
+                cancelTooltip();
+                tooltip('confirm', null, 'update', '<b>Auto Portaling NOW!</b><p>Hit Delay Portal to WAIT 1 more zone.', 'zonePostpone+=1', '<b>NOTICE: Auto-Portaling in 5 seconds....</b>', 'Delay Portal');
+                setTimeout(cancelTooltip, MODULES["portal"].timeout);
+                setTimeout(function() {
+                    if (zonePostpone >= 2)
+                        return;
+                    if (OKtoPortal) {
+                        abandonDaily();
+                        document.getElementById('finishDailyBtnContainer')!.style.display = 'none';
+                    }
+                    if (autoTrimpSettings.dHeliumHourChallenge.selected != 'None' && getPageSetting('u1daily') == false)
+                        doPortal(autoTrimpSettings.dHeliumHourChallenge.selected);
+                    else if (autoTrimpSettings.RdHeliumHourChallenge.selected != 'None' && getPageSetting('u1daily') == true)
+                        doPortal(autoTrimpSettings.RdHeliumHourChallenge.selected);
+                    else
+                        doPortal();
+                }, MODULES["portal"].timeout + 100);
             }
         }
     }
@@ -400,38 +403,38 @@ export function RdailyAutoPortal() {
             var bestHeHrZone = game.stats.bestHeliumHourThisRun.atZone;
             var myHeliumHr = game.stats.heliumHour.value();
             var heliumHrBuffer = Math.abs(getPageSetting('RdHeliumHrBuffer'));
-            if (!aWholeNewWorld) {
+            // #83 §2: NO BRACE — same defect as the U1 twin dailyAutoPortal() above; see the note there.
+            if (!aWholeNewWorld)
                 heliumHrBuffer *= MODULES["portal"].bufferExceedFactor;
-                var bufferExceeded = myHeliumHr < bestHeHr * (1 - (heliumHrBuffer / 100));
-                if (bufferExceeded && game.global.world >= minZone) {
-                    OKtoPortal = true;
-                    if (aWholeNewWorld)
-                        zonePostpone = 0;
-                }
-                if (heliumHrBuffer == 0 && !aWholeNewWorld)
-                    OKtoPortal = false;
-                if (OKtoPortal && zonePostpone == 0) {
-		    RresetVars();
-                    zonePostpone += 1;
-                    debug("My RadonHr was: " + myHeliumHr + " & the Best RadonHr was: " + bestHeHr + " at zone: " + bestHeHrZone, "portal");
-                    cancelTooltip();
-                    tooltip('confirm', null, 'update', '<b>Auto Portaling NOW!</b><p>Hit Delay Portal to WAIT 1 more zone.', 'zonePostpone+=1', '<b>NOTICE: Auto-Portaling in 5 seconds....</b>', 'Delay Portal');
-                    setTimeout(cancelTooltip, MODULES["portal"].Rtimeout);
-                    setTimeout(function() {
-                        if (zonePostpone >= 2)
-                            return;
-                        if (OKtoPortal) {
-                            abandonDaily();
-                            document.getElementById('finishDailyBtnContainer')!.style.display = 'none';
-                        }
-                        if (autoTrimpSettings.RdHeliumHourChallenge.selected != 'None' && getPageSetting('u2daily') == false)
-                            RdoPortal(autoTrimpSettings.RdHeliumHourChallenge.selected);
-			else if (autoTrimpSettings.dHeliumHourChallenge.selected != 'None' && getPageSetting('u2daily') == true)
-                            RdoPortal(autoTrimpSettings.dHeliumHourChallenge.selected);
-                        else
-                            RdoPortal();
-                    }, MODULES["portal"].timeout + 100);
-                }
+            var bufferExceeded = myHeliumHr < bestHeHr * (1 - (heliumHrBuffer / 100));
+            if (bufferExceeded && game.global.world >= minZone) {
+                OKtoPortal = true;
+                if (aWholeNewWorld)
+                    zonePostpone = 0;
+            }
+            if (heliumHrBuffer == 0 && !aWholeNewWorld)
+                OKtoPortal = false;
+            if (OKtoPortal && zonePostpone == 0) {
+                RresetVars();
+                zonePostpone += 1;
+                debug("My RadonHr was: " + myHeliumHr + " & the Best RadonHr was: " + bestHeHr + " at zone: " + bestHeHrZone, "portal");
+                cancelTooltip();
+                tooltip('confirm', null, 'update', '<b>Auto Portaling NOW!</b><p>Hit Delay Portal to WAIT 1 more zone.', 'zonePostpone+=1', '<b>NOTICE: Auto-Portaling in 5 seconds....</b>', 'Delay Portal');
+                setTimeout(cancelTooltip, MODULES["portal"].Rtimeout);
+                setTimeout(function() {
+                    if (zonePostpone >= 2)
+                        return;
+                    if (OKtoPortal) {
+                        abandonDaily();
+                        document.getElementById('finishDailyBtnContainer')!.style.display = 'none';
+                    }
+                    if (autoTrimpSettings.RdHeliumHourChallenge.selected != 'None' && getPageSetting('u2daily') == false)
+                        RdoPortal(autoTrimpSettings.RdHeliumHourChallenge.selected);
+                    else if (autoTrimpSettings.dHeliumHourChallenge.selected != 'None' && getPageSetting('u2daily') == true)
+                        RdoPortal(autoTrimpSettings.dHeliumHourChallenge.selected);
+                    else
+                        RdoPortal();
+                }, MODULES["portal"].timeout + 100);
             }
         }
     }
