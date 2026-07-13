@@ -15,6 +15,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import vm from 'node:vm'
 import { createSetting, settingChanged } from '../src/modules/settings-engine'
 import { getPageSetting, serializeSettings550 } from '../src/modules/utils'
 
@@ -42,24 +43,28 @@ describe('#81 — the BuyBuildingsNew dispatch, executed verbatim from legacy/Au
     expect(BLOCK).toContain('usingRealTimeOffline')
   })
 
-  /** Run the verbatim block once, as one mainLoop tick, and report which buyers it called. */
+  /**
+   * Run the verbatim block once, as one mainLoop tick, and report which buyers it called.
+   *
+   * Uses `node:vm` rather than `new Function`. Not cosmetic: #76 turned on oxlint's `no-new-func` after
+   * finding a live `eval()` RCE shipping behind an `oxlint-disable-next-line no-eval`, and suppressing
+   * the rule here — in the very sweep that is trying to *remove* suppressions (#92) — would be exactly
+   * the move that let the RCE live for nine years. `vm.runInContext` is the purpose-built tool for
+   * "execute this source text with these names bound", it is not a code-injection sink, and it preserves
+   * the property that actually matters: the code under test is READ FROM THE SHIPPED FILE, so a retyped
+   * copy of these lines could never pass.
+   */
   const tick = (buyBuildingsNew: number, offline: boolean, hidebuildings = false) => {
     const calls: string[] = []
-    const fn = new Function(
-      'getPageSetting',
-      'usingRealTimeOffline',
-      'buyBuildings',
-      'buyStorage',
-      'computeTopTarget',
-      BLOCK,
-    )
-    fn(
-      (id: string) => (id === 'BuyBuildingsNew' ? buyBuildingsNew : id === 'hidebuildings' ? hidebuildings : false),
-      offline,
-      () => calls.push('buyBuildings'),
-      () => calls.push('buyStorage'),
-      () => {},
-    )
+    const sandbox = vm.createContext({
+      getPageSetting: (id: string) =>
+        id === 'BuyBuildingsNew' ? buyBuildingsNew : id === 'hidebuildings' ? hidebuildings : false,
+      usingRealTimeOffline: offline,
+      buyBuildings: () => calls.push('buyBuildings'),
+      buyStorage: () => calls.push('buyStorage'),
+      computeTopTarget: () => {},
+    })
+    vm.runInContext(BLOCK, sandbox)
     return calls
   }
 
