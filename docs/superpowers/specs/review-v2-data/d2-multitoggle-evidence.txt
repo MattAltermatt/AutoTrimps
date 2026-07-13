@@ -1,0 +1,321 @@
+multitoggle settings defined: 54
+
+### CANDIDATES — option indices never discriminated anywhere (42)
+### This is EVIDENCE, not a verdict. Index 0 is usually the falsy "off" path and is
+### legitimately handled by an else-branch. A missing NON-ZERO index is the #64 signal.
+### Every raw comparison site is listed so the reader can judge the actual dispatch.
+
+!! BuyUpgradesNew  (src/modules/settings-defs.ts:16)
+   options : 0="Manual Upgrades"  1="Buy All Upgrades"  2="Upgrades no Coords"
+   NEVER DISCRIMINATED: [1]   <-- includes NON-ZERO [1]
+     · src/modules/upgrades.ts:148  getPageSetting('BuyUpgradesNew') == 2
+     · legacy/AutoTrimps2.js:203  getPageSetting('BuyUpgradesNew') != 0
+
+!! PowerSaving  (src/modules/settings-defs.ts:681)
+   options : 0="AutoAbandon"  1="Don't Abandon"  2="Only Rush Voids"
+   NEVER DISCRIMINATED: [1]   <-- includes NON-ZERO [1]
+     · src/modules/maps.ts:686  [truthiness] getPageSetting('PowerSaving')
+     · src/modules/maps.ts:686  getPageSetting('PowerSaving') == 2
+
+!! RBuyUpgradesNew  (src/modules/settings-defs.ts:38)
+   options : 0="Manual Upgrades"  1="Buy All Upgrades"  2="Upgrades no Coords"
+   NEVER DISCRIMINATED: [1]   <-- includes NON-ZERO [1]
+     · src/modules/upgrades.ts:197  getPageSetting('RBuyUpgradesNew') == 2
+     · legacy/AutoTrimps2.js:296  getPageSetting('RBuyUpgradesNew') != 0
+
+!! ScryerSkipBoss2  (src/modules/settings-defs.ts:716)
+   options : 0="Boss: NEVER (All Levels)"  1="Boss: NEVER (Above VoidLevel)"  2="Boss: MAYBE"
+   NEVER DISCRIMINATED: [2]   <-- includes NON-ZERO [2]
+     · src/modules/scryer.ts:69  getPageSetting('ScryerSkipBoss2') == 1
+     · src/modules/scryer.ts:70  getPageSetting('ScryerSkipBoss2') == 0
+
+!! ScryerSkipCorrupteds2  (src/modules/settings-defs.ts:717)
+   options : 0="Corrupted: NEVER"  1="Corrupted: FORCE"  2="Corrupted: MAYBE"
+   NEVER DISCRIMINATED: [2]   <-- includes NON-ZERO [2]
+     · src/modules/scryer.ts:20  getPageSetting('ScryerSkipCorrupteds2') != 0
+     · src/modules/scryer.ts:20  getPageSetting('ScryerSkipCorrupteds2') == 1
+     · src/modules/scryer.ts:62  getPageSetting('ScryerSkipCorrupteds2') == 0
+     · src/modules/scryer.ts:77  getPageSetting('ScryerSkipCorrupteds2') != 1
+     · src/modules/scryer.ts:102  getPageSetting('ScryerSkipCorrupteds2') == 1
+
+!! ScryerSkipHealthy  (src/modules/settings-defs.ts:718)
+   options : 0="Healthy: NEVER"  1="Healthy: FORCE"  2="Healthy: MAYBE"
+   NEVER DISCRIMINATED: [2]   <-- includes NON-ZERO [2]
+     · src/modules/scryer.ts:87  getPageSetting('ScryerSkipHealthy') == 0
+     · src/modules/scryer.ts:108  getPageSetting('ScryerSkipHealthy') == 1
+
+!! ScryerUseinBW  (src/modules/settings-defs.ts:714)
+   options : 0="BW: NEVER"  1="BW: FORCE"  2="BW: MAYBE"
+   NEVER DISCRIMINATED: [2]   <-- includes NON-ZERO [2]
+     · src/modules/scryer.ts:67  getPageSetting('ScryerUseinBW') == 0
+     · src/modules/scryer.ts:96  getPageSetting('ScryerUseinBW') == 1
+
+!! ScryerUseinMaps2  (src/modules/settings-defs.ts:709)
+   options : 0="Maps: NEVER"  1="Maps: FORCE"  2="Maps: MAYBE"
+   NEVER DISCRIMINATED: [2]   <-- includes NON-ZERO [2]
+     · src/modules/scryer.ts:64  getPageSetting('ScryerUseinMaps2') == 0
+     · src/modules/scryer.ts:94  getPageSetting('ScryerUseinMaps2') == 1
+
+!! ScryerUseinPMaps  (src/modules/settings-defs.ts:713)
+   options : 0="P Maps: NEVER"  1="P Maps: FORCE"  2="P Maps: MAYBE"
+   NEVER DISCRIMINATED: [2]   <-- includes NON-ZERO [2]
+     · src/modules/scryer.ts:65  getPageSetting('ScryerUseinPMaps') == 0
+     · src/modules/scryer.ts:97  getPageSetting('ScryerUseinPMaps') == 1
+
+!! ScryerUseinSpire2  (src/modules/settings-defs.ts:715)
+   options : 0="Spire: NEVER"  1="Spire: FORCE"  2="Spire: MAYBE"
+   NEVER DISCRIMINATED: [2]   <-- includes NON-ZERO [2]
+     · src/modules/scryer.ts:68  getPageSetting('ScryerUseinSpire2') == 0
+     · src/modules/scryer.ts:98  getPageSetting('ScryerUseinSpire2') == 1
+     · src/modules/scryer.ts:119  getPageSetting('ScryerUseinSpire2') == 0
+
+!! ScryerUseinVoidMaps2  (src/modules/settings-defs.ts:710)
+   options : 0="VoidMaps: NEVER"  1="VoidMaps: FORCE"  2="VoidMaps: MAYBE"
+   NEVER DISCRIMINATED: [2]   <-- includes NON-ZERO [2]
+     · src/modules/scryer.ts:66  getPageSetting('ScryerUseinVoidMaps2') == 0
+     · src/modules/scryer.ts:95  getPageSetting('ScryerUseinVoidMaps2') == 1
+
+!! beforegen  (src/modules/settings-defs.ts:731)
+   options : 0="Gain Mi"  1="Gain Fuel"  2="Hybrid"
+   NEVER DISCRIMINATED: [1]   <-- includes NON-ZERO [1]
+     · src/modules/magmite.ts:182  beforefuelstate == 2
+     · src/modules/magmite.ts:202  game.global.generatorMode != beforefuelstate
+     · src/modules/magmite.ts:204  game.global.generatorMode == beforefuelstate
+     · src/modules/magmite.ts:206  game.global.generatorMode != beforefuelstate
+     · src/modules/magmite.ts:208  game.global.generatorMode == beforefuelstate
+     · src/modules/upgrades.ts:55  getPageSetting("beforegen") != 0
+
+!! defaultgen  (src/modules/settings-defs.ts:734)
+   options : 0="Gain Mi"  1="Gain Fuel"  2="Hybrid"
+   NEVER DISCRIMINATED: [0, 1]   <-- includes NON-ZERO [1]
+     · src/modules/magmite.ts:179  defaultgenstate == 2
+     · src/modules/magmite.ts:218  game.global.generatorMode != defaultgenstate
+     · src/modules/magmite.ts:220  game.global.generatorMode == defaultgenstate
+
+!! spendmagmitesetting  (src/modules/settings-defs.ts:747)
+   options : 0="Normal"  1="Normal & No OC"  2="OneTime Only"  3="OneTime & OC"
+   NEVER DISCRIMINATED: [2]   <-- includes NON-ZERO [2]
+     · src/modules/magmite.ts:110  getPageSetting('spendmagmitesetting') == 0
+     · src/modules/magmite.ts:110  getPageSetting('spendmagmitesetting') == 3
+     · src/modules/magmite.ts:117  getPageSetting('spendmagmitesetting') == 0
+     · src/modules/magmite.ts:117  getPageSetting('spendmagmitesetting') == 1
+
+   AutoAllocatePerks  (src/modules/settings-defs.ts:23)
+   options : 0="Auto Allocate Off"  1="Auto Allocate On"  2="Dump into Looting II"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/portal.ts:246  getPageSetting('AutoAllocatePerks')==2
+     · src/modules/portal.ts:258  getPageSetting('AutoAllocatePerks')==1
+     · src/modules/portal.ts:297  getPageSetting('AutoAllocatePerks')==2
+     · src/modules/settings-visibility.ts:82  getPageSetting('AutoAllocatePerks') == 1
+
+   AutoPortalDaily  (src/modules/settings-defs.ts:191)
+   options : 0="Daily Portal Off"  1="DP: He/Hr"  2="DP: Custom"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/portal.ts:91  getPageSetting('AutoPortalDaily') == 1
+     · src/modules/portal.ts:134  getPageSetting('AutoPortalDaily') == 2
+     · src/modules/settings-visibility.ts:163  getPageSetting('AutoPortalDaily') == 2
+     · src/modules/settings-visibility.ts:164  getPageSetting('AutoPortalDaily') == 1
+     · src/modules/settings-visibility.ts:165  getPageSetting('AutoPortalDaily') == 1
+     · src/modules/settings-visibility.ts:166  getPageSetting('AutoPortalDaily') > 0
+     · legacy/AutoTrimps2.js:229  getPageSetting('AutoPortalDaily') > 0
+
+   BuyArmorNew  (src/modules/settings-defs.ts:331)
+   options : 0="Armor: Buy Neither"  1="Armor: Buy Both"  2="Armor: Prestiges"  3="Armor: Levels"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/equipment.ts:164  getPageSetting('BuyArmorNew') == 1
+     · src/modules/equipment.ts:164  getPageSetting('BuyArmorNew') == 2
+     · src/modules/equipment.ts:409  getPageSetting('BuyArmorNew') == 1
+     · src/modules/equipment.ts:409  getPageSetting('BuyArmorNew') == 2
+     · src/modules/equipment.ts:442  getPageSetting('BuyArmorNew') == 1
+     · src/modules/equipment.ts:442  getPageSetting('BuyArmorNew') == 3
+     · src/modules/other.ts:64  getPageSetting('BuyArmorNew') == 1
+     · src/modules/other.ts:64  getPageSetting('BuyArmorNew') == 3
+
+   BuyWeaponsNew  (src/modules/settings-defs.ts:332)
+   options : 0="Weapons: Buy Neither"  1="Weapons: Buy Both"  2="Weapons: Prestiges"  3="Weapons: Levels"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/equipment.ts:163  getPageSetting('BuyWeaponsNew') == 1
+     · src/modules/equipment.ts:163  getPageSetting('BuyWeaponsNew') == 2
+     · src/modules/equipment.ts:408  getPageSetting('BuyWeaponsNew') == 1
+     · src/modules/equipment.ts:408  getPageSetting('BuyWeaponsNew') == 2
+     · src/modules/equipment.ts:441  getPageSetting('BuyWeaponsNew') == 1
+     · src/modules/equipment.ts:441  getPageSetting('BuyWeaponsNew') == 3
+     · src/modules/other.ts:59  getPageSetting('BuyWeaponsNew') == 1
+     · src/modules/other.ts:59  getPageSetting('BuyWeaponsNew') == 3
+
+   Hdshrine  (src/modules/settings-defs.ts:119)
+   options : 0="Daily AutoShrine Off"  1="Daily AutoShrine On"  2="DAS: Normal"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/settings-visibility.ts:170  getPageSetting('Hdshrine') == 1
+     · legacy/AutoTrimps2.js:204  getPageSetting('Hdshrine') == 1
+     · legacy/AutoTrimps2.js:204  getPageSetting('Hdshrine') == 2
+
+   IgnoreCrits  (src/modules/settings-defs.ts:680)
+   options : 0="Safety First"  1="Ignore Void Strength"  2="Ignore All Crits"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/calc.ts:438  getPageSetting('IgnoreCrits') == 2
+     · src/modules/calc.ts:451  getPageSetting('IgnoreCrits') != 1
+
+   PrestigeSkip1_2  (src/modules/settings-defs.ts:341)
+   options : 0="Prestige Skip Off"  1="Prestige Skip 1 & 2"  2="Prestige Skip 1"  3="Prestige Skip 2"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/maps.ts:354  getPageSetting('PrestigeSkip1_2') == 1
+     · src/modules/maps.ts:354  getPageSetting('PrestigeSkip1_2') == 2
+     · src/modules/maps.ts:368  getPageSetting('PrestigeSkip1_2') == 1
+     · src/modules/maps.ts:368  getPageSetting('PrestigeSkip1_2') == 3
+
+   RABdustsimple  (src/modules/settings-defs.ts:843)
+   options : 0="Simple Dust Off"  1="SD: Equipped"  2="SD: Non-hidden"
+   NEVER DISCRIMINATED: [0]
+     · legacy/AutoTrimps2.js:315  getPageSetting('RABdustsimple') == 1
+     · legacy/AutoTrimps2.js:316  getPageSetting('RABdustsimple') == 2
+
+   RAMPraidfrag  (src/modules/settings-defs.ts:526)
+   options : 0="PR: Frag"  1="PR: Frag Min"  2="PR: Frag Max"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/mapfunctions-amp.ts:502  getPageSetting('RAMPraidfrag') > 0
+
+   RAutoAllocatePerks  (src/modules/settings-defs.ts:39)
+   options : 0="Auto Allocate Off"  1="Auto Allocate On"  2="Dump into Looting"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/portal.ts:463  getPageSetting('RAutoAllocatePerks')==2
+     · src/modules/portal.ts:481  getPageSetting('RAutoAllocatePerks')==1
+     · src/modules/portal.ts:513  getPageSetting('RAutoAllocatePerks')==2
+     · src/modules/settings-visibility.ts:100  getPageSetting('RAutoAllocatePerks') == 2
+
+   RAutoPortalDaily  (src/modules/settings-defs.ts:205)
+   options : 0="Daily Portal Off"  1="DP: Rn/Hr"  2="DP: Custom"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/portal.ts:384  getPageSetting('RAutoPortalDaily') == 1
+     · src/modules/portal.ts:428  getPageSetting('RAutoPortalDaily') == 2
+     · src/modules/settings-visibility.ts:237  getPageSetting('RAutoPortalDaily') == 2
+     · src/modules/settings-visibility.ts:238  getPageSetting('RAutoPortalDaily') == 1
+     · src/modules/settings-visibility.ts:239  getPageSetting('RAutoPortalDaily') == 1
+     · src/modules/settings-visibility.ts:240  getPageSetting('RAutoPortalDaily') > 0
+     · legacy/AutoTrimps2.js:340  getPageSetting('RAutoPortalDaily') > 0
+
+   RBuyJobsNew  (src/modules/settings-defs.ts:312)
+   options : 0="Don't Buy Jobs"  1="Auto Worker Ratios"  2="Manual Worker Ratios"
+   NEVER DISCRIMINATED: [0]
+     · legacy/AutoTrimps2.js:328  getPageSetting('RBuyJobsNew') == 1
+     · legacy/AutoTrimps2.js:331  getPageSetting('RBuyJobsNew') == 2
+     · legacy/AutoTrimps2.js:334  getPageSetting('RBuyJobsNew') > 0
+
+   RManualGather2  (src/modules/settings-defs.ts:36)
+   options : 0="Manual Gather/Build"  1="Auto Gather/Build"  2="Mining/Building Only"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/gather.ts:346  getPageSetting('RManualGather2') != 2
+     · src/modules/gather.ts:366  getPageSetting('RManualGather2') == 2
+     · src/modules/gather.ts:368  getPageSetting('RManualGather2') != 2
+     · legacy/AutoTrimps2.js:307  getPageSetting('RManualGather2') == 1
+     · legacy/AutoTrimps2.js:307  getPageSetting('RManualGather2') == 2
+
+   Rcarmormagic  (src/modules/settings-defs.ts:222)
+   options : 0="C2 Armor Magic Off"  1="CAM: Above 80%"  2="CAM: H:D"  3="CAM: Always"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/other.ts:239  getPageSetting('Rcarmormagic') == 1
+     · src/modules/other.ts:239  getPageSetting('Rcarmormagic') == 2
+     · src/modules/other.ts:239  getPageSetting('Rcarmormagic') == 3
+     · legacy/AutoTrimps2.js:358  getPageSetting('Rcarmormagic') > 0
+
+   RdAMPraid  (src/modules/settings-defs.ts:135)
+   options : 0="Daily Praiding Off"  1="Daily Praiding On"  2="DPR: Normal"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/maps.ts:1165  getPageSetting('RdAMPraid') == 2
+     · src/modules/maps.ts:1166  getPageSetting('RdAMPraid') != 2
+     · src/modules/maps.ts:1178  getPageSetting('RdAMPraid') == 1
+     · src/modules/settings-visibility.ts:188  getPageSetting('RdAMPraid') == 1
+     · src/modules/settings-visibility.ts:192  getPageSetting('RdAMPraid') == 1
+     · src/modules/settings-visibility.ts:193  getPageSetting('RdAMPraid') == 1
+
+   RdAMPraidfrag  (src/modules/settings-defs.ts:140)
+   options : 0="DPR: Frag"  1="DPR: Frag Min"  2="DPR: Frag Max"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/mapfunctions-amp.ts:677  getPageSetting('RdAMPraidfrag') > 0
+
+   Rdarmormagic  (src/modules/settings-defs.ts:131)
+   options : 0="Daily Armor Magic Off"  1="DAM: Above 80%"  2="DAM: H:D"  3="DAM: Always"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/other.ts:239  getPageSetting('Rdarmormagic') == 1
+     · src/modules/other.ts:239  getPageSetting('Rdarmormagic') == 2
+     · src/modules/other.ts:239  getPageSetting('Rdarmormagic') == 3
+     · legacy/AutoTrimps2.js:358  getPageSetting('Rdarmormagic') > 0
+
+   Rdfightforever  (src/modules/settings-defs.ts:129)
+   options : 0="DFA: Off"  1="DFA: Non-Empowered"  2="DFA: All Dailies"
+   NEVER DISCRIMINATED: [0]
+     · legacy/AutoTrimps2.js:355  getPageSetting('Rdfightforever') == 1
+     · legacy/AutoTrimps2.js:356  getPageSetting('Rdfightforever') == 2
+
+   Rdhs  (src/modules/settings-defs.ts:163)
+   options : 0="DHS: Off"  1="DHS: On"  2="DHS: Normal"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/settings-visibility.ts:208  getPageSetting('Rdhs') == 1
+     · legacy/AutoTrimps2.js:362  getPageSetting('Rdhs') == 2
+     · legacy/AutoTrimps2.js:365  getPageSetting('Rdhs') == 1
+
+   Rdshrine  (src/modules/settings-defs.ts:181)
+   options : 0="Daily AutoShrine Off"  1="Daily AutoShrine On"  2="DAS: Normal"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/settings-visibility.ts:227  getPageSetting('Rdshrine') == 1
+     · legacy/AutoTrimps2.js:310  getPageSetting('Rdshrine') == 1
+     · legacy/AutoTrimps2.js:310  getPageSetting('Rdshrine') == 2
+
+   Rdtimefarm  (src/modules/settings-defs.ts:145)
+   options : 0="Daily Time Farm Off"  1="Daily Time Farm On"  2="DTF: Normal"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/mapfunctions.ts:458  getPageSetting('Rdtimefarm') != 2
+     · src/modules/maps.ts:1139  getPageSetting('Rdtimefarm') == 2
+     · src/modules/maps.ts:1144  getPageSetting('Rdtimefarm') == 1
+     · src/modules/settings-visibility.ts:197  getPageSetting('Rdtimefarm') == 1
+
+   Rmayhemmap  (src/modules/settings-defs.ts:617)
+   options : 0="M: Maps Off"  1="M: Highest Map"  2="M: Smart Map"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/mapfunctions.ts:673  getPageSetting('Rmayhemmap') == 2
+     · src/modules/mapfunctions.ts:1492  getPageSetting('Rmayhemmap') == 2
+     · src/modules/mapfunctions.ts:1501  getPageSetting('Rmayhemmap') == 1
+     · src/modules/maps.ts:1514  getPageSetting('Rmayhemmap') > 0
+
+   carmormagic  (src/modules/settings-defs.ts:221)
+   options : 0="C2 Armor Magic Off"  1="CAM: Above 80%"  2="CAM: H:D"  3="CAM: Always"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/other.ts:182  getPageSetting('carmormagic') == 1
+     · src/modules/other.ts:182  getPageSetting('carmormagic') == 2
+     · src/modules/other.ts:182  getPageSetting('carmormagic') == 3
+     · legacy/AutoTrimps2.js:249  getPageSetting('carmormagic') > 0
+
+   dATGA2Auto  (src/modules/settings-defs.ts:567)
+   options : 0="ATGA: Manual"  1="ATGA: Auto No Spire"  2="ATGA: Auto Dailies"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/breedtimer.ts:175  getPageSetting('dATGA2Auto')==2
+     · src/modules/breedtimer.ts:175  getPageSetting('dATGA2Auto')==1
+
+   darmormagic  (src/modules/settings-defs.ts:80)
+   options : 0="Daily Armor Magic Off"  1="DAM: Above 80%"  2="DAM: H:D"  3="DAM: Always"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/other.ts:182  getPageSetting('darmormagic') == 1
+     · src/modules/other.ts:182  getPageSetting('darmormagic') == 2
+     · src/modules/other.ts:182  getPageSetting('darmormagic') == 3
+     · legacy/AutoTrimps2.js:249  getPageSetting('darmormagic') > 0
+
+   dfightforever  (src/modules/settings-defs.ts:78)
+   options : 0="DFA: Off"  1="DFA: Non-Empowered"  2="DFA: All Dailies"
+   NEVER DISCRIMINATED: [0]
+     · legacy/AutoTrimps2.js:239  getPageSetting('dfightforever') == 1
+     · legacy/AutoTrimps2.js:240  getPageSetting('dfightforever') == 2
+
+   radonsettings  (src/modules/settings-defs.ts:66)
+   options : 0="Helium"  1="Radon"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/settings-visibility.ts:40  getPageSetting('radonsettings') == 1
+
+   spendmagmite  (src/modules/settings-defs.ts:740)
+   options : 0="Spend Magmite OFF"  1="Spend Magmite (Portal)"  2="Spend Magmite Always"
+   NEVER DISCRIMINATED: [0]
+     · src/modules/portal.ts:225  getPageSetting('spendmagmite')==1
+     · legacy/AutoTrimps2.js:200  getPageSetting('spendmagmite') == 2
+
+
+### multitoggle compared against a STRING literal (the #65 typetokeep class) — 0
+

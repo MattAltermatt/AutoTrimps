@@ -1,0 +1,198 @@
+createSetting ids defined : 571
+getPageSetting ids read    : 519
+
+########## PHANTOM READS — getPageSetting(id) where id was NEVER createSetting'd (28)
+########## utils.ts returns FALSE for these. Every guard using one is silently dead.
+
+'DailyBWraid'   (1 read sites)   nearest defined: 'Dailybwraid' (edit distance 0)
+     · legacy/AutoTrimps2.js:272  getPageSetting('DailyBWraid') == true
+
+'Dailyportal'   (1 read sites)   nearest defined: 'AutoPortal' (edit distance 4)
+     · src/modules/portal.ts:307  getPageSetting("Dailyportal")+1
+
+'FoodEfficiencyIgnoresMax'   (1 read sites)   nearest defined: 'MetalEfficiencyPriority' (edit distance 13)
+     · src/modules/buildings.ts:110  ignoresLimit = getPageSetting('FoodEfficiencyIgnoresMax')
+
+'GatewayWall'   (2 read sites)   nearest defined: 'gathermetal' (edit distance 6)
+     · src/modules/buildings.ts:174  getPageSetting('GatewayWall') > 1
+     · src/modules/buildings.ts:175  game.resources.fragments.owned / getPageSetting('GatewayWall')
+
+'GemEfficiencyIgnoresMax'   (1 read sites)   nearest defined: 'MetalEfficiencyPriority' (edit distance 12)
+     · src/modules/buildings.ts:169  getPageSetting('GemEfficiencyIgnoresMax') && keysSorted[best] !== "Gateway"
+
+'MaxTox'   (1 read sites)   nearest defined: 'MaxHut' (edit distance 3)
+     · src/modules/portal.ts:73  if (getPageSetting('MaxTox')) settingChanged("MaxTox");
+
+'RCapEquip2'   (1 read sites)   nearest defined: 'CapEquip2' (edit distance 1)
+     · src/modules/equipment.ts:668  cap = getPageSetting('RCapEquip2')
+
+'RCapEquiparm'   (8 read sites)   nearest defined: 'CapEquiparm' (edit distance 1)
+     · src/modules/equipment.ts:667  cap = getPageSetting('RCapEquiparm')
+     · src/modules/other.ts:227  game.equipment.Shield.level < getPageSetting('RCapEquiparm')
+     · src/modules/other.ts:227  game.equipment.Boots.level < getPageSetting('RCapEquiparm')
+     · src/modules/other.ts:227  game.equipment.Helmet.level < getPageSetting('RCapEquiparm')
+     · src/modules/other.ts:227  game.equipment.Pants.level < getPageSetting('RCapEquiparm')
+     · src/modules/other.ts:227  game.equipment.Shoulderguards.level < getPageSetting('RCapEquiparm')
+     · src/modules/other.ts:227  game.equipment.Breastplate.level < getPageSetting('RCapEquiparm')
+     · src/modules/other.ts:227  game.equipment.Gambeson.level < getPageSetting('RCapEquiparm')
+
+'RDynamicPrestige2'   (1 read sites)   nearest defined: 'DynamicPrestige2' (edit distance 1)
+     · src/modules/dynprestige.ts:14  lastzone = getPageSetting("RDynamicPrestige2")
+
+'Ralways2'   (1 read sites)   nearest defined: 'always2' (edit distance 1)
+     · src/modules/equipment.ts:676  gameResource.level < 2 && getPageSetting('Ralways2')
+
+'Rgearamounttobuy'   (2 read sites)   nearest defined: 'gearamounttobuy' (edit distance 1)
+     · src/modules/other.ts:308  getPageSetting('Rgearamounttobuy') > 0
+     · src/modules/other.ts:308  (getPageSetting('Rgearamounttobuy') > 0) ? getPageSetting('Rgearamounttobuy') : 1
+
+'Rnovmsc2'   (1 read sites)   nearest defined: 'novmsc2' (edit distance 1)
+     · src/modules/maps.ts:1016  getPageSetting('Rnovmsc2') == true
+
+'Ronlystackedvoids'   (2 read sites)   nearest defined: 'onlystackedvoids' (edit distance 1)
+     · src/modules/maps.ts:1004  getPageSetting('Ronlystackedvoids') == true
+     · src/modules/maps.ts:1017  getPageSetting('Ronlystackedvoids') == true
+
+'autonu'   (2 read sites)   nearest defined: 'AutoWind' (edit distance 3)
+     · src/modules/heirlooms.ts:363  getPageSetting('autonu') == true
+     · src/modules/heirlooms.ts:372  getPageSetting('autonu') == true
+
+'dMaxMapBonushealth'   (1 read sites)   nearest defined: 'MaxMapBonushealth' (edit distance 1)
+     · src/modules/upgrades.ts:105  game.global.challengeActive === "Daily" ? getPageSetting('dMaxMapBonushealth') : getPageSetting
+
+'dVoidMaps'   (1 read sites)   nearest defined: 'VoidMaps' (edit distance 1)
+     · src/modules/settings-visibility.ts:989  voidmaps = getPageSetting('dVoidMaps')
+
+'dloomswap'   (5 read sites)   nearest defined: 'dwsmax' (edit distance 6)
+     · src/modules/equipment.ts:360  getPageSetting('dloomswap') > 0
+     · src/modules/maps.ts:394  getPageSetting('dloomswap') > 0
+     · src/modules/settings-visibility.ts:155  getPageSetting('dloomswap') > 0
+     · src/modules/settings-visibility.ts:156  getPageSetting('dloomswap') > 0
+     · src/modules/settings-visibility.ts:157  getPageSetting('dloomswap') > 0
+
+'fuckanti'   (1 read sites)   nearest defined: 'fuckjobs' (edit distance 4)
+     · legacy/AutoTrimps2.js:233  getPageSetting('fuckanti') > 0
+
+'game.global.universe == 1 && BWraid'   (1 read sites)   nearest defined: 'Dailybwraid' (edit distance 27)
+     · legacy/AutoTrimps2.js:273  getPageSetting('game.global.universe == 1 && BWraid') == true
+
+'heirloomnu'   (4 read sites)   nearest defined: 'autoheirlooms' (edit distance 6)
+     · src/modules/heirlooms.ts:363  getPageSetting('heirloomnu') != undefined
+     · src/modules/heirlooms.ts:372  getPageSetting('heirloomnu') != undefined
+     · src/modules/heirlooms.ts:607  nuloom = getPageSetting('heirloomnu')
+     · src/modules/heirlooms.ts:654  loom.name == getPageSetting('heirloomnu')
+
+'loomswap'   (2 read sites)   nearest defined: 'novmsc2' (edit distance 5)
+     · src/modules/equipment.ts:358  getPageSetting('loomswap') > 0
+     · src/modules/maps.ts:392  getPageSetting('loomswap') > 0
+
+'rationu'   (2 read sites)   nearest defined: 'Rarchon' (edit distance 4)
+     · src/modules/heirlooms.ts:363  getPageSetting('rationu') == 0
+     · src/modules/heirlooms.ts:372  getPageSetting('rationu') == 1
+
+'slot1nu'   (2 read sites)   nearest defined: 'dlowdmg' (edit distance 5)
+     · src/modules/heirlooms.ts:364  getPageSetting('slot1nu') > 0
+     · src/modules/heirlooms.ts:364  (getPageSetting('slot1nu') > 0 && calcLoomNuInfinity(0)) ? getPageSetting('slot1nu') : 0
+
+'slot2nu'   (2 read sites)   nearest defined: 'dlowdmg' (edit distance 5)
+     · src/modules/heirlooms.ts:365  getPageSetting('slot2nu') > 0
+     · src/modules/heirlooms.ts:365  (getPageSetting('slot2nu') > 0 && calcLoomNuInfinity(1)) ? getPageSetting('slot2nu') : 0
+
+'slot3nu'   (2 read sites)   nearest defined: 'dlowdmg' (edit distance 5)
+     · src/modules/heirlooms.ts:366  getPageSetting('slot3nu') > 0
+     · src/modules/heirlooms.ts:366  (getPageSetting('slot3nu') > 0 && calcLoomNuInfinity(2)) ? getPageSetting('slot3nu') : 0
+
+'slot4nu'   (2 read sites)   nearest defined: 'dlowdmg' (edit distance 5)
+     · src/modules/heirlooms.ts:367  getPageSetting('slot4nu') > 0
+     · src/modules/heirlooms.ts:367  (getPageSetting('slot4nu') > 0 && calcLoomNuInfinity(3)) ? getPageSetting('slot4nu') : 0
+
+'slot5nu'   (2 read sites)   nearest defined: 'dlowdmg' (edit distance 5)
+     · src/modules/heirlooms.ts:368  getPageSetting('slot5nu') > 0
+     · src/modules/heirlooms.ts:368  (getPageSetting('slot5nu') > 0 && calcLoomNuInfinity(4)) ? getPageSetting('slot5nu') : 0
+
+'slot6nu'   (2 read sites)   nearest defined: 'dlowdmg' (edit distance 5)
+     · src/modules/heirlooms.ts:369  getPageSetting('slot6nu') > 0
+     · src/modules/heirlooms.ts:369  (getPageSetting('slot6nu') > 0 && calcLoomNuInfinity(5)) ? getPageSetting('slot6nu') : 0
+
+
+########## DEFINED BUT NEVER READ (80) — the existing net should already cover these
+   'AutoIce'  defined src/modules/settings-defs.ts:858
+   'AutoPoison'  defined src/modules/settings-defs.ts:856
+   'AutoWind'  defined src/modules/settings-defs.ts:857
+   'ChangeLog'  defined src/modules/settings-defs.ts:904
+   'CleanupAutoTrimps'  defined src/modules/settings-defs.ts:935
+   'DefaultAutoTrimps'  defined src/modules/settings-defs.ts:932
+   'EnableAFK'  defined src/modules/settings-defs.ts:901
+   'Export550'  defined src/modules/settings-defs.ts:934
+   'Export60'  defined src/modules/settings-defs.ts:933
+   'ExportAutoTrimps'  defined src/modules/settings-defs.ts:931
+   'Hdshrineamount'  defined src/modules/settings-defs.ts:123
+   'Hdshrinecell'  defined src/modules/settings-defs.ts:122
+   'Hdshrinemaz'  defined src/modules/settings-defs.ts:120
+   'Hdshrinezone'  defined src/modules/settings-defs.ts:121
+   'Hshrineamount'  defined src/modules/settings-defs.ts:420
+   'Hshrinecell'  defined src/modules/settings-defs.ts:419
+   'Hshrinecharge'  defined src/modules/settings-defs.ts:421
+   'Hshrinemaz'  defined src/modules/settings-defs.ts:417
+   'Hshrinezone'  defined src/modules/settings-defs.ts:418
+   'ImportAutoTrimps'  defined src/modules/settings-defs.ts:930
+   'MagmiteExplain'  defined src/modules/settings-defs.ts:748
+   'MaxCollector'  defined src/modules/settings-defs.ts:252
+   'MaxGateway'  defined src/modules/settings-defs.ts:250
+   'MaxHotel'  defined src/modules/settings-defs.ts:246
+   'MaxHouse'  defined src/modules/settings-defs.ts:244
+   'MaxHut'  defined src/modules/settings-defs.ts:243
+   'MaxMansion'  defined src/modules/settings-defs.ts:245
+   'MaxPraidZone'  defined src/modules/settings-defs.ts:509
+   'MaxResort'  defined src/modules/settings-defs.ts:249
+   'Prestige'  defined src/modules/settings-defs.ts:337
+   'RAMPraidmaz'  defined src/modules/settings-defs.ts:522
+   'RAutoPortal'  defined src/modules/settings-defs.ts:53
+   'RMaxCollector'  defined src/modules/settings-defs.ts:282
+   'RMaxGateway'  defined src/modules/settings-defs.ts:279
+   'RMaxHotel'  defined src/modules/settings-defs.ts:277
+   'RMaxHouse'  defined src/modules/settings-defs.ts:275
+   'RMaxHut'  defined src/modules/settings-defs.ts:274
+   'RMaxMansion'  defined src/modules/settings-defs.ts:276
+   'RMaxResort'  defined src/modules/settings-defs.ts:278
+   'RadonHourChallenge'  defined src/modules/settings-defs.ts:54
+   'Ralchfarmmaz'  defined src/modules/settings-defs.ts:647
+   'Rblackbogmaz'  defined src/modules/settings-defs.ts:597
+   'RdAMPraidmaz'  defined src/modules/settings-defs.ts:136
+   'RdHeliumHourChallenge'  defined src/modules/settings-defs.ts:206
+   'Rdshrineamount'  defined src/modules/settings-defs.ts:185
+   'Rdshrinecell'  defined src/modules/settings-defs.ts:184
+   'Rdshrinemaz'  defined src/modules/settings-defs.ts:182
+   'Rdshrinezone'  defined src/modules/settings-defs.ts:183
+   'Rdtimefarmgather'  defined src/modules/settings-defs.ts:153
+   'Rdtimefarmmap'  defined src/modules/settings-defs.ts:151
+   'Rdtimefarmmaz'  defined src/modules/settings-defs.ts:146
+   'Rdtimefarmspecial'  defined src/modules/settings-defs.ts:152
+   'Requipamount'  defined src/modules/settings-defs.ts:354
+   'Rhypofarmmaz'  defined src/modules/settings-defs.ts:657
+   'Rinsanitymaz'  defined src/modules/settings-defs.ts:627
+   'Rmapselection'  defined src/modules/settings-defs.ts:429
+   'Rshrineamount'  defined src/modules/settings-defs.ts:483
+   'Rshrinecell'  defined src/modules/settings-defs.ts:482
+   'Rshrinecharge'  defined src/modules/settings-defs.ts:484
+   'Rshrinemaz'  defined src/modules/settings-defs.ts:480
+   'Rshrinezone'  defined src/modules/settings-defs.ts:481
+   'Rsmithyfarmmaz'  defined src/modules/settings-defs.ts:460
+   'Rtimefarmgather'  defined src/modules/settings-defs.ts:455
+   'Rtimefarmmap'  defined src/modules/settings-defs.ts:453
+   'Rtimefarmmaz'  defined src/modules/settings-defs.ts:448
+   'Rtimefarmspecial'  defined src/modules/settings-defs.ts:454
+   'Rtributefarmmaz'  defined src/modules/settings-defs.ts:468
+   'Rtributegatherselection'  defined src/modules/settings-defs.ts:475
+   'Rtributemapselection'  defined src/modules/settings-defs.ts:473
+   'Rtributespecialselection'  defined src/modules/settings-defs.ts:474
+   'buynojobsc'  defined src/modules/settings-defs.ts:219
+   'c2table'  defined src/modules/settings-defs.ts:231
+   'dBWraidingmax'  defined src/modules/settings-defs.ts:115
+   'dBWraidingz'  defined src/modules/settings-defs.ts:114
+   'dHeliumHourChallenge'  defined src/modules/settings-defs.ts:192
+   'dMaxPraidZone'  defined src/modules/settings-defs.ts:109
+   'mapselection'  defined src/modules/settings-defs.ts:388
+   'turnwson'  defined src/modules/settings-defs.ts:535
+   'windstackingfiller'  defined src/modules/settings-defs.ts:534
+   'zonetracker'  defined src/modules/settings-defs.ts:896

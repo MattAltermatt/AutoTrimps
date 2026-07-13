@@ -115,6 +115,47 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **🔬 CODE REVIEW v2 — ~91 distinct defects; milestone #9, issues #67–#87. REVIEW ONLY, no code changed**
+  (2026-07-12) — an adversarial review of the whole codebase. Report:
+  `docs/superpowers/specs/2026-07-12-code-review-v2-findings.md`. **Fix order is load-bearing and is encoded in
+  the issue numbers.**
+  🚨 **#67 IS A BLOCKER: THE PROOF NET HAS NEVER RUN IN THE DEPLOY GATE.** `tests/sim/guard.ts` does
+  `describeSim = existsSync(<clone>/index.html) ? describe : describe.skip`, and `../trimps-game` is a *local*
+  dev dependency that is never on a CI runner — so 11 suites / 34 tests silently skip, including
+  `baseline-zero.test.ts` ("THE KEYSTONE"). Proven end-to-end: a regression injected into `jobs.ts` passed the
+  full CI sequence and landed in `dist/` **green**. The guard's own comment admits the intent — *"keeping
+  `npm test` — the Pages-deploy gate — green."* A gate optimized for greenness is not a gate. Also `npm run
+  lint` is **absent from CI**, and adding it alone is a **no-op** (oxlint exits 0 with 1,999 warnings /
+  0 errors). **Nothing else should land before #67.**
+  🏛️ **#87 — `mainLoop` has NO error boundary** (`grep "try {\|catch" legacy/AutoTrimps2.js` → nothing; bare
+  `setInterval` over ~30 automations in fixed tick order). Any throw silently skips **everything ordered after
+  it, every tick, forever**. This *amplifies* every crash-class bug (#77 `ab.ts` `equips[0][1]`, #78
+  `resetModuleVars` ReferenceError, #79 `portal.ts` bare `loom`) from a local crash into a permanent cascading
+  outage. Fix LAST and ALONE — it changes emitted JS and moves the L0 traces (behavioral, not mechanism).
+  🕸️ **Systemic classes (#68–#74), each `needs-net`:** 28 phantom `getPageSetting` ids (dead guards; ⚠️ do NOT
+  fix by defining them — `MaxTox`'s phantom is *accidentally protective*); ~34 booleans `createSetting`'d with
+  a **string** default (`'false'` is truthy → behavior differs per reader); ambient state read-but-never-written
+  (`storedMODULES` → ReferenceError, and `tsc` is green because the `.d.ts` lies); **#70 `MODULES["maps"]
+  .enoughDamageCutoff` is never written** → `>= undefined` → "CAM: H:D" is dead in all four Armor Magic
+  settings, both universes; an **empty** `settingsProfileMakeGUI(){}` in `settings-visibility.ts` **shadows the
+  real one** in `import-export.ts` via the bridge's `Object.assign` spread order (last spread wins — exactly one
+  such collision exists in 401 exports); `byId("advExtraMapLevelselect")` — that element **does not exist**
+  (the game's id is `advExtraLevelSelect`).
+  **#32 and #58 WERE BOTH CLOSED PREMATURELY** — #32 recorded "FULLY COMPLETE" while `portal.ts:238` /
+  `mapfunctions-amp.ts:463` still carry live `ReferenceError`s *marked `@ts-expect-error #32 latent`*; #58 fixed
+  2 phantoms while 26 remained, including `RCapEquiparm` — phantom **inside the very function #58's own comment
+  declares repaired** (`other.ts:221`), so `RbuyArms()` still buys nothing (`level < false` → `level < 0`).
+  **Both drains closed on the MARKERS, not the BUGS.**
+  📐 **Two method lessons, and they generalize:**
+  (1) **NETS > READERS.** The review named `never-written` as a class, instantiated it 32 times, and closed it
+  with 45 *reading agents* instead of one exhaustive *mechanical net* — so it missed instances of the class it
+  had itself named. A ten-minute `MODULES.<field>` read-vs-write net found #70, which all 45 finders walked
+  past. **Where a class can be mechanized, mechanize it.**
+  (2) **THE SKEPTIC LAYER WAS DECORATIVE.** 297 adversarial votes changed almost nothing (95% pass rate), and
+  **4 of the 12 kills came from findings the skeptics passed *unanimously*** — killed later by the reproduction
+  stage. Adversarial *argument* is far weaker than adversarial *execution*. Next time skip the debate layer and
+  go straight to "make it fail." (Both audits of the confirmed set — lead's and post-mortem's — broke **0** of
+  the sampled findings, so the 91% survival rate is real: the codebase genuinely is this bad.)
 - **Bug-hunt session: #63/#64/#65/#66 shipped; ORACLE RE-PINNED to v2** (2026-07-12) — started from a user
   bug report ("AT only researches, ignores the Turkimp") and cascaded. **#63** (`d749a7d4`): `needGymystic`
   was `var needGymystic = true` in AutoTrimps2.js and **never reset** (a 2016 upstream commit flipped its
