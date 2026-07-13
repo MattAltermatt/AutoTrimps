@@ -261,7 +261,10 @@ export function doPortal(challenge?: any) {
     if (!portalWindowOpen) {
 	portalClicked();
     }
-    if (portalWindowOpen && getPageSetting('AutoAllocatePerks')==1 && (typeof MODULES["perks"] !== 'undefined' || typeof AutoPerks !== 'undefined')) {
+    // #82: this guard used to test `typeof MODULES["perks"] !== 'undefined' || typeof AutoPerks !==
+    // 'undefined'` — both ALWAYS true (perks.ts assigns both unconditionally), so it never fired and
+    // the call proceeded straight into an empty object. Test the thing we are about to call.
+    if (portalWindowOpen && getPageSetting('AutoAllocatePerks')==1 && typeof AutoPerks?.clickAllocate === 'function') {
         AutoPerks.clickAllocate();
     }
     if (portalWindowOpen && getPageSetting('c2runnerstart')==true && getPageSetting('c2runnerportal') > 0 && getPageSetting('c2runnerpercent') > 0) {
@@ -489,7 +492,9 @@ export function RdoPortal(challenge?: any) {
     if (!portalWindowOpen) {
 	portalClicked();
     }
-    if (portalWindowOpen && getPageSetting('RAutoAllocatePerks')==1 && (typeof MODULES["perks"] !== 'undefined' || typeof AutoPerks !== 'undefined')) {
+    // #82: as above — and this one guarded on `AutoPerks` while calling `RAutoPerks`, a copy-paste
+    // that made it doubly meaningless.
+    if (portalWindowOpen && getPageSetting('RAutoAllocatePerks')==1 && typeof RAutoPerks?.clickAllocate === 'function') {
         RAutoPerks.clickAllocate();
     }
     if (portalWindowOpen && getPageSetting('RAutoStartDaily') == true) {

@@ -19,13 +19,22 @@ MODULES["perks"].showDetails = true;
 // into the page — EXECUTABLE third-party JS, from an unpinned origin, with no integrity hash, running
 // in every user's game. If that GitHub account were ever deleted or taken over, whoever claimed the name
 // would get arbitrary code execution in every AutoTrimps install. It was also an async load racing four
-// `new FastPriorityQueue(...)` call sites.
+// `new FastPriorityQueue(...)` call sites. `legacy/FastPriorityQueue.js` was already in this repo — it
+// simply was not in the build MANIFEST. It is now bundled, so the global comes from our own shipped
+// bytes, synchronously. tests/nets/supply-chain.test.ts fails on any new executable remote origin.
 //
-// `legacy/FastPriorityQueue.js` was already sitting in this repo — it simply was not in the build
-// MANIFEST. It is now bundled, so the global is defined by our own shipped bytes, synchronously, with no
-// network fetch and no third-party trust. `tests/nets/supply-chain.test.ts` now fails on ANY new
-// executable remote origin in the emitted userscript.
-if (game.global.universe == 1) {
+// #82: this block used to open `if (game.global.universe == 1) {` and not close it until after
+// AutoPerks.getOwnedPerks, ~726 lines below — so EVERY AutoPerks method was DEFINED conditionally,
+// on a snapshot of the universe taken once, at script-load time. But Trimps reassigns
+// game.global.universe live inside resetGame() (updates.js:4681) and never reloads the page
+// (`grep -rn "location.reload" *.js` -> 0 hits). Load in U2, portal into U1, and AutoPerks was
+// still the bare `{}` from above: the whole feature gone, and portal.ts's call site throwing
+// `AutoPerks.clickAllocate is not a function` mid-portal — which, in a mainLoop with no try/catch
+// (#87), also killed every step ordered after it.
+//
+// Definitions are now unconditional. Only the DOM-building side effect stays universe-gated (see
+// AutoPerks.ensureGUI below) — that is the part that legitimately depends on the current universe.
+// The body is untouched and was already flush-left, so this is a pure de-gating, not a re-indent.
 //[looting,toughness,power,motivation,pheromones,artisanistry,carpentry,resilience,coordinated,resourceful,overkill,cunning,curious,classy]
 var preset_space = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 var preset_Zek059 = [7, 0.6, 3, 0.8, 0.3, 3, 25, 0.6, 0, 0, 0, 0, 0, 0];
@@ -175,6 +184,31 @@ AutoPerks.saveDumpPerk = function() {
     safeSetItems('AutoperkSelectedDumpPresetName', $dump.value);
 }
 
+// #82: mount this universe's perk GUI, lazily and idempotently.
+//
+// Both universes' displayGUI() build their roots under the SAME two ids — `allocatorBtn1` (into
+// #portalBtnContainer) and `customRatios` (into #portalWrapper) — and only namespace the selects
+// inside (ratioPreset/dumpPerk vs RratioPreset/RdumpPerk). Since a live portal can flip the
+// universe under a GUI that was built for the other one, "is my select present?" is the honest
+// mounted-test, and re-mounting must first tear down whichever roots are already there or we would
+// duplicate those two shared ids.
+//
+// Calling this before any DOM read (rather than only once at load) is what actually survives a live
+// portal: saveCustomRatios reads #ratioPreset directly and null-derefs if the GUI was never built
+// for the current universe.
+function ensurePerksGUI(selectId: string, build: () => void): void {
+    if (document.getElementById(selectId)) return;
+    for (var rootId of ['allocatorBtn1', 'customRatios']) {
+        var root = document.getElementById(rootId);
+        if (root) root.remove();
+    }
+    build();
+}
+
+AutoPerks.ensureGUI = function() {
+    ensurePerksGUI('ratioPreset', AutoPerks.displayGUI);
+}
+
 AutoPerks.saveCustomRatios = function() {
     if (byId<HTMLSelectElement>("ratioPreset").selectedIndex == byId<HTMLSelectElement>("ratioPreset").length-1) {
         var $perkRatioBoxes = document.getElementsByClassName('perkRatios') as any;
@@ -237,6 +271,7 @@ AutoPerks.updatePerkRatios = function() {
 }
 
 AutoPerks.initialise = function() {
+    AutoPerks.ensureGUI(); // #82: a live U2->U1 portal leaves this universe's GUI unbuilt
     AutoPerks.saveCustomRatios();
     AutoPerks.initializePerks();
     AutoPerks.updatePerkRatios();
@@ -750,7 +785,8 @@ AutoPerks.getOwnedPerks = function() {
     }
     return perks;
 }
-AutoPerks.displayGUI();
+if (game.global.universe == 1) {
+AutoPerks.ensureGUI();
 }
 
 globalThis.RAutoPerks = {};
@@ -973,7 +1009,12 @@ RAutoPerks.updatePerkRatios = function() {
     }
 }
 
+RAutoPerks.ensureGUI = function() {
+    ensurePerksGUI('RratioPreset', RAutoPerks.displayGUI);
+};
+
 RAutoPerks.initialise = function() {
+    RAutoPerks.ensureGUI(); // #82: a live U1->U2 portal leaves this universe's GUI unbuilt
     RAutoPerks.saveCustomRatios();
     RAutoPerks.initializePerks();
     RAutoPerks.updatePerkRatios();
@@ -1471,5 +1512,5 @@ RAutoPerks.getOwnedPerks = function() {
 };
 
 if (game.global.universe == 2) {
-RAutoPerks.displayGUI();
+RAutoPerks.ensureGUI();
 }
