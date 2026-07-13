@@ -12703,7 +12703,16 @@
     return drawArgs;
   };
   function RbuyArms() {
-    preBuy(), game.global.buyAmt = 10, game.equipment.Shield.level < getPageSetting2("RCapEquiparm") && canAffordBuilding("Shield", null, null, true) && buyEquipment("Shield", true, true), game.equipment.Boots.level < getPageSetting2("RCapEquiparm") && canAffordBuilding("Boots", null, null, true) && buyEquipment("Boots", true, true), game.equipment.Helmet.level < getPageSetting2("RCapEquiparm") && canAffordBuilding("Helmet", null, null, true) && buyEquipment("Helmet", true, true), game.equipment.Pants.level < getPageSetting2("RCapEquiparm") && canAffordBuilding("Pants", null, null, true) && buyEquipment("Pants", true, true), game.equipment.Shoulderguards.level < getPageSetting2("RCapEquiparm") && canAffordBuilding("Shoulderguards", null, null, true) && buyEquipment("Shoulderguards", true, true), game.equipment.Breastplate.level < getPageSetting2("RCapEquiparm") && canAffordBuilding("Breastplate", null, null, true) && buyEquipment("Breastplate", true, true), !game.equipment.Gambeson.locked && game.equipment.Gambeson.level < getPageSetting2("RCapEquiparm") && canAffordBuilding("Gambeson", null, null, true) && buyEquipment("Gambeson", true, true), postBuy();
+    const armourCap = getPageSetting2("Requipcaphealth") <= 0 ? Infinity : getPageSetting2("Requipcaphealth");
+    preBuy();
+    game.global.buyAmt = 10;
+    for (const slot of ["Shield", "Boots", "Helmet", "Pants", "Shoulderguards", "Breastplate"]) {
+      if (game.equipment[slot].level < armourCap && canAffordBuilding(slot, null, null, true))
+        buyEquipment(slot, true, true);
+    }
+    if (!game.equipment.Gambeson.locked && game.equipment.Gambeson.level < armourCap && canAffordBuilding("Gambeson", null, null, true))
+      buyEquipment("Gambeson", true, true);
+    postBuy();
   }
   function Rfightalways() {
     if (game.global.gridArray.length === 0 || game.global.preMapsActive || !game.upgrades.Battle.done || game.global.fighting)
@@ -12768,7 +12777,7 @@
     if (name == void 0) {
       return go;
     }
-    var amt = getPageSetting2("Rgearamounttobuy") > 0 ? getPageSetting2("Rgearamounttobuy") : 1;
+    var amt = getPageSetting2("Requipamount") > 0 ? getPageSetting2("Requipamount") : 1;
     var percent = getPageSetting2("Rsmithypercent") / 100;
     var seconds = getPageSetting2("Rsmithyseconds");
     var resourcesecwood = getPsString("wood", true);

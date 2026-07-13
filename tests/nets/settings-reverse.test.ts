@@ -263,12 +263,19 @@ describe('every setting id the code READS must have been createSetting\'d (#68)'
     // ── MISSING U2 / DAILY TWIN: the non-prefixed sibling is defined; the prefixed one never was. The
     //    repair is a choice (define the twin, or read the sibling) — hence TRIAGE, not a default define.
     RCapEquip2: "MISSING U2 TWIN of 'CapEquip2' — equipment.ts:668, cap = false (TRIAGE)",
+    // ✅ #68 — the LIVE site (other.ts, RbuyArms) is FIXED: it now reads 'Requipcaphealth', the real
+    // U2 armour cap. RCapEquiparm stays listed only because equipment.ts:668 still reads it inside
+    // RevaluateEquipmentEfficiency — a function with ZERO production callers. Dead code reading a dead
+    // id; harmless, and deleting it is its own (bundle-moving) change. NOT re-minted: it was deleted
+    // upstream in 2020, so createSetting'ing it would resurrect users' five-year-old stored values.
     RCapEquiparm:
-      "MISSING U2 TWIN of 'CapEquiparm' — other.ts:234 `level < false` → `level < 0`, so RbuyArms() buys " +
-      'NOTHING (8 read sites). The HIGH bug #58 claimed to have already repaired (TRIAGE)',
+      "DEAD-CODE-ONLY now — equipment.ts:668 in RevaluateEquipmentEfficiency (0 callers). The LIVE " +
+      'RbuyArms site was repaired in #68 by repointing at Requipcaphealth (TRIAGE: delete the dead fn)',
     RDynamicPrestige2: "MISSING U2 TWIN of 'DynamicPrestige2' — dynprestige.ts:15 (TRIAGE)",
     Ralways2: "MISSING U2 TWIN of 'always2' — equipment.ts:676 (TRIAGE)",
-    Rgearamounttobuy: "MISSING U2 TWIN of 'gearamounttobuy' — other.ts:315, falls back to 1 (TRIAGE)",
+    // ✅ Rgearamounttobuy — FIXED (#68). smithylogic now reads 'Requipamount', the live U2 gear-amount
+    // setting, which until now was a rendered ORPHAN no code read. Default 1 == the old `: 1` fallback,
+    // so behavior is unchanged. The net went red the moment the last read vanished; that is the design.
     Rnovmsc2: "MISSING U2 TWIN of 'novmsc2' — maps.ts:1023 (TRIAGE)",
     Ronlystackedvoids: "MISSING U2 TWIN of 'onlystackedvoids' — maps.ts:1011,1024 (TRIAGE)",
     dMaxMapBonushealth: "MISSING DAILY TWIN of 'MaxMapBonushealth' — upgrades.ts:105 (TRIAGE)",
@@ -337,7 +344,7 @@ describe('every setting id the code READS must have been createSetting\'d (#68)'
         `'${id}' is no longer read anywhere — delete it from KNOWN_PHANTOM`,
       ).toBe(true)
     }
-    expect(Object.keys(KNOWN_PHANTOM).length).toBeLessThanOrEqual(29)
+    expect(Object.keys(KNOWN_PHANTOM).length).toBeLessThanOrEqual(28) // 29 → 28: Rgearamounttobuy fixed (#68)
   })
 
   it('the ALLOWED_DYNAMIC allowlist stays honest — every entry must still be a live call site', () => {
@@ -492,8 +499,6 @@ describe('a test may only seed setting ids that production defines (#74)', () =>
     'tests/equipment.characterization.test.ts:772': "#68/#74 — seeds phantom 'RCapEquip2'",
     'tests/equipment.characterization.test.ts:807': "#68/#74 — seeds phantom 'loomswap' (dead nuloom feature)",
     'tests/equipment.characterization.test.ts:825': "#68/#74 — seeds phantom 'dloomswap' (dead nuloom feature)",
-    'tests/other.rarmormagic.test.ts:41': "#68/#74 — seeds phantom 'RCapEquiparm'",
-    'tests/other.rbuyArms.test.ts:31': "#68/#74 — seeds phantom 'RCapEquiparm' — the very bug the test covers",
   }
 
   it('finds the test-side settings seeds (anti-false-green)', () => {
@@ -515,7 +520,7 @@ describe('a test may only seed setting ids that production defines (#74)', () =>
     const live = new Set(seeds.filter((s) => !DEFINED.has(s.id)).map((s) => `${s.file}:${s.line}`))
     for (const k of Object.keys(KNOWN_TEST_LIE))
       expect(live.has(k), `${k} no longer seeds a phantom id — delete it from KNOWN_TEST_LIE`).toBe(true)
-    expect(Object.keys(KNOWN_TEST_LIE).length).toBeLessThanOrEqual(8)
+    expect(Object.keys(KNOWN_TEST_LIE).length).toBeLessThanOrEqual(6) // 8 → 6: the two RCapEquiparm fixtures now seed Requipcaphealth (#68)
   })
 
   it('the synthetic-fixture allowlist stays inside the engine unit test', () => {

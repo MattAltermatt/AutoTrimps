@@ -26,9 +26,12 @@ beforeAll(async () => {
 let buyEquipmentCalls: unknown[][]
 beforeEach(() => {
   buyEquipmentCalls = []
-  // RCapEquiparm is a real 'value' setting RbuyArms reads for the level cap. RBuyArmorNew is
-  // deliberately ABSENT — that is the phantom condition the bug lived under (getPageSetting → false).
-  ;(globalThis as any).autoTrimpSettings = { RCapEquiparm: { type: 'value', value: '50' } }
+  // #68/#74: this fixture used to seed `RCapEquiparm`, and its comment called it "a real 'value'
+  // setting". It is not — RCapEquiparm was deleted upstream in 2020 and production can never see it,
+  // so the fixture was manufacturing the very branch the bug made unreachable (the #74 class: a green
+  // test certifying a dead path). RbuyArms now reads the live U2 armour cap, `Requipcaphealth`.
+  // RBuyArmorNew stays deliberately ABSENT — that is the phantom condition #58's bug lived under.
+  ;(globalThis as any).autoTrimpSettings = { Requipcaphealth: { type: 'value', value: '50' } }
   ;(globalThis as any).game = {
     global: { buyAmt: 1, firing: false, lockTooltip: false, maxSplit: 1 },
     equipment: Object.fromEntries(ARMOR.map((n) => [n, { level: 0, locked: false }])),
@@ -51,4 +54,31 @@ describe('#58: RbuyArms buys armor even when RBuyArmorNew is unset (phantom)', (
     other.RbuyArms()
     expect(buyEquipmentCalls.map((a) => a[0])).toEqual(ARMOR.filter((n) => n !== 'Shield'))
   })
+})
+
+describe('#68: RbuyArms reads the live U2 armour cap, and treats <= 0 as "no cap"', () => {
+  it('buys nothing above the cap the U2 player actually set (Requipcaphealth)', () => {
+    ;(globalThis as any).autoTrimpSettings = { Requipcaphealth: { type: 'value', value: '10' } }
+    ;(globalThis as any).game.equipment.Boots.level = 10 // == cap → skipped
+    ;(globalThis as any).game.equipment.Shield.level = 9 // < cap → bought
+    other.RbuyArms()
+    const bought = buyEquipmentCalls.map((a) => a[0])
+    expect(bought).toContain('Shield')
+    expect(bought).not.toContain('Boots')
+  })
+
+  it('a disabled cap (<= 0) means NO cap, not a cap of zero', () => {
+    // RautoEquip (equipment.ts:949) already normalizes `<= 0 ? Infinity`. RbuyArms compared raw, so a
+    // player who disabled the cap would get `level < -1` → false for every slot → the feature lands
+    // right back on the dead behavior #68 exists to repair. Pin the normalization.
+    ;(globalThis as any).autoTrimpSettings = { Requipcaphealth: { type: 'value', value: '-1' } }
+    for (const n of ARMOR) (globalThis as any).game.equipment[n].level = 999
+    other.RbuyArms()
+    expect(buyEquipmentCalls.map((a) => a[0])).toEqual(ARMOR) // no cap → every slot still buys
+  })
+
+  // NOTE: there is deliberately NO test here seeding `RCapEquiparm` to prove it is inert. Seeding a
+  // phantom id in a fixture is the exact #74 anti-pattern this cluster exists to kill, and the
+  // settings-reverse net already proves mechanically that no `src/` code reads that id at all — which
+  // is a stronger guarantee than any fixture could offer.
 })

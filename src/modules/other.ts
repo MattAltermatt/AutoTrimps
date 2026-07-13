@@ -225,13 +225,44 @@ playerSpire.drawInfo = function(drawArgs: any) {
 
 //Radon
 export function RbuyArms() {
-    // #58: the RBuyArmorNew gate was removed — RBuyArmorNew is a phantom setting (never createSetting'd
-    // → getPageSetting returns false), so this ALWAYS early-returned, silently killing U2 armor-magic.
-    // RbuyArms's only live caller, Rarmormagic (via AutoTrimps2.js:348), already gates on the real
-    // Rcarmormagic/Rdarmormagic, so the phantom re-gate was a bad copy-paste of U1 buyArms (whose
-    // BuyArmorNew gate IS real AND drives the U1 main buy loop — U2 has neither). See regression test.
-    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-    preBuy(), game.global.buyAmt = 10, game.equipment.Shield.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Shield', null, null, !0) && buyEquipment('Shield', !0, !0), game.equipment.Boots.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Boots', null, null, !0) && buyEquipment('Boots', !0, !0), game.equipment.Helmet.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Helmet', null, null, !0) && buyEquipment('Helmet', !0, !0), game.equipment.Pants.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Pants', null, null, !0) && buyEquipment('Pants', !0, !0), game.equipment.Shoulderguards.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Shoulderguards', null, null, !0) && buyEquipment('Shoulderguards', !0, !0), game.equipment.Breastplate.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Breastplate', null, null, !0) && buyEquipment('Breastplate', !0, !0), !game.equipment.Gambeson.locked && game.equipment.Gambeson.level < getPageSetting('RCapEquiparm') && canAffordBuilding('Gambeson', null, null, !0) && buyEquipment('Gambeson', !0, !0), postBuy()
+    // #58 removed the phantom RBuyArmorNew gate here and shipped a comment declaring U2 armor-magic
+    // repaired. IT WAS NOT. A SECOND phantom on the very next line still killed it: every one of the
+    // seven slots was gated on `level < getPageSetting('RCapEquiparm')`, and RCapEquiparm resolves to
+    // false/undefined → `level < 0` → false at every level. The function bought nothing, ever. (#68)
+    //
+    // RCapEquiparm is not a typo: it was createSetting'd in 2019 (d33ea06b) and DELETED upstream in
+    // 2020 (701faab4), leaving these reads orphaned. It must NOT be re-minted — createSetting applies
+    // its default only when NOTHING is stored (`loaded === undefined ? defaultValue : loaded`), while
+    // loadPageVariables() restores the whole localStorage blob and serializeSettings() round-trips
+    // unknown keys forever. Re-minting a deleted id therefore RESURRECTS whatever value the user last
+    // set in 2020 rather than applying a safe default.
+    //
+    // Repointing at an id that already exists mints no key, so there is nothing to resurrect.
+    // 'Requipcaphealth' ("AE: Armour Cap — What level to stop buying Armour at") is the live U2 armour
+    // cap the player already configured for RautoEquip (equipment.ts:949) — same universe, same
+    // semantic, and visible in the U2 panel (the U1 twin CapEquiparm is turnOff()'d when radonon, so
+    // pointing at it would bind U2 to a control the U2 player cannot see, and its default of 10 sits
+    // BELOW typical U2 armour levels — the feature would have stayed dead while looking fixed).
+    //
+    // Normalize as RautoEquip does: a cap of <= 0 means "no cap", not "cap of zero" — without this a
+    // player who disables the cap (-1) gets `level < -1` and lands right back on a dead feature.
+    // De-comma'd from the legacy one-line comma sequence (#92 sanctions this "behind the live net", and
+    // the net is live as of #67). A comma sequence is exactly equivalent to sequential statements — every
+    // operand was already evaluated left-to-right with no early exit — so this is byte-equivalent behavior.
+    // It is also load-bearing for the lint gate: oxlint's no-unused-vars does NOT count identifier uses
+    // inside a sequence-expression statement, so `armourCap` read as "declared but never used" until the
+    // commas went. Keeping the sequence would have forced a lint suppression to hide a phantom warning.
+    const armourCap = (getPageSetting('Requipcaphealth') <= 0) ? Infinity : getPageSetting('Requipcaphealth');
+    preBuy();
+    game.global.buyAmt = 10;
+    for (const slot of ['Shield', 'Boots', 'Helmet', 'Pants', 'Shoulderguards', 'Breastplate'] as const) {
+        if (game.equipment[slot].level < armourCap && canAffordBuilding(slot, null, null, !0))
+            buyEquipment(slot, !0, !0);
+    }
+    // Gambeson keeps its extra `locked` guard — it is the one armour slot that can still be locked.
+    if (!game.equipment.Gambeson.locked && game.equipment.Gambeson.level < armourCap && canAffordBuilding('Gambeson', null, null, !0))
+        buyEquipment('Gambeson', !0, !0);
+    postBuy();
 }
 
 export function Rfightalways() {
@@ -312,7 +343,13 @@ export function smithylogic(name: any, resource: any, equip: any) {
 
     //Vars
 
-    var amt = (getPageSetting('Rgearamounttobuy') > 0) ? getPageSetting('Rgearamounttobuy') : 1;
+    // #68: was getPageSetting('Rgearamounttobuy') — an id createSetting'd in 2019 (d33ea06b) and DELETED
+    // upstream in 2020 (701faab4) with this read left behind, so it resolved to false/undefined and `amt`
+    // always fell to the `: 1` branch. The live U2 gear knob is 'Requipamount' ("AE: Amount"), which until
+    // now was a rendered orphan NO code read. Same semantic, same universe, visible to the U2 player, and
+    // its default is 1 — identical to the fallback this replaces, so default behavior is unchanged.
+    // Repointing (rather than re-minting the deleted id) is deliberate: see the note in RbuyArms below.
+    var amt = (getPageSetting('Requipamount') > 0) ? getPageSetting('Requipamount') : 1;
     var percent = (getPageSetting('Rsmithypercent') / 100);
     var seconds = getPageSetting('Rsmithyseconds');
     var resourcesecwood = getPsString("wood", true);

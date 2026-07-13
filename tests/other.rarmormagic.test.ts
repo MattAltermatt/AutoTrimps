@@ -38,7 +38,9 @@ function baseGame(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   buyEquipmentCalls = []
-  ;(globalThis as any).autoTrimpSettings = { RCapEquiparm: { type: 'value', value: '50' } }
+  // #68/#74: was `RCapEquiparm` — a phantom (deleted upstream 2020) that production can never read.
+  // RbuyArms now reads the live U2 armour cap, so seed the id production actually uses.
+  ;(globalThis as any).autoTrimpSettings = { Requipcaphealth: { type: 'value', value: '50' } }
   ;(globalThis as any).game = baseGame()
   ;(globalThis as any).preBuy = vi.fn()
   ;(globalThis as any).postBuy = vi.fn()
