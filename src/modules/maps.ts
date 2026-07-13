@@ -130,10 +130,15 @@ export function testMapSpecialModController() {
             // g/h/i/j/k are pre-existing dead assignments (results never read) — kept as declarations to
             // preserve the collaborators' call order + side effects (byte-faithful; same unused-var lint
             // profile as before).
+            // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
             const g = getSpecialModifierSetting();
+            // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
             const h = game.global.highestLevelCleared >= 109;
+            // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
             const i = checkPerfectChecked();
+            // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
             const j = document.getElementById("advPerfectCheckbox");
+            // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
             const k = getPageSetting("AdvMapSpecialModifier") ? getExtraMapLevels() : 0;
             if (game.global.highestLevelCleared >= 209) {
                 const m = byId<HTMLSelectElement>("advExtraMapLevelselect");
@@ -345,6 +350,7 @@ export function autoMap() {
 
     //Prestige
     if ((getPageSetting('ForcePresZ') >= 0) && ((game.global.world + extraMapLevels) >= getPageSetting('ForcePresZ'))) {
+        // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
         const prestigeList = ['Supershield', 'Dagadder', 'Megamace', 'Polierarm', 'Axeidic', 'Greatersword', 'Harmbalest', 'Bootboost', 'Hellishmet', 'Pantastic', 'Smoldershoulder', 'Bestplate', 'GambesOP'];
         needPrestige = (offlineProgress.countMapItems(game.global.world) !== 0);
     } else
@@ -702,6 +708,7 @@ export function autoMap() {
             }
         }
     } else if (game.global.preMapsActive) {
+        // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
         const minFragmentsNeeded = Math.floor((((game.global.world / 150) * (Math.pow(1.14, game.global.world - 1))) * game.global.world * 2) * Math.pow((1.03 + (game.global.world / 50000)), game.global.world)) * 2;
         if (selectedMap == "world") {
             mapsClicked();

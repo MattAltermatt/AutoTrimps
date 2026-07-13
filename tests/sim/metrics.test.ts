@@ -1,9 +1,8 @@
-import { it, expect } from 'vitest'
-import { describeSim } from './guard'
+import { describe, it, expect } from 'vitest'
 import { bootGame } from '../../scripts/sim/boot.mjs'
 import { snapshot } from '../../scripts/sim/metrics.mjs'
 
-describeSim('sim/metrics', () => {
+describe('sim/metrics', () => {
   it('reads a stable numeric shape from a booted game', () => {
     const { game } = bootGame()
     const s = snapshot(game)

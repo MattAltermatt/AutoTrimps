@@ -19,13 +19,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # .nvmrc pins the EXACT patch (26.0.0) — the runtime the oracle traces were recorded on
+          # (tests/fixtures/traces/manifest.json .runtime.node). A floating major resolves to whatever
+          # is newest, and fingerprint.mjs would then report a runtime MISMATCH on every divergence,
+          # muddying the one signal that tells a real regression from an environmental one.
+          node-version-file: .nvmrc
           cache: npm
+
+      # `npm ci` runs postinstall -> scripts/fetch-game-clone.mjs, which materializes the SHA-pinned
+      # Trimps clone. That is why there is no clone step here: the proof net's input is a managed
+      # dependency, not something this workflow has to remember to fetch (#67).
       - run: npm ci
+
+      - run: npm run lint
       - run: npm run typecheck
-      - run: npm test
+      # test:ci = vitest + the zero-skip census. A skipped test is not a passed test (#67).
+      - run: npm run test:ci
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:

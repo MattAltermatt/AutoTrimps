@@ -1,7 +1,7 @@
-import { it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest'
+import { TEST_BUNDLE } from './bundle'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { describeSim } from './guard'
 import { bootGame } from '../../scripts/sim/boot.mjs'
 import { installSeededRandom } from '../../scripts/sim/seededRandom.mjs'
 import { stepWithAT } from '../../scripts/sim/driver.mjs'
@@ -24,7 +24,7 @@ import { stepWithAT } from '../../scripts/sim/driver.mjs'
 
 const load = (name: string) => readFileSync(resolve('tests/fixtures/saves', name + '.txt'), 'utf8')
 
-describeSim('sim/offline-flag (#66)', () => {
+describe('sim/offline-flag (#66)', () => {
   it('loading a save leaves usingRealTimeOffline FALSE (offline replay is torn down)', () => {
     const { window } = bootGame({ saveString: load('02-mid-u1') })
     expect(window.usingRealTimeOffline).toBe(false)
@@ -36,7 +36,7 @@ describeSim('sim/offline-flag (#66)', () => {
   })
 
   it('AT actually buys EQUIPMENT — the subsystem the stuck flag disabled', () => {
-    const { window } = bootGame({ withAutoTrimps: true, saveString: load('02-mid-u1') })
+    const { window } = bootGame({ withAutoTrimps: true, atBundlePath: TEST_BUNDLE, saveString: load('02-mid-u1') })
     installSeededRandom(window, 1)
 
     let buyEquipmentCalls = 0
@@ -54,7 +54,7 @@ describeSim('sim/offline-flag (#66)', () => {
   })
 
   it('AT tracks science needs — the other subsystem behind the same gate', () => {
-    const { window } = bootGame({ withAutoTrimps: true, saveString: load('02-mid-u1') })
+    const { window } = bootGame({ withAutoTrimps: true, atBundlePath: TEST_BUNDLE, saveString: load('02-mid-u1') })
     installSeededRandom(window, 1)
     // setScienceNeeded() assigns the global; if it never runs the global stays undefined.
     stepWithAT(window, 200)

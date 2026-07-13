@@ -37,6 +37,7 @@ MODULES["buildings"].storageLowlvlCutoff1 = 0.7;
 MODULES["buildings"].storageLowlvlCutoff2 = 0.5;
 
 //Helium
+// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
 const housingList = ['Hut', 'House', 'Mansion', 'Hotel', 'Resort', 'Gateway', 'Collector', 'Warpstation'];
 
 
@@ -197,7 +198,9 @@ export function buyGemEfficientHousing() {
                 const toTip = game.buildings.Warpstation;
                 if (canAffordBuilding("Warpstation")) {
                     const howMany = calculateMaxAfford(game.buildings["Warpstation"], true);
+                    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
                     const needCoord = game.upgrades.Coordination.allowed - game.upgrades.Coordination.done > 0;
+                    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
                     const coordReplace = (game.portal.Coordinated.level) ? (25 * Math.pow(game.portal.Coordinated.modifier, game.portal.Coordinated.level)).toFixed(3) : 25;
                     if (!canAffordCoordinationTrimps()) {
                         const nextCount = (game.portal.Coordinated.level) ? game.portal.Coordinated.currentSend : game.resources.trimps.maxSoldiers;
@@ -220,6 +223,7 @@ export function buyGemEfficientHousing() {
 }
 
 export function buyBuildings() {
+    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
     const customVars = MODULES["buildings"];
     const oldBuy = preBuy2();
     const hidebuild = (getPageSetting('BuyBuildingsNew') === 0 && getPageSetting('hidebuildings') == true);
@@ -239,6 +243,7 @@ export function buyBuildings() {
         //Dynamic Gyms
         if (getPageSetting('DynamicGyms')) {
             //Target Zone
+            // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
             const targetZone = game.global.world;
 
             //Enemy stats
@@ -346,6 +351,7 @@ export function buyStorage() {
 
 //Radon
 
+// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
 const RhousingList = ['Hut', 'House', 'Mansion', 'Hotel', 'Resort', 'Gateway', 'Collector'];
 
 export function RsafeBuyBuilding(building: string) {

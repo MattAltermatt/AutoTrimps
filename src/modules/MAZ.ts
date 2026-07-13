@@ -7,6 +7,7 @@
 // ambient. Behaviour-preserving: any body edits are TYPE-ONLY.
 import { saveSettings } from './utils'
 
+// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
 export function MAZLookalike(titleText: any, isItIn?: any, event?: any) {
 
     var zone: any;
@@ -110,7 +111,7 @@ export function MAZLookalike(titleText: any, isItIn?: any, event?: any) {
 
     var ondisplay: any = null;
     var maxSettings = 120;
-    var windowHelp = "Welcome to AT\'s version of MaZ! Please read the tooltips of the settings button to get more detailed info on how to use this. However it should be easy enough to figure out!";
+    var windowHelp = "Welcome to AT's version of MaZ! Please read the tooltips of the settings button to get more detailed info on how to use this. However it should be easy enough to figure out!";
 
     tooltipText = "\
     <div id='windowContainer' style='display: block'><div id='windowError'></div>\
@@ -227,7 +228,7 @@ export function MAZLookalike(titleText: any, isItIn?: any, event?: any) {
 
         var gatherDropdown = "<option value='food'" + ((vals.gather == 'food') ? " selected='selected'" : "") + ">Food</option>\"<option value='metal'" + ((vals.gather == 'metal') ? " selected='selected'" : "") + ">Metal</option>\"<option value='wood'" + ((vals.gather == 'wood') ? " selected='selected'" : "") + ">Wood</option>\"<option value='science'" + ((vals.gather == 'science') ? " selected='selected'" : "") + ">Science</option>"
         var mapDropdown = "<option value='Random'" + ((vals.map == 'Random') ? " selected='selected'" : "") + ">Random</option>\"<option value='Mountain'" + ((vals.map == 'Mountain') ? " selected='selected'" : "") + ">Moutain</option>\"<option value='Forest'" + ((vals.map == 'Forest') ? " selected='selected'" : "") + ">Forest</option>\"<option value='Sea'" + ((vals.map == 'Sea') ? " selected='selected'" : "") + ">Sea</option>\"<option value='Depths'" + ((vals.map == 'Depths') ? " selected='selected'" : "") + ">Depths</option>\"<option value='Plentiful'" + ((vals.map == 'Plentiful') ? " selected='selected'" : "") + ">Gardens</option>\"<option value='Farmlands'" + ((vals.map == 'Farmlands') ? " selected='selected'" : "") + ">Farmlands</option>"
-        var specialsDropdown = "<option value='fa'" + ((vals.special == 'fa') ? " selected='selected'" : "") + ">Fast Attack</option>\<option value='lc'" + ((vals.special == 'lc') ? " selected='selected'" : "") + ">Large Cache</option>\<option value='ssc'" + ((vals.special == 'ssc') ? " selected='selected'" : "") + ">Small Savory Cache</option>\<option value='swc'" + ((vals.special == 'swc') ? " selected='selected'" : "") + ">Small Wooden Cache</option>\<option value='smc'" + ((vals.special == 'smc') ? " selected='selected'" : "") + ">Small Metal Cache</option>\\<option value='src'" + ((vals.special == 'src') ? " selected='selected'" : "") + ">Small Research Cache</option>\<option value='p'" + ((vals.special == 'p') ? " selected='selected'" : "") + ">Prestigious</option>\<option value='hc'" + ((vals.special == 'hc') ? " selected='selected'" : "") + ">Huge Cache</option>\<option value='lsc'" + ((vals.special == 'lsc') ? " selected='selected'" : "") + ">Large Savory Cache</option>\<option value='lwc'" + ((vals.special == 'lwc') ? " selected='selected'" : "") + ">Large Wooden Cache</option>\<option value='lmc'" + ((vals.special == 'lmc') ? " selected='selected'" : "") + ">Large Metal Cache</option>\<option value='lrc'" + ((vals.special == 'lrc') ? " selected='selected'" : "") + ">Large Research Cache</option>"
+        var specialsDropdown = "<option value='fa'" + ((vals.special == 'fa') ? " selected='selected'" : "") + ">Fast Attack</option><option value='lc'" + ((vals.special == 'lc') ? " selected='selected'" : "") + ">Large Cache</option><option value='ssc'" + ((vals.special == 'ssc') ? " selected='selected'" : "") + ">Small Savory Cache</option><option value='swc'" + ((vals.special == 'swc') ? " selected='selected'" : "") + ">Small Wooden Cache</option><option value='smc'" + ((vals.special == 'smc') ? " selected='selected'" : "") + ">Small Metal Cache</option>\\<option value='src'" + ((vals.special == 'src') ? " selected='selected'" : "") + ">Small Research Cache</option><option value='p'" + ((vals.special == 'p') ? " selected='selected'" : "") + ">Prestigious</option><option value='hc'" + ((vals.special == 'hc') ? " selected='selected'" : "") + ">Huge Cache</option><option value='lsc'" + ((vals.special == 'lsc') ? " selected='selected'" : "") + ">Large Savory Cache</option><option value='lwc'" + ((vals.special == 'lwc') ? " selected='selected'" : "") + ">Large Wooden Cache</option><option value='lmc'" + ((vals.special == 'lmc') ? " selected='selected'" : "") + ">Large Metal Cache</option><option value='lrc'" + ((vals.special == 'lrc') ? " selected='selected'" : "") + ">Large Research Cache</option>"
 
         var className = (vals.preset == 3) ? "windowBwMainOn" : "windowBwMainOff";
         tooltipText += "<div id='windowRow" + x + "' class='row windowRow " + className + "'" + style + ">";
@@ -324,6 +325,7 @@ export function settingsWindowSave(titleText: any, reopen?: any) {
         var special: any;
         var gather: any;
 
+        // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
         var world = [0];
         zone = [0];
 
@@ -465,7 +467,7 @@ export function settingsWindowSave(titleText: any, reopen?: any) {
             continue;
         }
         if (zone + level < 6) {
-            error += " Preset " + (x + 1) + " can\'t have a zone and map combination below zone 6.";
+            error += " Preset " + (x + 1) + " can't have a zone and map combination below zone 6.";
             continue;
         }
 
@@ -638,5 +640,6 @@ export function removeRow(index: any) {
 }
 
 export function updateWindowPreset(index: any) {
+    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
     var special = document.getElementById('windowSpecial' + index);
 }

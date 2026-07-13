@@ -9,6 +9,7 @@
 // TYPE-ONLY; zero logic or numeric-literal changes.
 import { getPageSetting } from './utils'
 
+// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
 var wantToScry = false;
 var transitionRequired = false;
 

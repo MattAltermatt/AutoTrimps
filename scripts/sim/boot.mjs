@@ -4,8 +4,12 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = fileURLToPath(new URL('.', import.meta.url))
+// The clone is a MANAGED, SHA-pinned dependency that `npm ci` materializes (scripts/fetch-game-clone.mjs),
+// not a sibling directory you were supposed to have cloned by hand. That is what makes it always
+// present — and therefore what lets the conditional-skip mechanism (#67) be deleted rather than
+// merely made loud. TRIMPS_GAME_DIR still wins, for A/B-ing an upstream bump against a dev workspace.
 export const DEFAULT_GAME_DIR =
-  process.env.TRIMPS_GAME_DIR || resolve(HERE, '../../../trimps-game')
+  process.env.TRIMPS_GAME_DIR || resolve(HERE, '../../.trimps-game')
 
 // Order matters: cross-file bare-identifier refs only resolve in one shared scope.
 const GAME_FILES = ['lz-string.js', 'decimal.min.js', 'config.js', 'updates.js', 'playerSpire.js', 'objects.js', 'main.js']
@@ -54,7 +58,18 @@ export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, a
   }
 
   if (withAutoTrimps) {
-    const at = atBundlePath || resolve(HERE, '../../dist/autotrimps.user.js')
+    // NO IMPLICIT DEFAULT. This used to fall back to the gitignored dist/autotrimps.user.js, which
+    // made the net's INPUT "whatever bundle happens to be lying around" — absent on CI (ENOENT), and
+    // locally whatever you last built. Same disease as #67: a gate whose input is ambient. Callers
+    // pass a freshly-built bundle (tests/globalSetup.ts builds one per run); there is nothing to be
+    // stale. Cf. baseline-zero.test.ts, which already built in-process for exactly this reason.
+    if (!atBundlePath) {
+      throw new Error(
+        'bootGame({ withAutoTrimps: true }) requires an explicit atBundlePath. Use TEST_BUNDLE from ' +
+          "tests/sim/bundle.ts (a fresh in-process build) — never a path into the gitignored dist/.",
+      )
+    }
+    const at = atBundlePath
     Object.assign(window, { GM_getValue: () => undefined, GM_setValue: () => {}, GM_xmlhttpRequest: () => {}, unsafeWindow: window })
     window.eval(readFileSync(at, 'utf8'))
     // AT's startup normally fires via setTimeout (stubbed off here). Run the settings init

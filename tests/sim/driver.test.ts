@@ -1,9 +1,8 @@
-import { it, expect } from 'vitest'
-import { describeSim } from './guard'
+import { describe, it, expect } from 'vitest'
 import { bootGame } from '../../scripts/sim/boot.mjs'
 import { runTicks, runUntil } from '../../scripts/sim/driver.mjs'
 
-describeSim('sim/driver', () => {
+describe('sim/driver', () => {
   it('gameLoop(null) accumulates gathered resources over ticks', () => {
     const { window, game } = bootGame()
     game.global.playerGathering = 'wood'

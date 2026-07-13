@@ -1,10 +1,9 @@
-import { describeSim } from './guard'
-import { it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { bootGame } from '../../scripts/sim/boot.mjs'
 import { installFrozenClock } from '../../scripts/sim/clock.mjs'
 import { runTicks } from '../../scripts/sim/driver.mjs'
 
-describeSim('frozen clock', () => {
+describe('frozen clock', () => {
   it('Date.now() equals game.global.start + game.global.time', () => {
     const { window, game } = bootGame()
     installFrozenClock(window)

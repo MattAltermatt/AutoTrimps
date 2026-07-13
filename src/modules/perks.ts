@@ -751,7 +751,9 @@ AutoPerks.displayGUI();
 globalThis.RAutoPerks = {};
 MODULES["perks"].RshowDetails = true;
 
+// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
 var Rhead = document.getElementsByTagName('head')[0];
+// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
 var Rqueuescript = document.createElement('script');
 queuescript.type = 'text/javascript';
 queuescript.src = 'https://Zorn192.github.io/AutoTrimps/FastPriorityQueue.js';

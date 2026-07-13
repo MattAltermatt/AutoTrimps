@@ -1,5 +1,5 @@
-import { describeSim } from './guard'
-import { it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest'
+import { TEST_BUNDLE } from './bundle'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { bootGame } from '../../scripts/sim/boot.mjs'
@@ -10,7 +10,7 @@ import { assertHydrated } from '../harness/gameFixture'
 
 const load = (name: string) => readFileSync(resolve('tests/fixtures/saves', name + '.txt'), 'utf8')
 
-describeSim('synthetic save corpus', () => {
+describe('synthetic save corpus', () => {
   it('01-early-u1 loads, hydrated, at a progressed U1 zone', () => {
     const { game } = bootGame({ saveString: load('01-early-u1') })
     assertHydrated(game)
@@ -30,7 +30,7 @@ describeSim('synthetic save corpus', () => {
   })
 
   it('the corpus is NON-VACUOUS: AT calls native mutators (a fresh newGame would not)', () => {
-    const { window: w } = bootGame({ withAutoTrimps: true, saveString: load('01-early-u1') })
+    const { window: w } = bootGame({ withAutoTrimps: true, atBundlePath: TEST_BUNDLE, saveString: load('01-early-u1') })
     installSeededRandom(w, 1)
     installFrozenClock(w)
     let calls = 0

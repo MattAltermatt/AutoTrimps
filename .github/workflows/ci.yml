@@ -1,0 +1,31 @@
+name: CI
+
+# Before #67 the ONLY workflow was deploy.yml (push to main), so every gate ran AFTER the merge, as
+# part of publishing — nothing gated a feature branch or a PR. This runs the identical gate earlier.
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+  workflow_dispatch:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # postinstall -> scripts/fetch-game-clone.mjs materializes the SHA-pinned Trimps clone that the
+      # proof net boots. No clone step here on purpose: the oracle's input is a managed dependency,
+      # not something each workflow has to remember to fetch (#67).
+      - run: npm ci
+
+      - run: npm run lint
+      - run: npm run typecheck
+      # test:ci = vitest + the zero-skip census. A skipped test is not a passed test (#67).
+      - run: npm run test:ci
+      - run: npm run build

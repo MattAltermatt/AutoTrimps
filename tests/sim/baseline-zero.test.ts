@@ -1,5 +1,4 @@
-import { describeSim } from './guard'
-import { beforeAll, it, expect } from 'vitest'
+import { describe, beforeAll, it, expect } from 'vitest'
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -29,7 +28,7 @@ const manifest = JSON.parse(readFileSync(resolve(TRACES, 'manifest.json'), 'utf8
 
 let workingBundle: string
 
-describeSim('baseline-zero (current build reproduces the oracle traces)', () => {
+describe('baseline-zero (current build reproduces the oracle traces)', () => {
   beforeAll(async () => {
     const dir = mkdtempSync(join(tmpdir(), 'at-baseline-'))
     workingBundle = join(dir, 'working.user.js')

@@ -1,2 +1,4 @@
 node_modules/
 dist/
+.trimps-game/
+.vitest-report.json

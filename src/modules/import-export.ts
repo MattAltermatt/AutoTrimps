@@ -92,6 +92,7 @@ export function confirmedSwitchNow() {
     //load the stored profiles from browser
     var loadLastProfiles = JSON.parse(localStorage.getItem('ATSelectedSettingsProfile')!);
     if (loadLastProfiles != null) {
+        // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
         var results = loadLastProfiles.filter(function(elem: any,i: any){
             return elem.name == profname;
         });
@@ -174,6 +175,7 @@ export function ImportExportTooltip(what: any, event?: any) {
             costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
             ondisplay = function() {
                 byId('exportArea').select();
+                // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
                 byId<HTMLElement>('clipBoardBtn').addEventListener('click', function(event: any) {
                     byId('exportArea').select();
                     try {
@@ -196,6 +198,7 @@ export function ImportExportTooltip(what: any, event?: any) {
             costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
             ondisplay = function() {
                 byId('exportArea').select();
+                // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
                 byId<HTMLElement>('clipBoardBtn').addEventListener('click', function(event: any) {
                     byId('exportArea').select();
                     try {
@@ -213,6 +216,7 @@ export function ImportExportTooltip(what: any, event?: any) {
             costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
             ondisplay = function() {
                 byId('exportArea').select();
+                // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
                 byId<HTMLElement>('clipBoardBtn').addEventListener('click', function(event: any) {
                     byId('exportArea').select();
                     try {
@@ -251,6 +255,7 @@ export function ImportExportTooltip(what: any, event?: any) {
             costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
             ondisplay = function() {
                 byId('exportArea').select();
+                // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
                 byId<HTMLElement>('clipBoardBtn').addEventListener('click', function(event: any) {
                     byId('exportArea').select();
                     try {
@@ -886,7 +891,9 @@ export function ImportExportTooltip(what: any, event?: any) {
         ondisplay();
 }
 
+// oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
 export function resetAutoTrimps(a?: any,b?: any){ATrunning=!1,setTimeout((function(d: any){localStorage.removeItem("autoTrimpSettings"),autoTrimpSettings=d?d:{};var e=document.getElementById("settingsRow")!;e.removeChild(document.getElementById("autoSettings")!),e.removeChild(document.getElementById("autoTrimpsTabBarMenu")!),automationMenuSettingsInit(),initializeAllTabs(),initializeAllSettings(),initializeSettingsProfiles(),updateCustomButtons(),saveSettings(),checkPortalSettings(),ATrunning=!0} as any)(a),101),a?(debug("Successfully imported new AT settings...","profile"),b?ImportExportTooltip("message","Successfully Imported Autotrimps Settings File!: "+b):ImportExportTooltip("NameSettingsProfiles")):(debug("Successfully reset AT settings to Defaults...","profile"),ImportExportTooltip("message","Autotrimps has been successfully reset to its defaults!"))}
+// oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
 export function loadAutoTrimps(){try{var a=byId("importBox").value.replace(/[\n\r]/gm,""),b=JSON.parse(a);if(null==b)return void debug("Error importing AT settings, the string is empty.","profile")}catch(c: any){return void debug("Error importing AT settings, the string is bad."+c.message,"profile")}debug("Importing new AT settings file...","profile"),resetAutoTrimps(b)}
 export function cleanupAutoTrimps(){for(var a in autoTrimpSettings){var b=document.getElementById(autoTrimpSettings[a].id);null==b&&delete autoTrimpSettings[a]}}
 export function exportModuleVars(){return JSON.stringify(compareModuleVars())}
@@ -911,7 +918,9 @@ export function compareModuleVars() {
     return diffs;
 }
 
+// oxlint-disable-next-line no-unused-expressions,no-eval -- faithful legacy port: comma sequence — de-comma behind the live net (#92); settings import evals pasted text — tracked as #76
 export function importModuleVars(){try{var thestring=byId('importBox').value,strarr=thestring.split(/\n/);for(var line in strarr){var s=strarr[line];s=s.substring(0,s.indexOf(';')+1),s=s.replace(/\s/g,''),eval(s),strarr[line]=s}var tmpset=compareModuleVars()}catch(a: any){return void debug('Error importing MODULE vars, the string is bad.'+a.message,'profile')}localStorage.removeItem('storedMODULES'),safeSetItems('storedMODULES',JSON.stringify(tmpset))}
+// oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
 export function resetModuleVars(a?: any){ATrunning=!1,setTimeout((function(){localStorage.removeItem('storedMODULES'),MODULES=JSON.parse(JSON.stringify(MODULESdefault)),safeSetItems('storedMODULES',JSON.stringify(storedMODULES)),ATrunning=!0} as any)(a),101)}
 settingsProfileMakeGUI();
 initializeSettingsProfiles();

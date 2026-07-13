@@ -1,8 +1,7 @@
-import { it, expect } from 'vitest'
-import { describeSim } from './guard'
+import { describe, it, expect } from 'vitest'
 import { bootGame } from '../../scripts/sim/boot.mjs'
 
-describeSim('sim/boot', () => {
+describe('sim/boot', () => {
   it('boots the game into jsdom with a live game object at world 1', () => {
     const { game } = bootGame()
     expect(typeof game).toBe('object')

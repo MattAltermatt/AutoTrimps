@@ -19,6 +19,7 @@ MODULES["jobs"].autoRatio4 = [1, 1.1, 10];
 MODULES["jobs"].autoRatio3 = [3, 1, 4];
 MODULES["jobs"].autoRatio2 = [3, 3.1, 5];
 MODULES["jobs"].autoRatio1 = [1.1, 1.15, 1.2];
+// oxlint-disable-next-line no-unused-expressions -- DROPPED ASSIGNMENT — customRatio is never written; the branch is dead (#88)
 MODULES["jobs"].customRatio;
 
 // Half the colony's max is reserved for workers; the rest breed. This "free worker slots" count —
@@ -304,6 +305,7 @@ MODULES["jobs"].RautoRatio4 = [1, 1.1, 10];
 MODULES["jobs"].RautoRatio3 = [3, 1, 4];
 MODULES["jobs"].RautoRatio2 = [3, 3.1, 5];
 MODULES["jobs"].RautoRatio1 = [1.1, 1.15, 1.2];
+// oxlint-disable-next-line no-unused-expressions -- DROPPED ASSIGNMENT — RcustomRatio is never written; the branch is dead (#88)
 MODULES["jobs"].RcustomRatio;
 
 export function RsafeBuyJob(jobTitle: string, amount: number): boolean {

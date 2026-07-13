@@ -1,9 +1,8 @@
-import { it, expect } from 'vitest'
-import { describeSim } from './guard'
+import { describe, it, expect } from 'vitest'
 import { sweep } from '../../scripts/sim/sweep.mjs'
 import { runTicks } from '../../scripts/sim/driver.mjs'
 
-describeSim('sim/sweep', () => {
+describe('sim/sweep', () => {
   const runOne = (window: any, game: any) => {
     game.global.playerGathering = 'wood'
     runTicks(window, 200)

@@ -9,6 +9,7 @@ MODULES["fight"].breedTimerCutoff2 = 0.5;
 MODULES["fight"].enableDebug = true;
 
 export function betterAutoFight() {
+    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
     var customVars = MODULES["fight"];
     if (game.global.autoBattle && !game.global.pauseFight)
         pauseFight();
@@ -24,6 +25,7 @@ export function betterAutoFight() {
 }
 
 export function betterAutoFight3() {
+    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
     var customVars = MODULES["fight"];
     if (game.global.autoBattle && game.global.pauseFight && !game.global.spireActive)
         pauseFight();

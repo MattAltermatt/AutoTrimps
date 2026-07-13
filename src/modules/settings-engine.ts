@@ -70,7 +70,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn settingKind-toggle settingBtn' + autoTrimpSettings[id].enabled);
         btn.setAttribute("onclick", 'settingChanged("' + id + '")');
-        btn.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
+        btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         renderControlFace(btn, autoTrimpSettings[id]);
         btnParent.appendChild(btn);
@@ -88,7 +88,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn btn-info settingKind-input');
         btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == 'valueNegative'}, ${type == 'multiValue'})`);
-        btn.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
+        btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = name;
         btnParent.appendChild(btn);
@@ -106,7 +106,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn btn-info settingKind-input');
         btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == 'valueNegative'}, ${type == 'multiValue'})`);
-        btn.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
+        btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = name;
         btnParent.appendChild(btn);
@@ -124,7 +124,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn btn-info settingKind-input');
         btn.setAttribute("onclick", `autoSetTextToolTip("${id}", "${name}", ${type == 'textValue'})`);
-        btn.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
+        btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = name;
         btnParent.appendChild(btn);
@@ -145,7 +145,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         if (game.options.menu.darkTheme.enabled == 2) btn.setAttribute("style", "color: #C8C8C8; font-size: 1.0vw;");
         else btn.setAttribute("style", "color:black; font-size: 1.0vw;");
         btn.setAttribute("class", "noselect settingKind-select");
-        btn.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
+        btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.setAttribute("onchange", 'settingChanged("' + id + '")');
         for (var item in list) {
@@ -166,7 +166,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
     } else if (type == 'infoclick') {
         btn.setAttribute('class', 'noselect settingsBtn settingKind-action settingKind-info');
         btn.setAttribute("onclick", 'ImportExportTooltip(\'' + defaultValue + '\', \'update\')');
-        btn.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
+        btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.setAttribute("style", "font-size: 1.1vw;");
         renderControlFace(btn, { type: 'infoclick', name: name });
@@ -186,7 +186,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn settingKind-cycle settingBtn' + autoTrimpSettings[id].value);
         btn.setAttribute("onclick", 'settingChanged("' + id + '")');
-        btn.setAttribute("onmouseover", 'tooltip(\"' + name.join(' / ') + '\", \"customText\", event, \"' + description + '\")');
+        btn.setAttribute("onmouseover", 'tooltip("' + name.join(' / ') + '", "customText", event, "' + description + '")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         renderControlFace(btn, autoTrimpSettings[id]);
         btnParent.appendChild(btn);
@@ -196,7 +196,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn settingKind-action settingBtn3'); // keep native teal (additive)
         btn.setAttribute('onclick', defaultValue);
-        btn.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
+        btn.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         renderControlFace(btn, { type: 'action', name: name });
         btnParent.appendChild(btn);
@@ -214,7 +214,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
 export function createInput(id: any, name: any, description: any) {
     var $btnParent = document.createElement("DIV");
     $btnParent.setAttribute('style', 'display: inline-block; vertical-align: top; margin-left: 0.5vw; margin-bottom: 0.5vw; width: 6.5vw;');
-    $btnParent.setAttribute("onmouseover", 'tooltip(\"' + name + '\", \"customText\", event, \"' + description + '\")');
+    $btnParent.setAttribute("onmouseover", 'tooltip("' + name + '", "customText", event, "' + description + '")');
     $btnParent.setAttribute("onmouseout", 'tooltip("hide")');
     var $input = document.createElement("input");
     $input.type = 'checkbox';

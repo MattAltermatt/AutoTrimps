@@ -12,6 +12,7 @@ export function isBelowThreshold(a: any) {
 }
 
 export function plusPres() {
+    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
     byId("biomeAdvMapsSelect").value = "Random", byId("advExtraLevelSelect").value = String(plusMapToRun(game.global.world)), byId("advSpecialSelect").value = "p", byId("lootAdvMapsRange").value = "0", byId("difficultyAdvMapsRange").value = "9", byId("sizeAdvMapsRange").value = "9", byId("advPerfectCheckbox").checked = !1, byId("mapLevelInput").value = String(game.global.world), updateMapCost()
 }
 

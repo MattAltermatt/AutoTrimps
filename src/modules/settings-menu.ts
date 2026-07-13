@@ -35,7 +35,7 @@ export function automationMenuInit() {
     newContainer.setAttribute("id", "autoMapBtn");
     newContainer.setAttribute("class", "noselect settingsBtn");
     newContainer.setAttribute("onClick", "toggleAutoMaps()");
-    newContainer.setAttribute("onmouseover", 'tooltip(\"Toggle Automapping\", \"customText\", event, \"Toggle automapping on and off.\")');
+    newContainer.setAttribute("onmouseover", 'tooltip("Toggle Automapping", "customText", event, "Toggle automapping on and off.")');
     newContainer.setAttribute("onmouseout", 'tooltip("hide")');
     var abutton = document.createElement("SPAN");
     abutton.appendChild(document.createTextNode("Auto Maps"));
@@ -47,10 +47,10 @@ export function automationMenuInit() {
     newContainer = document.createElement("DIV");
     newContainer.setAttribute("style", "display: block; font-size: 1.1vw; text-align: center; background-color: rgba(0,0,0,0.3);");
     if (game.global.universe == 1) {
-        newContainer.setAttribute("onmouseover", 'tooltip(\"Health to Damage ratio\", \"customText\", event, \"This status box displays the current mode Automaps is in. The number usually shown here during Farming or Want more Damage modes is the \'HDratio\' meaning EnemyHealth to YourDamage Ratio (in X stance). Above 16 will trigger farming, above 4 will trigger going for Map bonus up to 10 stacks.<p><b>enoughHealth: </b>\" + enoughHealth + \"<br><b>enoughDamage: </b>\" + enoughDamage +\"<br><b>shouldFarm: </b>\" + shouldFarm +\"<br><b>H:D ratio = </b>\" + calcHDratio() + \"<br>\")');
+        newContainer.setAttribute("onmouseover", 'tooltip("Health to Damage ratio", "customText", event, "This status box displays the current mode Automaps is in. The number usually shown here during Farming or Want more Damage modes is the \'HDratio\' meaning EnemyHealth to YourDamage Ratio (in X stance). Above 16 will trigger farming, above 4 will trigger going for Map bonus up to 10 stacks.<p><b>enoughHealth: </b>" + enoughHealth + "<br><b>enoughDamage: </b>" + enoughDamage +"<br><b>shouldFarm: </b>" + shouldFarm +"<br><b>H:D ratio = </b>" + calcHDratio() + "<br>")');
     }
     if (game.global.universe == 2) {
-        newContainer.setAttribute("onmouseover", 'tooltip(\"Health to Damage ratio\", \"customText\", event, \"This status box displays the current mode Automaps is in. The number usually shown here during Farming or Want more Damage modes is the \'HDratio\' meaning EnemyHealth to YourDamage Ratio (in X stance). Above 16 will trigger farming, above 4 will trigger going for Map bonus up to 10 stacks.<p><b>enoughHealth: </b>\" + RenoughHealth + \"<br><b>enoughDamage: </b>\" + RenoughDamage +\"<br><b>shouldFarm: </b>\" + RshouldFarm +\"<br><b>H:D ratio = </b>\" + RcalcHDratio() + \"<br>\")');
+        newContainer.setAttribute("onmouseover", 'tooltip("Health to Damage ratio", "customText", event, "This status box displays the current mode Automaps is in. The number usually shown here during Farming or Want more Damage modes is the \'HDratio\' meaning EnemyHealth to YourDamage Ratio (in X stance). Above 16 will trigger farming, above 4 will trigger going for Map bonus up to 10 stacks.<p><b>enoughHealth: </b>" + RenoughHealth + "<br><b>enoughDamage: </b>" + RenoughDamage +"<br><b>shouldFarm: </b>" + RshouldFarm +"<br><b>H:D ratio = </b>" + RcalcHDratio() + "<br>")');
     }
     newContainer.setAttribute("onmouseout", 'tooltip("hide")');
     abutton = document.createElement("SPAN");
@@ -61,9 +61,9 @@ export function automationMenuInit() {
     newContainer = document.createElement("DIV");
     newContainer.setAttribute("style", "display: block; font-size: 1vw; text-align: center; margin-top: 2px; background-color: rgba(0,0,0,0.3);");
     if (game.global.universe == 1)
-        newContainer.setAttribute("onmouseover", 'tooltip(\"Helium/Hr Info\", \"customText\", event, \"1st is Current He/hr % out of Lifetime He(not including current+unspent).<br> 0.5% is an ideal peak target. This can tell you when to portal... <br>2nd is Current run Total He earned / Lifetime He(not including current)<br>\" + getDailyHeHrStats())');
+        newContainer.setAttribute("onmouseover", 'tooltip("Helium/Hr Info", "customText", event, "1st is Current He/hr % out of Lifetime He(not including current+unspent).<br> 0.5% is an ideal peak target. This can tell you when to portal... <br>2nd is Current run Total He earned / Lifetime He(not including current)<br>" + getDailyHeHrStats())');
     else if (game.global.universe == 2)
-        newContainer.setAttribute("onmouseover", 'tooltip(\"Radon/Hr Info\", \"customText\", event, \"1st is Current Rn/hr % out of Lifetime Rn(not including current+unspent).<br> 0.5% is an ideal peak target. This can tell you when to portal... <br>2nd is Current run Total Rn earned / Lifetime Rn(not including current)<br>\" + getDailyRnHrStats())');
+        newContainer.setAttribute("onmouseover", 'tooltip("Radon/Hr Info", "customText", event, "1st is Current Rn/hr % out of Lifetime Rn(not including current+unspent).<br> 0.5% is an ideal peak target. This can tell you when to portal... <br>2nd is Current run Total Rn earned / Lifetime Rn(not including current)<br>" + getDailyRnHrStats())');
     newContainer.setAttribute("onmouseout", 'tooltip("hide")');
     abutton = document.createElement("SPAN");
     abutton.id = 'hiderStatus';
@@ -106,25 +106,30 @@ export function modifyParentNode(setting: any, id: any) {
 export function automationMenuSettingsInit() {
     var a: any = document.getElementById("settingsRow"),
         b = document.createElement("DIV");
+    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
     b.id = "autoSettings", b.setAttribute("style", "display: none; max-height: 92.5vh;overflow: auto;"), b.setAttribute("class", "niceScroll"), a.appendChild(b)
 }
 
 export function createTabs(a: any, b: any) {
     var c = document.createElement("li"),
         d = document.createElement("a");
+    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
     d.className = "tablinks", d.setAttribute("onclick", "toggleTab(event, '" + a + "')"), d.href = "#", d.appendChild(document.createTextNode(a)), c.id = "tab" + a, c.appendChild(d), addtabsUL.appendChild(c), createTabContents(a, b)
 }
 
 export function createTabContents(a: any, b: any) {
     var c = document.createElement('div');
+    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
     c.className = 'tabcontent', c.id = a;
     var d = document.createElement('div');
     d.setAttribute('style', 'margin-left: 1vw; margin-right: 1vw;');
     var e = document.createElement('h4');
+    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
     e.setAttribute('style', 'font-size: 1.2vw;'), e.appendChild(document.createTextNode(b)), d.appendChild(e), c.appendChild(d), addTabsDiv.appendChild(c)
 }
 
 export function toggleTab(a: any, b: any) {
+    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
     -1 < a.currentTarget.className.indexOf(" active") ? (document.getElementById(b)!.style.display = "none", a.currentTarget.className = a.currentTarget.className.replace(" active", "")) : (document.getElementById(b)!.style.display = "block", a.currentTarget.className += " active")
 }
 
@@ -135,6 +140,7 @@ export function minimizeAllTabs() {
 
 export function maximizeAllTabs() {
     for (var a = document.getElementsByClassName("tabcontent"), b = 0, c = a.length; b < c; b++) (a[b] as any).style.display = "block";
+    // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
     for (var d = document.getElementsByClassName("tablinks"), b = 0, c = d.length; b < c; b++) (d[b] as any).style.display = "block", d[b].className.includes(" active") || (d[b].className += " active")
 }
 

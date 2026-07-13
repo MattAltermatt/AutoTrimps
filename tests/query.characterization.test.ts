@@ -218,7 +218,7 @@ describe('query getPerSecBeforeManual (per-branch multiplier arming)', () => {
       },
     }
     // shallow-ish merge for the fields tests override
-    for (const k of Object.keys(over)) g[k] = { ...(g[k] || {}), ...over[k] }
+    for (const k of Object.keys(over)) g[k] = { ...g[k], ...over[k] }
     return g
   }
 
@@ -465,7 +465,7 @@ describe('query getPotencyMod (per-multiplier arming)', () => {
       jobs: { Geneticist: { owned: 0 } },
       challenges: { Toxicity: { stacks: 0, stackMult: 1.05 } },
     }
-    for (const k of Object.keys(over)) g[k] = { ...(g[k] || {}), ...over[k] }
+    for (const k of Object.keys(over)) g[k] = { ...g[k], ...over[k] }
     return g
   }
   beforeEach(() => {

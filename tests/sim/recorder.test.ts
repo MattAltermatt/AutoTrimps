@@ -1,5 +1,5 @@
-import { describeSim } from './guard'
-import { it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest'
+import { TEST_BUNDLE } from './bundle'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { bootGame } from '../../scripts/sim/boot.mjs'
@@ -12,7 +12,7 @@ const MUT = ['buyJob', 'buyBuilding', 'buyUpgrade', 'runMap', 'selectMap', 'buyE
 const SAVE = () => readFileSync(resolve('tests/fixtures/saves/01-early-u1.txt'), 'utf8')
 
 function run(seed = 1, ticks = 800) {
-  const { window } = bootGame({ withAutoTrimps: true, saveString: SAVE() })
+  const { window } = bootGame({ withAutoTrimps: true, atBundlePath: TEST_BUNDLE, saveString: SAVE() })
   installSeededRandom(window, seed)
   installFrozenClock(window)
   let tick = 0
@@ -24,7 +24,7 @@ function run(seed = 1, ticks = 800) {
   return trace
 }
 
-describeSim('native-mutator recorder', () => {
+describe('native-mutator recorder', () => {
   it('records native-mutator calls with fn + args + tick', () => {
     const trace = run()
     expect(trace.length).toBeGreaterThan(0)

@@ -11,6 +11,7 @@
 //   autoTrimpSettings.<farm>.value[index] comparison (a per-setting multi-value array read at a
 //   possibly-out-of-range index → undefined element; same polymorphism rationale as getPageSetting).
 //   Every numeric literal + formula shape is preserved exactly (balance is sacrosanct).
+// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
 import { getPageSetting, debug } from './utils'
 
 //updated
@@ -227,6 +228,7 @@ export function RmanualLabor2() {
     //Vars
     // NOTE: lowOnTraps is computed but never read anywhere in this function (pre-existing dead
     // assignment, preserved faithfully).
+    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
     const lowOnTraps = game.buildings.Trap.owned < 5;
     const trapTrimpsOK = getPageSetting('RTrapTrimps');
     const hasTurkimp = game.talents.turkimp2.purchased || game.global.turkimpTimer > 0;

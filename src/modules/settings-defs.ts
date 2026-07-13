@@ -117,7 +117,7 @@ export function initializeAllSettings() {
     //Shrine - U1 (Daily)
     (document.getElementById('dBWraidingmax') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Hdshrine', ['Daily AutoShrine Off', 'Daily AutoShrine On', 'DAS: Normal'], 'Turn this on if you want to use Shrines automatically in Dailies. Use DAS: Normal if you want to use the settings in the Maps tab if do not wish to copy them here. ', 'multitoggle', 0, null, 'Daily');
-    createSetting('Hdshrinemaz', 'Daily AutoShrine Settings', 'Click to open Daily AutoShrine settings. <br> <b>Zone:</b> What zone to use Bone Shrine charges. <br> <b>Cell:</b> What cell to use Bone Shrine charges at, if you use it after cell 80 you will get the benefit of all the books. to use. <br> <b>Amount:</b> How many Bone Shrine charges you wish to use. <br> <b>Example:</b> If you put Zone: 40\, Cell: 10\, Amount: 3\, you will use 3 Bone Shrine Charges at zone 40 at cell 10 in a Daily. ', 'infoclick', false, null, 'Daily');
+    createSetting('Hdshrinemaz', 'Daily AutoShrine Settings', 'Click to open Daily AutoShrine settings. <br> <b>Zone:</b> What zone to use Bone Shrine charges. <br> <b>Cell:</b> What cell to use Bone Shrine charges at, if you use it after cell 80 you will get the benefit of all the books. to use. <br> <b>Amount:</b> How many Bone Shrine charges you wish to use. <br> <b>Example:</b> If you put Zone: 40, Cell: 10, Amount: 3, you will use 3 Bone Shrine Charges at zone 40 at cell 10 in a Daily. ', 'infoclick', false, null, 'Daily');
     createSetting('Hdshrinezone', 'AutoShrine: Zone', 'zone', 'multiValue', [-1], null, 'Daily');
     createSetting('Hdshrinecell', 'AutoShrine: Cell', 'cell', 'multiValue', [-1], null, 'Daily');
     createSetting('Hdshrineamount', 'AutoShrine: Amount', 'amount', 'multiValue', [-1], null, 'Daily');
@@ -143,7 +143,7 @@ export function initializeAllSettings() {
     //dTimefarm
     (document.getElementById('RdAMPraidrecycle') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rdtimefarm', ['Daily Time Farm Off', 'Daily Time Farm On', 'DTF: Normal'], 'Turn this on if you want to use Daily Time Farming. Use DTF: Normal if you want to use the settings in the Maps tab if do not wish to copy them here. ', 'multitoggle', 0, null, 'Daily');
-    createSetting('Rdtimefarmmaz', 'DTM Settings', 'Click to open the Daily Time Farm settings. It will also put all your workers into what you are gathering. <br> <b>Zone:</b> What zone to start time farming. <br> <b>Cell:</b> What cell to start time farming at. <br> <b>Time:</b> How much time in Minutes to farm. <br> <b>Level:</b> How many map levels above your zone to use. <br> <b>Map:</b> What kind of map you want to use. <br> <b>Special:</b> What type of special you want to use. <br> <b>Gather:</b> What resource you would like to gather. <br> <b>Example:</b> If you put Zone: 60\, Cell: 10\, Time: 3\, Level: 5\, Map: Gardens\, Special: Large Metal Cache\, Gather: Metal\, while in a Daily you will farm at zone 60 at cell 10 for 3 minutes in a +5 Gardens map that has a Large Metal Cache while gathering metal. ', 'infoclick', false, null, 'Daily');
+    createSetting('Rdtimefarmmaz', 'DTM Settings', 'Click to open the Daily Time Farm settings. It will also put all your workers into what you are gathering. <br> <b>Zone:</b> What zone to start time farming. <br> <b>Cell:</b> What cell to start time farming at. <br> <b>Time:</b> How much time in Minutes to farm. <br> <b>Level:</b> How many map levels above your zone to use. <br> <b>Map:</b> What kind of map you want to use. <br> <b>Special:</b> What type of special you want to use. <br> <b>Gather:</b> What resource you would like to gather. <br> <b>Example:</b> If you put Zone: 60, Cell: 10, Time: 3, Level: 5, Map: Gardens, Special: Large Metal Cache, Gather: Metal, while in a Daily you will farm at zone 60 at cell 10 for 3 minutes in a +5 Gardens map that has a Large Metal Cache while gathering metal. ', 'infoclick', false, null, 'Daily');
     createSetting('Rdtimefarmzone', 'DTF: Zone', 'zone', 'multiValue', [-1], null, 'Daily');
     createSetting('Rdtimefarmcell', 'DTF: Cell', 'cell', 'multiValue', [-1], null, 'Daily');
     createSetting('Rdtimefarmtime', 'DTF: Time', 'time', 'multiValue', [-1], null, 'Daily');
@@ -179,7 +179,7 @@ export function initializeAllSettings() {
     //Shrine - U2 (Daily)
     (document.getElementById('Rdhstributestaff') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rdshrine', ['Daily AutoShrine Off', 'Daily AutoShrine On', 'DAS: Normal'], 'Turn this on if you want to use Shrines automatically in Dailies. Use DAS: Normal if you want to use the settings in the Maps tab if do not wish to copy them here. ', 'multitoggle', 0, null, 'Daily');
-    createSetting('Rdshrinemaz', 'Daily AutoShrine Settings', 'Click to open Daily AutoShrine settings. <br> <b>Zone:</b> What zone to use Bone Shrine charges. <br> <b>Cell:</b> What cell to use Bone Shrine charges at, if you use it after cell 80 you will get the benefit of all the books. to use. <br> <b>Amount:</b> How many Bone Shrine charges you wish to use. <br> <b>Example:</b> If you put Zone: 40\, Cell: 10\, Amount: 3\, you will use 3 Bone Shrine Charges at zone 40 at cell 10 in a Daily. ', 'infoclick', false, null, 'Daily');
+    createSetting('Rdshrinemaz', 'Daily AutoShrine Settings', 'Click to open Daily AutoShrine settings. <br> <b>Zone:</b> What zone to use Bone Shrine charges. <br> <b>Cell:</b> What cell to use Bone Shrine charges at, if you use it after cell 80 you will get the benefit of all the books. to use. <br> <b>Amount:</b> How many Bone Shrine charges you wish to use. <br> <b>Example:</b> If you put Zone: 40, Cell: 10, Amount: 3, you will use 3 Bone Shrine Charges at zone 40 at cell 10 in a Daily. ', 'infoclick', false, null, 'Daily');
     createSetting('Rdshrinezone', 'AutoShrine: Zone', 'zone', 'multiValue', [-1], null, 'Daily');
     createSetting('Rdshrinecell', 'AutoShrine: Cell', 'cell', 'multiValue', [-1], null, 'Daily');
     createSetting('Rdshrineamount', 'AutoShrine: Amount', 'amount', 'multiValue', [-1], null, 'Daily');
@@ -369,7 +369,7 @@ export function initializeAllSettings() {
     //Maps
 
     //Line 1
-    createSetting('AutoMaps', ["Auto Maps Off", "Auto Maps On", "Auto Maps: Unique"], 'Automaps. Recommended ON. Do not use MaZ, it will not work. Automaps: Unique will unlock settings for each unique map. Select which unique maps you would like to run\, but otherwise functions the same. ', 'multitoggle', 1, null, "Maps");
+    createSetting('AutoMaps', ["Auto Maps Off", "Auto Maps On", "Auto Maps: Unique"], 'Automaps. Recommended ON. Do not use MaZ, it will not work. Automaps: Unique will unlock settings for each unique map. Select which unique maps you would like to run, but otherwise functions the same. ', 'multitoggle', 1, null, "Maps");
     createSetting('AMUblock', 'AMU: The Block', 'Turn on to run this map every run. ', 'boolean', false, null, 'Maps');
     // #42 removed the AMU: The Wall / Dimension of Anger branches (their natural selector branch already
     // runs them each portal until the reward is earned; the checkbox re-ran a completed one = the bug).
@@ -414,7 +414,7 @@ export function initializeAllSettings() {
     //Shrine - U1
     (document.getElementById('finishExpOnBw') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Hshrine', 'AutoShrine', 'Turn this on if you want to use Shrines automatically. ', 'boolean', false, null, 'Maps');
-    createSetting('Hshrinemaz', 'AutoShrine Settings', 'Click to open AutoShrine settings. <br> <b>Zone:</b> What zone to use Bone Shrine charges. <br> <b>Cell:</b> What cell to use Bone Shrine charges at, if you use it after cell 80 you will get the benefit of all the books. to use. <br> <b>Amount:</b> How many Bone Shrine charges you wish to use. <br> <b>Example:</b> If you put Zone: 40\, Cell: 10\, Amount: 3\, you will use 3 Bone Shrine Charges at zone 40 at cell 10. ', 'infoclick', false, null, 'Maps');
+    createSetting('Hshrinemaz', 'AutoShrine Settings', 'Click to open AutoShrine settings. <br> <b>Zone:</b> What zone to use Bone Shrine charges. <br> <b>Cell:</b> What cell to use Bone Shrine charges at, if you use it after cell 80 you will get the benefit of all the books. to use. <br> <b>Amount:</b> How many Bone Shrine charges you wish to use. <br> <b>Example:</b> If you put Zone: 40, Cell: 10, Amount: 3, you will use 3 Bone Shrine Charges at zone 40 at cell 10. ', 'infoclick', false, null, 'Maps');
     createSetting('Hshrinezone', 'AutoShrine: Zone', 'zone', 'multiValue', [-1], null, 'Maps');
     createSetting('Hshrinecell', 'AutoShrine: Cell', 'cell', 'multiValue', [-1], null, 'Maps');
     createSetting('Hshrineamount', 'AutoShrine: Amount', 'amount', 'multiValue', [-1], null, 'Maps');
@@ -445,7 +445,7 @@ export function initializeAllSettings() {
     //Timefarm
     (document.getElementById('Rfrozencastle') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rtimefarm', 'Time Farm', 'Turn this on if you want to use Time Farming. ', 'boolean', false, null, 'Maps');
-    createSetting('Rtimefarmmaz', 'Time Farm Settings', 'Click to open the Time Farm settings. It will also put all your workers into what you are gathering. <br> <b>Zone:</b> What zone to start time farming. <br> <b>Cell:</b> What cell to start time farming at. <br> <b>Time:</b> How much time in Minutes to farm. <br> <b>Level:</b> How many map levels above your zone to use. <br> <b>Map:</b> What kind of map you want to use. <br> <b>Special:</b> What type of special you want to use. <br> <b>Gather:</b> What resource you would like to gather. <br> <b>Example:</b> If you put Zone: 60\, Cell: 10\, Time: 3\, Level: 5\, Map: Gardens\, Special: Large Metal Cache\, Gather: Metal\, you will farm at zone 60 at cell 10 for 3 minutes in a +5 Gardens map that has a Large Metal Cache while gathering metal. ', 'infoclick', false, null, 'Maps');
+    createSetting('Rtimefarmmaz', 'Time Farm Settings', 'Click to open the Time Farm settings. It will also put all your workers into what you are gathering. <br> <b>Zone:</b> What zone to start time farming. <br> <b>Cell:</b> What cell to start time farming at. <br> <b>Time:</b> How much time in Minutes to farm. <br> <b>Level:</b> How many map levels above your zone to use. <br> <b>Map:</b> What kind of map you want to use. <br> <b>Special:</b> What type of special you want to use. <br> <b>Gather:</b> What resource you would like to gather. <br> <b>Example:</b> If you put Zone: 60, Cell: 10, Time: 3, Level: 5, Map: Gardens, Special: Large Metal Cache, Gather: Metal, you will farm at zone 60 at cell 10 for 3 minutes in a +5 Gardens map that has a Large Metal Cache while gathering metal. ', 'infoclick', false, null, 'Maps');
     createSetting('Rtimefarmzone', 'TF: Zone', 'zone', 'multiValue', [-1], null, 'Maps');
     createSetting('Rtimefarmcell', 'TF: Cell', 'cell', 'multiValue', [-1], null, 'Maps');
     createSetting('Rtimefarmtime', 'TF: Time', 'time', 'multiValue', [-1], null, 'Maps');
@@ -457,7 +457,7 @@ export function initializeAllSettings() {
     //Smithyfarm
     (document.getElementById('Rtimefarmgather') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rsmithyfarm', 'Smithy Farm', 'Turn this on if you want to use Smithy Farming. ', 'boolean', false, null, 'Maps');
-    createSetting('Rsmithyfarmmaz', 'Smithy Farm Settings', 'Click to open the Smithy Farm settings. <br> <b>Zone:</b> What zone to start smithy farming.<br> <b>Cell:</b> What cell to start smithy farming at. <br> <b>Smithys:</b> How many smithys you want to have at that zone. <br> <b>Example:</b> If you put Zone: 60\, Cell: 10\, Smithys: 2\, you will farm at zone 60 at cell 10 for 2 total smithies in an autogenerated map that will fill your resource needs\, gather and job appropriately', 'infoclick', false, null, 'Maps');
+    createSetting('Rsmithyfarmmaz', 'Smithy Farm Settings', 'Click to open the Smithy Farm settings. <br> <b>Zone:</b> What zone to start smithy farming.<br> <b>Cell:</b> What cell to start smithy farming at. <br> <b>Smithys:</b> How many smithys you want to have at that zone. <br> <b>Example:</b> If you put Zone: 60, Cell: 10, Smithys: 2, you will farm at zone 60 at cell 10 for 2 total smithies in an autogenerated map that will fill your resource needs, gather and job appropriately', 'infoclick', false, null, 'Maps');
     createSetting('Rsmithyfarmzone', 'SF: Zone', 'zone', 'multiValue', [-1], null, 'Maps');
     createSetting('Rsmithyfarmcell', 'SF: Cell', 'cell', 'multiValue', [-1], null, 'Maps');
     createSetting('Rsmithyfarmamount', 'SF: Smithys', 'smithys', 'multiValue', [-1], null, 'Maps');
@@ -465,7 +465,7 @@ export function initializeAllSettings() {
     //Tributefarm
     (document.getElementById('Rsmithyfarmamount') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rtributefarm', 'Tribute Farm', 'Turn this on if you want to use Tribute Farming. ', 'boolean', false, null, 'Maps');
-    createSetting('Rtributefarmmaz', 'Tribute Farm Settings', 'Click to open the Tribute Farm settings. <br> <b>Zone:</b> What zone to start tribute farming. It will also put all your workers into farming. <br> <b>Cell:</b> What cell to start tribute farming at. <br> <b>Tributes:</b> How many tributes to farm. <br> <b>Level:</b> How many map levels above your zone to use. <br> <b>Map:</b> What kind of map you want to use. <br> <b>Special:</b> What type of special you want to use. <br> <b>Gather:</b> What resource you would like to gather. <br> <b>Example:</b> If you put Zone: 40\, Cell: 10\, Tributes: 1000\, Level: 5\, Map: Gardens\, Special: Large Savory Cache\, Gather: Food\, you will farm at zone 40 at cell 10 for 1000 tributes in a +5 Gardens map that has a Large Savory Cache while gathering food. ', 'infoclick', false, null, 'Maps');
+    createSetting('Rtributefarmmaz', 'Tribute Farm Settings', 'Click to open the Tribute Farm settings. <br> <b>Zone:</b> What zone to start tribute farming. It will also put all your workers into farming. <br> <b>Cell:</b> What cell to start tribute farming at. <br> <b>Tributes:</b> How many tributes to farm. <br> <b>Level:</b> How many map levels above your zone to use. <br> <b>Map:</b> What kind of map you want to use. <br> <b>Special:</b> What type of special you want to use. <br> <b>Gather:</b> What resource you would like to gather. <br> <b>Example:</b> If you put Zone: 40, Cell: 10, Tributes: 1000, Level: 5, Map: Gardens, Special: Large Savory Cache, Gather: Food, you will farm at zone 40 at cell 10 for 1000 tributes in a +5 Gardens map that has a Large Savory Cache while gathering food. ', 'infoclick', false, null, 'Maps');
     createSetting('Rtributefarmzone', 'TrF: Zone', 'zone', 'multiValue', [-1], null, 'Maps');
     createSetting('Rtributefarmcell', 'TrF: Cell', 'cell', 'multiValue', [-1], null, 'Maps');
     createSetting('Rtributefarmamount', 'TrF: Tributes', 'tributes', 'multiValue', [-1], null, 'Maps');
@@ -477,7 +477,7 @@ export function initializeAllSettings() {
     //Shrine - U2
     (document.getElementById('Rtributegatherselection') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rshrine', 'AutoShrine', 'Turn this on if you want to use Shrines automatically. ', 'boolean', false, null, 'Maps');
-    createSetting('Rshrinemaz', 'AutoShrine Settings', 'Click to open AutoShrine settings. <br> <b>Zone:</b> What zone to use Bone Shrine charges. <br> <b>Cell:</b> What cell to use Bone Shrine charges at, if you use it after cell 80 you will get the benefit of all the books. to use. <br> <b>Amount:</b> How many Bone Shrine charges you wish to use. <br> <b>Example:</b> If you put Zone: 40\, Cell: 10\, Amount: 3\, you will use 3 Bone Shrine Charges at zone 40 at cell 10. ', 'infoclick', false, null, 'Maps');
+    createSetting('Rshrinemaz', 'AutoShrine Settings', 'Click to open AutoShrine settings. <br> <b>Zone:</b> What zone to use Bone Shrine charges. <br> <b>Cell:</b> What cell to use Bone Shrine charges at, if you use it after cell 80 you will get the benefit of all the books. to use. <br> <b>Amount:</b> How many Bone Shrine charges you wish to use. <br> <b>Example:</b> If you put Zone: 40, Cell: 10, Amount: 3, you will use 3 Bone Shrine Charges at zone 40 at cell 10. ', 'infoclick', false, null, 'Maps');
     createSetting('Rshrinezone', 'AutoShrine: Zone', 'zone', 'multiValue', [-1], null, 'Maps');
     createSetting('Rshrinecell', 'AutoShrine: Cell', 'cell', 'multiValue', [-1], null, 'Maps');
     createSetting('Rshrineamount', 'AutoShrine: Amount', 'amount', 'multiValue', [-1], null, 'Maps');
@@ -594,7 +594,7 @@ export function initializeAllSettings() {
     //Quagmire
     (document.getElementById('Rchallengehidedeso') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rblackbog', 'Quagmire', 'Enable Bog Running for Quagmire. ', 'boolean', false, null, 'Challenges');
-    createSetting('Rblackbogmaz', 'Quagmire Settings', 'Click to open the Quagmire settings. <br> <b>Zone:</b> What zone to start bogging. <br> <b>Black Bogs:</b> How many Black Bogs to at specified zones. <br> <b>Example:</b> If you put Zone: 40\, Black Bogs: 10\, you will run 10 black bogs at zone 40. ', 'infoclick', false, null, 'Challenges');
+    createSetting('Rblackbogmaz', 'Quagmire Settings', 'Click to open the Quagmire settings. <br> <b>Zone:</b> What zone to start bogging. <br> <b>Black Bogs:</b> How many Black Bogs to at specified zones. <br> <b>Example:</b> If you put Zone: 40, Black Bogs: 10, you will run 10 black bogs at zone 40. ', 'infoclick', false, null, 'Challenges');
     createSetting('Rblackbogzone', 'Zone', 'zone', 'multiValue', [-1], null, 'Challenges');
     createSetting('Rblackbogamount', 'Amount', 'black bogs', 'multiValue', [-1], null, 'Challenges');
 
@@ -624,7 +624,7 @@ export function initializeAllSettings() {
 
     //Insanity
     createSetting('Rinsanityon', 'Insanity', 'Turn on Insanity settings. This also controls the entireity of IF. If you turn this off it will not Insanity Farm. ', 'boolean', 'false', null, 'Challenges');
-    createSetting('Rinsanitymaz', 'Insanity Settings', 'Click to open the Insanity settings. <br> <b>Zone:</b> What zone to farm insanity stacks in.<br> <b>Cell:</b> What cell to start farming insanity stacks on.<br> <b>Stacks:</b> Number of stacks you want. <br> <b>Level:</b> How many map levels you want above zone. <br> <b>Example:</b> If you put Zone: 60\, Cell: 50\, Stacks: 500\, Level: 5\, you will farm at zone 60\, on cell 50 until you have 500 insanity stacks\, in a +5 map. ', 'infoclick', false, null, 'Challenges');
+    createSetting('Rinsanitymaz', 'Insanity Settings', 'Click to open the Insanity settings. <br> <b>Zone:</b> What zone to farm insanity stacks in.<br> <b>Cell:</b> What cell to start farming insanity stacks on.<br> <b>Stacks:</b> Number of stacks you want. <br> <b>Level:</b> How many map levels you want above zone. <br> <b>Example:</b> If you put Zone: 60, Cell: 50, Stacks: 500, Level: 5, you will farm at zone 60, on cell 50 until you have 500 insanity stacks, in a +5 map. ', 'infoclick', false, null, 'Challenges');
     createSetting('Rinsanityfarmzone', 'Insanity Farming', 'zone', 'multiValue', [-1], null, 'Challenges');
     createSetting('Rinsanityfarmcell', 'IF: Cell', 'cell', 'multiValue', '-1', null, 'Challenges');
     createSetting('Rinsanityfarmstack', 'IF: Stacks', 'stacks', 'multiValue', [-1], null, 'Challenges');
@@ -644,7 +644,7 @@ export function initializeAllSettings() {
 
     //Alch
     createSetting('Ralchon', 'Alchemy', 'Turn on Alchemy settings. This also controls the entireity of AF. If you turn this off it will not Alchemy Farm. ', 'boolean', 'false', null, 'Challenges');
-    createSetting('Ralchfarmmaz', 'Alchemy Settings', 'Click to open the Alchemy settings. Do not use vanilla autobrew AF will buy potions for you. <br> <b>Zone:</b> What zone to farm herbs and potions in.<br> <b>Cell:</b> What cell to start farming herbs and potions on.<br> <b>Potion:</b> You must pair a potion with a level here. Example: h15\,g20\,s15. This will farm Herby potion up to level 15 on the first AF zone\, Gaseous potion to level 20 and so on. <br> <b>Level:</b> How many map levels you want above zone. <br> <b>Example:</b> If you put Zone: 81\, Cell: 50\, Potion: h15\, Level: 5\, Map: Farmlands\, you will farm at zone 81\, on cell 50 until you can afford 15 total herby potions\, in a +5 map\, using a farmlands map. ', 'infoclick', false, null, 'Challenges');
+    createSetting('Ralchfarmmaz', 'Alchemy Settings', 'Click to open the Alchemy settings. Do not use vanilla autobrew AF will buy potions for you. <br> <b>Zone:</b> What zone to farm herbs and potions in.<br> <b>Cell:</b> What cell to start farming herbs and potions on.<br> <b>Potion:</b> You must pair a potion with a level here. Example: h15,g20,s15. This will farm Herby potion up to level 15 on the first AF zone, Gaseous potion to level 20 and so on. <br> <b>Level:</b> How many map levels you want above zone. <br> <b>Example:</b> If you put Zone: 81, Cell: 50, Potion: h15, Level: 5, Map: Farmlands, you will farm at zone 81, on cell 50 until you can afford 15 total herby potions, in a +5 map, using a farmlands map. ', 'infoclick', false, null, 'Challenges');
     createSetting('Ralchfarmzone', 'Alchemy Farming', 'zone', 'multiValue', [-1], null, 'Challenges');
     createSetting('Ralchfarmcell', 'AF: Cell', 'cell', 'multiValue', '[-1]', null, 'Challenges');
     createSetting('Ralchfarmstack', 'AF: Potion', 'potion', 'textValue', 'undefined', null, 'Challenges');
@@ -654,7 +654,7 @@ export function initializeAllSettings() {
 
     //Hypo
     createSetting('Rhypoon', 'Hypothermia', 'Turn on Hypothermia settings. This also controls the entireity of HF. If you turn this off it will not Hypothermia Farm. ', 'boolean', 'false', null, 'Challenges');
-    createSetting('Rhypofarmmaz', 'Hypothermia Settings', 'Click to open the Hypothermia settings. HF will not spend wood on zones you are farming bonfires or until you have achieved your bonfire goal. <br> <b>Zone:</b> What zone to farm bonfires in.<br> <b>Cell:</b> What cell to start farming bonfires on.<br> <b>Bonfire:</b> The number of total bonfires in the run you want at that zone.<br> <b>Level:</b> How many map levels you want above zone. <br> <b>Example:</b> If you put Zone: 17\, Cell: 50\, Bonfire: 5\, Level: 5\, you will farm at zone 17\, on cell 50 until you can afford 5 total bonfires\, in a +5 map. ', 'infoclick', false, null, 'Challenges');
+    createSetting('Rhypofarmmaz', 'Hypothermia Settings', 'Click to open the Hypothermia settings. HF will not spend wood on zones you are farming bonfires or until you have achieved your bonfire goal. <br> <b>Zone:</b> What zone to farm bonfires in.<br> <b>Cell:</b> What cell to start farming bonfires on.<br> <b>Bonfire:</b> The number of total bonfires in the run you want at that zone.<br> <b>Level:</b> How many map levels you want above zone. <br> <b>Example:</b> If you put Zone: 17, Cell: 50, Bonfire: 5, Level: 5, you will farm at zone 17, on cell 50 until you can afford 5 total bonfires, in a +5 map. ', 'infoclick', false, null, 'Challenges');
     createSetting('Rhypofarmzone', 'Hypothermia Farming', 'zone', 'multiValue', [-1], null, 'Challenges');
     createSetting('Rhypofarmcell', 'HF: Cell', 'cell', 'multiValue', [-1], null, 'Challenges');
     createSetting('Rhypofarmstack', 'HF: Bonfire', 'bonfire', 'multiValue', 'undefined', null, 'Challenges');
@@ -694,7 +694,7 @@ export function initializeAllSettings() {
     createSetting('Rfightforever', 'Fight Always', 'U2: -1 to disable. Sends trimps to fight if they\'re not fighting, regardless of BAF. Has 2 uses. Set to 0 to always send out trimps. Or set a number higher than 0 to enable the H:D function. If the H:D ratio is below this number it will send them out. I.e, this is set to 1, it will send out trimps regardless with the H:D ratio is below 1. ', 'value', '-1', null, 'Combat');
     createSetting('Rcalcmaxequality', ['Equality Calc Off', 'EC: On', 'EC: Health'], '<b>Experimental. </b><br>Adds Equality Scaling levels to the battlecalc. Will always calculate equality based on actual scaling levels when its turned off by other settings. Assumes you use Equality Scaling. Turning this on allows in-game Equality Scaling to adjust your Health accordingly. EC: Health only decreases enemies attack in the calculation which may improve speed. ', 'multitoggle', 0, null, 'Combat');
     createSetting('Rmanageequality', 'Manage Equality', 'Manages Equality for you. Sets Equality to 0 on Slow enemies, and Autoscaling on for Fast enemies. ', 'boolean', 'false', null, 'Combat');
-    createSetting('Rcalcfrenzy', 'Frenzy Calc', '<b>Experimental. </b><br>Adds frenzy to the calc. Be warned\, it will not farm as much with this on as it expects 100% frenzy uptime. ', 'boolean', 'false', null, 'Combat');
+    createSetting('Rcalcfrenzy', 'Frenzy Calc', '<b>Experimental. </b><br>Adds frenzy to the calc. Be warned, it will not farm as much with this on as it expects 100% frenzy uptime. ', 'boolean', 'false', null, 'Combat');
     createSetting('Rmutecalc', 'Mute Calc', 'What zone to start calculating Mutations at. 0 to disable.', 'value', '-1', null, 'Combat');
 
 
@@ -839,12 +839,12 @@ export function initializeAllSettings() {
     //AB
 
     createSetting('RAB', 'SA', 'Turn on SA settings and allow them to work. Do not open input settings when SA is on or you will crash. ', 'boolean', false, null, "SA");
-    createSetting('RABpreset', 'Presets', 'Automatically switch presets depending on current enemy. You must make sure preset 1 is for Poison\, preset 2 Bleed and preset 3 Shock. If enemy has less than 2 resistances it will switch between the non-resisted presets till you kill the enemy. It will not purchase any equips or try different ones though so it may get stuck till you update your presets. ', 'boolean', false, null, "SA");
+    createSetting('RABpreset', 'Presets', 'Automatically switch presets depending on current enemy. You must make sure preset 1 is for Poison, preset 2 Bleed and preset 3 Shock. If enemy has less than 2 resistances it will switch between the non-resisted presets till you kill the enemy. It will not purchase any equips or try different ones though so it may get stuck till you update your presets. ', 'boolean', false, null, "SA");
     createSetting('RABdustsimple', ['Simple Dust Off', 'SD: Equipped', 'SD: Non-hidden'], 'SD: Equipped automatically upgrades currently equipped items by lowest price. SD: Non-hidden automatically upgrades items that are not hidden and not equipped. ', 'multitoggle', 0, null, 'SA');
     createSetting('RABfarm', 'Save String', 'Saves your best Dust/s using SA level and your equipped items in a string. If this is on it will continously check your dust/s and generate a farm string if you beat your previous best. ', 'boolean', false, null, "SA");
     createSetting('RABfarmswitch', 'Switch', 'If this is on it will swtich directly to the SA level and equipped items. ', 'boolean', false, null, "SA");
     createSetting('RABfarmstring', 'String', 'This is your best farming string. Feel free to share it with other AT users. If you do use a shared string I advise you to change the second value (the dust part) to 0 so it calcs the actual dust you get instead of the shared strings. ', 'textValue', '-1', null, "SA");
-    createSetting('RABsolve', 'Solver', 'Solves your current level including farming\, item levels\, and contracts. Currently does up to 10. ', 'boolean', false, null, "SA");
+    createSetting('RABsolve', 'Solver', 'Solves your current level including farming, item levels, and contracts. Currently does up to 10. ', 'boolean', false, null, "SA");
 
 
 

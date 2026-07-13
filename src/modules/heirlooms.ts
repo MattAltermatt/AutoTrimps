@@ -10,9 +10,13 @@
 //     the early src slot). animated/worth3/hrlmProtBtn* module vars are heirlooms-internal.
 import { getPageSetting } from './utils'
 
+// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
 var animated = (game.options.menu.showHeirloomAnimations.enabled) ? "animated " : "";
+// oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
 var hrlmProtBtn1=document.createElement('DIV');hrlmProtBtn1.setAttribute('class','noselect heirloomBtnActive heirBtn'),hrlmProtBtn1.setAttribute('onclick','protectHeirloom(this, true)'),hrlmProtBtn1.innerHTML='Protect/Unprotect',hrlmProtBtn1.id='protectHeirloomBTN1';var hrlmProtBtn2=document.createElement('DIV');hrlmProtBtn2.setAttribute('class','noselect heirloomBtnActive heirBtn'),hrlmProtBtn2.setAttribute('onclick','protectHeirloom(this, true)'),hrlmProtBtn2.innerHTML='Protect/Unprotect',hrlmProtBtn2.id='protectHeirloomBTN2';var hrlmProtBtn3=document.createElement('DIV');hrlmProtBtn3.setAttribute('class','noselect heirloomBtnActive heirBtn'),hrlmProtBtn3.setAttribute('onclick','protectHeirloom(this, true)'),hrlmProtBtn3.innerHTML='Protect/Unprotect',hrlmProtBtn3.id='protectHeirloomBTN3',document.getElementById('equippedHeirloomsBtnGroup')!.appendChild(hrlmProtBtn1),document.getElementById('carriedHeirloomsBtnGroup')!.appendChild(hrlmProtBtn2),document.getElementById('extraHeirloomsBtnGroup')!.appendChild(hrlmProtBtn3);
+// oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
 export function protectHeirloom(a?: any, b?: any){var c=game.global.selectedHeirloom,d=c[1],e=game.global[d];if(-1!=c[0])var e=e[c[0]];b&&(e.protected=!e.protected),a||(d.includes("Equipped")?a=document.getElementById("protectHeirloomBTN1"):"heirloomsCarried"==d?a=document.getElementById("protectHeirloomBTN2"):"heirloomsExtra"==d&&(a=document.getElementById("protectHeirloomBTN3"))),a&&(a.innerHTML=e.protected?"UnProtect":"Protect")}
+// oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
 export function newSelectHeirloom(a?: any, b?: any, c?: any){selectHeirloom(a,b,c),protectHeirloom()}
 export function highdmgshield(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('highdmg'))return loom;}
 export function lowdmgshield(){for(var loom of game.global.heirloomsCarried)if(loom.name==getPageSetting('lowdmg'))return loom;}
@@ -51,6 +55,7 @@ export function getHeirloomEff(name: string, type: string): number | undefined {
 
 export function evaluateHeirloomMods2(loom: any, location: string): number {
 
+  // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
   var index = loom;
   var eff = 0;
   var name;

@@ -7,14 +7,22 @@
   "engines": {
     "node": ">=22"
   },
+  "trimpsGame": {
+    "repo": "Trimps/Trimps.github.io",
+    "sha": "b9edb1dfee270ebf81bef8d934dc71276bf8d963",
+    "version": "5.10.1"
+  },
   "scripts": {
     "build": "node scripts/build-userscript.mjs",
     "build:watch": "node scripts/build-userscript.mjs --watch",
     "serve": "node scripts/serve-game.mjs",
+    "postinstall": "node scripts/fetch-game-clone.mjs",
+    "game:fetch": "node scripts/fetch-game-clone.mjs",
     "sim:coverage": "node scripts/sim/coverage.mjs",
     "sim:record": "node scripts/sim/record-oracle.mjs",
-    "lint": "oxlint src tests scripts",
+    "lint": "oxlint src tests scripts --deny-warnings",
     "test": "vitest run",
+    "test:ci": "vitest run --reporter=default --reporter=json --outputFile=.vitest-report.json && node scripts/ci/assert-no-skips.mjs",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },

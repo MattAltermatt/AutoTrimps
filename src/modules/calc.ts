@@ -125,6 +125,7 @@ export function calcOurHealth(stance?: boolean): number {
     }
     if (mutations.Magma.active()) {
         const mult = mutations.Magma.getTrimpDecay();
+        // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
         const lvls = game.global.world - mutations.Magma.start() + 1;
         health *= mult;
     }
@@ -1468,7 +1469,9 @@ export function RcalcDailyHealthMod(number: number): number {
 
 export function RcalcBadGuyDmg(enemy?: any, attack?: number, equality?: boolean): number {
     let number;
+    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
     const highest = 1;
+    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
     let mute = false;
 
     if (enemy)
@@ -1573,6 +1576,7 @@ export function RcalcEnemyBaseHealth(world: number, level: number, name: string)
 }
 
 export function RcalcEnemyHealth(world?: any): number | undefined {
+    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
     const highest = 1;
     let mute = false;
     let health: any;
@@ -1647,6 +1651,7 @@ export function RcalcEnemyHealth(world?: any): number | undefined {
 
 export function RcalcEnemyHealthMod(world?: any, cell?: any, name?: any): number | undefined {
 	
+    // oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
     const highest = 1;
     let mute = false;
     let health: any;
