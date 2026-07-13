@@ -459,36 +459,31 @@ export function RAMPreset(daily: any) {
     } else {
 
         if (RdAMPrepMap1 != undefined) {
-            // @ts-expect-error #32 latent: typo 'recyle' should be 'recycle' — preserved byte-faithfully
-            if (recyle) {
+            if (recycle) {
                 recycleMap(getMapIndex(RdAMPrepMap1));
             }
             RdAMPrepMap1 = undefined;
         }
         if (RdAMPrepMap2 != undefined) {
-            // @ts-expect-error #32 latent: typo 'recyle' should be 'recycle' — preserved byte-faithfully
-            if (recyle) {
+            if (recycle) {
                 recycleMap(getMapIndex(RdAMPrepMap2));
             }
             RdAMPrepMap2 = undefined;
         }
         if (RdAMPrepMap3 != undefined) {
-            // @ts-expect-error #32 latent: typo 'recyle' should be 'recycle' — preserved byte-faithfully
-            if (recyle) {
+            if (recycle) {
                 recycleMap(getMapIndex(RdAMPrepMap3));
             }
             RdAMPrepMap3 = undefined;
         }
         if (RdAMPrepMap4 != undefined) {
-            // @ts-expect-error #32 latent: typo 'recyle' should be 'recycle' — preserved byte-faithfully
-            if (recyle) {
+            if (recycle) {
                 recycleMap(getMapIndex(RdAMPrepMap4));
             }
             RdAMPrepMap4 = undefined;
         }
         if (RdAMPrepMap5 != undefined) {
-            // @ts-expect-error #32 latent: typo 'recyle' should be 'recycle' — preserved byte-faithfully
-            if (recyle) {
+            if (recycle) {
                 recycleMap(getMapIndex(RdAMPrepMap5));
             }
             RdAMPrepMap5 = undefined;

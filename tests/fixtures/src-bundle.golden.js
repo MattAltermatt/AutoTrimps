@@ -4893,16 +4893,16 @@
     selectHeirloom(a, b, c), protectHeirloom();
   }
   function highdmgshield2() {
-    for (var loom2 of game.global.heirloomsCarried) if (loom2.name == getPageSetting2("highdmg")) return loom2;
+    for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("highdmg")) return loom;
   }
   function lowdmgshield() {
-    for (var loom2 of game.global.heirloomsCarried) if (loom2.name == getPageSetting2("lowdmg")) return loom2;
+    for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("lowdmg")) return loom;
   }
   function dhighdmgshield() {
-    for (var loom2 of game.global.heirloomsCarried) if (loom2.name == getPageSetting2("dhighdmg")) return loom2;
+    for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("dhighdmg")) return loom;
   }
   function dlowdmgshield() {
-    for (var loom2 of game.global.heirloomsCarried) if (loom2.name == getPageSetting2("dlowdmg")) return loom2;
+    for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("dlowdmg")) return loom;
   }
   function getHeirloomEff(name, type) {
     if (type == "staff") {
@@ -4931,8 +4931,8 @@
       else return 0;
     }
   }
-  function evaluateHeirloomMods2(loom2, location) {
-    var index = loom2;
+  function evaluateHeirloomMods2(loom, location) {
+    var index = loom;
     var eff = 0;
     var name;
     var type;
@@ -4952,13 +4952,13 @@
     else if (raretokeep == "Enigmatic") raretokeep = 11;
     else if (raretokeep == "Mutated") raretokeep = 12;
     if (location.includes("Equipped"))
-      loom2 = game.global[location];
+      loom = game.global[location];
     else
-      loom2 = game.global[location][loom2];
-    for (var m in loom2.mods) {
-      name = loom2.mods[m][0];
-      type = loom2.type;
-      rarity = loom2.rarity;
+      loom = game.global[location][loom];
+    for (var m in loom.mods) {
+      name = loom.mods[m][0];
+      type = loom.type;
+      rarity = loom.rarity;
       if (type == "Shield") {
         eff += getHeirloomEff(name, "shield");
       }
@@ -5072,30 +5072,30 @@
     }
   }
   function lowHeirloom2() {
-    var loom2 = lowdmgshield();
-    if (loom2 != void 0 && game.global.ShieldEquipped.name != getPageSetting2("lowdmg")) {
-      selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+    var loom = lowdmgshield();
+    if (loom != void 0 && game.global.ShieldEquipped.name != getPageSetting2("lowdmg")) {
+      selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
     }
   }
   function dlowHeirloom2() {
-    var loom2 = dlowdmgshield();
-    if (loom2 != void 0 && game.global.ShieldEquipped.name != getPageSetting2("dlowdmg")) {
-      selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+    var loom = dlowdmgshield();
+    if (loom != void 0 && game.global.ShieldEquipped.name != getPageSetting2("dlowdmg")) {
+      selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
     }
   }
   function highHeirloom2() {
-    var loom2 = highdmgshield2();
-    if (loom2 != void 0 && game.global.ShieldEquipped.name != getPageSetting2("highdmg")) {
-      selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+    var loom = highdmgshield2();
+    if (loom != void 0 && game.global.ShieldEquipped.name != getPageSetting2("highdmg")) {
+      selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
     }
   }
   function dhighHeirloom2() {
-    var loom2 = dhighdmgshield();
-    if (loom2 != void 0 && game.global.ShieldEquipped.name != getPageSetting2("dhighdmg")) {
-      selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+    var loom = dhighdmgshield();
+    if (loom != void 0 && game.global.ShieldEquipped.name != getPageSetting2("dhighdmg")) {
+      selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
     }
   }
@@ -5288,102 +5288,102 @@
     return html;
   }
   function Rhsshield1() {
-    for (var loom2 of game.global.heirloomsCarried) if (loom2.name == getPageSetting2("Rhs1")) return loom2;
+    for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("Rhs1")) return loom;
   }
   function Rhsshield2() {
-    for (var loom2 of game.global.heirloomsCarried) if (loom2.name == getPageSetting2("Rhs2")) return loom2;
+    for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("Rhs2")) return loom;
   }
   function Rdhsshield1() {
-    for (var loom2 of game.global.heirloomsCarried) if (loom2.name == getPageSetting2("Rdhs1")) return loom2;
+    for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("Rdhs1")) return loom;
   }
   function Rdhsshield2() {
-    for (var loom2 of game.global.heirloomsCarried) if (loom2.name == getPageSetting2("Rdhs2")) return loom2;
+    for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("Rdhs2")) return loom;
   }
   function Rhsworldstaff() {
-    for (var loom2 of game.global.heirloomsCarried) if (loom2.name == getPageSetting2("Rhsworldstaff")) return loom2;
+    for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("Rhsworldstaff")) return loom;
   }
   function Rhsmapstaff() {
-    for (var loom2 of game.global.heirloomsCarried) if (loom2.name == getPageSetting2("Rhsmapstaff")) return loom2;
+    for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("Rhsmapstaff")) return loom;
   }
   function Rhstributestaff() {
-    for (var loom2 of game.global.heirloomsCarried) if (loom2.name == getPageSetting2("Rhstributestaff")) return loom2;
+    for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("Rhstributestaff")) return loom;
   }
   function Rdhsworldstaff() {
-    for (var loom2 of game.global.heirloomsCarried) if (loom2.name == getPageSetting2("Rdhsworldstaff")) return loom2;
+    for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("Rdhsworldstaff")) return loom;
   }
   function Rdhsmapstaff() {
-    for (var loom2 of game.global.heirloomsCarried) if (loom2.name == getPageSetting2("Rdhsmapstaff")) return loom2;
+    for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("Rdhsmapstaff")) return loom;
   }
   function Rdhstributestaff() {
-    for (var loom2 of game.global.heirloomsCarried) if (loom2.name == getPageSetting2("Rdhstributestaff")) return loom2;
+    for (var loom of game.global.heirloomsCarried) if (loom.name == getPageSetting2("Rdhstributestaff")) return loom;
   }
   function Rhsequip1() {
-    var loom2 = Rhsshield1();
-    if (loom2 != void 0 && game.global.ShieldEquipped.name != getPageSetting2("Rhs1")) {
-      selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+    var loom = Rhsshield1();
+    if (loom != void 0 && game.global.ShieldEquipped.name != getPageSetting2("Rhs1")) {
+      selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
     }
   }
   function Rhsequip2() {
-    var loom2 = Rhsshield2();
-    if (loom2 != void 0 && game.global.ShieldEquipped.name != getPageSetting2("Rhs2")) {
-      selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+    var loom = Rhsshield2();
+    if (loom != void 0 && game.global.ShieldEquipped.name != getPageSetting2("Rhs2")) {
+      selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
     }
   }
   function Rdhsequip1() {
-    var loom2 = Rdhsshield1();
-    if (loom2 != void 0 && game.global.ShieldEquipped.name != getPageSetting2("Rdhs1")) {
-      selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+    var loom = Rdhsshield1();
+    if (loom != void 0 && game.global.ShieldEquipped.name != getPageSetting2("Rdhs1")) {
+      selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
     }
   }
   function Rdhsequip2() {
-    var loom2 = Rdhsshield2();
-    if (loom2 != void 0 && game.global.ShieldEquipped.name != getPageSetting2("Rdhs2")) {
-      selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+    var loom = Rdhsshield2();
+    if (loom != void 0 && game.global.ShieldEquipped.name != getPageSetting2("Rdhs2")) {
+      selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
     }
   }
   function Rhsworldstaffequip() {
-    var loom2 = Rhsworldstaff();
-    if (loom2 != void 0 && game.global.StaffEquipped.name != getPageSetting2("Rhsworldstaff")) {
-      selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+    var loom = Rhsworldstaff();
+    if (loom != void 0 && game.global.StaffEquipped.name != getPageSetting2("Rhsworldstaff")) {
+      selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
     }
   }
   function Rhsmapstaffequip() {
-    var loom2 = Rhsmapstaff();
-    if (loom2 != void 0 && game.global.StaffEquipped.name != getPageSetting2("Rhsmapstaff")) {
-      selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+    var loom = Rhsmapstaff();
+    if (loom != void 0 && game.global.StaffEquipped.name != getPageSetting2("Rhsmapstaff")) {
+      selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
     }
   }
   function Rhstributestaffequip() {
-    var loom2 = Rhstributestaff();
-    if (loom2 != void 0 && game.global.StaffEquipped.name != getPageSetting2("Rhstributestaff")) {
-      selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+    var loom = Rhstributestaff();
+    if (loom != void 0 && game.global.StaffEquipped.name != getPageSetting2("Rhstributestaff")) {
+      selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
     }
   }
   function Rdhsworldstaffequip() {
-    var loom2 = Rdhsworldstaff();
-    if (loom2 != void 0 && game.global.StaffEquipped.name != getPageSetting2("Rdhsworldstaff")) {
-      selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+    var loom = Rdhsworldstaff();
+    if (loom != void 0 && game.global.StaffEquipped.name != getPageSetting2("Rdhsworldstaff")) {
+      selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
     }
   }
   function Rdhsmapstaffequip() {
-    var loom2 = Rdhsmapstaff();
-    if (loom2 != void 0 && game.global.StaffEquipped.name != getPageSetting2("Rdhsmapstaff")) {
-      selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+    var loom = Rdhsmapstaff();
+    if (loom != void 0 && game.global.StaffEquipped.name != getPageSetting2("Rdhsmapstaff")) {
+      selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
     }
   }
   function Rdhstributestaffequip() {
-    var loom2 = Rdhstributestaff();
-    if (loom2 != void 0 && game.global.StaffEquipped.name != getPageSetting2("Rdhstributestaff")) {
-      selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+    var loom = Rdhstributestaff();
+    if (loom != void 0 && game.global.StaffEquipped.name != getPageSetting2("Rdhstributestaff")) {
+      selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
       equipHeirloom();
     }
   }
@@ -5479,26 +5479,26 @@
       }
     }
     if (game.global.StaffEquipped.name != nuloom2 && game.global.ShieldEquipped.name != nuloom2) {
-      for (var loom2 of game.global.heirloomsCarried) {
-        if (loom2.name == getPageSetting2("heirloomnu")) {
-          selectHeirloom(game.global.heirloomsCarried.indexOf(loom2), "heirloomsCarried", true);
+      for (var loom of game.global.heirloomsCarried) {
+        if (loom.name == getPageSetting2("heirloomnu")) {
+          selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
           if (slot == 0) {
-            return loom2.mods[0][0];
+            return loom.mods[0][0];
           }
           if (slot == 1) {
-            return loom2.mods[1][0];
+            return loom.mods[1][0];
           }
           if (slot == 2) {
-            return loom2.mods[2][0];
+            return loom.mods[2][0];
           }
           if (slot == 3) {
-            return loom2.mods[3][0];
+            return loom.mods[3][0];
           }
           if (slot == 4) {
-            return loom2.mods[4][0];
+            return loom.mods[4][0];
           }
           if (slot == 5) {
-            return loom2.mods[5][0];
+            return loom.mods[5][0];
           }
         }
       }
@@ -10375,31 +10375,31 @@
       }
     } else {
       if (RdAMPrepMap1 != void 0) {
-        if (recyle) {
+        if (recycle) {
           recycleMap(getMapIndex(RdAMPrepMap1));
         }
         RdAMPrepMap1 = void 0;
       }
       if (RdAMPrepMap2 != void 0) {
-        if (recyle) {
+        if (recycle) {
           recycleMap(getMapIndex(RdAMPrepMap2));
         }
         RdAMPrepMap2 = void 0;
       }
       if (RdAMPrepMap3 != void 0) {
-        if (recyle) {
+        if (recycle) {
           recycleMap(getMapIndex(RdAMPrepMap3));
         }
         RdAMPrepMap3 = void 0;
       }
       if (RdAMPrepMap4 != void 0) {
-        if (recyle) {
+        if (recycle) {
           recycleMap(getMapIndex(RdAMPrepMap4));
         }
         RdAMPrepMap4 = void 0;
       }
       if (RdAMPrepMap5 != void 0) {
-        if (recyle) {
+        if (recycle) {
           recycleMap(getMapIndex(RdAMPrepMap5));
         }
         RdAMPrepMap5 = void 0;
@@ -10974,7 +10974,8 @@
       autoheirlooms3();
     }
     if (game.global.ShieldEquipped.name != getPageSetting2("highdmg") || game.global.ShieldEquipped.name != getPageSetting2("dhighdmg")) {
-      if (highdmgshield() != void 0) {
+      var loom = highdmgshield();
+      if (loom != void 0) {
         selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
         equipHeirloom();
       }
@@ -11190,7 +11191,8 @@
       autoheirlooms3();
     }
     if (game.global.ShieldEquipped.name != getPageSetting2("highdmg") || game.global.ShieldEquipped.name != getPageSetting2("dhighdmg")) {
-      if (highdmgshield() != void 0) {
+      var loom = highdmgshield();
+      if (loom != void 0) {
         selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
         equipHeirloom();
       }

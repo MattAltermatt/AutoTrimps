@@ -235,8 +235,13 @@ export function doPortal(challenge?: any) {
 	autoheirlooms3();
     }
     if (game.global.ShieldEquipped.name != getPageSetting('highdmg') || game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {
-        if (highdmgshield() != undefined) {
-	    // @ts-expect-error #32 latent: bare 'loom' is undefined here (indexOf arg; likely should be highdmgshield()) — preserved byte-faithfully
+        // #79: was `if (highdmgshield() != undefined) { ...indexOf(loom)... }` — `loom` is bound
+        // nowhere, so the indexOf argument was a strict-mode ReferenceError that aborted doPortal
+        // (and every mainLoop automation ordered after it) for anyone whose 'highdmg' names a
+        // carried heirloom. Capture the finder's return value, exactly as highHeirloom()
+        // (heirlooms.ts:234) does — the same seam bug was already fixed there in #22.
+        var loom = highdmgshield();
+        if (loom != undefined) {
 	    selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
 	    equipHeirloom();
 	}
@@ -456,8 +461,9 @@ export function RdoPortal(challenge?: any) {
 	autoheirlooms3();
     }
     if (game.global.ShieldEquipped.name != getPageSetting('highdmg') || game.global.ShieldEquipped.name != getPageSetting('dhighdmg')) {
-        if (highdmgshield() != undefined) {
-	    // @ts-expect-error #32 latent: bare 'loom' is undefined here (indexOf arg; likely should be highdmgshield()) — preserved byte-faithfully
+        // #79: identical bare-`loom` ReferenceError to doPortal (portal.ts:237). Same fix.
+        var loom = highdmgshield();
+        if (loom != undefined) {
 	    selectHeirloom(game.global.heirloomsCarried.indexOf(loom), "heirloomsCarried", true);
 	    equipHeirloom();
 	}
