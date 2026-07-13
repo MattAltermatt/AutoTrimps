@@ -216,12 +216,12 @@ export function initializeAllSettings() {
 
     //Line 1
     createSetting('FinishC2', 'Finish Challenge2', '<b>DONT USE THIS WITH C2 RUNNER</b><br>Finish / Abandon Challenge2 (any) when this zone is reached, if you are running one. For manual use. Recommended: Zones ending with 0 for most Challenge2. Disable with -1. Does not affect Non-Challenge2 runs.', 'value', -1, null, 'C2');
-    createSetting('buynojobsc', 'No F/L/M in C2', 'Buys No Farmers, Lumberjacks or Miners in the C2 challenges Watch and Trapper. ', 'boolean', 'false', null, "C2");
-    createSetting('cfightforever', 'Tox/Nom Fight Always', 'Sends trimps to fight if they\'re not fighting in the Toxicity and Nom Challenges, regardless of BAF. Essenitally the same as the one in combat, can use either if you wish, except this will only activate in these challenges (duh) ', 'boolean', 'false', null, 'C2');
+    createSetting('buynojobsc', 'No F/L/M in C2', 'Buys No Farmers, Lumberjacks or Miners in the C2 challenges Watch and Trapper. ', 'boolean', false, null, "C2");
+    createSetting('cfightforever', 'Tox/Nom Fight Always', 'Sends trimps to fight if they\'re not fighting in the Toxicity and Nom Challenges, regardless of BAF. Essenitally the same as the one in combat, can use either if you wish, except this will only activate in these challenges (duh) ', 'boolean', false, null, 'C2');
     createSetting('carmormagic', ['C2 Armor Magic Off', 'CAM: Above 80%', 'CAM: H:D', 'CAM: Always'], 'Will buy Armor to try and prevent death on Nom/Tox Challenges under the 3 conditions. <br><b>Above 80%:</b> Will activate at and above 80% of your HZE and when your health is sufficiently low. <br><b>H:D:</b> Will activate at and above the H:D you have defined in maps. <br><b>Always</b> Will activate always. <br>All options will activate at or <b>below 25% of your health.</b> ', 'multitoggle', 0, null, "C2");
     createSetting('Rcarmormagic', ['C2 Armor Magic Off', 'CAM: Above 80%', 'CAM: H:D', 'CAM: Always'], 'Will buy Armor to try and prevent death on Nom/Tox Challenges under the 3 conditions. <br><b>Above 80%:</b> Will activate at and above 80% of your HZE and when your health is sufficiently low. <br><b>H:D:</b> Will activate at and above the H:D you have defined in maps. <br><b>Always</b> Will activate always. <br>All options will activate at or <b>below 25% of your health.</b> ', 'multitoggle', 0, null, "C2");
     createSetting('mapc2hd', 'Mapology H:D', 'Set your H:D ratio for Mapology. Will not go into maps unless your H:D ratio is above this. -1 to use normal behaviour. ', 'value', '-1', null, 'C2');
-    createSetting('novmsc2', 'No VMs', 'Turn off VM running for C2s. Handy for the C2 Runner. ', 'boolean', 'false', null, "C2");
+    createSetting('novmsc2', 'No VMs', 'Turn off VM running for C2s. Handy for the C2 Runner. ', 'boolean', false, null, "C2");
 
     //C2 Runner Line
     (document.getElementById('novmsc2') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
@@ -257,7 +257,7 @@ export function initializeAllSettings() {
     //Line 3
     createSetting('FirstGigastation', 'First Gigastation', 'How many warpstations to buy before your first gigastation', 'value', '20', null, "Buildings");
     createSetting('DeltaGigastation', 'Delta Gigastation', '<b>YOU MUST HAVE BUY UPGRADES ENABLED!</b><br> How many extra warpstations to buy for each gigastation. Supports decimal values. For example 2.5 will buy +2/+3/+2/+3...', 'value', '2', null, "Buildings");
-    createSetting('AutoGigas', 'Auto Gigas', "Advanced. <br>If enabled, AT will buy its first Gigastation if: <br>A) Has more than 2 Warps & <br>B) Can't afford more Coords & <br>C) (Only if Custom Delta Factor > 20) Lacking Health or Damage & <br>D) (Only if Custom Delta Factor > 20) Has run at least 1 map stack or <br>E) If forced to by using the firstGiga(true) command in the console. <br>Then, it'll calculate the delta based on your Custom Delta Factor and your Auto Portal/VM zone (whichever is higher), or Daily Auto Portal/VM zone, or C2 zone, or Custom AutoGiga Zone.", 'boolean', 'true', null, 'Buildings');
+    createSetting('AutoGigas', 'Auto Gigas', "Advanced. <br>If enabled, AT will buy its first Gigastation if: <br>A) Has more than 2 Warps & <br>B) Can't afford more Coords & <br>C) (Only if Custom Delta Factor > 20) Lacking Health or Damage & <br>D) (Only if Custom Delta Factor > 20) Has run at least 1 map stack or <br>E) If forced to by using the firstGiga(true) command in the console. <br>Then, it'll calculate the delta based on your Custom Delta Factor and your Auto Portal/VM zone (whichever is higher), or Daily Auto Portal/VM zone, or C2 zone, or Custom AutoGiga Zone.", 'boolean', true, null, 'Buildings');
     createSetting('CustomTargetZone', 'Custom Target Zone', 'To be used with Auto Gigas. <br>The zone to be used as a the target zone when calculating the Auto Gigas delta. <br>Values below 60 will be discarded.', 'value', '-1', null, "Buildings");
     createSetting('CustomDeltaFactor', 'Custom Delta Factor', 'Advanced. To be used with Auto Gigas. <br>This setting is used to calculate a better Delta. Think of this setting as how long your target zone takes to complete divided by the zone you bought your first giga in. <br>Basically, a higher number means a higher delta. Values below 1 will default to 10. <br><b>Recommended: 1-2 for very quick runs. 5-10 for regular runs where you slow down at the end. 20-100+ for very pushy runs.</b>', 'value', '-1', null, "Buildings");
     createSetting('WarpstationWall3', 'Warpstation Wall', 'Conserves Metal. Only buys 1 Warpstation when you can afford <b>X</b> warpstations metal cost (at the first one\'s price, simple math). -1, 0, 1 = disable. In other words, only allows warps that cost less than 1/nth your currently owned metal. (to save metal for prestiges)', 'value', -1, null, 'Buildings');
@@ -283,7 +283,7 @@ export function initializeAllSettings() {
     createSetting('RMaxTribute', 'Max Tributes', 'Advanced. recommend: -1 ', 'value', '-1', null, "Buildings");
     createSetting('RMaxLabs', 'Max Labs', 'It is about 10 labs per level at level 10 plus. ', 'value', '0', null, "Buildings");
     createSetting('Rmeltsmithy', 'Melt Smithy', 'Run the Melting Point Map to gain one extra Smithy when at or above this value. ', 'value', '-1', null, "Buildings");
-    createSetting('Rsmithylogic', 'Smithy Savings', '<b>ABSOLUTELY WILL NOT WORK IN TESTING!</b><br>Uses Smithy Saving logic when this is turned on. Make sure every SS setting is set above 0 or it wont work. This feature will stop using resources on items needed for Smithy when you have reached the targets you have selected.', 'boolean', 'false', null, "Buildings");
+    createSetting('Rsmithylogic', 'Smithy Savings', '<b>ABSOLUTELY WILL NOT WORK IN TESTING!</b><br>Uses Smithy Saving logic when this is turned on. Make sure every SS setting is set above 0 or it wont work. This feature will stop using resources on items needed for Smithy when you have reached the targets you have selected.', 'boolean', false, null, "Buildings");
     createSetting('Rsmithynumber', 'SS: Number', 'Start SS at this number of Smithys. I.e 9, will buy anything regardless of Smithy before having 9 Smithys. After 9 has been reached will start to save up for them. ', 'value', '-1', null, "Buildings");
     createSetting('Rsmithypercent', 'SS: Percent', 'If you have SS enabled this value will allow items below this value to be purchased. I.e if this is set to 1, it will only buy items if that item is 1% of Smithys cost or lower. ', 'value', '-1', null, "Buildings");
     createSetting('Rsmithyseconds', 'SS: Seconds', 'How many seconds SS starts activating at. I.e 120, if your Smithy is 120 seconds away from being purchased SS will kick in. ', 'value', '-1', null, "Buildings");
@@ -293,7 +293,7 @@ export function initializeAllSettings() {
     //Jobs
 
     //Line 1
-    createSetting('fuckjobs', 'Hide Jobs', 'Hides obsolete settings when you have obtained the AutoJobs Mastery. It should be far better to use than AT, Especially on c2 Challenges like Watch. ', 'boolean', 'false', null, "Jobs");
+    createSetting('fuckjobs', 'Hide Jobs', 'Hides obsolete settings when you have obtained the AutoJobs Mastery. It should be far better to use than AT, Especially on c2 Challenges like Watch. ', 'boolean', false, null, "Jobs");
     createSetting('BuyJobsNew', ['Don\'t Buy Jobs', 'Auto Worker Ratios', 'Manual Worker Ratios'], 'Manual Worker Ratios buys jobs for your trimps according to the ratios below, <b>Make sure they are all different values, if two of them are the same it might causing an infinite loop of hiring and firing!</b> Auto Worker ratios automatically changes these ratios based on current progress, <u>overriding your ratio settings</u>.<br>AutoRatios: 1/1/1 up to 300k trimps, 3/3/5 up to 3mil trimps, then 3/1/4 above 3 mil trimps, then 1/1/10 above 1000 tributes, then 1/2/22 above 1500 tributes, then 1/12/12 above 3000 tributes.<br>CAUTION: You cannot manually assign jobs with this, turn it off if you have to', 'multitoggle', 1, null, "Jobs");
     createSetting('AutoMagmamancers', 'Auto Magmamancers', 'Auto Magmamancer Management. Hires Magmamancers when the Current Zone time goes over 10 minutes. Does a one-time spend of at most 10% of your gem resources. Every increment of 10 minutes after that repeats the 10% hiring process. Magmamancery mastery is accounted for, with that it hires them at 5 minutes instead of 10. Disclaimer: May negatively impact Gem count.', 'boolean', true, null, 'Jobs');
     createSetting('FarmerRatio', 'Farmer Ratio', '', 'value', '1', null, "Jobs");
@@ -317,12 +317,12 @@ export function initializeAllSettings() {
 
     //Ships
     (document.getElementById('RMaxExplorers') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
-    createSetting('Rshipfarmon', 'Ship Farming', 'Turn Ship Farming off or on. You need to have unlocked Large Savory Cache to use this. If you have not I would recommend Time Farm instead. ', 'boolean', 'false', null, "Jobs");
+    createSetting('Rshipfarmon', 'Ship Farming', 'Turn Ship Farming off or on. You need to have unlocked Large Savory Cache to use this. If you have not I would recommend Time Farm instead. ', 'boolean', false, null, "Jobs");
     createSetting('Rshipfarmzone', 'SF: Zone', 'Farms for specified worshippers in SF: Amount at zone according to this settings value. Can use 59,61,62. ', 'multiValue', [-1], null, 'Jobs');
     createSetting('Rshipfarmcell', 'SF: Cell', 'Ship Farm at this Cell. -1 to run them at the default value, which is 1. ', 'value', '-1', null, 'Jobs');
     createSetting('Rshipfarmamount', 'SF: Amount', 'How many Worshippers to farm up to at zone specified in SF. Can use 50,45,40. These values should match up to your SF zones. If using SF and SF: Amount examples (59 and 50 respectively) it will farm at z59 up to 50 Worshippers. Just use one 50 if you want it to farm to 50 everytime. ', 'multiValue', [-1], null, 'Jobs');
     createSetting('Rshipfarmlevel', 'SF: Map Level', 'What map level to use for SF. Can use -1,1,2. -1 to use a level down from world (Map Reducer mastery gives loot equal to world one level down), 0 to use world, 1 etc to use +maps. Using 0 by itself will use global level for all maps. ', 'multiValue', [0], null, 'Jobs');
-    createSetting('Rshipfarmfrag', 'SF: Frags', '**Ship farming will create infinite maps if this isnt on** <br>Turn this on to farm fragments if you cannot afford the map you have selected for SF. ', 'boolean', 'false', null, 'Jobs');
+    createSetting('Rshipfarmfrag', 'SF: Frags', '**Ship farming will create infinite maps if this isnt on** <br>Turn this on to farm fragments if you cannot afford the map you have selected for SF. ', 'boolean', false, null, 'Jobs');
 
 
     //Gear
@@ -531,8 +531,8 @@ export function initializeAllSettings() {
     //Windstacking
 
     //Line 1
-    createSetting('windstackingfiller', 'Use Daily Tab for Dailies!', 'These settings are for fillers ONLY. ', 'boolean', 'false', null, 'Windstacking');
-    createSetting('turnwson', 'Turn WS On!', 'Turn on Windstacking Stance in Combat to see the settings! ', 'boolean', 'false', null, 'Windstacking');
+    createSetting('windstackingfiller', 'Use Daily Tab for Dailies!', 'These settings are for fillers ONLY. ', 'boolean', false, null, 'Windstacking');
+    createSetting('turnwson', 'Turn WS On!', 'Turn on Windstacking Stance in Combat to see the settings! ', 'boolean', false, null, 'Windstacking');
     createSetting('WindStackingMin', 'Windstack Min Zone', 'For use with Windstacking Stance, enables windstacking in zones above and inclusive of the zone set. (Get specified windstacks then change to D, kill bad guy, then repeat). This is designed to force S use until you have specified stacks in wind zones, overriding scryer settings. All windstack settings apart from WS MAX work off this setting. ', 'value', '-1', null, 'Windstacking');
     createSetting('WindStackingMinHD', 'Windstack H:D', 'For use with Windstacking Stance, if your H:D is below this number it will use W inside windlight and S outside of it. If it is above it will start manually windstacking using heirloom swapping and stancing. If you just want to use W stance just set this to something impossibly high like 1e30. ', 'value', '-1', null, 'Windstacking');
     createSetting('WindStackingMax', 'Windstack Stacks', 'For use with Windstacking Stance. Amount of windstacks to obtain before switching to D stance. Default is 200, but I recommend anywhere between 175-190.  In Wind Enlightenment it will add 100 stacks to your total automatically. So if this setting is 200 It will assume you want 300 stacks instead during enlightenment. ', 'value', '200', null, 'Windstacking');
@@ -546,7 +546,7 @@ export function initializeAllSettings() {
     //ATGA
 
     //Line 1
-    createSetting('ATGA2', 'ATGA', '<b>ATGA MASTER BUTTON</b><br>AT Geneticassist. Do not use vanilla GA, as it will conflict otherwise. May get fucky with super high values. ', 'boolean', 'false', null, 'ATGA');
+    createSetting('ATGA2', 'ATGA', '<b>ATGA MASTER BUTTON</b><br>AT Geneticassist. Do not use vanilla GA, as it will conflict otherwise. May get fucky with super high values. ', 'boolean', false, null, 'ATGA');
     createSetting('ATGA2gen', 'ATGA: Gen %', '<b>ATGA: Geneassist %</b><br>ATGA will only hire geneticists if they cost less than this value. E.g if this setting is 1 it will only buy geneticists if they cost less than 1% of your food. Default is 1%. ', 'value', '1', null, 'ATGA');
     createSetting('ATGA2timer', 'ATGA: Timer', '<b>ATGA Timer</b><br>This is the default time your ATGA will use. ', 'value', '-1', null, 'ATGA');
 
@@ -599,73 +599,73 @@ export function initializeAllSettings() {
     createSetting('Rblackbogamount', 'Amount', 'black bogs', 'multiValue', [-1], null, 'Challenges');
 
     //Nurture
-    createSetting('Rnurtureon', 'Nurture', 'Enables the Lab setting in Buildings and building labs through it. ', 'boolean', 'false', null, 'Challenges');
+    createSetting('Rnurtureon', 'Nurture', 'Enables the Lab setting in Buildings and building labs through it. ', 'boolean', false, null, 'Challenges');
 
     //Arch
-    createSetting('Rarchon', 'Archaeology', 'Turn on Archaeology settings. ', 'boolean', 'false', null, 'Challenges');
+    createSetting('Rarchon', 'Archaeology', 'Turn on Archaeology settings. ', 'boolean', false, null, 'Challenges');
     createSetting('Rarchstring1', 'First String', 'First string to use in Archaeology. Put the zone you want to stop using this string and start using the second string (Make sure the second string has a value) at the start. I.e: 70,10a,10e ', 'textValue', 'undefined', null, 'Challenges');
     createSetting('Rarchstring2', 'Second String', 'Second string to use in Archaeology. Put the zone you want to stop using this string and start using the third string (Make sure the third string has a value) at the start. I.e: 94,10a,10e ', 'textValue', 'undefined', null, 'Challenges');
     createSetting('Rarchstring3', 'Third String', 'Third string to use in Archaeology. Make sure this is just your Archaeology string and nothing else. I.e: 10a,10e ', 'textValue', 'undefined', null, 'Challenges');
 
     //Mayhem
-    createSetting('Rmayhemon', 'Mayhem', 'Turn on Mayhem settings. ', 'boolean', 'false', null, 'Challenges');
-    createSetting('Rmayhemattack', 'M: Attack', 'Turn this on to ignore your farm settings so It will do maps if you cannot survive the hits you have defined in Maps. ', 'boolean', 'false', null, 'Challenges');
-    createSetting('Rmayhemhealth', 'M: Health', 'Turn this on to ignore your farm settings so It will do maps if your HD is above the target you have defined in Maps. ', 'boolean', 'false', null, 'Challenges');
+    createSetting('Rmayhemon', 'Mayhem', 'Turn on Mayhem settings. ', 'boolean', false, null, 'Challenges');
+    createSetting('Rmayhemattack', 'M: Attack', 'Turn this on to ignore your farm settings so It will do maps if you cannot survive the hits you have defined in Maps. ', 'boolean', false, null, 'Challenges');
+    createSetting('Rmayhemhealth', 'M: Health', 'Turn this on to ignore your farm settings so It will do maps if your HD is above the target you have defined in Maps. ', 'boolean', false, null, 'Challenges');
     createSetting('Rmayhemabcut', 'M: Attack Boss', 'What cut-off to use when farming for the boss using M: Attack. If this setting is 100, the script will farm till you can kill the boss in 100 average hits. ', 'value', '-1', null, 'Challenges');
     createSetting('Rmayhemamcut', 'M: Attack Map', 'What cut-off to use when farming maps using M: Attack and M: Smart Map. If this setting is 10, the script will do maps you can kill cells in 10 average hits. ', 'value', '-1', null, 'Challenges');
     createSetting('Rmayhemhcut', 'M: Health Cut-off', 'What cut-off to use when using M: Health. ', 'value', '-1', null, 'Challenges');
     createSetting('Rmayhemmap', ['M: Maps Off', 'M: Highest Map', 'M: Smart Map'], 'Control what maps you do to farm M: Attack and/or M: Health. M: Highest map always selects the highest map you have whether it be from Praiding, Time Farming or any you have manually created. M: Smart Map attempts to create a map best suited to the situation. Will calculate if you can survive and kill the map, and will try to buy all the necessary map attributes such as FA. ', 'multitoggle', 0, null, 'Challenges');
 
     //Storm
-    createSetting('Rstormon', 'Storm', 'Turn on Storm settings. This also controls the entireity of Storm settings. If you turn this off it will not do anything in Storm. ', 'boolean', 'false', null, 'Challenges');
+    createSetting('Rstormon', 'Storm', 'Turn on Storm settings. This also controls the entireity of Storm settings. If you turn this off it will not do anything in Storm. ', 'boolean', false, null, 'Challenges');
     createSetting('Rstormzone', 'S: Zone', 'What zone to start S: H:D and S: Multiplier. ', 'value', '-1', null, 'Challenges');
     createSetting('RstormHD', 'S: H:D', 'What H:D to use inside Storm. ', 'value', '-1', null, 'Challenges');
     createSetting('Rstormmult', 'S: Multiplier', 'Starting from the zone above S: Zone, this setting will multiply the H:D you have set in S: H:D. So if S: Zone was 100, S: H:D was 10, S: Multiplier was 1.2, at z101 your H:D target will be 12, then at z102 it will be 14.4 and so on. This way you can account for the zones getting stronger and you will not waste time farming for a really low H:D. ', 'value', '-1', null, 'Challenges');
 
     //Insanity
-    createSetting('Rinsanityon', 'Insanity', 'Turn on Insanity settings. This also controls the entireity of IF. If you turn this off it will not Insanity Farm. ', 'boolean', 'false', null, 'Challenges');
+    createSetting('Rinsanityon', 'Insanity', 'Turn on Insanity settings. This also controls the entireity of IF. If you turn this off it will not Insanity Farm. ', 'boolean', false, null, 'Challenges');
     createSetting('Rinsanitymaz', 'Insanity Settings', 'Click to open the Insanity settings. <br> <b>Zone:</b> What zone to farm insanity stacks in.<br> <b>Cell:</b> What cell to start farming insanity stacks on.<br> <b>Stacks:</b> Number of stacks you want. <br> <b>Level:</b> How many map levels you want above zone. <br> <b>Example:</b> If you put Zone: 60, Cell: 50, Stacks: 500, Level: 5, you will farm at zone 60, on cell 50 until you have 500 insanity stacks, in a +5 map. ', 'infoclick', false, null, 'Challenges');
     createSetting('Rinsanityfarmzone', 'Insanity Farming', 'zone', 'multiValue', [-1], null, 'Challenges');
     createSetting('Rinsanityfarmcell', 'IF: Cell', 'cell', 'multiValue', '-1', null, 'Challenges');
     createSetting('Rinsanityfarmstack', 'IF: Stacks', 'stacks', 'multiValue', [-1], null, 'Challenges');
     createSetting('Rinsanityfarmlevel', 'IF: Map Level', 'level', 'multiValue', [0], null, 'Challenges');
-    createSetting('Rinsanityfarmfrag', 'IF: Frags', 'Turn this on to farm fragments if you cannot afford the map you have selected for IF. ', 'boolean', 'false', null, 'Challenges');
+    createSetting('Rinsanityfarmfrag', 'IF: Frags', 'Turn this on to farm fragments if you cannot afford the map you have selected for IF. ', 'boolean', false, null, 'Challenges');
 
     //Exterminate
-    createSetting('Rexterminateon', 'Exterminate', 'Turn on Exterminate settings. This also controls the entireity of Exterminate. If you turn this off it will not calculate Exterminate. ', 'boolean', 'false', null, 'Challenges');
-    createSetting('Rexterminatecalc', 'E: Calc', 'Calculate Exterminate enemies instead of the usual ones. May improve your challenge experience. ', 'boolean', 'false', null, 'Challenges');
-    createSetting('Rexterminateeq', 'E: Equality', 'Will manage your equality \'better\' inside the challenge. When you have the experienced buff it will turn it off, when you dont it will turn it on and let it build up. ', 'boolean', 'false', null, 'Challenges');
+    createSetting('Rexterminateon', 'Exterminate', 'Turn on Exterminate settings. This also controls the entireity of Exterminate. If you turn this off it will not calculate Exterminate. ', 'boolean', false, null, 'Challenges');
+    createSetting('Rexterminatecalc', 'E: Calc', 'Calculate Exterminate enemies instead of the usual ones. May improve your challenge experience. ', 'boolean', false, null, 'Challenges');
+    createSetting('Rexterminateeq', 'E: Equality', 'Will manage your equality \'better\' inside the challenge. When you have the experienced buff it will turn it off, when you dont it will turn it on and let it build up. ', 'boolean', false, null, 'Challenges');
 
     //Panda
-    createSetting('Rpandaon', 'Pandemonium', 'Turn on Pandemonium settings. ', 'boolean', 'false', null, 'Challenges');
-    createSetting('Rpandamaps', 'P: Mapping', 'Turn this on to automate mapping Pandemonium starting at the zone defined in P: Zone. Use the P: Attacks to define the maximum amount of hits an enemy in a map should take to kill. ', 'boolean', 'false', null, 'Challenges');
+    createSetting('Rpandaon', 'Pandemonium', 'Turn on Pandemonium settings. ', 'boolean', false, null, 'Challenges');
+    createSetting('Rpandamaps', 'P: Mapping', 'Turn this on to automate mapping Pandemonium starting at the zone defined in P: Zone. Use the P: Attacks to define the maximum amount of hits an enemy in a map should take to kill. ', 'boolean', false, null, 'Challenges');
     createSetting('Rpandazone', 'P: Zone', 'What zone to start Pandemonium mapping at. Will ignore Pandemonium stacks below this zone. ', 'value', '-1', null, 'Challenges');
     createSetting('Rpandahits', 'P: Hits', 'How many hits an enemy in a plus map should take to kill. Will select up to +6 levels. If you cannot kill an enemy in the maximum number of hits in any plus map, will try to run a +1 map anyway. ', 'value', '-1', null, 'Challenges');
 
     //Alch
-    createSetting('Ralchon', 'Alchemy', 'Turn on Alchemy settings. This also controls the entireity of AF. If you turn this off it will not Alchemy Farm. ', 'boolean', 'false', null, 'Challenges');
+    createSetting('Ralchon', 'Alchemy', 'Turn on Alchemy settings. This also controls the entireity of AF. If you turn this off it will not Alchemy Farm. ', 'boolean', false, null, 'Challenges');
     createSetting('Ralchfarmmaz', 'Alchemy Settings', 'Click to open the Alchemy settings. Do not use vanilla autobrew AF will buy potions for you. <br> <b>Zone:</b> What zone to farm herbs and potions in.<br> <b>Cell:</b> What cell to start farming herbs and potions on.<br> <b>Potion:</b> You must pair a potion with a level here. Example: h15,g20,s15. This will farm Herby potion up to level 15 on the first AF zone, Gaseous potion to level 20 and so on. <br> <b>Level:</b> How many map levels you want above zone. <br> <b>Example:</b> If you put Zone: 81, Cell: 50, Potion: h15, Level: 5, Map: Farmlands, you will farm at zone 81, on cell 50 until you can afford 15 total herby potions, in a +5 map, using a farmlands map. ', 'infoclick', false, null, 'Challenges');
     createSetting('Ralchfarmzone', 'Alchemy Farming', 'zone', 'multiValue', [-1], null, 'Challenges');
     createSetting('Ralchfarmcell', 'AF: Cell', 'cell', 'multiValue', '[-1]', null, 'Challenges');
     createSetting('Ralchfarmstack', 'AF: Potion', 'potion', 'textValue', 'undefined', null, 'Challenges');
     createSetting('Ralchfarmlevel', 'AF: Map Level', 'level', 'multiValue', [0], null, 'Challenges');
     createSetting('Ralchfarmselection', 'AF: Map Selection', 'map', 'textValue', 'l', null, 'Challenges');
-    createSetting('Ralchfarmfrag', 'AF: Frags', 'Turn this on to farm fragments if you cannot afford the map you have selected for AF. ', 'boolean', 'false', null, 'Challenges');
+    createSetting('Ralchfarmfrag', 'AF: Frags', 'Turn this on to farm fragments if you cannot afford the map you have selected for AF. ', 'boolean', false, null, 'Challenges');
 
     //Hypo
-    createSetting('Rhypoon', 'Hypothermia', 'Turn on Hypothermia settings. This also controls the entireity of HF. If you turn this off it will not Hypothermia Farm. ', 'boolean', 'false', null, 'Challenges');
+    createSetting('Rhypoon', 'Hypothermia', 'Turn on Hypothermia settings. This also controls the entireity of HF. If you turn this off it will not Hypothermia Farm. ', 'boolean', false, null, 'Challenges');
     createSetting('Rhypofarmmaz', 'Hypothermia Settings', 'Click to open the Hypothermia settings. HF will not spend wood on zones you are farming bonfires or until you have achieved your bonfire goal. <br> <b>Zone:</b> What zone to farm bonfires in.<br> <b>Cell:</b> What cell to start farming bonfires on.<br> <b>Bonfire:</b> The number of total bonfires in the run you want at that zone.<br> <b>Level:</b> How many map levels you want above zone. <br> <b>Example:</b> If you put Zone: 17, Cell: 50, Bonfire: 5, Level: 5, you will farm at zone 17, on cell 50 until you can afford 5 total bonfires, in a +5 map. ', 'infoclick', false, null, 'Challenges');
     createSetting('Rhypofarmzone', 'Hypothermia Farming', 'zone', 'multiValue', [-1], null, 'Challenges');
     createSetting('Rhypofarmcell', 'HF: Cell', 'cell', 'multiValue', [-1], null, 'Challenges');
     createSetting('Rhypofarmstack', 'HF: Bonfire', 'bonfire', 'multiValue', 'undefined', null, 'Challenges');
     createSetting('Rhypofarmlevel', 'HF: Map Level', 'level', 'multiValue', [0], null, 'Challenges');
-    createSetting('Rhypofarmfrag', 'HF: Frags', 'Turn this on to farm fragments if you cannot afford the map you have selected for HF. ', 'boolean', 'false', null, 'Challenges');
+    createSetting('Rhypofarmfrag', 'HF: Frags', 'Turn this on to farm fragments if you cannot afford the map you have selected for HF. ', 'boolean', false, null, 'Challenges');
     createSetting('Rhypocastle', 'Frozen Castle', 'What zone you wish you run frozen castle on to complete the challenge. Will run castle after voids so make sure thats set up right. ', 'value', '-1', null, 'Challenges');
     createSetting('Rhypovoids', 'After Voids', 'Only run Frozen castle after all voids have been completed. ', 'boolean', true, null, 'Challenges');
-    createSetting('Rhypostorage', 'Storage', 'Turn this on to disable buying sheds unless you need more wood for your HF: Bonfire target price (AT AutoBuildings). Essentially this means you wont get accidently bonfires but you may lose out on smithies and shield prestiges. If you use vanilla autobuildings this setting is pointless. Disables AutoStorage until the first Bonfire farm zone that you reach during the challenge.', 'boolean', 'false', null, 'Challenges');
+    createSetting('Rhypostorage', 'Storage', 'Turn this on to disable buying sheds unless you need more wood for your HF: Bonfire target price (AT AutoBuildings). Essentially this means you wont get accidently bonfires but you may lose out on smithies and shield prestiges. If you use vanilla autobuildings this setting is pointless. Disables AutoStorage until the first Bonfire farm zone that you reach during the challenge.', 'boolean', false, null, 'Challenges');
     
     //Desolation
-    createSetting('Rdesoon', 'Desolation', 'Turn on Desolation settings. This also controls the entireity of Desolation settings. If you turn this off it will not do anything in Desolation. ', 'boolean', 'false', null, 'Challenges');
+    createSetting('Rdesoon', 'Desolation', 'Turn on Desolation settings. This also controls the entireity of Desolation settings. If you turn this off it will not do anything in Desolation. ', 'boolean', false, null, 'Challenges');
     createSetting('Rdesozone', 'D: Zone', 'What zone to start D: H:D and D: Multiplier. ', 'value', '-1', null, 'Challenges');
     createSetting('RdesoHD', 'D: H:D', 'What H:D to use inside Desolation. ', 'value', '-1', null, 'Challenges');
     createSetting('Rdesomult', 'D: Multiplier', 'Starting from the zone above D: Zone, this setting will multiply the H:D you have set in D: H:D. So if D: Zone was 100, D: H:D was 10, D: Multiplier was 1.2, at z101 your H:D target will be 12, then at z102 it will be 14.4 and so on. This way you can account for the zones getting stronger and you will not waste time farming for a really low H:D. ', 'value', '-1', null, 'Challenges');
@@ -693,8 +693,8 @@ export function initializeAllSettings() {
     //RCombat
     createSetting('Rfightforever', 'Fight Always', 'U2: -1 to disable. Sends trimps to fight if they\'re not fighting, regardless of BAF. Has 2 uses. Set to 0 to always send out trimps. Or set a number higher than 0 to enable the H:D function. If the H:D ratio is below this number it will send them out. I.e, this is set to 1, it will send out trimps regardless with the H:D ratio is below 1. ', 'value', '-1', null, 'Combat');
     createSetting('Rcalcmaxequality', ['Equality Calc Off', 'EC: On', 'EC: Health'], '<b>Experimental. </b><br>Adds Equality Scaling levels to the battlecalc. Will always calculate equality based on actual scaling levels when its turned off by other settings. Assumes you use Equality Scaling. Turning this on allows in-game Equality Scaling to adjust your Health accordingly. EC: Health only decreases enemies attack in the calculation which may improve speed. ', 'multitoggle', 0, null, 'Combat');
-    createSetting('Rmanageequality', 'Manage Equality', 'Manages Equality for you. Sets Equality to 0 on Slow enemies, and Autoscaling on for Fast enemies. ', 'boolean', 'false', null, 'Combat');
-    createSetting('Rcalcfrenzy', 'Frenzy Calc', '<b>Experimental. </b><br>Adds frenzy to the calc. Be warned, it will not farm as much with this on as it expects 100% frenzy uptime. ', 'boolean', 'false', null, 'Combat');
+    createSetting('Rmanageequality', 'Manage Equality', 'Manages Equality for you. Sets Equality to 0 on Slow enemies, and Autoscaling on for Fast enemies. ', 'boolean', false, null, 'Combat');
+    createSetting('Rcalcfrenzy', 'Frenzy Calc', '<b>Experimental. </b><br>Adds frenzy to the calc. Be warned, it will not farm as much with this on as it expects 100% frenzy uptime. ', 'boolean', false, null, 'Combat');
     createSetting('Rmutecalc', 'Mute Calc', 'What zone to start calculating Mutations at. 0 to disable.', 'value', '-1', null, 'Combat');
 
 

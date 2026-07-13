@@ -364,43 +364,24 @@ describe('no boolean setting is declared with a STRING default (#69)', () => {
   // ⚠️ These are NOT free to fix in bulk: flipping `'false'` → `false` CHANGES behavior for every
   // truthiness reader of that setting (ON → OFF). Each one needs its readers checked. Hence a queue.
   const KNOWN_STRING_DEFAULT: Record<string, string> = {
-    buynojobsc: "#69 — 'false'",
-    cfightforever: "#69 — 'false'",
-    novmsc2: "#69 — 'false'",
-    AutoGigas: "#69 — 'true' (truthy, and `== true` reads see FALSE)",
-    RBuyBuildingsNew: "#69 — 'true' (truthy, and `== true` reads see FALSE)",
-    Rsmithylogic: "#69 — 'false'",
-    fuckjobs: "#69 — 'false'",
-    Rshipfarmon: "#69 — 'false'",
-    Rshipfarmfrag: "#69 — 'false'",
-    windstackingfiller: "#69 — 'false'",
-    turnwson: "#69 — 'false'",
-    ATGA2: "#69 — 'false'",
-    Rnurtureon: "#69 — 'false'",
-    Rarchon: "#69 — 'false'",
-    Rmayhemon: "#69 — 'false'",
-    Rmayhemattack: "#69 — 'false'",
-    Rmayhemhealth: "#69 — 'false'",
-    Rstormon: "#69 — 'false'",
-    Rinsanityon: "#69 — 'false'",
-    Rinsanityfarmfrag: "#69 — 'false'",
-    Rexterminateon: "#69 — 'false'",
-    Rexterminatecalc: "#69 — 'false'",
-    Rexterminateeq: "#69 — 'false'",
-    Rpandaon: "#69 — 'false'",
-    Rpandamaps: "#69 — 'false'",
-    Ralchon: "#69 — 'false'",
-    Ralchfarmfrag: "#69 — 'false'",
-    Rhypoon: "#69 — 'false'",
-    Rhypofarmfrag: "#69 — 'false'",
-    Rhypostorage: "#69 — 'false'",
-    Rdesoon: "#69 — 'false'",
-    addpoison: "#69 — 'false'",
-    fullice: "#69 — 'false'",
-    '45stacks': "#69 — 'false'",
-    Rmanageequality: "#69 — 'false'",
-    Rcalcfrenzy: "#69 — 'false'",
+    // #69 ship B unquoted the other 32 (measured: ZERO L0 trace divergences). These four are held back
+    // because each needs its own reviewed change — they are the only ones whose repair alters behavior
+    // in a way this repo's nets cannot vouch for:
+    RBuyBuildingsNew:
+      "#69 — 'true'. Its SOLE gate is `== true` -> false, so U2 AutoBuildings has NEVER run while the " +
+      'UI has always shown it ON. Repairing it moves 1167 oracle traces on 04-u2-radon — the only ' +
+      'trace-mover of the 36. Ships alone, behind an explicit decision + a deliberate re-pin.',
+    // The damage trio: all three are read by calcOurDmg, and the L0 net is STRUCTURALLY BLIND to them
+    // (it records only buyJob/buyBuilding/buyEquipment/buyUpgrade — #90). A 1,000,000x multiplier
+    // injected into the restored arm passes the net GREEN. They ship behind purpose-built calcOurDmg
+    // goldens + a live Chrome verify, and NEVER on the strength of a green proof net.
+    '45stacks': "#69 — 'false'. BOTH the `== true` and `== false` arms are dead -> the Anticipation " +
+      'multiplier is dropped from calcOurDmg entirely (measured 1 -> 1.6).',
+    fullice: "#69 — 'false'. Both arms dead -> the Ice empowerment multiplier is dropped (1 -> 2.4).",
+    addpoison: "#69 — 'false'. A TRUTHY reader at calc.ts:39 returns poison damage (silently ON) while " +
+      'the `== true` reader at :280 is dead. The third calcOurDmg reader.',
   }
+
 
   it('finds the boolean-setting inventory (anti-false-green)', () => {
     expect(declared.length).toBeGreaterThan(500)
@@ -423,7 +404,7 @@ describe('no boolean setting is declared with a STRING default (#69)', () => {
       expect(live.has(id), `'${id}' no longer has a string default — delete it from KNOWN_STRING_DEFAULT`).toBe(
         true,
       )
-    expect(Object.keys(KNOWN_STRING_DEFAULT).length).toBeLessThanOrEqual(36)
+    expect(Object.keys(KNOWN_STRING_DEFAULT).length).toBeLessThanOrEqual(4) // 36 → 4: ship B unquoted 32 (#69)
   })
 })
 
