@@ -3342,7 +3342,7 @@
         const costScaling = game.buildings[housing].cost[resource][1];
         let avgProduction = getPsString(resource, true);
         if (avgProduction <= 0) avgProduction = 1;
-        let housingBonus = game.buildings.Hut.increase.by;
+        let housingBonus = game.buildings[housing].increase.by;
         if (!game.buildings.Hub.locked) {
           housingBonus += 500;
         }

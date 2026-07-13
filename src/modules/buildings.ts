@@ -368,7 +368,13 @@ export function mostEfficientHousing() {
             const costScaling = game.buildings[housing].cost[resource][1];
             let avgProduction = getPsString(resource, true);
             if (avgProduction <= 0) avgProduction = 1;
-            let housingBonus = game.buildings.Hut.increase.by;
+            // #93: was `game.buildings.Hut.increase.by` — the HUT's population gain, for every housing
+            // type in the loop. Being constant across the loop it cancelled out of the comparison
+            // entirely, degenerating this "efficiency" metric into plain time-to-afford (always buy the
+            // cheapest) and scoring a Collector (+5000 pop) as if it granted 3. The sibling
+            // RbuyGemEfficientHousing already divides by the EVALUATED building's `increase.by`, and the
+            // `+500` Hub term below only makes sense against the evaluated building's gain.
+            let housingBonus = game.buildings[housing].increase.by;
             if (!game.buildings.Hub.locked) { housingBonus += 500; }
 
             // Only keep the slowest producer, aka the one that would take the longest to generate resources for

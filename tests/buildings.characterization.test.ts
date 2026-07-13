@@ -653,6 +653,51 @@ describe('buildings.mostEfficientHousing — L1a golden master', () => {
     expect(buildings.mostEfficientHousing()).toBe('Hut')
   })
 
+  // #93 — the housing gain must come from the EVALUATED building, not always from the Hut.
+  //
+  // ⚠️ The shared `bld()` fixture gives EVERY building `increase.by = 3`, which makes it structurally
+  // blind to this bug: with a constant gain the divisor cancels out of the comparison and the buggy
+  // and fixed code agree on every input. So this test uses the REAL game values (read from
+  // .trimps-game/config.js: Hut 3 · House 5 · Mansion 10 · Hotel 20 · Resort 40 · Gateway 100 ·
+  // Collector 5000) and picks costs where the bug and the fix DISAGREE — which is the only assertion
+  // that can actually go red.
+  //
+  // worstTime = baseCost * costScaling^(owned-1) / (avgProduction * housingBonus), with owned 0 and the
+  // getPsString stub pinned at 1:
+  //   Hut       125 / 1.24 / 3    =    33.6
+  //   Collector 100000 / 1.05 / 5000 =  19.0   ← the better deal per unit of population
+  // Under the bug BOTH divide by the Hut's 3, so the Collector scores 100000/1.05/3 = 31,746 and the
+  // Hut wins — which is the reported symptom: AT would never buy a Collector.
+  it('#93: a Collector wins on population-per-resource even though it costs far more', () => {
+    ;(globalThis as any).autoTrimpSettings = { ...RMAX_UNLIMITED }
+    const buildingsObj = bld({
+      House: { locked: 1 }, Mansion: { locked: 1 }, Hotel: { locked: 1 },
+      Resort: { locked: 1 }, Gateway: { locked: 1 },
+    })
+    buildingsObj.Hut.cost = { food: [125, 1.24] }
+    buildingsObj.Hut.increase.by = 3
+    buildingsObj.Collector.cost = { food: [100000, 1.05] }
+    buildingsObj.Collector.increase.by = 5000
+    ;(globalThis as any).game = makeMinimalGame({ buildings: buildingsObj })
+    expect(buildings.mostEfficientHousing()).toBe('Collector')
+  })
+
+  it('#93: the SAME costs pick the Hut once the Collector really is the worse deal', () => {
+    // The negative control — proves the test above is measuring the gain and not just "prefers the
+    // expensive one". Same fixture, Collector's gain dropped to a Hut's: now it is genuinely worse.
+    ;(globalThis as any).autoTrimpSettings = { ...RMAX_UNLIMITED }
+    const buildingsObj = bld({
+      House: { locked: 1 }, Mansion: { locked: 1 }, Hotel: { locked: 1 },
+      Resort: { locked: 1 }, Gateway: { locked: 1 },
+    })
+    buildingsObj.Hut.cost = { food: [125, 1.24] }
+    buildingsObj.Hut.increase.by = 3
+    buildingsObj.Collector.cost = { food: [100000, 1.05] }
+    buildingsObj.Collector.increase.by = 3
+    ;(globalThis as any).game = makeMinimalGame({ buildings: buildingsObj })
+    expect(buildings.mostEfficientHousing()).toBe('Hut')
+  })
+
   // L469: resource == 'wood' (true) && !Rhyposhouldwood → worstTime Infinity → deprioritized
   it('wood-costed housing is deprioritized (Infinity) when Rhyposhouldwood is false', () => {
     ;(globalThis as any).Rhyposhouldwood = false
