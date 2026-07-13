@@ -19,7 +19,7 @@ const GAME_FILES = ['lz-string.js', 'decimal.min.js', 'config.js', 'updates.js',
  * @param {{ gameDir?: string, withAutoTrimps?: boolean, atBundlePath?: string, saveString?: string, atSettings?: Record<string, unknown> }} [opts]
  * @returns {{ window: any, game: any, dom: any }}
  */
-export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, atBundlePath, saveString, atSettings } = {}) {
+export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, atBundlePath, saveString, atSettings, atSettingsBlob } = {}) {
   const html = readFileSync(resolve(gameDir, 'index.html'), 'utf8')
   const dom = new JSDOM(html, { runScripts: 'outside-only', pretendToBeVisual: true, url: 'http://localhost/' })
   const { window } = dom
@@ -72,6 +72,18 @@ export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, a
     const at = atBundlePath
     Object.assign(window, { GM_getValue: () => undefined, GM_setValue: () => {}, GM_xmlhttpRequest: () => {}, unsafeWindow: window })
     window.eval(readFileSync(at, 'utf8'))
+
+    // A REAL user's exported settings blob (#105/#106) — the flat `id -> primitive` object AT persists.
+    // This is the AUTHENTIC path, not a shortcut: loadPageVariables() reads localStorage
+    // ('autoTrimpSettings', utils.ts:23) and, if the blob carries an ATversion, adopts it wholesale;
+    // createSetting then applies its default ONLY where the blob has no key. So writing the blob here
+    // reproduces exactly what the browser does on load. Prefer this over the per-id atSettings hook when
+    // you have a user's real config — it exercises the same code path their browser does, including any
+    // stale/unknown keys they are carrying.
+    if (atSettingsBlob) {
+      window.localStorage.setItem('autoTrimpSettings', typeof atSettingsBlob === 'string' ? atSettingsBlob : JSON.stringify(atSettingsBlob))
+    }
+
     // AT's startup normally fires via setTimeout (stubbed off here). Run the settings init
     // directly: loadPageVariables() seeds autoTrimpSettings, bootSettingsUI() runs the ~570
     // createSetting defs (each populates a setting object mainLoop reads via .selected/.enabled).
