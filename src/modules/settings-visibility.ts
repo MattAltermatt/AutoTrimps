@@ -393,6 +393,9 @@ export function updateCustomButtons() {
     radonon ? turnOn("RFarmerRatio") : turnOff("RFarmerRatio");
     radonon ? turnOn("RLumberjackRatio") : turnOff("RLumberjackRatio");
     radonon ? turnOn("RMinerRatio") : turnOff("RMinerRatio");
+    // #109: minted by #106 and then left out of this table, so turnOff was never called on it and
+    // U1 rendered BOTH "Scientist %" boxes side by side. Its U1 twin is the line in the //Jobs block.
+    radonon ? turnOn("RScientistPercent") : turnOff("RScientistPercent");
     radonon ? turnOn("RMaxExplorers") : turnOff("RMaxExplorers");
     radonon ? turnOn("Rshipfarmon") : turnOff("Rshipfarmon");
     (radonon && getPageSetting('Rshipfarmon') == true) ? turnOn("Rshipfarmzone") : turnOff("Rshipfarmzone");

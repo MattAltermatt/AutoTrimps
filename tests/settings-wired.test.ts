@@ -131,3 +131,36 @@ describe('gather dispatchers route every selectable option (#64)', () => {
     expect(at2).toMatch(/getPageSetting\('RManualGather2'\) == 1 \|\| getPageSetting\('RManualGather2'\) == 2\) RmanualLabor2\(\)/)
   })
 })
+
+describe('every U1/U2 twin setting appears in the visibility table (#109)', () => {
+  // #109's shape: #106 minted ScientistPercent + RScientistPercent — a U1/U2 twin PAIR sharing one
+  // label ("Scientist %") — but added only the U1 id to settingsVisibility()'s turnOn/turnOff table.
+  // turnOff was therefore never called on the U2 box, so a U1 player saw "Scientist %" TWICE, one of
+  // which does nothing in their universe. The bug is invisible to every other net: both ids are
+  // createSetting'd, both are read, both have live consumers. Only the RENDER is wrong.
+  //
+  // The invariant this pins: if a setting has a twin (X and RX both exist), the two are
+  // universe-exclusive by construction, so BOTH must be routed through the visibility table —
+  // otherwise one of them is unconditionally visible in a universe where it is inert.
+  const defsSrc = readFileSync(join(ROOT, DEFS), 'utf8')
+  const visSrc = readFileSync(join(ROOT, 'src/modules/settings-visibility.ts'), 'utf8')
+
+  const ids = [...defsSrc.matchAll(/createSetting\(\s*'([^']+)'/g)].map((m) => m[1])
+  const shown = new Set([...visSrc.matchAll(/turn(?:On|Off)\(\s*["']([A-Za-z0-9_]+)["']\s*\)/g)].map((m) => m[1]))
+
+  const idSet = new Set(ids)
+  const twins = ids.filter((id) => idSet.has('R' + id))
+
+  it('finds the twin pairs at all (anti-false-green: an empty walk passes vacuously)', () => {
+    expect(twins.length).toBeGreaterThan(50)
+    expect(shown.size).toBeGreaterThan(400)
+  })
+
+  it('both halves of every twin pair are routed through turnOn/turnOff', () => {
+    const offenders: string[] = []
+    for (const u1 of twins) {
+      for (const id of [u1, 'R' + u1]) if (!shown.has(id)) offenders.push(id)
+    }
+    expect([...new Set(offenders)]).toEqual([])
+  })
+})
