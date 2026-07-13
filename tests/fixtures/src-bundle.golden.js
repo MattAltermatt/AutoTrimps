@@ -1865,9 +1865,15 @@
       number *= game.talents.daily.purchased ? 1.5 : 1;
       minDailyMod -= typeof game.global.dailyChallenge.minDamage !== "undefined" ? dailyModifiers.minDamage.getMult(game.global.dailyChallenge.minDamage.strength) : 0;
       maxDailyMod += typeof game.global.dailyChallenge.maxDamage !== "undefined" ? dailyModifiers.maxDamage.getMult(game.global.dailyChallenge.maxDamage.strength) : 0;
-      number += typeof game.global.dailyChallenge.oddTrimpNerf !== "undefined" && game.global.world % 2 === 1 ? dailyModifiers.oddTrimpNerf.getMult(game.global.dailyChallenge.oddTrimpNerf.strength) : 0;
-      number -= typeof game.global.dailyChallenge.evenTrimpBuff !== "undefined" && game.global.world % 2 === 0 ? dailyModifiers.evenTrimpBuff.getMult(game.global.dailyChallenge.evenTrimpBuff.strength) : 0;
-      number -= typeof game.global.dailyChallenge.rampage !== "undefined" ? dailyModifiers.rampage.getMult(game.global.dailyChallenge.rampage.strength, game.global.dailyChallenge.rampage.stacks) : 0;
+      if (typeof game.global.dailyChallenge.oddTrimpNerf !== "undefined" && game.global.world % 2 === 1) {
+        number *= dailyModifiers.oddTrimpNerf.getMult(game.global.dailyChallenge.oddTrimpNerf.strength);
+      }
+      if (typeof game.global.dailyChallenge.evenTrimpBuff !== "undefined" && game.global.world % 2 === 0) {
+        number *= dailyModifiers.evenTrimpBuff.getMult(game.global.dailyChallenge.evenTrimpBuff.strength);
+      }
+      if (typeof game.global.dailyChallenge.rampage !== "undefined") {
+        number *= dailyModifiers.rampage.getMult(game.global.dailyChallenge.rampage.strength, game.global.dailyChallenge.rampage.stacks);
+      }
     }
     number *= Fluffy.isRewardActive("SADailies") && game.global.challengeActive === "Daily" ? Fluffy.rewardConfig.SADailies.attackMod() : 1;
     number *= autoBattle.bonuses.Stats.getMult();

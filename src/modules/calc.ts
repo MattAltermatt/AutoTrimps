@@ -1252,12 +1252,18 @@ export function RcalcOurDmg(minMaxAvg?: string, equality?: boolean, _unusedIncFl
         minDailyMod -= typeof game.global.dailyChallenge.minDamage !== 'undefined' ? dailyModifiers.minDamage.getMult(game.global.dailyChallenge.minDamage.strength) : 0;
         // Max damage increased (additive)
         maxDailyMod += typeof game.global.dailyChallenge.maxDamage !== 'undefined' ? dailyModifiers.maxDamage.getMult(game.global.dailyChallenge.maxDamage.strength) : 0;
-        // Minus attack on odd zones
-        number += typeof game.global.dailyChallenge.oddTrimpNerf !== 'undefined' && ((game.global.world % 2) === 1) ? dailyModifiers.oddTrimpNerf.getMult(game.global.dailyChallenge.oddTrimpNerf.strength) : 0;
-        // Bonus attack on even zones
-        number -= typeof game.global.dailyChallenge.evenTrimpBuff !== 'undefined' && ((game.global.world % 2) === 0) ? dailyModifiers.evenTrimpBuff.getMult(game.global.dailyChallenge.evenTrimpBuff.strength) : 0;
-        // Rampage Daily mod
-        number -= typeof game.global.dailyChallenge.rampage !== 'undefined' ? dailyModifiers.rampage.getMult(game.global.dailyChallenge.rampage.strength, game.global.dailyChallenge.rampage.stacks) : 0;
+        // Minus attack on odd zones (MULTIPLICATIVE — .trimps-game/main.js:12357)
+        if (typeof game.global.dailyChallenge.oddTrimpNerf !== 'undefined' && ((game.global.world % 2) === 1)) {
+            number *= dailyModifiers.oddTrimpNerf.getMult(game.global.dailyChallenge.oddTrimpNerf.strength);
+        }
+        // Bonus attack on even zones (MULTIPLICATIVE — .trimps-game/main.js:12358)
+        if (typeof game.global.dailyChallenge.evenTrimpBuff !== 'undefined' && ((game.global.world % 2) === 0)) {
+            number *= dailyModifiers.evenTrimpBuff.getMult(game.global.dailyChallenge.evenTrimpBuff.strength);
+        }
+        // Rampage Daily mod (MULTIPLICATIVE — .trimps-game/main.js:12356)
+        if (typeof game.global.dailyChallenge.rampage !== 'undefined') {
+            number *= dailyModifiers.rampage.getMult(game.global.dailyChallenge.rampage.strength, game.global.dailyChallenge.rampage.stacks);
+        }
     }
 
     //Scruffy Level 20 - Dailies
