@@ -1851,7 +1851,12 @@ export function RmapRepeat(selectedMap: any, shouldDoHealthMaps: any, restartVoi
             repeatClicked();
             RdoMaxMapBonus = false;
         }
-        if (game.global.repeatMap &&
+        // #83 §4: `&&` binds tighter than `||`, so `game.global.repeatMap &&` used to guard ONLY the
+        // first disjunct. repeatClicked() is a TOGGLE, not a setter (main.js:10983) — so any of the
+        // six fragment-farm disjuncts firing while Repeat was already OFF turned Repeat back ON, and
+        // AT re-ran the fragment map forever instead of leaving it. The precondition must wrap the
+        // whole disjunction.
+        if (game.global.repeatMap && (
             (Rshoulddoquest == 3 && game.global.mapBonus >= 4) ||
             (Rshoulddopraid && RAMPfragfarming && RAMPfrag(false) == true) ||
             (Rdshoulddopraid && RdAMPfragfarming && RAMPfrag(true) == true) ||
@@ -1859,7 +1864,7 @@ export function RmapRepeat(selectedMap: any, shouldDoHealthMaps: any, restartVoi
             (Rshouldalchfarm && Ralchfragfarming && RfragCheck("alch") == true) ||
             (Rshouldhypofarm && Rhypofragfarming && RfragCheck("hypo") == true) ||
             (Rshouldshipfarm && Rshipfragfarming && RfragCheck("ship") == true)
-        ) {
+        )) {
             repeatClicked();
         }
 
