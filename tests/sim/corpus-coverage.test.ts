@@ -42,9 +42,22 @@ describe('corpus mutator coverage (loud, pinned)', () => {
       '01-early-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyUpgrade'],
       '02-mid-u1': ['buyBuilding', 'buyEquipment', 'buyJob'],
       '03-challenge-watch': ['buyBuilding', 'buyEquipment', 'buyJob'],
-      // U2 is unchanged by #66 — the stuck flag gated a branch inside `if (universe == 1)`, and U2's
-      // gear path (RautoEquip) never read it. That invariance is itself confirmation of the mechanism.
-      '04-u2-radon': ['buyJob', 'buyUpgrade'],
+      // #69 ship C: U2 now reaches buyBuilding for the FIRST TIME. RBuyBuildingsNew's default was the
+      // STRING 'true' and its only gate is `== true`, so RbuyBuildings() had never executed — and in U2
+      // it is the ONLY building automation, so U2 players got neither housing nor storage.
+      //
+      // ⚠️ THE COMMENT THAT USED TO SIT HERE WAS FALSE, and it is worth recording why, because it is
+      // exactly the failure this file was warned about at the top. It read: "U2 is unchanged by #66 —
+      // the stuck flag gated a branch inside `if (universe == 1)`". It does not: legacy/AutoTrimps2.js
+      // gates RsetScienceNeeded() on the same `!usingRealTimeOffline` INSIDE the `universe == 2` block,
+      // so U2's science was equally dark. And U2 showed no buyEquipment not because #66 spared it, but
+      // because `Requipon` defaults false, so RautoEquip never runs in the sim AT ALL. The invariance
+      // was a coincidence, and the comment promoted it to evidence — inside a passing assertion, where
+      // the next person auditing #66 would have believed it. (#74)
+      //
+      // Rule, stated so it does not happen a third time: a comment inside an assertion that explains
+      // WHY a value is what it is must cite the file:line that makes it so.
+      '04-u2-radon': ['buyBuilding', 'buyJob', 'buyUpgrade'],
     })
   })
 })

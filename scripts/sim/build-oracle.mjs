@@ -19,6 +19,31 @@
 //      buyEquipment events. The v2 traces contain them, so the L0 net is strictly MORE sensitive now
 //      than it was before the re-pin, not less.
 //
+// ORACLE v3 (#69 ship C, 2026-07-12) — re-pinned from `oracle/v2-post-bugfix` (514b790d) to
+// `oracle/v3-u2-autobuildings`. One cause, fully isolated:
+//
+//   `RBuyBuildingsNew` was declared 'boolean' with the STRING 'true', and its only gate is
+//   `getPageSetting('RBuyBuildingsNew') == true` — which is false for a string. So `RbuyBuildings()`
+//   had NEVER EXECUTED in production, for anyone, while the settings panel always rendered it ON.
+//   In U2 the mainLoop never calls U1's buyBuildings(), so RbuyBuildings() is the ONLY building
+//   automation — and its else-branch is also what enables vanilla AutoStorage. A dead setting left
+//   U2 players with NEITHER housing NOR storage: measured on 04-u2-radon, every resource sits pegged
+//   at 100% of cap, permanently, with all gathering income overflowing into the void.
+//
+// WHY THIS RE-PIN IS SAFE, AND HOW IT WAS CHECKED. baseline-zero reports "1167 divergences", which
+// looks like the wholly-shifted trajectory the re-pin rule exists to refuse. It is not. Tallied BY
+// EVENT rather than by index, oracle=1201 vs working=1204: every pre-existing event is UNCHANGED
+// (300x each buyJob(Farmer|Lumberjack|Miner|Scientist) + 1 buyUpgrade(Speedminer)), and exactly THREE
+// are INSERTED — buyBuilding(Barn) + buyBuilding(Shed) from the native AutoStorage this enables, and
+// buyBuilding(House) from AT itself. Three insertions at tick 9 shift every later index; 1204-37=1167.
+// Count the events before you believe a divergence count.
+//
+// ⚠️ The L0 net could NOT have vouched for this change on its own, and did not. The corpus saves all
+// decode to HZE=3/world=4 and the recorder emits only buy events (#90/#98) — a 1,000,000x damage
+// multiplier passes the whole sim suite GREEN. The evidence here is a 40,000-tick A/B on four U2
+// states (+68% max population, +75% population, +22% science, no stall, no over-buy, no throw) plus a
+// crash audit of the never-executed body, NOT a green net. See #98.
+//
 // Re-pinning is otherwise NOT routine: a naked oracle change is exactly the accidental-drift alarm
 // this net exists to raise. Only re-pin behind a root-caused, reviewed, intentional behavior change.
 import { execFileSync } from 'node:child_process'
@@ -26,7 +51,7 @@ import { mkdtempSync, copyFileSync, rmSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve, join } from 'node:path'
 
-const TAG = 'oracle/v2-post-bugfix'
+const TAG = 'oracle/v3-u2-autobuildings'
 const OUT = resolve('tests/fixtures/oracle/autotrimps.oracle.user.js')
 const wt = mkdtempSync(join(tmpdir(), 'at-oracle-'))
 
