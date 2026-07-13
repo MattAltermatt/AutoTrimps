@@ -210,9 +210,14 @@ describe('legacy-bridge spread — no module may silently shadow another module 
     // form. (Every export in src/modules today is an `export function` — the walk also handles var /
     // const / let / class / enum / `export {}` so that a future form arrives INSIDE the net, not around
     // it. Those paths are unexercised by the current corpus, which is why the counts are pinned too.)
-    const at = (n: string) => (byName.get(n) ?? []).map((d) => `${d.file}:${d.line}`)
-    expect(at('byId')).toContain('src/modules/utils.ts:179')
-    expect(at('createSetting')).toContain('src/modules/settings-engine.ts:81')
+    // Pin the FILE, not the line. These pins were originally `utils.ts:181` / `settings-engine.ts:81`,
+    // and they broke on three separate merges in one night — every unrelated edit above the symbol moved
+    // them. That is a bad pin: it fails for reasons that have nothing to do with what it is guarding, and
+    // a check that cries wolf is a check someone eventually deletes. The invariant being defended is
+    // "the export walk still sees these declarations", and the file is enough to prove that.
+    const at = (n: string) => (byName.get(n) ?? []).map((d) => d.file)
+    expect(at('byId')).toContain('src/modules/utils.ts')
+    expect(at('createSetting')).toContain('src/modules/settings-engine.ts')
     // Every bridged module must have contributed at least one export; a module whose walk returned
     // nothing is a module this net is not watching at all.
     const contributing = new Set([...byName.values()].flat().map((d) => d.alias))
@@ -220,7 +225,7 @@ describe('legacy-bridge spread — no module may silently shadow another module 
 
     // #72 FIXED: the empty stub in settings-visibility.ts is gone, so exactly ONE module may now export
     // this name — the real implementation. If a stub ever comes back, this pin names it immediately.
-    expect(at('settingsProfileMakeGUI')).toEqual(['src/modules/import-export.ts:8'])
+    expect(at('settingsProfileMakeGUI')).toEqual(['src/modules/import-export.ts'])
   })
 
   it('the last-write-wins model is correct (synthetic — survives the real bug being fixed)', () => {
