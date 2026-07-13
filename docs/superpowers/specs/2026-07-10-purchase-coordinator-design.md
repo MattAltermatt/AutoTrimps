@@ -62,6 +62,10 @@ Decisions locked in the brainstorm:
 - N3. Porting `legacy/AutoTrimps2.js` to TypeScript. The coordinator hooks into it via the existing
   bare-name bridge seam; a full port is out of scope.
 - N4. A provably-optimal allocator. This is a *greedy* priority + reservation pass, not a planner.
+- N5. **Authority over spenders the coordinator cannot intercept.** The reserve is **advisory, not
+  authoritative** — see "The reserve is advisory" below. Native game code spends on the game's own
+  tick and can drain a reserve without ever passing a chokepoint. The coordinator is a *soft priority
+  hint over the buyers it owns*, not a resource allocator over the whole game.
 
 ---
 
@@ -213,6 +217,34 @@ user-gated.**
   user-gated.** Beyond the cap, the reserve is released and buyers proceed FCFS for that tick.
 - **Single-target:** exactly one `topTarget` is reserved per tick (Non-Goal N1). The `reserved` map
   is keyed by resource so it *could* later hold multiple targets, but v1 reserves for one.
+
+### The reserve is advisory, not authoritative (#104)
+
+There exists at least one metal spender the coordinator **cannot** intercept, and it is one AT itself
+switches on. `RbuyBuildings()` → `__syncAutoStorageOnce()` force-enables `game.global.autoStorage`;
+the **game's own** gameLoop then calls native `autoStorage()`, which buys Barn/Shed/**Forge** — and
+Forge costs metal. (`addResource()` does the same in a loop when `improvedAutoStorage` is on.) These
+are native calls on the game's tick. They can never route through `safeBuyBuilding` /
+`coordinatorAllowsBuilding`, and intercepting native `buyBuilding` at the bridge is **rejected**: the
+game calls it from the player's own click handlers, and a coordinator that silently refuses a *manual*
+purchase is a worse bug than the leak it would fix.
+
+**This is a leak, not a deadlock, and the distinction is the whole reason it is acceptable.** The
+coordinator keeps **no persistent ledger** — `computeTopTarget()` recomputes `topTarget` and `reserved`
+from scratch every tick off live `game.resources`. An unintercepted spend therefore cannot *corrupt*
+it; there is no accumulated state to be wrong. The one invariant it cannot enforce is the between-tick
+one — `metal.owned >= reserved.metal` is preserved from one tick to the next. When a native Forge
+purchase drains part of the reserve, the next tick simply re-reserves and keeps saving. The target
+still gets bought; it just takes longer. The spender is also self-limiting: it only fires at ≥99% of a
+resource cap.
+
+**Today's exposure is nil, and that is precisely why this is written down now.** Warpstation is
+`blockU2`, so `computeTopTarget()`'s `locked` early-return fires on every U2 tick and the coordinator
+has **no U2 target at all** (`topTarget === null` even with the setting on) — while the only code that
+force-enables native autoStorage, `RbuyBuildings`, is **U2-only**. The un-interceptable spender and
+the coordinator's only target currently live in different universes. The day a U2 scorer lands, this
+becomes a live accounting bug. `tests/coordinator.u2Buildings.test.ts` pins both facts as a tripwire:
+if `topTarget === null` ever goes red, a U2 target exists and this section is load-bearing again.
 
 ---
 
