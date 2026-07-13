@@ -9,14 +9,18 @@ history lives in **[GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/i
 architecture is in the [design spec](docs/superpowers/specs/2026-07-08-autotrimps-modernization-design.md).
 
 ```bash
-npm install
+npm install           # also fetches the pinned Trimps clone → .trimps-game/ (postinstall)
 npm run build         # → dist/autotrimps.user.js
 npm run build:watch   # rebuild on change
 npm run serve         # static-serve the local Trimps clone (:8080) with the bundle injected
 npm test              # vitest
 npm run typecheck     # tsc --noEmit
-npm run lint          # oxlint
+npm run lint          # oxlint --deny-warnings
 ```
+
+No manual setup is needed to run the tests: `npm install` fetches the SHA-pinned copy of the
+game that the behavioral test suite boots. That suite is the **deploy gate** — it replays the
+bot's decisions against recorded traces, and a missing clone fails loudly rather than skipping.
 
 The legacy runtime lives untouched in `legacy/` as a behavioral oracle during migration;
 files leave it only once their `src/` port is verified in the live game.
