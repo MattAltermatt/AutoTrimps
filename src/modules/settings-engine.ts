@@ -277,7 +277,18 @@ export function settingChanged(id: any) {
         renderControlFace(elB, btn);
     }
     if (btn.type == 'multitoggle') {
-        if (id == 'AutoMagmiteSpender2' && btn.value == 1) {
+        // #83 §7: the guard named 'AutoMagmiteSpender2' — an id that has no createSetting anywhere in
+        // src/ or legacy/. It survives ONLY inside the two frozen legacy default-settings JSON blobs
+        // (utils.ts:51/54). The live control is 'spendmagmite'. settingChanged is only ever invoked as
+        // `settingChanged("<id>")` from a createSetting'd button, so the old comparison could never be
+        // true — magmiteSpenderChanged was written nowhere and stayed false forever, leaving
+        // AutoTrimps2.js:200 (`spendmagmite == 2 && !magmiteSpenderChanged`) unguarded. A player merely
+        // CYCLING PAST "Spend Magmite Always" had their whole magmite bank dumped on the very next tick.
+        // This is a REPOINT at an existing id, not a re-mint of the dead one (which would resurrect a
+        // stale stored value — see the phantom-settings rule).
+        // `btn.value == 1` is tested PRE-increment, so it means "the user is cycling INTO value 2 =
+        // Spend Magmite Always" — exactly the value AutoTrimps2.js:200 acts on.
+        if (id == 'spendmagmite' && btn.value == 1) {
             magmiteSpenderChanged = true;
             setTimeout(function () {
                 magmiteSpenderChanged = false;

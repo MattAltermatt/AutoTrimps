@@ -268,9 +268,9 @@ describe('every setting id the code READS must have been createSetting\'d (#68)'
   const KNOWN_PHANTOM: Record<string, string> = {
     // ── TYPOs: the intended id exists, spelled differently. ────────────────────────────────────────────
     DailyBWraid: "TYPO → 'Dailybwraid' (case) — AutoTrimps2.js:272, the daily BW-raid toggle never fires",
-    AutoMagmiteSpender2:
-      "TYPO → 'spendmagmite' — settings-engine.ts:240. magmiteSpenderChanged is therefore never set true, so " +
-      "AutoTrimps2.js:200's 5-second suppression after cycling the Magmite spender never engages",
+    // AutoMagmiteSpender2 — FIXED (#83 §7). settings-engine.ts now compares against the live id
+    // 'spendmagmite', so magmiteSpenderChanged is really set and AutoTrimps2.js:200's 5-second
+    // suppression engages. Repointed, NOT re-minted. Entry deleted per the shrinking-baseline rule.
     'game.global.universe == 1 && BWraid':
       "BUG — an entire EXPRESSION was pasted inside the string argument (AutoTrimps2.js:273). Intended: " +
       "game.global.universe == 1 && getPageSetting('BWraid')",
