@@ -143,6 +143,37 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **🏦 THE BOT WAS SATISFICING — #108/#109/#110 shipped** (2026-07-13, `81d78114`) — 1015 tests, deploy green,
+  published userscript verified to carry all three.
+  💰 **AT DECLINED AN AFFORDABLE GEAR LEVEL ON 18,503 OF 20,000 TICKS.** `autoLevelEquipment` gates armor on
+  `!enoughHealthE` and weapons on `!enoughDamageE || enoughHealthE` — so the moment it judges itself strong
+  enough *for the current zone* it converts **nothing** and banks the income. That, not a reserve or a late
+  arrival, is the 20M unspent metal #108 reported. Removing the brake is **−19.5% ticks-to-next-zone** (noise
+  floor 3.5%), shipped as the opt-in `InvestSpareMetal` (default OFF ⇒ byte-identical; L0 baseline-zero green).
+  🎯 **THE WIN IS TIMING, NOT VOLUME** — the unGated bot ends with only **~3 more levels**, bought *early*, where
+  the damage compounds into faster clears and more income; it ends with **more** metal banked despite spending
+  more, because it got deeper. "Strong enough for this zone" is the wrong bar: gear pays for itself.
+  🪤 **THE INTUITIVE FIX MEASURED HARMFUL — and reasoning would have shipped it.** AT keeps ONE candidate per
+  (stat,resource) key (`Best`, highest Factor), so an unaffordable Best buys nothing even with six cheaper
+  unlocked pieces affordable that tick. Falling back to the cheapest affordable piece is **−2.8% (INSIDE the
+  noise floor)** alone, and stacked on the real fix it drags **−19.5% → −8.6%**: metal spent on cheap low-Factor
+  gear is metal not spent on the good piece. **Rejected by measurement.** Method: instrument ONE clean run
+  (per-tick `metal.owned` + every DECLINED decision with its full gate vector, using the game's OWN oracle
+  `canAffordBuilding(name,null,null,true,false,1)`) → A/B vs a measured noise floor → `inf_metal` as the positive
+  control. Then **re-verify on the SHIPPED setting**: a splice is evidence about a patch, not about the product.
+  💬 **A RAW `"` IN A SETTING DESCRIPTION SILENTLY KILLS ITS TOOLTIP (#110).** `createSetting` splices name +
+  description into an `onmouseover` attribute holding a **double-quoted** JS string, so one quote closes the
+  literal, the handler **fails to compile**, and the browser leaves `onmouseover === null`. **Nothing throws** —
+  the control still renders, clicks and saves. **`RVoidMaps` shipped dead this way.** Escaped at the seam
+  (`tipAttr()`, all 8 injection sites). ⚠️ Do **NOT** escape `name`/`description` in place: both are stored on
+  the record and rendered as the label, and a multitoggle's `name` is an **ARRAY** of option labels. Net:
+  `tests/nets/settings-tooltips.test.ts` mounts all 574 settings and asserts every tooltip **compiles** — node
+  env + recording-DOM stub + **esbuild's parser**, because `no-new-func` is a real lint gate, jsdom raises an
+  **uncaught** SyntaxError when you read a broken handler, and **esbuild cannot run under jsdom**.
+  🧩 **#109** — `RScientistPercent` (minted by #106) was never routed through `settingsVisibility()`, so U1
+  rendered **both** "Scientist %" boxes. Net: of the **57 U1/U2 twin pairs**, both halves must appear in the
+  turnOn/turnOff table. It was the only violation.
+
 - **🌙 THE ALL-NIGHT SWEEP — 30 of 36 code-review-v2 issues closed** (2026-07-13) — 955 tests, deploy green.
   Everything below is a *live* gotcha, not a changelog. The changelog is the closed issues.
   🔬 **THE PROOF NET CAN FINALLY SEE THE BOT (#90/#98).** It used to record only buy events on 4 saves that all
