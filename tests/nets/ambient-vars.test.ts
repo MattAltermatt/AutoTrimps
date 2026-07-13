@@ -14,15 +14,18 @@ import ts from 'typescript'
 // Reading an ambient var that nothing ever created is a read of an UNDECLARED identifier, and that
 // THROWS a ReferenceError. A `var` with no writer is a LIVE CRASH sitting behind a green build.
 //
-// Two of them shipped:
-//   #71a  storedMODULES      — read at import-export.ts:924 inside resetModuleVars(). It throws AFTER
-//                              `ATrunning = false` and BEFORE the line that restores it, so the "Reset
-//                              Module Vars" button does not merely fail: it stops AutoTrimps DEAD until
-//                              the page is reloaded.
-//   #71b  Rdshouldtributefarm — read at heirlooms.ts:591 and :594. `Rshouldtributefarm` (no `d`) is
-//                              written in seven places; the `Rd` twin is written in ZERO. maps.ts:14
-//                              seeds thirty-nine of these R-flags and this one is simply missing from
-//                              the list. Reached every tick for a U2 Daily player.
+// Two of them shipped, and BOTH ARE NOW FIXED (#71) — the baseline below is empty, which is the state
+// this net exists to reach and then defend. What they were:
+//   #71a  storedMODULES      — read inside resetModuleVars(). It threw AFTER `ATrunning = false` and
+//                              BEFORE the line that restored it, so the "Reset Module Vars" button did
+//                              not merely fail: it stopped AutoTrimps DEAD until the page was reloaded.
+//                              Fixed by persisting `compareModuleVars()`, which is what both of its
+//                              sibling writers persist. The ambient decl is gone.
+//   #71b  Rdshouldtributefarm — read twice in Rdheirloomswap(). `Rshouldtributefarm` (no `d`) has seven
+//                              writers; the `Rd` twin had ZERO, and no daily variant of the flag exists.
+//                              Reached every tick for a U2 Daily player. Fixed by reading the real flag,
+//                              which is exactly what the identical non-daily twin block does. Decl gone.
+// From here the baseline is EMPTY: a third one fails on arrival. That is the whole job.
 //
 // WHY THE CORPUS IS THE BUNDLE, NOT THE TREE. The build MANIFEST (scripts/build-userscript.mjs) is
 // ['AutoTrimps2.js', 'Graphs.js'] plus the esbuild'd src/**. `legacy/mods.js`, `legacy/GraphsOnly.js`
@@ -217,10 +220,9 @@ const EXTERNALLY_PROVIDED: Record<string, string> = {
  * get smaller — the guard test below goes red the moment an entry is fixed, demanding its deletion.
  */
 const KNOWN_UNWRITTEN: Record<string, string> = {
-  storedMODULES:
-    '#71 — read bare at import-export.ts:924 (resetModuleVars). Throws between `ATrunning=false` and its restore → AT halts until reload.',
-  Rdshouldtributefarm:
-    '#71 — read bare at heirlooms.ts:591,:594. The `Rshouldtributefarm` twin has 7 writers; this one has 0 (missing from the maps.ts:14 seed list). Throws every tick for a U2 Daily player.',
+  // ✅ EMPTY — both #71 crashes are fixed and both ambient decls are deleted from at-legacy.d.ts.
+  // Do not add to this. An ambient `var` with no writer is a live ReferenceError; if one appears, the
+  // fix is to give it a writer or delete the decl, never to park it here.
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -253,7 +255,10 @@ describe('at-legacy.d.ts — every ambient var must have a writer in the shipped
     expect(WRITTEN.has('MODULESdefault')).toBe(true) // written by AutoTrimps2.js — the exemplar's stated case
 
     // Pin the read arm too, including the typeof/bare split that the severity test depends on.
-    expect(BARE_READ.has('storedMODULES')).toBe(true)
+    // (This used to pin `storedMODULES` — the #71a bug. It is fixed and its decl is deleted, so the
+    // anchor moved to a healthy bare-read name: Rshouldtributefarm, read at heirlooms.ts in both the
+    // daily and non-daily swap blocks. The pin must be a name that is DECLARED, or it reads as false.)
+    expect(BARE_READ.has('Rshouldtributefarm')).toBe(true)
     expect(TYPEOF_READ.has('isSteam')).toBe(true)
   })
 
@@ -279,7 +284,8 @@ describe('at-legacy.d.ts — every ambient var must have a writer in the shipped
       expect(WRITTEN.has(name), `${name} now HAS a writer — the bug is fixed; delete it from KNOWN_UNWRITTEN`).toBe(false)
       expect(DECLARED.has(name), `${name} is no longer declared in ${DTS} — delete it from KNOWN_UNWRITTEN`).toBe(true)
     }
-    expect(Object.keys(KNOWN_UNWRITTEN).length).toBeLessThanOrEqual(2)
+    // Ratcheted 2 → 0 by the #71 fixes. The baseline is closed; it may never grow again.
+    expect(Object.keys(KNOWN_UNWRITTEN).length).toBe(0)
   })
 
   it('every known-unwritten entry is a LIVE CRASH, not a benign undefined (severity pin)', () => {

@@ -5415,10 +5415,10 @@
       if (getPageSetting2("Rdhsworldstaff") != "undefined" && game.global.mapsActive == false) {
         Rhsworldstaffequip();
       }
-      if (getPageSetting2("Rdhsmapstaff") != "undefined" && (Rdshouldtributefarm == false || getPageSetting2("Rdhstributestaff") == "undefined") && game.global.mapsActive == true) {
+      if (getPageSetting2("Rdhsmapstaff") != "undefined" && (Rshouldtributefarm == false || getPageSetting2("Rdhstributestaff") == "undefined") && game.global.mapsActive == true) {
         Rhsmapstaffequip();
       }
-      if (getPageSetting2("Rdhstributestaff") != "undefined" && getPageSetting2("Rdhsstaff") && Rdshouldtributefarm == true && game.global.mapsActive == true) {
+      if (getPageSetting2("Rdhstributestaff") != "undefined" && getPageSetting2("Rdhsstaff") && Rshouldtributefarm == true && game.global.mapsActive == true) {
         Rhstributestaffequip();
       }
     }
@@ -12213,10 +12213,14 @@
     }
     localStorage.removeItem("storedMODULES"), safeSetItems2("storedMODULES", JSON.stringify(tmpset));
   }
-  function resetModuleVars(a) {
-    ATrunning = false, setTimeout((function() {
-      localStorage.removeItem("storedMODULES"), MODULES = JSON.parse(JSON.stringify(MODULESdefault)), safeSetItems2("storedMODULES", JSON.stringify(storedMODULES)), ATrunning = true;
-    })(a), 101);
+  function resetModuleVars() {
+    ATrunning = false;
+    setTimeout(function() {
+      localStorage.removeItem("storedMODULES");
+      MODULES = JSON.parse(JSON.stringify(MODULESdefault));
+      safeSetItems2("storedMODULES", JSON.stringify(compareModuleVars()));
+      ATrunning = true;
+    }, 101);
   }
   settingsProfileMakeGUI2();
   initializeSettingsProfiles();

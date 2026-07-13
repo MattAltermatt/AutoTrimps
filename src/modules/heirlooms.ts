@@ -584,14 +584,25 @@ export function Rdheirloomswap() {
 		}
 	}
         //Swapping Staffs
+	// #71b — these two lines read `Rdshouldtributefarm`, a name NOTHING in the shipped bundle ever
+	// assigns. A bare read of a never-created identifier is a ReferenceError, not a benign undefined,
+	// so this threw on EVERY tick for a U2 Daily player with a daily map-staff configured, killing the
+	// whole tail of mainLoop after it. `tsc` was green only because at-legacy.d.ts declared it.
+	//
+	// There is NO daily variant of the tribute-farm flag and there should not be: mapfunctions.ts sets
+	// `Rshouldtributefarm` regardless of Daily, and the non-daily twin of this exact block (:566/:569
+	// above) is line-for-line identical modulo the `Rd` prefix and reads that REAL flag. So read it too.
+	//
+	// NOT fixed by seeding `globalThis.Rdshouldtributefarm = false` — that would convert a crash into a
+	// permanently-dead feature (the tribute-staff arm could never fire), which is the wrong fix.
 	if (getPageSetting('Rdhsstaff') != false) {
 		if (getPageSetting('Rdhsworldstaff') != "undefined" && game.global.mapsActive == false) {
 			Rhsworldstaffequip();
 		}
-		if (getPageSetting('Rdhsmapstaff') != "undefined" && (Rdshouldtributefarm == false || getPageSetting('Rdhstributestaff') == "undefined") && game.global.mapsActive == true) {
+		if (getPageSetting('Rdhsmapstaff') != "undefined" && (Rshouldtributefarm == false || getPageSetting('Rdhstributestaff') == "undefined") && game.global.mapsActive == true) {
 			Rhsmapstaffequip();
 		}
-		if (getPageSetting('Rdhstributestaff') != "undefined" && getPageSetting('Rdhsstaff') && Rdshouldtributefarm == true && game.global.mapsActive == true) {
+		if (getPageSetting('Rdhstributestaff') != "undefined" && getPageSetting('Rdhsstaff') && Rshouldtributefarm == true && game.global.mapsActive == true) {
 			Rhstributestaffequip();
 		}
 	}

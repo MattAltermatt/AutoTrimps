@@ -206,7 +206,6 @@ declare global {
   var Rdshouldtimefarm: any
   var Rshouldsmithyfarm: any
   var Rshouldtributefarm: any
-  var Rdshouldtributefarm: any
   var Rshouldshipfarm: any
   var Rshouldhypofarm: any
   // Shield-swap seam var — bare-written by heirlooms.ts HeirloomShieldSwapped, created at
@@ -471,7 +470,6 @@ declare global {
   // Automation run flag + module config snapshots — `var` in AutoTrimps2.js.
   var ATrunning: any
   var MODULESdefault: any
-  var storedMODULES: any
   // `settingsProfiles` <select> exposed as a DOM-id global; `script` is a
   // for-in loop var that was an implicit global in the sloppy-mode legacy.
   var settingsProfiles: any

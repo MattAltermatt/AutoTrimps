@@ -920,7 +920,33 @@ export function compareModuleVars() {
 
 // oxlint-disable-next-line no-unused-expressions,no-eval -- faithful legacy port: comma sequence — de-comma behind the live net (#92); settings import evals pasted text — tracked as #76
 export function importModuleVars(){try{var thestring=byId('importBox').value,strarr=thestring.split(/\n/);for(var line in strarr){var s=strarr[line];s=s.substring(0,s.indexOf(';')+1),s=s.replace(/\s/g,''),eval(s),strarr[line]=s}var tmpset=compareModuleVars()}catch(a: any){return void debug('Error importing MODULE vars, the string is bad.'+a.message,'profile')}localStorage.removeItem('storedMODULES'),safeSetItems('storedMODULES',JSON.stringify(tmpset))}
-// oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
-export function resetModuleVars(a?: any){ATrunning=!1,setTimeout((function(){localStorage.removeItem('storedMODULES'),MODULES=JSON.parse(JSON.stringify(MODULESdefault)),safeSetItems('storedMODULES',JSON.stringify(storedMODULES)),ATrunning=!0} as any)(a),101)}
+// #71a — this function had TWO defects, both fatal, both invisible to tsc.
+//
+// 1. `JSON.stringify(storedMODULES)` read a name NOTHING in the shipped bundle ever assigns. That is a
+//    bare read of an undeclared identifier, i.e. a ReferenceError — not a benign `undefined`. It threw
+//    AFTER `ATrunning = false` and BEFORE the line that restores it, so clicking "Reset Module Vars"
+//    did not merely fail: it stopped AutoTrimps DEAD until the page was reloaded. `tsc` was green only
+//    because at-legacy.d.ts declared `var storedMODULES: any` — a promise the type-checker cannot audit.
+//    Its two sibling writers say what it is meant to hold: AutoTrimps2.js:380 and importModuleVars()
+//    (:922 above) both persist `JSON.stringify(compareModuleVars())`. So that is what we persist. After
+//    `MODULES = MODULESdefault` that diff is `{}` — the semantically correct "no overrides" state, and
+//    consistent with the localStorage.removeItem on the line before it.
+//
+// 2. `setTimeout((function(){…})(a), 101)` IMMEDIATELY INVOKED the closure and handed setTimeout its
+//    `undefined` return. There was no 101ms defer at all — the body ran synchronously, which makes the
+//    `ATrunning` false→true window meaningless (it closes in the same tick it opened). The window only
+//    makes sense if the body is actually deferred past the in-flight mainLoop tick, so defer it.
+//
+// The `a` parameter was only ever passed to a zero-arg closure and discarded; the sole caller (:305)
+// passes nothing. De-comma'd from the legacy sequence — exactly equivalent to sequential statements.
+export function resetModuleVars() {
+    ATrunning = false;
+    setTimeout(function() {
+        localStorage.removeItem('storedMODULES');
+        MODULES = JSON.parse(JSON.stringify(MODULESdefault));
+        safeSetItems('storedMODULES', JSON.stringify(compareModuleVars()));
+        ATrunning = true;
+    }, 101);
+}
 settingsProfileMakeGUI();
 initializeSettingsProfiles();
