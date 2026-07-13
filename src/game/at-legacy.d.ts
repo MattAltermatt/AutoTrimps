@@ -89,6 +89,12 @@ declare global {
   var initializeAllSettings: typeof import('../modules/settings-defs').initializeAllSettings
   // Settings-def builders read bare by settings-defs.ts (#31), resolved via the bridge.
   var createSetting: typeof import('../modules/settings-engine').createSetting
+  // #76: the id census every createSetting call registers into — read by import-export's
+  // cleanupCandidates() to answer "does THIS BUILD still declare this key?" without asking the DOM.
+  // Bridged rather than ESM-imported on purpose: a real import edge from import-export → settings-engine
+  // reorders the whole bundle's module-evaluation order (import-export has top-level side effects), and
+  // this seam is exactly what at-legacy.d.ts exists for.
+  var definedSettingIds: typeof import('../modules/settings-engine').definedSettingIds
   var modifyParentNode: typeof import('../modules/settings-menu').modifyParentNode
   function settingsProfileMakeGUI(...rest: any[]): any     // settings-engine.ts
   // AutoTrimps2.js loader path prefix, read bare by settings-boot.ts.

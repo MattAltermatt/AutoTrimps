@@ -95,7 +95,16 @@ export function setPageSetting(setting: string, value: any) {
     }
 }
 
-export function saveSettings(){safeSetItems('autoTrimpSettings',serializeSettings())}
+// #76 — defence in depth for the load gate. loadPageVariables() (above) REJECTS the entire saved
+// file unless it carries an 'ATversion' key, and serializeSettings() only emits keys that are in
+// autoTrimpSettings. So any bug that drops that one key turns the very next save into a file that
+// can never be loaded again — every setting silently back to defaults, no undo. That is exactly what
+// cleanupAutoTrimps() did (#76A). The contract is enforced where the file is WRITTEN, not only where
+// it is read: re-stamp the key if something removed it. (createSetting also writes it, at boot.)
+export function saveSettings(){
+    if (autoTrimpSettings['ATversion'] === undefined) autoTrimpSettings['ATversion'] = ATversion;
+    safeSetItems('autoTrimpSettings',serializeSettings());
+}
 
 export function debug(message: any, type?: any, lootIcon?: any) {
     var general = getPageSetting('SpamGeneral');

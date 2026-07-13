@@ -461,11 +461,20 @@ describe('a test may only seed setting ids that production defines (#74)', () =>
   // fixtures are synthetic BY DESIGN and assert nothing about any real setting's behavior — the #74 class
   // does not apply. Scoped to that one file, and the guard test below refuses any other file.
   const ENGINE_FIXTURE_FILE = join('tests', 'settings-engine.test.ts')
+  // #76 — the second exempt file, for the same reason with the sign flipped. cleanupAutoTrimps() is the
+  // PURGE of ids production no longer defines, so its regression test must seed an id production no
+  // longer defines: that is the input the function exists to consume. An undefined id there is the
+  // fixture, not a lie. (Both ids are real history: 'Ronlystackedvoids' was createSetting'd in 2019 and
+  // deleted upstream in 2020 — see #68 — and 'hardcorewindmax' is junk frozen into serializeSettings60().)
+  const PURGE_FIXTURE_FILE = join('tests', 'import-export.security.test.ts')
+  const SYNTHETIC_FILES = [ENGINE_FIXTURE_FILE, PURGE_FIXTURE_FILE]
   const ALLOWED_SYNTHETIC: Record<string, string> = {
     [`${ENGINE_FIXTURE_FILE}:71`]: "engine unit test — synthetic 'Foo' (boolean branch)",
     [`${ENGINE_FIXTURE_FILE}:94`]: "engine unit test — synthetic 'Bar' (multitoggle branch)",
     [`${ENGINE_FIXTURE_FILE}:122`]: "engine unit test — synthetic 'Drop' (dropdown branch)",
     [`${ENGINE_FIXTURE_FILE}:146`]: "engine unit test — synthetic 'Foo' (downstream-trio branch)",
+    [`${PURGE_FIXTURE_FILE}:184`]: "#76 purge test — seeds stale 'Ronlystackedvoids' so cleanup can reap it",
+    [`${PURGE_FIXTURE_FILE}:196`]: "#76 purge test — seeds stale 'Ronlystackedvoids' for the tooltip preview",
   }
 
   // Shrinking baseline, keyed by SITE — a test lie is a property of the line, not of the id (the same id
@@ -505,10 +514,13 @@ describe('a test may only seed setting ids that production defines (#74)', () =>
     expect(Object.keys(KNOWN_TEST_LIE).length).toBeLessThanOrEqual(6) // 8 → 6: the two RCapEquiparm fixtures now seed Requipcaphealth (#68)
   })
 
-  it('the synthetic-fixture allowlist stays inside the engine unit test', () => {
+  it('the synthetic-fixture allowlist stays inside the two files that own synthetic ids', () => {
     // The one way this exemption could rot into a hole: a characterization test hiding behind it.
     for (const site of Object.keys(ALLOWED_SYNTHETIC)) {
-      expect(site.startsWith(`${ENGINE_FIXTURE_FILE}:`), `${site} is not the engine unit test`).toBe(true)
+      expect(
+        SYNTHETIC_FILES.some((f) => site.startsWith(`${f}:`)),
+        `${site} is neither the engine unit test nor the #76 purge test`,
+      ).toBe(true)
       expect(
         seeds.some((s) => `${s.file}:${s.line}` === site),
         `${site} no longer seeds anything — delete it from ALLOWED_SYNTHETIC`,

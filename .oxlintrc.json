@@ -5,6 +5,8 @@
     "no-unused-expressions": ["error", { "allowShortCircuit": true, "allowTernary": true }],
     "no-useless-escape": "error",
     "no-unused-vars": ["error", { "caughtErrors": "none", "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
-    "no-eval": "error"
+    "no-eval": "error",
+    "no-new-func": "error",
+    "no-implied-eval": "error"
   }
 }

@@ -144,6 +144,7 @@
     }
   }
   function saveSettings2() {
+    if (autoTrimpSettings["ATversion"] === void 0) autoTrimpSettings["ATversion"] = ATversion;
     safeSetItems2("autoTrimpSettings", serializeSettings2());
   }
   function debug2(message, type, lootIcon) {
@@ -4099,11 +4100,11 @@
   }
   function firstGiga(forced) {
     const maxHealthMaps = game.global.challengeActive === "Daily" ? getPageSetting2("dMaxMapBonushealth") : getPageSetting2("MaxMapBonushealth");
-    const s2 = !(getPageSetting2("CustomDeltaFactor") > 20);
+    const s = !(getPageSetting2("CustomDeltaFactor") > 20);
     const a = game.buildings.Warpstation.owned >= 2;
     const b = !canAffordCoordinationTrimps() || game.global.world >= 230 && !canAffordTwoLevel(game.upgrades.Coordination);
-    const c = s2 || !enoughHealth || !enoughDamage;
-    const d = s2 || game.global.mapBonus >= 2 || game.global.mapBonus >= getPageSetting2("MaxMapBonuslimit") || game.global.mapBonus >= maxHealthMaps;
+    const c = s || !enoughHealth || !enoughDamage;
+    const d = s || game.global.mapBonus >= 2 || game.global.mapBonus >= getPageSetting2("MaxMapBonuslimit") || game.global.mapBonus >= maxHealthMaps;
     if (!forced && !(a && b && c && d)) return false;
     const base = game.buildings.Warpstation.owned;
     const deltaZ = getPageSetting2("CustomTargetZone") >= 60 ? getPageSetting2("CustomTargetZone") : void 0;
@@ -10610,6 +10611,7 @@
   __export(import_export_exports, {
     ImportExportTooltip: () => ImportExportTooltip,
     cleanupAutoTrimps: () => cleanupAutoTrimps,
+    cleanupCandidates: () => cleanupCandidates,
     compareModuleVars: () => compareModuleVars,
     confirmedSwitchNow: () => confirmedSwitchNow,
     exportModuleVars: () => exportModuleVars,
@@ -10619,6 +10621,7 @@
     nameAndSaveNewProfile: () => nameAndSaveNewProfile,
     onDeleteProfile: () => onDeleteProfile,
     onDeleteProfileHandler: () => onDeleteProfileHandler,
+    parseModuleVars: () => parseModuleVars,
     resetAutoTrimps: () => resetAutoTrimps,
     resetModuleVars: () => resetModuleVars,
     settingsProfileDropdownHandler: () => settingsProfileDropdownHandler,
@@ -10739,6 +10742,9 @@
     safeSetItems2("ATSelectedSettingsProfile", JSON.stringify(oldpresets));
     debug2("Successfully deleted profile #: " + target, "profile");
   }
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
   function ImportExportTooltip(what, event2) {
     if (game.global.lockTooltip)
       return;
@@ -10822,9 +10828,16 @@
         byId("importBox").focus();
       };
     } else if (what == "CleanupAutoTrimps") {
-      cleanupAutoTrimps();
-      tooltipText = "Autotrimps saved-settings have been attempted to be cleaned up. If anything broke, refreshing will fix it, but check that your settings are correct! (prestige in particular)";
-      costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip();'>OK</div></div>";
+      var stale = cleanupCandidates();
+      if (stale.length === 0) {
+        titleText = "Cleanup Saved Settings";
+        tooltipText = "Nothing to clean up \u2014 every key in your saved settings file is a setting this version of AutoTrimps still defines.";
+        costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip();'>OK</div></div>";
+      } else {
+        titleText = "<b>WARNING:</b> Delete " + stale.length + " saved setting(s)?";
+        tooltipText = "These <b>" + stale.length + "</b> key(s) in your saved settings file are not defined by this version of AutoTrimps (leftovers from an older version). Deleting them is <b>permanent</b> and cannot be undone.<br/><br/><textarea readonly style='width: 100%' rows='5'>" + escapeHtml(stale.join("\n")) + "</textarea><br/>Your " + (Object.keys(autoTrimpSettings).length - stale.length) + " live settings are NOT touched.";
+        costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-danger' onclick='cancelTooltip(); cleanupAutoTrimps(); saveSettings();'>Delete " + stale.length + "</div><div style='margin-left: 15%' class='btn btn-info' onclick='cancelTooltip();'>Cancel</div></div>";
+      }
     } else if (what == "ExportModuleVars") {
       tooltipText = "These are your custom Variables. The defaults have not been included, only what you have set... <br/><br/><textarea id='exportArea' style='width: 100%' rows='5'>" + exportModuleVars() + "</textarea>";
       costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip()'>Got it</div>";
@@ -11481,11 +11494,22 @@
     }
     debug2("Importing new AT settings file...", "profile"), resetAutoTrimps(b);
   }
-  function cleanupAutoTrimps() {
-    for (var a in autoTrimpSettings) {
-      var b = document.getElementById(autoTrimpSettings[a].id);
-      null == b && delete autoTrimpSettings[a];
+  var NON_SETTING_KEYS = /* @__PURE__ */ new Set(["ATversion"]);
+  function cleanupCandidates() {
+    if (definedSettingIds.size === 0) return [];
+    var stale = [];
+    for (var key in autoTrimpSettings) {
+      if (!Object.prototype.hasOwnProperty.call(autoTrimpSettings, key)) continue;
+      if (NON_SETTING_KEYS.has(key)) continue;
+      if (definedSettingIds.has(key)) continue;
+      stale.push(key);
     }
+    return stale;
+  }
+  function cleanupAutoTrimps() {
+    var stale = cleanupCandidates();
+    for (var i = 0; i < stale.length; i++) delete autoTrimpSettings[stale[i]];
+    return stale;
   }
   function exportModuleVars() {
     return JSON.stringify(compareModuleVars());
@@ -11509,18 +11533,62 @@
     }
     return diffs;
   }
-  function importModuleVars() {
-    try {
-      var thestring = byId("importBox").value, strarr = thestring.split(/\n/);
-      for (var line in strarr) {
-        var s = strarr[line];
-        s = s.substring(0, s.indexOf(";") + 1), s = s.replace(/\s/g, ""), eval(s), strarr[line] = s;
+  var PROTO_KEYS = /* @__PURE__ */ new Set(["__proto__", "constructor", "prototype"]);
+  function isPlainObject(v) {
+    return v !== null && typeof v === "object" && !Array.isArray(v) && (Object.getPrototypeOf(v) === Object.prototype || Object.getPrototypeOf(v) === null);
+  }
+  function isJsonLiteral(v) {
+    if (v === null) return true;
+    var t = typeof v;
+    if (t === "boolean" || t === "string") return true;
+    if (t === "number") return Number.isFinite(v);
+    if (Array.isArray(v)) return v.every(isJsonLiteral);
+    if (isPlainObject(v)) return Object.keys(v).every((k) => !PROTO_KEYS.has(k) && isJsonLiteral(v[k]));
+    return false;
+  }
+  function shapeMatchesDefault(value, dflt) {
+    if (dflt === null) return true;
+    if (value === null) return false;
+    if (Array.isArray(dflt) !== Array.isArray(value)) return false;
+    return typeof dflt === typeof value;
+  }
+  function parseModuleVars(text) {
+    var incoming = JSON.parse(text);
+    if (!isPlainObject(incoming)) throw new Error("expected a JSON object of modules.");
+    var writes = [];
+    var mods = Object.keys(incoming);
+    for (var i = 0; i < mods.length; i++) {
+      var mod = mods[i];
+      if (PROTO_KEYS.has(mod)) throw new Error("illegal module name: " + mod);
+      if (!Object.prototype.hasOwnProperty.call(MODULES, mod) || !Object.prototype.hasOwnProperty.call(MODULESdefault, mod))
+        throw new Error("unknown module: " + mod);
+      var fields = incoming[mod];
+      if (!isPlainObject(fields)) throw new Error("module " + mod + " is not an object of variables.");
+      var keys = Object.keys(fields);
+      for (var j = 0; j < keys.length; j++) {
+        var key = keys[j];
+        if (PROTO_KEYS.has(key)) throw new Error("illegal variable name: " + mod + "." + key);
+        if (!Object.prototype.hasOwnProperty.call(MODULESdefault[mod], key))
+          throw new Error("unknown variable: " + mod + "." + key);
+        var value = fields[key];
+        if (!isJsonLiteral(value)) throw new Error("unsupported value for " + mod + "." + key);
+        if (!shapeMatchesDefault(value, MODULESdefault[mod][key]))
+          throw new Error("wrong type for " + mod + "." + key + " (expected " + (Array.isArray(MODULESdefault[mod][key]) ? "array" : typeof MODULESdefault[mod][key]) + ").");
+        writes.push([mod, key, value]);
       }
-      var tmpset = compareModuleVars();
+    }
+    return writes;
+  }
+  function importModuleVars() {
+    var writes;
+    try {
+      writes = parseModuleVars(byId("importBox").value);
     } catch (a) {
       return void debug2("Error importing MODULE vars, the string is bad." + a.message, "profile");
     }
-    localStorage.removeItem("storedMODULES"), safeSetItems2("storedMODULES", JSON.stringify(tmpset));
+    for (var i = 0; i < writes.length; i++) MODULES[writes[i][0]][writes[i][1]] = writes[i][2];
+    localStorage.removeItem("storedMODULES");
+    safeSetItems2("storedMODULES", JSON.stringify(compareModuleVars()));
   }
   function resetModuleVars() {
     ATrunning = false;
@@ -11967,14 +12035,14 @@
   }
   globalThis.trapIndexs = ["", "Fire", "Frost", "Poison", "Lightning", "Strength", "Condenser", "Knowledge"];
   function tdStringCode2() {
-    var thestring2 = byId2("importBox").value.replace(/\s/g, "");
-    var s2 = new String(thestring2);
-    var index = s2.indexOf("+", 0);
-    s2 = s2.slice(0, index);
-    var length = s2.length;
+    var thestring = byId2("importBox").value.replace(/\s/g, "");
+    var s = new String(thestring);
+    var index = s.indexOf("+", 0);
+    s = s.slice(0, index);
+    var length = s.length;
     var saveLayout = [];
     for (var i = 0; i < length; i++) {
-      saveLayout.push(trapIndexs[s2.charAt(i)]);
+      saveLayout.push(trapIndexs[s.charAt(i)]);
     }
     playerSpire["savedLayout-1"] = saveLayout;
     if (playerSpire.runestones + playerSpire.getCurrentLayoutPrice() < playerSpire.getSavedLayoutPrice(-1)) return false;
@@ -13985,6 +14053,7 @@
     autoSetValue: () => autoSetValue,
     autoSetValueToolTip: () => autoSetValueToolTip,
     createSetting: () => createSetting2,
+    definedSettingIds: () => definedSettingIds2,
     onKeyPressSetting: () => onKeyPressSetting,
     parseNum: () => parseNum,
     renderControlFace: () => renderControlFace2,
@@ -14028,7 +14097,9 @@
     var fallback = parseInt(defaultValue);
     autoTrimpSettings[id].value = Number.isInteger(fallback) && fallback >= 0 && fallback < name.length ? fallback : 0;
   }
+  var definedSettingIds2 = /* @__PURE__ */ new Set();
   function createSetting2(id, name, description, type, defaultValue, list, container) {
+    definedSettingIds2.add(id);
     var btnParent = document.createElement("DIV");
     btnParent.setAttribute("style", "display: inline-block; vertical-align: top; margin-left: 1vw; margin-bottom: 1vw; width: 13.142vw;");
     var btn = document.createElement("DIV");

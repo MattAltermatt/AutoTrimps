@@ -77,8 +77,19 @@ function clampMultitoggle(id: any, name: any, defaultValue: any) {
     autoTrimpSettings[id].value =
         Number.isInteger(fallback) && fallback >= 0 && fallback < name.length ? fallback : 0;
 }
+// #76 — the id census of the CURRENT build. Every createSetting call registers its id here, so
+// "is this key in the user's saved file a setting this version still declares?" is answerable
+// without asking the DOM. cleanupAutoTrimps() used to ask the DOM instead (`getElementById(id) ==
+// null` ⇒ delete), which conflates "not a setting" with "has no node right now" and, worse, reaps
+// the non-record keys (ATversion) that the save file's load gate depends on.
+// Population order is the same as the DOM's: initializeAllSettings() runs every createSetting at
+// boot, so this set is complete before any UI is clickable. An EMPTY set therefore means
+// "settings never booted" — never "no settings exist" — and the purge must no-op (see
+// cleanupCandidates).
+export const definedSettingIds = new Set<string>();
 
 export function createSetting(id: any, name: any, description: any, type: any, defaultValue: any, list: any, container: any) {
+    definedSettingIds.add(id);
     var btnParent = document.createElement("DIV");
     btnParent.setAttribute('style', 'display: inline-block; vertical-align: top; margin-left: 1vw; margin-bottom: 1vw; width: 13.142vw;');
     var btn: any = document.createElement("DIV");
