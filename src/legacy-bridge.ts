@@ -4,6 +4,10 @@
 // namespace: anything `export`ed is auto-published — you cannot forget a name.
 // This manifest shrinks to nothing as the strangle completes.
 import * as utils from './modules/utils'
+// guard: #87's mainLoop/guiLoop error boundary. AutoTrimps2.js calls atGuard() by bare name at every
+// dispatch site. It is emitted BEFORE this bundle, but only *calls* atGuard from inside mainLoop —
+// i.e. at tick time (8s after load), long after the bridge has published it. No load-time race.
+import * as guard from './modules/guard'
 import * as time from './modules/time'
 import * as buystate from './modules/buystate'
 import * as dynprestige from './modules/dynprestige'
@@ -54,4 +58,4 @@ import * as settingsDefs from './modules/settings-defs'
 // call resolves. Its module body only DEFINES the function, so bridge-eval order is irrelevant.
 import * as settingsBoot from './modules/settings-boot'
 
-Object.assign(globalThis, { ...utils, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...mapfunctionsAmp, ...portal, ...importExport, ...query, ...other, ...otherPraiding, ...coordinator, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs, ...settingsBoot })
+Object.assign(globalThis, { ...utils, ...guard, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...mapfunctionsAmp, ...portal, ...importExport, ...query, ...other, ...otherPraiding, ...coordinator, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs, ...settingsBoot })

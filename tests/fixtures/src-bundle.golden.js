@@ -280,6 +280,36 @@
     return document.getElementById(id);
   }
 
+  // src/modules/guard.ts
+  var guard_exports = {};
+  __export(guard_exports, {
+    atGuard: () => atGuard,
+    atGuardErrors: () => atGuardErrors
+  });
+  var atGuardErrors = {};
+  function atGuard(name, fn) {
+    try {
+      fn();
+    } catch (e) {
+      const first = !atGuardErrors[name];
+      const message = e && e.message || String(e);
+      if (first) atGuardErrors[name] = { count: 1, message, stack: e && e.stack };
+      else atGuardErrors[name].count++;
+      if (!first) return;
+      try {
+        console.error(`[AutoTrimps] ${name}() threw and was skipped \u2014 the rest of the tick still ran.`, e);
+      } catch {
+      }
+      try {
+        debug(
+          `AutoTrimps: ${name}() threw and was skipped \u2014 ${message}. The rest of the tick still ran; this automation is disabled until the error is fixed (further failures are silenced).`,
+          "other"
+        );
+      } catch {
+      }
+    }
+  }
+
   // src/modules/buystate.ts
   var buystate_exports = {};
   __export(buystate_exports, {
@@ -11523,19 +11553,22 @@
   function resetAutoTrimps(a, b) {
     ATrunning = false;
     setTimeout((function(d) {
-      localStorage.removeItem("autoTrimpSettings");
-      autoTrimpSettings = d ? d : {};
-      var e = document.getElementById("settingsRow");
-      e.removeChild(document.getElementById("autoSettings"));
-      e.removeChild(document.getElementById("autoTrimpsTabBarMenu"));
-      automationMenuSettingsInit();
-      initializeAllTabs();
-      initializeAllSettings();
-      initializeSettingsProfiles();
-      updateCustomButtons();
-      saveSettings2();
-      checkPortalSettings();
-      ATrunning = true;
+      try {
+        localStorage.removeItem("autoTrimpSettings");
+        autoTrimpSettings = d ? d : {};
+        var e = document.getElementById("settingsRow");
+        e.removeChild(document.getElementById("autoSettings"));
+        e.removeChild(document.getElementById("autoTrimpsTabBarMenu"));
+        automationMenuSettingsInit();
+        initializeAllTabs();
+        initializeAllSettings();
+        initializeSettingsProfiles();
+        updateCustomButtons();
+        saveSettings2();
+        checkPortalSettings();
+      } finally {
+        ATrunning = true;
+      }
     })(a), 101);
     if (a) {
       debug2("Successfully imported new AT settings...", "profile");
@@ -11661,10 +11694,13 @@
   function resetModuleVars() {
     ATrunning = false;
     setTimeout(function() {
-      localStorage.removeItem("storedMODULES");
-      MODULES = JSON.parse(JSON.stringify(MODULESdefault));
-      safeSetItems2("storedMODULES", JSON.stringify(compareModuleVars()));
-      ATrunning = true;
+      try {
+        localStorage.removeItem("storedMODULES");
+        MODULES = JSON.parse(JSON.stringify(MODULESdefault));
+        safeSetItems2("storedMODULES", JSON.stringify(compareModuleVars()));
+      } finally {
+        ATrunning = true;
+      }
     }, 101);
   }
   settingsProfileMakeGUI2();
@@ -16281,7 +16317,7 @@
   }
 
   // src/legacy-bridge.ts
-  Object.assign(globalThis, { ...utils_exports, ...time_exports, ...buystate_exports, ...dynprestige_exports, ...breedtimer_exports, ...nature_exports, ...magmite_exports, ...calc_exports, ...equipment_exports, ...buildings_exports, ...jobs_exports, ...upgrades_exports, ...gather_exports, ...heirlooms_exports, ...fight_exports, ...scryer_exports, ...ab_exports, ...MAZ_exports, ...stance_exports, ...maps_exports, ...mapfunctions_exports, ...mapfunctions_amp_exports, ...portal_exports, ...import_export_exports, ...query_exports, ...other_exports, ...other_praiding_exports, ...coordinator_exports, ...settings_engine_exports, ...settings_menu_exports, ...settings_visibility_exports, ...settings_defs_exports, ...settings_boot_exports });
+  Object.assign(globalThis, { ...utils_exports, ...guard_exports, ...time_exports, ...buystate_exports, ...dynprestige_exports, ...breedtimer_exports, ...nature_exports, ...magmite_exports, ...calc_exports, ...equipment_exports, ...buildings_exports, ...jobs_exports, ...upgrades_exports, ...gather_exports, ...heirlooms_exports, ...fight_exports, ...scryer_exports, ...ab_exports, ...MAZ_exports, ...stance_exports, ...maps_exports, ...mapfunctions_exports, ...mapfunctions_amp_exports, ...portal_exports, ...import_export_exports, ...query_exports, ...other_exports, ...other_praiding_exports, ...coordinator_exports, ...settings_engine_exports, ...settings_menu_exports, ...settings_visibility_exports, ...settings_defs_exports, ...settings_boot_exports });
 
   // src/modules/perks.ts
   globalThis.AutoPerks = {};

@@ -18,6 +18,7 @@ import { resolve } from 'node:path'
 import vm from 'node:vm'
 import { createSetting, settingChanged } from '../src/modules/settings-engine'
 import { getPageSetting, serializeSettings550 } from '../src/modules/utils'
+import { atGuard } from '../src/modules/guard'
 
 const ROOT = resolve(__dirname, '..')
 
@@ -31,7 +32,12 @@ describe('#81 — the BuyBuildingsNew dispatch, executed verbatim from legacy/Au
   // Extract the real block. If the markers ever move, this throws rather than silently testing nothing.
   const src = readFileSync(resolve(ROOT, 'legacy/AutoTrimps2.js'), 'utf8').split('\n')
   const start = src.findIndex((l) => l.trim() === '//Buildings')
-  const end = src.findIndex((l, i) => i > start && l.includes("getPageSetting('UseAutoGen')"))
+  // #87 wrapped every dispatch in an atGuard(name, function(){…}) closure, so the block no longer ends
+  // at a bare `if (getPageSetting('UseAutoGen'))` line — that line is now INSIDE the next guard's
+  // closure, and slicing there cut the function in half (SyntaxError: Unexpected end of input). The end
+  // marker is the next dispatch's guard, so the slice stays a set of whole statements. It still has to
+  // be found, and the tripwire below still has to see the real dispatch inside it.
+  const end = src.findIndex((l, i) => i > start && l.includes("atGuard('autoGenerator'"))
   const BLOCK = src.slice(start, end).join('\n')
 
   it('TRIPWIRE: the harness really extracted the dispatch (not an empty string)', () => {
@@ -41,6 +47,7 @@ describe('#81 — the BuyBuildingsNew dispatch, executed verbatim from legacy/Au
     expect(BLOCK).toContain("getPageSetting('BuyBuildingsNew') == 2")
     expect(BLOCK).toContain("getPageSetting('BuyBuildingsNew') == 3") // the option under test exists
     expect(BLOCK).toContain('usingRealTimeOffline')
+    expect(BLOCK).toContain("atGuard('buildings'") // #87 — and it runs through the real error boundary
   })
 
   /**
@@ -63,6 +70,12 @@ describe('#81 — the BuyBuildingsNew dispatch, executed verbatim from legacy/Au
       buyBuildings: () => calls.push('buyBuildings'),
       buyStorage: () => calls.push('buyStorage'),
       computeTopTarget: () => {},
+      // #87 — the REAL boundary, imported, not a pass-through stub. The block under test is now
+      // dispatched through atGuard(), and a stub would quietly hide the one thing that could go wrong
+      // with wrapping it: a guard that never invokes its closure would make every assertion below read
+      // `[]`, and "no buyer ran" is exactly the #81 bug this file exists to catch. Using the shipped
+      // atGuard means the containment layer is on the hook for these results too.
+      atGuard,
     })
     vm.runInContext(BLOCK, sandbox)
     return calls

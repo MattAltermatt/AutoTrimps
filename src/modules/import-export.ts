@@ -910,22 +910,33 @@ export function ImportExportTooltip(what: any, event?: any) {
         ondisplay();
 }
 
+// #87 — the ATrunning latch is now restored in a `finally`, not on the happy path.
+// mainLoop's first statement is `if (ATrunning == false) return;`. So ANY throw between the
+// `ATrunning = false` here and the `ATrunning = true` at the bottom does not merely fail the reset —
+// it leaves AutoTrimps switched OFF, permanently, until the page is reloaded. The body below tears
+// down and rebuilds the entire settings DOM (eleven calls, five of them `document.getElementById(...)!`
+// non-null assertions that are only *asserted* to be non-null), which is exactly the kind of code that
+// throws. #71a was the same shape in resetModuleVars() and it really did kill AT with one click.
+// A `finally` makes the latch un-strandable regardless of what the body does.
 export function resetAutoTrimps(a?: any, b?: any) {
     ATrunning = !1;
     setTimeout((function(d: any) {
-        localStorage.removeItem("autoTrimpSettings");
-        autoTrimpSettings = d ? d : {};
-        var e = document.getElementById("settingsRow")!;
-        e.removeChild(document.getElementById("autoSettings")!);
-        e.removeChild(document.getElementById("autoTrimpsTabBarMenu")!);
-        automationMenuSettingsInit();
-        initializeAllTabs();
-        initializeAllSettings();
-        initializeSettingsProfiles();
-        updateCustomButtons();
-        saveSettings();
-        checkPortalSettings();
-        ATrunning = !0;
+        try {
+            localStorage.removeItem("autoTrimpSettings");
+            autoTrimpSettings = d ? d : {};
+            var e = document.getElementById("settingsRow")!;
+            e.removeChild(document.getElementById("autoSettings")!);
+            e.removeChild(document.getElementById("autoTrimpsTabBarMenu")!);
+            automationMenuSettingsInit();
+            initializeAllTabs();
+            initializeAllSettings();
+            initializeSettingsProfiles();
+            updateCustomButtons();
+            saveSettings();
+            checkPortalSettings();
+        } finally {
+            ATrunning = !0;
+        }
     } as any)(a), 101);
     if (a) {
         debug("Successfully imported new AT settings...", "profile");
@@ -1164,13 +1175,20 @@ export function importModuleVars() {
 //
 // The `a` parameter was only ever passed to a zero-arg closure and discarded; the sole caller (:305)
 // passes nothing. De-comma'd from the legacy sequence — exactly equivalent to sequential statements.
+// #87 — `ATrunning = true` moved into a `finally`. #71a fixed the two throws that were actually in
+// this body; the `finally` fixes the SHAPE, so the next throw introduced here (compareModuleVars()
+// walks MODULES and MODULESdefault — neither is beyond throwing) cannot strand the latch and kill
+// AutoTrimps until reload. The bug class, not just its two instances.
 export function resetModuleVars() {
     ATrunning = false;
     setTimeout(function() {
-        localStorage.removeItem('storedMODULES');
-        MODULES = JSON.parse(JSON.stringify(MODULESdefault));
-        safeSetItems('storedMODULES', JSON.stringify(compareModuleVars()));
-        ATrunning = true;
+        try {
+            localStorage.removeItem('storedMODULES');
+            MODULES = JSON.parse(JSON.stringify(MODULESdefault));
+            safeSetItems('storedMODULES', JSON.stringify(compareModuleVars()));
+        } finally {
+            ATrunning = true;
+        }
     }, 101);
 }
 settingsProfileMakeGUI();

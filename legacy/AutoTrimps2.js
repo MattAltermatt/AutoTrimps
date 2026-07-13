@@ -138,73 +138,129 @@ var lastRadonZone = 0;
 gammaBurstPct = (getHeirloomBonus("Shield", "gammaBurst") / 100) > 0 ? (getHeirloomBonus("Shield", "gammaBurst") / 100) : 1;
 shieldEquipped = game.global.ShieldEquipped.id;
 
+// #87 — EVERY DISPATCH BELOW IS WRAPPED IN atGuard(name, fn). See src/modules/guard.ts for the
+// contract. In short: this loop used to contain not one try/catch, so a throw in any one automation
+// skipped every automation ordered after it — again on the next tick, and every tick after, forever.
+// The guard CONTAINS; it does not recover. A caught error is reported once (message log + console),
+// then counted silently. The wrapped statement is otherwise the same statement it always was: when
+// nothing throws, atGuard(n, fn) is exactly fn(), which is why this change moves ZERO L0 traces.
+//
+// The guard closure deliberately encloses the CONDITION as well as the call — `calcHDratio()`,
+// `getCurrentMapObject().location` and `document.getElementById('Prestige').value` are all inside
+// `if (...)` guards and are all entirely capable of throwing. A boundary that only wrapped the callee
+// would leave the tick just as fragile.
+//
+// A guard NAME is the throttle key and the label the player sees, so it identifies the SITE, not the
+// function: buyWeps() fires from three different U1 sites and knowing which one is failing is the point.
+// tests/nets/mainloop-guarded.test.ts asserts mechanically that no unguarded call survives here — add
+// automation #61 without a guard and it fails on arrival.
 function mainLoop() {
     if (ATrunning == false) return;
     if (getPageSetting('PauseScript') || game.options.menu.pauseGame.enabled || game.global.viewingUpgrades) return;
     ATrunning = true;
-    if (getPageSetting('showbreedtimer') == true) {
-        if (game.options.menu.showFullBreed.enabled != 1) toggleSetting("showFullBreed");
-        addbreedTimerInsideText.innerHTML = ((game.jobs.Amalgamator.owned > 0) ? Math.floor((new Date().getTime() - game.global.lastSoldierSentAt) / 1000) : Math.floor(game.global.lastBreedTime / 1000)) + 's'; //add breed time for next army;
-        addToolTipToArmyCount();
-    }
-    if (mainCleanup() || portalWindowOpen || (!heirloomsShown && heirloomFlag) || (heirloomCache != game.global.heirloomsExtra.length)) {
-        heirloomCache = game.global.heirloomsExtra.length;
-    }
-    heirloomFlag = heirloomsShown;
-    if (aWholeNewWorld) {
-        switch (document.getElementById('tipTitle').innerHTML) {
-            case 'The Improbability':
-            case 'Corruption':
-            case 'Spire':
-            case 'The Magma':
-                cancelTooltip();
+    atGuard('breedTimer', function () {
+        if (getPageSetting('showbreedtimer') == true) {
+            if (game.options.menu.showFullBreed.enabled != 1) toggleSetting("showFullBreed");
+            addbreedTimerInsideText.innerHTML = ((game.jobs.Amalgamator.owned > 0) ? Math.floor((new Date().getTime() - game.global.lastSoldierSentAt) / 1000) : Math.floor(game.global.lastBreedTime / 1000)) + 's'; //add breed time for next army;
+            addToolTipToArmyCount();
         }
-        if (getPageSetting('AutoEggs'))
-            easterEggClicked();
-        setTitle();
-    }
+    });
+    atGuard('mainCleanup', function () {
+        if (mainCleanup() || portalWindowOpen || (!heirloomsShown && heirloomFlag) || (heirloomCache != game.global.heirloomsExtra.length)) {
+            heirloomCache = game.global.heirloomsExtra.length;
+        }
+        heirloomFlag = heirloomsShown;
+    });
+    atGuard('newZone', function () {
+        if (aWholeNewWorld) {
+            switch (document.getElementById('tipTitle').innerHTML) {
+                case 'The Improbability':
+                case 'Corruption':
+                case 'Spire':
+                case 'The Magma':
+                    cancelTooltip();
+            }
+            if (getPageSetting('AutoEggs'))
+                easterEggClicked();
+            setTitle();
+        }
+    });
     if (game.global.world != autoTrimpSettings.zonetracker) {
         autoTrimpSettings.zonetracker = game.global.world;
     }
-    
+
     //Universal Logic
-    if (getPageSetting('AutoBoneChargeMax') != 0) autoBoneChargeWhenMax();
+    atGuard('autoBoneChargeWhenMax', function () {
+        if (getPageSetting('AutoBoneChargeMax') != 0) autoBoneChargeWhenMax();
+    });
 
     //Logic for Universe 1
     if (game.global.universe == 1) {
 
         //Offline Progress
         if (!usingRealTimeOffline) {
-            setScienceNeeded();
-            autoLevelEquipment();
+            atGuard('setScienceNeeded', setScienceNeeded);
+            atGuard('autoLevelEquipment', autoLevelEquipment);
         }
-        
+
         //Heirloom Shield Swap Check
-		if (shieldEquipped !== game.global.ShieldEquipped.id) HeirloomShieldSwapped();
+        atGuard('HeirloomShieldSwapped', function () {
+            if (shieldEquipped !== game.global.ShieldEquipped.id) HeirloomShieldSwapped();
+        });
 
         //Core
-        if (getPageSetting('AutoMaps') > 0 && game.global.mapsUnlocked) autoMap();
-	if (getPageSetting('automapsalways') == true && autoTrimpSettings.AutoMaps.value != 1) autoTrimpSettings.AutoMaps.value = 1;
-        if (getPageSetting('showautomapstatus') == true) updateAutoMapsStatus();
+        atGuard('autoMap', function () {
+            if (getPageSetting('AutoMaps') > 0 && game.global.mapsUnlocked) autoMap();
+        });
+        atGuard('automapsalways', function () {
+            if (getPageSetting('automapsalways') == true && autoTrimpSettings.AutoMaps.value != 1) autoTrimpSettings.AutoMaps.value = 1;
+        });
+        atGuard('updateAutoMapsStatus', function () {
+            if (getPageSetting('showautomapstatus') == true) updateAutoMapsStatus();
+        });
         // #64: 3 = "Science Research OFF" runs the same gather brain as 1 = "Auto Gather/Build";
         // manualLabor2's own `!= 3` guards suppress the science branches. It used to dispatch
         // nothing, so the option silently froze playerGathering wherever it was.
-        if (getPageSetting('ManualGather2') == 1 || getPageSetting('ManualGather2') == 3) manualLabor2();
-        if (getPageSetting('TrapTrimps') && game.global.trapBuildAllowed && game.global.trapBuildToggled == false) toggleAutoTrap();
-        if (getPageSetting('ManualGather2') == 2) autogather3();
-        if (getPageSetting('ATGA2') == true) ATGA2();
-        if (aWholeNewWorld && getPageSetting('AutoRoboTrimp')) autoRoboTrimp();
-        if (game.global.challengeActive == "Daily" && getPageSetting('buyheliumy') >= 1 && getDailyHeliumValue(countDailyWeight()) >= getPageSetting('buyheliumy') && game.global.b >= 100 && !game.singleRunBonuses.heliumy.owned) purchaseSingleRunBonus('heliumy');
-        if (aWholeNewWorld && getPageSetting('FinishC2') > 0 && game.global.runningChallengeSquared) finishChallengeSquared();
-        if (getPageSetting('spendmagmite') == 2 && !magmiteSpenderChanged) autoMagmiteSpender();
-        if (getPageSetting('AutoNatureTokens') && game.global.world > 229) autoNatureTokens();
-        if (getPageSetting('autoenlight') && game.global.world > 229 && game.global.uberNature == false) autoEnlight();
-        if (getPageSetting('BuyUpgradesNew') != 0) buyUpgrades();
-        if ((getPageSetting('Hshrine') == true) || (getPageSetting('Hdshrine') == 1) || (getPageSetting('Hdshrine') == 2)) autoshrine();
+        atGuard('manualLabor2', function () {
+            if (getPageSetting('ManualGather2') == 1 || getPageSetting('ManualGather2') == 3) manualLabor2();
+        });
+        atGuard('toggleAutoTrap', function () {
+            if (getPageSetting('TrapTrimps') && game.global.trapBuildAllowed && game.global.trapBuildToggled == false) toggleAutoTrap();
+        });
+        atGuard('autogather3', function () {
+            if (getPageSetting('ManualGather2') == 2) autogather3();
+        });
+        atGuard('ATGA2', function () {
+            if (getPageSetting('ATGA2') == true) ATGA2();
+        });
+        atGuard('autoRoboTrimp', function () {
+            if (aWholeNewWorld && getPageSetting('AutoRoboTrimp')) autoRoboTrimp();
+        });
+        atGuard('buyheliumy', function () {
+            if (game.global.challengeActive == "Daily" && getPageSetting('buyheliumy') >= 1 && getDailyHeliumValue(countDailyWeight()) >= getPageSetting('buyheliumy') && game.global.b >= 100 && !game.singleRunBonuses.heliumy.owned) purchaseSingleRunBonus('heliumy');
+        });
+        atGuard('finishChallengeSquared', function () {
+            if (aWholeNewWorld && getPageSetting('FinishC2') > 0 && game.global.runningChallengeSquared) finishChallengeSquared();
+        });
+        atGuard('autoMagmiteSpender', function () {
+            if (getPageSetting('spendmagmite') == 2 && !magmiteSpenderChanged) autoMagmiteSpender();
+        });
+        atGuard('autoNatureTokens', function () {
+            if (getPageSetting('AutoNatureTokens') && game.global.world > 229) autoNatureTokens();
+        });
+        atGuard('autoEnlight', function () {
+            if (getPageSetting('autoenlight') && game.global.world > 229 && game.global.uberNature == false) autoEnlight();
+        });
+        atGuard('buyUpgrades', function () {
+            if (getPageSetting('BuyUpgradesNew') != 0) buyUpgrades();
+        });
+        atGuard('autoshrine', function () {
+            if ((getPageSetting('Hshrine') == true) || (getPageSetting('Hdshrine') == 1) || (getPageSetting('Hdshrine') == 2)) autoshrine();
+        });
 
         //#57 purchase coordinator: compute the current top-priority target + metal reserve before
         //the buyers run (no-op unless the PurchaseCoordinator setting is on).
-        computeTopTarget();
+        atGuard('computeTopTarget', computeTopTarget);
 
         //Buildings
         // #81: the `== 3` ("Buy Storage") arm used to sit OUTSIDE this block — the `}` closed the
@@ -214,25 +270,39 @@ function mainLoop() {
         // picked "Buy Storage" got no buildings and no storage for the whole session. The two halves
         // were exactly inverted. Every option now dispatches inside the live-play block.
         if (!usingRealTimeOffline) {
-        if (getPageSetting('BuyBuildingsNew') === 0 && getPageSetting('hidebuildings') == true) buyBuildings();
-        else if (getPageSetting('BuyBuildingsNew') == 1) {
-            buyBuildings();
-            buyStorage();
-        } else if (getPageSetting('BuyBuildingsNew') == 2) buyBuildings();
-        else if (getPageSetting('BuyBuildingsNew') == 3) buyStorage();
-	}
-        if (getPageSetting('UseAutoGen') == true && game.global.world > 229) autoGenerator();
+            // #87: the arms are nested guards, not one. buyBuildings() throwing must not cost you
+            // buyStorage() — they are independent automations that happen to share a multitoggle.
+            atGuard('buildings', function () {
+                if (getPageSetting('BuyBuildingsNew') === 0 && getPageSetting('hidebuildings') == true) atGuard('buyBuildings', buyBuildings);
+                else if (getPageSetting('BuyBuildingsNew') == 1) {
+                    atGuard('buyBuildings', buyBuildings);
+                    atGuard('buyStorage', buyStorage);
+                } else if (getPageSetting('BuyBuildingsNew') == 2) atGuard('buyBuildings', buyBuildings);
+                else if (getPageSetting('BuyBuildingsNew') == 3) atGuard('buyStorage', buyStorage);
+            });
+        }
+        atGuard('autoGenerator', function () {
+            if (getPageSetting('UseAutoGen') == true && game.global.world > 229) autoGenerator();
+        });
 
         //Jobs
-        if (getPageSetting('BuyJobsNew') == 1) {
-            workerRatios();
-            buyJobs();
-        } else if (getPageSetting('BuyJobsNew') == 2) buyJobs();
+        atGuard('jobs', function () {
+            if (getPageSetting('BuyJobsNew') == 1) {
+                atGuard('workerRatios', workerRatios);
+                atGuard('buyJobs', buyJobs);
+            } else if (getPageSetting('BuyJobsNew') == 2) atGuard('buyJobs', buyJobs);
+        });
 
         //Portal
-        if (autoTrimpSettings.AutoPortal.selected != "Off" && game.global.challengeActive != "Daily" && !game.global.runningChallengeSquared) autoPortal();
-        if (getPageSetting('AutoPortalDaily') > 0 && game.global.challengeActive == "Daily") dailyAutoPortal();
-        if (getPageSetting('c2runnerstart') == true && getPageSetting('c2runnerportal') > 0 && game.global.runningChallengeSquared && game.global.world > getPageSetting('c2runnerportal')) c2runnerportal();
+        atGuard('autoPortal', function () {
+            if (autoTrimpSettings.AutoPortal.selected != "Off" && game.global.challengeActive != "Daily" && !game.global.runningChallengeSquared) autoPortal();
+        });
+        atGuard('dailyAutoPortal', function () {
+            if (getPageSetting('AutoPortalDaily') > 0 && game.global.challengeActive == "Daily") dailyAutoPortal();
+        });
+        atGuard('c2runnerportal', function () {
+            if (getPageSetting('c2runnerstart') == true && getPageSetting('c2runnerportal') > 0 && game.global.runningChallengeSquared && game.global.world > getPageSetting('c2runnerportal')) c2runnerportal();
+        });
 
         //Combat
         // #68: the `|| getPageSetting('fuckanti') > 0` disjunct is DELETED, not repaired. 'fuckanti' is
@@ -240,62 +310,107 @@ function mainLoop() {
         // NOT re-mintable — minting resurrects a stored value); getPageSetting returns false for it, so
         // `false > 0` was always false and the disjunct could never contribute. Removing it is exactly
         // behaviour-preserving, and it takes the resurrection hazard with it.
-        if (getPageSetting('ForceAbandon') == true) trimpcide();
-        if (getPageSetting('trimpsnotdie') == true && game.global.world > 1) helptrimpsnotdie();
-        if (!game.global.fighting) {
-            if (getPageSetting('fightforever') == 0) fightalways();
-            else if (getPageSetting('fightforever') > 0 && calcHDratio() <= getPageSetting('fightforever')) fightalways();
-            else if (getPageSetting('cfightforever') == true && (challengeActive("Electricty") || challengeActive("Toxicity") || challengeActive("Nom"))) fightalways();
-            else if (getPageSetting('dfightforever') == 1 && game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) fightalways();
-            else if (getPageSetting('dfightforever') == 2 && game.global.challengeActive == "Daily" && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) fightalways();
-        }
-        if (getPageSetting('BetterAutoFight') == 1) betterAutoFight();
-        if (getPageSetting('BetterAutoFight') == 2) betterAutoFight3();
-        var forcePrecZ = (getPageSetting('ForcePresZ') < 0) || (game.global.world < getPageSetting('ForcePresZ'));
-        if (getPageSetting('DynamicPrestige2') > 0 && forcePrecZ) prestigeChanging2();
-        else autoTrimpSettings.Prestige.selected = document.getElementById('Prestige').value;
-        if (game.global.world > 5 && game.global.challengeActive == "Daily" && getPageSetting('avoidempower') == true && typeof game.global.dailyChallenge.empower !== 'undefined' && !game.global.preMapsActive && !game.global.mapsActive && game.global.soldierHealth > 0) avoidempower();
-        if (getPageSetting('buywepsvoid') == true && ((getPageSetting('VoidMaps') == game.global.world && game.global.challengeActive != "Daily") || (getPageSetting('DailyVoidMod') == game.global.world && game.global.challengeActive == "Daily")) && game.global.mapsActive && getCurrentMapObject().location == "Void") buyWeps();
-        if ((getPageSetting('darmormagic') > 0 && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) || (getPageSetting('carmormagic') > 0 && (challengeActive("Toxicity") || challengeActive("Nom")))) armormagic();
+        atGuard('trimpcide', function () {
+            if (getPageSetting('ForceAbandon') == true) trimpcide();
+        });
+        atGuard('helptrimpsnotdie', function () {
+            if (getPageSetting('trimpsnotdie') == true && game.global.world > 1) helptrimpsnotdie();
+        });
+        atGuard('fightalways', function () {
+            if (!game.global.fighting) {
+                if (getPageSetting('fightforever') == 0) fightalways();
+                else if (getPageSetting('fightforever') > 0 && calcHDratio() <= getPageSetting('fightforever')) fightalways();
+                else if (getPageSetting('cfightforever') == true && (challengeActive("Electricty") || challengeActive("Toxicity") || challengeActive("Nom"))) fightalways();
+                else if (getPageSetting('dfightforever') == 1 && game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) fightalways();
+                else if (getPageSetting('dfightforever') == 2 && game.global.challengeActive == "Daily" && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) fightalways();
+            }
+        });
+        atGuard('betterAutoFight', function () {
+            if (getPageSetting('BetterAutoFight') == 1) betterAutoFight();
+        });
+        atGuard('betterAutoFight3', function () {
+            if (getPageSetting('BetterAutoFight') == 2) betterAutoFight3();
+        });
+        // forcePrecZ is consumed only by the prestige dispatch on the next line, so it lives inside the
+        // guard with it. Note the `else` arm reads document.getElementById('Prestige').value — a DOM read
+        // that throws outright if the select is not mounted, which is precisely a mainLoop-killer.
+        atGuard('prestigeChanging2', function () {
+            var forcePrecZ = (getPageSetting('ForcePresZ') < 0) || (game.global.world < getPageSetting('ForcePresZ'));
+            if (getPageSetting('DynamicPrestige2') > 0 && forcePrecZ) prestigeChanging2();
+            else autoTrimpSettings.Prestige.selected = document.getElementById('Prestige').value;
+        });
+        atGuard('avoidempower', function () {
+            if (game.global.world > 5 && game.global.challengeActive == "Daily" && getPageSetting('avoidempower') == true && typeof game.global.dailyChallenge.empower !== 'undefined' && !game.global.preMapsActive && !game.global.mapsActive && game.global.soldierHealth > 0) avoidempower();
+        });
+        atGuard('buyWeps:void', function () {
+            if (getPageSetting('buywepsvoid') == true && ((getPageSetting('VoidMaps') == game.global.world && game.global.challengeActive != "Daily") || (getPageSetting('DailyVoidMod') == game.global.world && game.global.challengeActive == "Daily")) && game.global.mapsActive && getCurrentMapObject().location == "Void") buyWeps();
+        });
+        atGuard('armormagic', function () {
+            if ((getPageSetting('darmormagic') > 0 && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) || (getPageSetting('carmormagic') > 0 && (challengeActive("Toxicity") || challengeActive("Nom")))) armormagic();
+        });
 
         //Stance
-        if ((getPageSetting('UseScryerStance') == true) || (getPageSetting('scryvoidmaps') == true && game.global.challengeActive != "Daily") || (getPageSetting('dscryvoidmaps') == true && game.global.challengeActive == "Daily")) useScryerStance();
-        else if ((getPageSetting('AutoStance') == 3) || (getPageSetting('use3daily') == true && game.global.challengeActive == "Daily")) windStance();
-        else if (getPageSetting('AutoStance') == 1) autoStance();
-        else if (getPageSetting('AutoStance') == 2) autoStance2();
+        atGuard('stance', function () {
+            if ((getPageSetting('UseScryerStance') == true) || (getPageSetting('scryvoidmaps') == true && game.global.challengeActive != "Daily") || (getPageSetting('dscryvoidmaps') == true && game.global.challengeActive == "Daily")) useScryerStance();
+            else if ((getPageSetting('AutoStance') == 3) || (getPageSetting('use3daily') == true && game.global.challengeActive == "Daily")) windStance();
+            else if (getPageSetting('AutoStance') == 1) autoStance();
+            else if (getPageSetting('AutoStance') == 2) autoStance2();
+        });
 
         //Spire
-        if (getPageSetting('ExitSpireCell') > 0 && game.global.challengeActive != "Daily" && getPageSetting('IgnoreSpiresUntil') <= game.global.world && game.global.spireActive) exitSpireCell();
-        if (getPageSetting('dExitSpireCell') >= 1 && game.global.challengeActive == "Daily" && getPageSetting('dIgnoreSpiresUntil') <= game.global.world && game.global.spireActive) dailyexitSpireCell();
-        if (getPageSetting('SpireBreedTimer') > 0 && getPageSetting('IgnoreSpiresUntil') <= game.global.world) ATspirebreed();
-        if (getPageSetting('spireshitbuy') == true && (isActiveSpireAT() || disActiveSpireAT())) buyshitspire();
+        atGuard('exitSpireCell', function () {
+            if (getPageSetting('ExitSpireCell') > 0 && game.global.challengeActive != "Daily" && getPageSetting('IgnoreSpiresUntil') <= game.global.world && game.global.spireActive) exitSpireCell();
+        });
+        atGuard('dailyexitSpireCell', function () {
+            if (getPageSetting('dExitSpireCell') >= 1 && game.global.challengeActive == "Daily" && getPageSetting('dIgnoreSpiresUntil') <= game.global.world && game.global.spireActive) dailyexitSpireCell();
+        });
+        atGuard('ATspirebreed', function () {
+            if (getPageSetting('SpireBreedTimer') > 0 && getPageSetting('IgnoreSpiresUntil') <= game.global.world) ATspirebreed();
+        });
+        atGuard('buyshitspire', function () {
+            if (getPageSetting('spireshitbuy') == true && (isActiveSpireAT() || disActiveSpireAT())) buyshitspire();
+        });
 
         //Raiding
-        if ((getPageSetting('PraidHarder') == true && getPageSetting('Praidingzone').length > 0 && game.global.challengeActive != "Daily") || (getPageSetting('dPraidHarder') == true && getPageSetting('dPraidingzone').length > 0 && game.global.challengeActive == "Daily")) PraidHarder();
-        else {
-            if (getPageSetting('Praidingzone').length && game.global.challengeActive != "Daily") Praiding();
-            if (getPageSetting('dPraidingzone').length && game.global.challengeActive == "Daily") dailyPraiding();
-        }
-        if (((getPageSetting('BWraid') && game.global.challengeActive != "Daily") || (getPageSetting('Dailybwraid') && game.global.challengeActive == "Daily"))) {
-            BWraiding();
-        }
+        atGuard('praiding', function () {
+            if ((getPageSetting('PraidHarder') == true && getPageSetting('Praidingzone').length > 0 && game.global.challengeActive != "Daily") || (getPageSetting('dPraidHarder') == true && getPageSetting('dPraidingzone').length > 0 && game.global.challengeActive == "Daily")) PraidHarder();
+            else {
+                atGuard('Praiding', function () {
+                    if (getPageSetting('Praidingzone').length && game.global.challengeActive != "Daily") Praiding();
+                });
+                atGuard('dailyPraiding', function () {
+                    if (getPageSetting('dPraidingzone').length && game.global.challengeActive == "Daily") dailyPraiding();
+                });
+            }
+        });
+        atGuard('BWraiding', function () {
+            if (((getPageSetting('BWraid') && game.global.challengeActive != "Daily") || (getPageSetting('Dailybwraid') && game.global.challengeActive == "Daily"))) {
+                BWraiding();
+            }
+        });
         // #68: 'DailyBWraid' -> 'Dailybwraid'. A CASE typo, not a deleted setting: the live id is
         // lowercase-b, and the line directly above spells it correctly. getPageSetting('DailyBWraid')
         // returned false, so a Daily BW raid never bought weapons — buyWeps() only fired if the U1
         // 'BWraid' toggle happened to be on too.
-        if ((getPageSetting('BWraid') == true || getPageSetting('Dailybwraid') == true) && bwraidon) buyWeps();
+        atGuard('buyWeps:bwraid', function () {
+            if ((getPageSetting('BWraid') == true || getPageSetting('Dailybwraid') == true) && bwraidon) buyWeps();
+        });
         // #68: the id argument here WAS the string "game.global.universe == 1 && BWraid" — an entire
         // expression pasted inside the quotes. No such setting exists, so getPageSetting returned false,
         // `false == true` was false, and this line NEVER ran. Restored to what the string plainly says.
-        if (game.global.mapsActive && game.global.universe == 1 && getPageSetting('BWraid') == true && game.global.world == getPageSetting('BWraidingz') && getCurrentMapObject().level <= getPageSetting('BWraidingmax')) buyWeps();
+        atGuard('buyWeps:bwraidMap', function () {
+            if (game.global.mapsActive && game.global.universe == 1 && getPageSetting('BWraid') == true && game.global.world == getPageSetting('BWraidingz') && getCurrentMapObject().level <= getPageSetting('BWraidingmax')) buyWeps();
+        });
 
         //Golden
-        var agu = getPageSetting('AutoGoldenUpgrades');
-        var dagu = getPageSetting('dAutoGoldenUpgrades');
-        var cagu = getPageSetting('cAutoGoldenUpgrades');
-        if (agu && agu != 'Off' && (!game.global.runningChallengeSquared && game.global.challengeActive != "Daily")) autoGoldenUpgradesAT(agu);
-        if (dagu && dagu != 'Off' && game.global.challengeActive == "Daily") autoGoldenUpgradesAT(dagu);
-        if (cagu && cagu != 'Off' && game.global.runningChallengeSquared) autoGoldenUpgradesAT(cagu);
+        atGuard('autoGoldenUpgradesAT', function () {
+            var agu = getPageSetting('AutoGoldenUpgrades');
+            var dagu = getPageSetting('dAutoGoldenUpgrades');
+            var cagu = getPageSetting('cAutoGoldenUpgrades');
+            if (agu && agu != 'Off' && (!game.global.runningChallengeSquared && game.global.challengeActive != "Daily")) autoGoldenUpgradesAT(agu);
+            if (dagu && dagu != 'Off' && game.global.challengeActive == "Daily") autoGoldenUpgradesAT(dagu);
+            if (cagu && cagu != 'Off' && game.global.runningChallengeSquared) autoGoldenUpgradesAT(cagu);
+        });
     }
 
     //Logic for Universe 2
@@ -303,98 +418,177 @@ function mainLoop() {
 
         //Offline Progress
         if (!usingRealTimeOffline) {
-            RsetScienceNeeded();
+            atGuard('RsetScienceNeeded', RsetScienceNeeded);
         }
-        
-        //Heirloom Shield Swap Check
-		if (shieldEquipped !== game.global.ShieldEquipped.id) HeirloomShieldSwapped();
 
-        if (!(game.global.challengeActive == "Quest" && game.global.world > 5 && game.global.lastClearedCell < 90 && ([14, 24].indexOf(questcheck()) >= 0))) {
-            if (getPageSetting('RBuyUpgradesNew') != 0) RbuyUpgrades();
-        }
+        //Heirloom Shield Swap Check
+        atGuard('RHeirloomShieldSwapped', function () {
+            if (shieldEquipped !== game.global.ShieldEquipped.id) HeirloomShieldSwapped();
+        });
+
+        atGuard('RbuyUpgrades', function () {
+            if (!(game.global.challengeActive == "Quest" && game.global.world > 5 && game.global.lastClearedCell < 90 && ([14, 24].indexOf(questcheck()) >= 0))) {
+                if (getPageSetting('RBuyUpgradesNew') != 0) RbuyUpgrades();
+            }
+        });
 
         //RCore
-        if (getPageSetting('RAutoMaps') > 0 && game.global.mapsUnlocked) RautoMap();
-        if (getPageSetting('Rshowautomapstatus') == true) RupdateAutoMapsStatus();
-	if (getPageSetting('Rautomapsalways') == true && autoTrimpSettings.RAutoMaps.value != 1) autoTrimpSettings.RAutoMaps.value = 1;
+        atGuard('RautoMap', function () {
+            if (getPageSetting('RAutoMaps') > 0 && game.global.mapsUnlocked) RautoMap();
+        });
+        atGuard('RupdateAutoMapsStatus', function () {
+            if (getPageSetting('Rshowautomapstatus') == true) RupdateAutoMapsStatus();
+        });
+        atGuard('Rautomapsalways', function () {
+            if (getPageSetting('Rautomapsalways') == true && autoTrimpSettings.RAutoMaps.value != 1) autoTrimpSettings.RAutoMaps.value = 1;
+        });
         // #64: 2 = "Mining/Building Only" dispatched nothing, so the option froze playerGathering.
         // It routes to RmanualLabor2, NOT to U1's autogather3: RmanualLabor2 already carries the
         // `== 2` / `!= 2` guards implementing mining-mode (gather.ts:346/366/368), and autogather3
         // reads `gathermetal`, a setting settings-visibility.ts only exposes outside U2.
-        if (getPageSetting('RManualGather2') == 1 || getPageSetting('RManualGather2') == 2) RmanualLabor2();
-        if (getPageSetting('RTrapTrimps') && game.global.trapBuildAllowed && game.global.trapBuildToggled == false) toggleAutoTrap();
-        if (game.global.challengeActive == "Daily" && getPageSetting('buyradony') >= 1 && getDailyHeliumValue(countDailyWeight()) >= getPageSetting('buyradony') && game.global.b >= 100 && !game.singleRunBonuses.heliumy.owned) purchaseSingleRunBonus('heliumy');
-        if ((getPageSetting('Rshrine') == true) || (getPageSetting('Rdshrine') == 1) || (getPageSetting('Rdshrine') == 2)) autoshrine();
+        atGuard('RmanualLabor2', function () {
+            if (getPageSetting('RManualGather2') == 1 || getPageSetting('RManualGather2') == 2) RmanualLabor2();
+        });
+        atGuard('RtoggleAutoTrap', function () {
+            if (getPageSetting('RTrapTrimps') && game.global.trapBuildAllowed && game.global.trapBuildToggled == false) toggleAutoTrap();
+        });
+        atGuard('buyradony', function () {
+            if (game.global.challengeActive == "Daily" && getPageSetting('buyradony') >= 1 && getDailyHeliumValue(countDailyWeight()) >= getPageSetting('buyradony') && game.global.b >= 100 && !game.singleRunBonuses.heliumy.owned) purchaseSingleRunBonus('heliumy');
+        });
+        atGuard('Rautoshrine', function () {
+            if ((getPageSetting('Rshrine') == true) || (getPageSetting('Rdshrine') == 1) || (getPageSetting('Rdshrine') == 2)) autoshrine();
+        });
 
         //AB
-        if (game.stats.highestRadLevel.valueTotal() >= 75 && !autoBattle.sealed && getPageSetting('RAB') == true) {
-            if (getPageSetting('RABpreset') == true) ABswitch();
-            if (getPageSetting('RABdustsimple') == 1) ABdustsimple();
-            else if (getPageSetting('RABdustsimple') == 2) ABdustsimplenonhid();
-            if (getPageSetting('RABfarm') == true) ABfarmsave();
-            if (getPageSetting('RABfarmswitch') == true) ABfarmswitch();
-            if (getPageSetting('RABsolve') == true) ABsolver();
-        }
+        // #87 / #77: the AB block is the canonical instance of this issue. ABdustsimple() derefs
+        // equips[0][1] with no minimum guard, so a U2 player with no SA item equipped (or an unsaved AB
+        // preset) threw HERE — and everything from RbuyBuildings to RautoGoldenUpgradesAT below simply
+        // stopped existing, every tick, forever. Each AB automation now gets its own boundary, and the
+        // OUTER guard covers the condition itself (`highestRadLevel.valueTotal()` is a call too).
+        atGuard('RAB', function () {
+            if (game.stats.highestRadLevel.valueTotal() >= 75 && !autoBattle.sealed && getPageSetting('RAB') == true) {
+                atGuard('ABswitch', function () {
+                    if (getPageSetting('RABpreset') == true) ABswitch();
+                });
+                atGuard('ABdustsimple', function () {
+                    if (getPageSetting('RABdustsimple') == 1) ABdustsimple();
+                    else if (getPageSetting('RABdustsimple') == 2) ABdustsimplenonhid();
+                });
+                atGuard('ABfarmsave', function () {
+                    if (getPageSetting('RABfarm') == true) ABfarmsave();
+                });
+                atGuard('ABfarmswitch', function () {
+                    if (getPageSetting('RABfarmswitch') == true) ABfarmswitch();
+                });
+                atGuard('ABsolver', function () {
+                    if (getPageSetting('RABsolve') == true) ABsolver();
+                });
+            }
+        });
 
         //RBuildings
-        if (getPageSetting('RBuyBuildingsNew') == true) {
-            RbuyBuildings();
-        }
+        atGuard('RbuyBuildings', function () {
+            if (getPageSetting('RBuyBuildingsNew') == true) {
+                RbuyBuildings();
+            }
+        });
 
         //RJobs
-        if (!(game.global.challengeActive == "Quest" && game.global.world > 5) && getPageSetting('RBuyJobsNew') == 1) {
-            RworkerRatios();
-            RbuyJobs();
-        } else if (!(game.global.challengeActive == "Quest" && game.global.world > 5) && getPageSetting('RBuyJobsNew') == 2) {
-            RbuyJobs();
-        }
-        if (game.global.challengeActive == "Quest" && game.global.world > 5 && getPageSetting('RBuyJobsNew') > 0) {
-            RquestbuyJobs();
-        }
+        atGuard('Rjobs', function () {
+            if (!(game.global.challengeActive == "Quest" && game.global.world > 5) && getPageSetting('RBuyJobsNew') == 1) {
+                atGuard('RworkerRatios', RworkerRatios);
+                atGuard('RbuyJobs', RbuyJobs);
+            } else if (!(game.global.challengeActive == "Quest" && game.global.world > 5) && getPageSetting('RBuyJobsNew') == 2) {
+                atGuard('RbuyJobs', RbuyJobs);
+            }
+        });
+        atGuard('RquestbuyJobs', function () {
+            if (game.global.challengeActive == "Quest" && game.global.world > 5 && getPageSetting('RBuyJobsNew') > 0) {
+                RquestbuyJobs();
+            }
+        });
 
         //RPortal
-        if (autoTrimpSettings.RAutoPortal.selected != "Off" && game.global.challengeActive != "Daily" && !game.global.runningChallengeSquared) RautoPortal();
-        if (getPageSetting('RAutoPortalDaily') > 0 && game.global.challengeActive == "Daily") RdailyAutoPortal();
+        atGuard('RautoPortal', function () {
+            if (autoTrimpSettings.RAutoPortal.selected != "Off" && game.global.challengeActive != "Daily" && !game.global.runningChallengeSquared) RautoPortal();
+        });
+        atGuard('RdailyAutoPortal', function () {
+            if (getPageSetting('RAutoPortalDaily') > 0 && game.global.challengeActive == "Daily") RdailyAutoPortal();
+        });
 
         //RChallenges
-        if (getPageSetting('Rarchon') == true && game.global.challengeActive == "Archaeology") {
-            archstring();
-        }
+        atGuard('archstring', function () {
+            if (getPageSetting('Rarchon') == true && game.global.challengeActive == "Archaeology") {
+                archstring();
+            }
+        });
 
         //RCombat
-        if (getPageSetting('Requipon') == true && (!(game.global.challengeActive == "Quest" && game.global.world > 5 && game.global.lastClearedCell < 90 && ([11, 12, 21, 22].indexOf(questcheck()) >= 0)))) RautoEquip();
-        if (getPageSetting('BetterAutoFight') == 1) betterAutoFight();
-        if (getPageSetting('BetterAutoFight') == 2) betterAutoFight3();
-        if (game.global.world > 5 && game.global.challengeActive == "Daily" && getPageSetting('Ravoidempower') == true && typeof game.global.dailyChallenge.empower !== 'undefined' && !game.global.preMapsActive && !game.global.mapsActive && game.global.soldierHealth > 0) Ravoidempower();
-        if (!game.global.fighting) {
-            if (getPageSetting('Rfightforever') == 0) Rfightalways();
-            else if (getPageSetting('Rfightforever') > 0 && RcalcHDratio() <= getPageSetting('Rfightforever')) Rfightalways();
-            else if (getPageSetting('Rdfightforever') == 1 && game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) Rfightalways();
-            else if (getPageSetting('Rdfightforever') == 2 && game.global.challengeActive == "Daily" && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) Rfightalways();
-        }
-        if ((getPageSetting('Rdarmormagic') > 0 && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) || (getPageSetting('Rcarmormagic') > 0 && (game.global.challengeActive == 'Toxicity' || game.global.challengeActive == 'Nom'))) Rarmormagic();
-        if (getPageSetting('Rmanageequality') == true && game.global.fighting) Rmanageequality();
+        atGuard('RautoEquip', function () {
+            if (getPageSetting('Requipon') == true && (!(game.global.challengeActive == "Quest" && game.global.world > 5 && game.global.lastClearedCell < 90 && ([11, 12, 21, 22].indexOf(questcheck()) >= 0)))) RautoEquip();
+        });
+        atGuard('RbetterAutoFight', function () {
+            if (getPageSetting('BetterAutoFight') == 1) betterAutoFight();
+        });
+        atGuard('RbetterAutoFight3', function () {
+            if (getPageSetting('BetterAutoFight') == 2) betterAutoFight3();
+        });
+        atGuard('Ravoidempower', function () {
+            if (game.global.world > 5 && game.global.challengeActive == "Daily" && getPageSetting('Ravoidempower') == true && typeof game.global.dailyChallenge.empower !== 'undefined' && !game.global.preMapsActive && !game.global.mapsActive && game.global.soldierHealth > 0) Ravoidempower();
+        });
+        atGuard('Rfightalways', function () {
+            if (!game.global.fighting) {
+                if (getPageSetting('Rfightforever') == 0) Rfightalways();
+                else if (getPageSetting('Rfightforever') > 0 && RcalcHDratio() <= getPageSetting('Rfightforever')) Rfightalways();
+                else if (getPageSetting('Rdfightforever') == 1 && game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) Rfightalways();
+                else if (getPageSetting('Rdfightforever') == 2 && game.global.challengeActive == "Daily" && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) Rfightalways();
+            }
+        });
+        atGuard('Rarmormagic', function () {
+            if ((getPageSetting('Rdarmormagic') > 0 && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) || (getPageSetting('Rcarmormagic') > 0 && (game.global.challengeActive == 'Toxicity' || game.global.challengeActive == 'Nom'))) Rarmormagic();
+        });
+        atGuard('Rmanageequality', function () {
+            if (getPageSetting('Rmanageequality') == true && game.global.fighting) Rmanageequality();
+        });
 
         //RHeirlooms
-        if ((getPageSetting('Rhs') == true && game.global.challengeActive != 'Daily') || (getPageSetting('Rdhs') == 2 && game.global.challengeActive == 'Daily')) {
-            Rheirloomswap();
-        }
-        if (getPageSetting('Rdhs') == 1 && game.global.challengeActive == 'Daily') {
-            Rdheirloomswap();
-        }
+        atGuard('Rheirloomswap', function () {
+            if ((getPageSetting('Rhs') == true && game.global.challengeActive != 'Daily') || (getPageSetting('Rdhs') == 2 && game.global.challengeActive == 'Daily')) {
+                Rheirloomswap();
+            }
+        });
+        atGuard('Rdheirloomswap', function () {
+            if (getPageSetting('Rdhs') == 1 && game.global.challengeActive == 'Daily') {
+                Rdheirloomswap();
+            }
+        });
 
         //RGolden
-        var Ragu = getPageSetting('RAutoGoldenUpgrades');
-        var Rdagu = getPageSetting('RdAutoGoldenUpgrades');
-        var Rcagu = getPageSetting('RcAutoGoldenUpgrades');
-        if (Ragu && Ragu != 'Off' && (!game.global.runningChallengeSquared && game.global.challengeActive != "Daily")) RautoGoldenUpgradesAT(Ragu);
-        if (Rdagu && Rdagu != 'Off' && game.global.challengeActive == "Daily") RautoGoldenUpgradesAT(Rdagu);
-        if (Rcagu && Rcagu != 'Off' && game.global.runningChallengeSquared) RautoGoldenUpgradesAT(Rcagu);
+        atGuard('RautoGoldenUpgradesAT', function () {
+            var Ragu = getPageSetting('RAutoGoldenUpgrades');
+            var Rdagu = getPageSetting('RdAutoGoldenUpgrades');
+            var Rcagu = getPageSetting('RcAutoGoldenUpgrades');
+            if (Ragu && Ragu != 'Off' && (!game.global.runningChallengeSquared && game.global.challengeActive != "Daily")) RautoGoldenUpgradesAT(Ragu);
+            if (Rdagu && Rdagu != 'Off' && game.global.challengeActive == "Daily") RautoGoldenUpgradesAT(Rdagu);
+            if (Rcagu && Rcagu != 'Off' && game.global.runningChallengeSquared) RautoGoldenUpgradesAT(Rcagu);
+        });
     }
 }
 
+// #87: de-comma'd first, then guarded. As a single comma-expression this was all-or-nothing — a throw
+// in updateCustomButtons() also cost you the storedMODULES persist, the enhanced grids and the AFK
+// overlay, every 1000ms, forever. Four statements, four boundaries.
 function guiLoop() {
-    updateCustomButtons(), safeSetItems('storedMODULES', JSON.stringify(compareModuleVars())), getPageSetting('EnhanceGrids') && MODULES.fightinfo.Update(), 'undefined' != typeof MODULES && 'undefined' != typeof MODULES.performance && MODULES.performance.isAFK && MODULES.performance.UpdateAFKOverlay()
+    atGuard('updateCustomButtons', updateCustomButtons);
+    atGuard('storedMODULES', function () {
+        safeSetItems('storedMODULES', JSON.stringify(compareModuleVars()));
+    });
+    atGuard('fightinfo.Update', function () {
+        if (getPageSetting('EnhanceGrids')) MODULES.fightinfo.Update();
+    });
+    atGuard('performance.UpdateAFKOverlay', function () {
+        if ('undefined' != typeof MODULES && 'undefined' != typeof MODULES.performance && MODULES.performance.isAFK) MODULES.performance.UpdateAFKOverlay();
+    });
 }
 
 function mainCleanup() {
