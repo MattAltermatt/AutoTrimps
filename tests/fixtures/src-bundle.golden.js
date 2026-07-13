@@ -3251,6 +3251,7 @@
     RbuyGemEfficientHousing: () => RbuyGemEfficientHousing,
     RbuyStorage: () => RbuyStorage,
     RsafeBuyBuilding: () => RsafeBuyBuilding,
+    __syncAutoStorageOnce: () => __syncAutoStorageOnce,
     buyBuildings: () => buyBuildings,
     buyFoodEfficientHousing: () => buyFoodEfficientHousing,
     buyGemEfficientHousing: () => buyGemEfficientHousing,
@@ -3682,6 +3683,13 @@
       }
     }
   }
+  var autoStorageEnabledOnce = false;
+  function __syncAutoStorageOnce() {
+    if (!game.global.autoStorage && !autoStorageEnabledOnce) {
+      autoStorageEnabledOnce = true;
+      toggleAutoStorage(false);
+    }
+  }
   function RbuyBuildings() {
     if (game.global.challengeActive === "Hypothermia" && getPageSetting2("Rhypostorage")) {
       let hypofarmzone;
@@ -3711,9 +3719,7 @@
         RbuyStorage(true, false, true);
       }
     } else {
-      if (!game.global.autoStorage) {
-        toggleAutoStorage(false);
-      }
+      __syncAutoStorageOnce();
     }
     if (!game.buildings.Smithy.locked && canAffordBuilding("Smithy", false, false, false, false, 1) && Rhyposhouldwood) {
       if (game.global.challengeActive === "Quest") {
@@ -16311,7 +16317,7 @@
     createSetting("MaxNursery", "Max Nurseries", "Advanced. Recommend: -1 until you reach Magma (z230+)", "value", "-1", null, "Buildings");
     createSetting("NurseryWall", "Nursery Wall", "Only spends N% of resources on nurseries. N being this setting. ", "value", -1, null, "Buildings");
     createSetting("NoNurseriesUntil", "No Nurseries Until z", "Builds Nurseries starting from this zone. -1 to build from when they are unlocked. ", "value", "-1", null, "Buildings");
-    createSetting("RBuyBuildingsNew", "AutoBuildings", "Buys buildings in an efficient way. Also enables Vanilla AutoStorage if its off. ", "boolean", "true", null, "Buildings");
+    createSetting("RBuyBuildingsNew", "AutoBuildings", "Buys buildings in an efficient way. Also enables Vanilla AutoStorage if its off. ", "boolean", true, null, "Buildings");
     createSetting("RMaxHut", "Max Huts", "Huts", "value", "100", null, "Buildings");
     createSetting("RMaxHouse", "Max Houses", "Houses", "value", "100", null, "Buildings");
     createSetting("RMaxMansion", "Max Mansions", "Mansions", "value", "100", null, "Buildings");

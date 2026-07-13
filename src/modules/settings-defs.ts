@@ -270,7 +270,7 @@ export function initializeAllSettings() {
     //RBuildings
 
     //Line 1
-    createSetting('RBuyBuildingsNew', 'AutoBuildings', 'Buys buildings in an efficient way. Also enables Vanilla AutoStorage if its off. ', 'boolean', 'true', null, "Buildings");
+    createSetting('RBuyBuildingsNew', 'AutoBuildings', 'Buys buildings in an efficient way. Also enables Vanilla AutoStorage if its off. ', 'boolean', true, null, "Buildings");
     createSetting('RMaxHut', 'Max Huts', 'Huts', 'value', '100', null, "Buildings");
     createSetting('RMaxHouse', 'Max Houses', 'Houses', 'value', '100', null, "Buildings");
     createSetting('RMaxMansion', 'Max Mansions', 'Mansions', 'value', '100', null, "Buildings");

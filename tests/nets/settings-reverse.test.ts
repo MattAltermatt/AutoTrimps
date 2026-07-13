@@ -364,17 +364,14 @@ describe('no boolean setting is declared with a STRING default (#69)', () => {
   // ⚠️ These are NOT free to fix in bulk: flipping `'false'` → `false` CHANGES behavior for every
   // truthiness reader of that setting (ON → OFF). Each one needs its readers checked. Hence a queue.
   const KNOWN_STRING_DEFAULT: Record<string, string> = {
-    // #69 ship B unquoted 32 (measured: ZERO L0 trace divergences). Ship D unquoted the damage trio
-    // ('45stacks' / 'fullice' / 'addpoison') behind purpose-built calcOurDmg characterization goldens
-    // (tests/calc.damageTrio.test.ts) — NOT on the strength of a green proof net, which is structurally
-    // blind to them (a 1,000,000x multiplier injected into the restored Anticipation arm passes the
-    // entire sim suite GREEN — #90). One is left, and it is held back because its repair alters
-    // behavior in a way this repo's nets cannot vouch for:
-    RBuyBuildingsNew:
-      "#69 — 'true'. Its SOLE gate is `== true` -> false, so U2 AutoBuildings has NEVER run while the " +
-      'UI has always shown it ON. Repairing it moves 1167 oracle traces on 04-u2-radon — the only ' +
-      'trace-mover of the 36. Ships alone, behind an explicit decision + a deliberate re-pin.',
+    // ✅ EMPTY — all 36 are FIXED (#69). Every boolean setting now carries a real boolean default, and
+    // settings-engine.ts coerces the persisted strings that five years of saves are carrying. This
+    // baseline must stay empty: a re-quoted default is a new bug, and the ceiling below refuses to let
+    // one be parked here. The bug this closes: 'false' is TRUTHY, and JS `==` never coerces it, so
+    // `'false' == true` AND `'false' == false` were BOTH false while `if (x)` saw ON — every setting's
+    // effective value depended on how its reader happened to test it.
   }
+
 
 
   it('finds the boolean-setting inventory (anti-false-green)', () => {

@@ -570,6 +570,27 @@ export function RbuyStorage(buyFood: boolean, buyWood: boolean, buyMetal: boolea
 
 }
 
+// #69 ship C: this path had NEVER executed in production (RbuyBuildings' gate compared a STRING to
+// `true`), so there is no legacy behavior to preserve — this is a first-ever choice.
+//
+// The trap: the game's toggleAutoStorage(false) is a FLIP, not a setter (.trimps-game/main.js:18378 —
+// `if (!noChange) game.global.autoStorage = !game.global.autoStorage`). Guarded only on the flag being
+// off, it re-fires the instant the player turns AutoStorage off, so AT would force it back on ~100ms
+// later, every tick, forever, with no opt-out anywhere in the settings. The setting's own tooltip only
+// promises to "enable Vanilla AutoStorage if its off" — holding it on against the player is a different
+// thing, and a player who cannot turn off a button is a bug report waiting to happen.
+//
+// So: one-shot. Enable it once per page load if it is off, then respect the player.
+let autoStorageEnabledOnce = false;
+
+/** Enable the game's AutoStorage at most once per page load, then leave the player's choice alone. */
+export function __syncAutoStorageOnce() {
+    if (!game.global.autoStorage && !autoStorageEnabledOnce) {
+        autoStorageEnabledOnce = true;
+        toggleAutoStorage(false);
+    }
+}
+
 export function RbuyBuildings() {
 
     // Storage
@@ -611,9 +632,7 @@ export function RbuyBuildings() {
         }
     }
     else {
-        if (!game.global.autoStorage) {
-            toggleAutoStorage(false);
-        }
+        __syncAutoStorageOnce();
     }
 
 
