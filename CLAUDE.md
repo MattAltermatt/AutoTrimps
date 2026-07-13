@@ -143,6 +143,53 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **🌙 THE ALL-NIGHT SWEEP — 30 of 36 code-review-v2 issues closed** (2026-07-13) — 955 tests, deploy green.
+  Everything below is a *live* gotcha, not a changelog. The changelog is the closed issues.
+  🔬 **THE PROOF NET CAN FINALLY SEE THE BOT (#90/#98).** It used to record only buy events on 4 saves that all
+  decoded to HZE=3/world=4 — so a **1,000,000× damage multiplier passed the entire sim suite GREEN**. Now: 8
+  saves, **10/10 mutators**, and `tests/sim/damage-sensitivity.test.ts` is a **mutation SELF-TEST** that patches
+  the bundle every CI run and *demands* the differential go red.
+  🎯 **REACH ≠ SENSITIVITY — the deepest lesson of the night.** Fixing corpus *reach* was not enough: on a deep
+  save with AT mapping and fighting every tick, the 1e6× injection **still diffed to zero**. AT's damage
+  decisions are **threshold predicates** (`dmg * cutoff > enemyHealth`), and on a *healthy* save that predicate
+  is **already true** — multiplying its input by a million leaves it true. **Calling a function is not the same
+  as depending on its answer.** The fix was `08-starved-u1`: damage-*starved* but *perked*, so the threshold sits
+  **unsaturated**. Any future coverage claim must prove sensitivity, not just execution.
+  🕳️ **The recorder was watching the WRONG functions.** AT creates maps via `buyMap()` (38 sites) and recycles
+  via `recycleBelow()` — *neither was wrapped*. The `recycleMap` that *was* wrapped only fires at the game's
+  100-map cap. #90 blamed corpus depth; that was the smaller half.
+  🚨 **PHANTOM SETTINGS ARE NOT TYPOS — re-minting one is a DATA-LOSS BUG.** Three were REAL settings deleted
+  upstream in 2020 (`701faab4`). `createSetting` applies its default **only when nothing is stored**, and
+  `serializeSettings` round-trips unknown keys **forever** — so re-minting a deleted id **resurrects the user's
+  five-year-old value**. Three dispositions: **repoint** at an existing id (mints nothing) · **delete** the read ·
+  **mint only if `git log --all -S"createSetting.*<id>"` is EMPTY**. `MaxTox`'s phantom was *accidentally
+  protective* — defining it would throw in the portal path; it was **deleted**, not defined.
+  🧩 **FIX THE CONSUMER BEFORE THE DEFAULT.** Proven twice (#96, #100). A default change **cannot reach existing
+  users** (their localStorage already holds the old value), so the consumer fix is the *only* step that helps
+  anyone who already plays — and adopting the "correct" default first actively regresses them. #96: `[NaN×9]`
+  **was** the load-bearing "unset" semantic, and the codebase's own `[-1]` convention would have blocked Smithy
+  for the whole Hypothermia challenge. #100: flipping the default first makes `archstring()` write
+  `game.global.archString = ''` into the live game.
+  🪤 **CHECK EXIT CODES, NOT GREP.** I verified lint with `| grep -cE '^\s*(error|warning)'` — which never matches
+  oxlint's format. It printed `0` every time, **a gate incapable of failing ran for hours**, and the Pages deploy
+  went **RED on `main`** invisibly. Use `npm run lint >/dev/null 2>&1; echo $?`. See
+  [[feedback-check-exit-codes-not-grep]].
+  🔒 **The golden-regen laundering hatch is CLOSED (#91).** `regen-src-golden.mjs` now **refuses to run without
+  `--reason`**, records it + the sha256 in a committed manifest, and the parity test rejects any golden whose hash
+  disagrees. It cannot stop a determined liar; it converts a *silent side effect of a build command* into an
+  *attributable claim in the diff*. (Its `bytes` field must be `Buffer.byteLength`, not `String.length` — they
+  diverge the moment a non-ASCII char lands in the emit.)
+  🧹 **ZERO `oxlint-disable` suppressions remain in `src/` (#92, 69 → 0), and `no-eval`/`no-new-func`/
+  `no-implied-eval` are ON with a test forbidding their suppression.** #76 found a live `eval()` RCE that had
+  shipped for **nine years** behind an `oxlint-disable-next-line no-eval` — and the feature it guarded had been a
+  **no-op since 2016** (the importer truncates at the first `;`; the exporter emits JSON, which has none).
+  💀 **31 unreachable exports deleted (#85) via a call-graph WALK, not a reference count** — that is how it found
+  dead *cycles* (`RsafeBuyBuilding` and friends have real callers; every caller is itself dead). ⚠️ `RsafeBuyBuilding`
+  must **not** be resurrected: it was a copy of `safeBuyBuilding` **with the coordinator hook missing**.
+  📌 Oracle re-pinned once (`oracle/v3-u2-autobuildings`, #69 ship C). **COUNT THE EVENTS BEFORE BELIEVING A
+  DIVERGENCE COUNT** — "1167 divergences" was 1201 → 1204: three *inserted* events, every pre-existing one
+  unchanged. #90/#98's re-record was **additive, not a re-pin** (all 10 prior traces byte-identical).
+
 - **👁️ #90 + #98 SHIPPED — THE NET CAN SEE THE BOT NOW** (2026-07-13) — the L0 proof net was structurally
   blind to combat: a **1,000,000× damage multiplier passed the entire sim suite GREEN**. It now goes **RED
   with 1542 divergences**, and that is enforced forever by `tests/sim/damage-sensitivity.test.ts` — a
