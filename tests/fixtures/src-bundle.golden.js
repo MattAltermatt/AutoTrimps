@@ -3743,14 +3743,6 @@
     if (!game.buildings.Microchip.locked && canAffordBuilding("Microchip")) {
       buyBuilding("Microchip", true, true, 1);
     }
-    const HousingTypes = ["Hut", "House", "Mansion", "Hotel", "Resort", "Gateway", "Collector"];
-    const housingTargets = [];
-    for (const house in HousingTypes) {
-      const maxHousing = getPageSetting2("RMax" + house) === -1 ? Infinity : getPageSetting2("RMax" + house);
-      if (!game.buildings[HousingTypes[house]].locked && game.buildings[HousingTypes[house]].owned < maxHousing) {
-        housingTargets.push(house);
-      }
-    }
     let boughtHousing = false;
     do {
       boughtHousing = false;

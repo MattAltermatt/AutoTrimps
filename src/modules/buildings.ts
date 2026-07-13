@@ -656,18 +656,19 @@ export function RbuyBuildings() {
         buyBuilding('Microchip', true, true, 1);
     }
 
-    //Housing
-    const HousingTypes = ['Hut', 'House', 'Mansion', 'Hotel', 'Resort', 'Gateway', 'Collector'];
-
-    // Which houses we actually want to check
-    const housingTargets = [];
-    for (const house in HousingTypes) {
-        const maxHousing = (getPageSetting('RMax' + house) === -1 ? Infinity : getPageSetting('RMax' + house));
-        if (!game.buildings[HousingTypes[house]].locked && game.buildings[HousingTypes[house]].owned < maxHousing) {
-            housingTargets.push(house);
-        }
-    }
-
+    // Housing
+    //
+    // #95: a `housingTargets` pre-filter used to sit here. It was dead THREE times over:
+    //   1. It iterated `for (const house IN HousingTypes)` — `for..in` over an ARRAY yields the index
+    //      STRINGS '0'..'6', so its cap lookup was getPageSetting('RMax0')…getPageSetting('RMax6').
+    //      Those seven ids were never createSetting'd, so every one returned `false` (#68), making
+    //      `maxHousing` false and `owned < false` → `owned < 0` → the filter admitted nothing.
+    //   2. Nothing ever read `housingTargets`. The buy loop below calls mostEfficientHousing().
+    //   3. mostEfficientHousing() already runs the SAME filter correctly (`for..of`, real `RMax<name>`
+    //      ids), and the do/while below re-applies the cap on the winner. So even a repaired copy here
+    //      would be redundant compute — 7 extra getPageSetting calls per tick for a value nobody reads.
+    // Deleted rather than repaired: reviving it would need `RMax0`…`RMax6` settings that must NOT be
+    // minted (#68 — a re-minted id resurrects the user's stored value forever).
     let boughtHousing = false;
 
     do {

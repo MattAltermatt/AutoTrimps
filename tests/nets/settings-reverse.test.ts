@@ -227,7 +227,13 @@ const ALLOWED_DYNAMIC: Record<string, string> = {
   "'Max' + keysSorted[best]": 'buildings.ts — same family, keyed by the winning building',
   "'RMax' + bb.name": 'buildings.ts — the U2 (RMax*) twin of the same family',
   "'RMax' + keysSorted[best]": 'buildings.ts — U2 twin',
-  "'RMax' + house": 'buildings.ts — U2 twin, keyed by housing name',
+  // ⚠️ #95: this entry USED TO BE A LIE. Two sites shared the expression text `'RMax' + house`; in one of
+  // them `house` came from `for (const house IN HousingTypes)` — an INDEX string, so it read the phantoms
+  // RMax0..RMax6, and this allowlist waved it through on the strength of a comment. The buggy site is
+  // deleted; the survivor (mostEfficientHousing, `for..of`) really is keyed by name. A dynamic id is only
+  // as safe as the claim written beside it — re-read the site, do not trust the text.
+  // tests/buildings.housingCaps.test.ts now pins the consequence behaviorally.
+  "'RMax' + house": 'buildings.ts — U2 twin, keyed by housing name (mostEfficientHousing, for..of)',
   "'RMax' + housing": 'buildings.ts — U2 twin, keyed by housing name',
   "'R' + worker + 'Ratio'": 'jobs.ts:650 — RFarmerRatio / RLumberjackRatio / RMinerRatio',
   "'Auto' + nature": 'nature.ts:17 — AutoPoison / AutoWind / AutoIce',
