@@ -32,12 +32,17 @@ export function readyToSwitch(stance = "S") {
 export function useScryerStance() {
     var scry = 4;
     var scryF = 'S';
-    var x = 0;
+    // #83 §3: STRING, not number. The game's setFormation guards on `if (what)` (main.js:16838), so
+    // numeric 0 (X formation) is FALSY and the call is a silent no-op — and because the arms below
+    // `return` after calling it, that no-op also eats the setFormation(scry) fallback at the bottom,
+    // making the whole tick dead. The game's own UI passes strings (`setFormation("0")`, main.js:2779)
+    // and parseInts them, so '0'/'5' are the correct, native idiom. `x` is only ever a setFormation arg.
+    var x = '0';
 
     if (game.global.uberNature == "Wind" && getEmpowerment() != "Wind") {
         scry = 5;
         scryF = 'W';
-        x = 5;
+        x = '5';
     }
     
     var AutoStance = getPageSetting('AutoStance');

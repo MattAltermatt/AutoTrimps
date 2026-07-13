@@ -339,5 +339,9 @@ export function windStance() {
             dhighHeirloom();
         }
     }
-    setFormation(stancey);
+    // #83 §3: stancey is 0 (X formation) on four paths above, and the game's setFormation guards on
+    // `if (what)` (main.js:16838) — numeric 0 is falsy, so windStance could NEVER enter X. Stringify
+    // to match the game's own UI idiom (`setFormation("0")`) and stance.ts:296/298 next door. 1/2/5
+    // are unaffected: the game parseInts its argument.
+    setFormation(String(stancey));
 }

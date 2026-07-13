@@ -157,7 +157,16 @@ describe('stance.windStance — stance-tier mapping', () => {
   function setup(currentStance: number, challengeActive = '') {
     formationCalls = []
     heirloomCalls = []
-    ;(globalThis as any).setFormation = vi.fn((f: unknown) => formationCalls.push(f))
+    // #83 §3: this spy now ENFORCES THE CALLEE'S CONTRACT instead of merely recording the call.
+    // The real game does `function setFormation(what) { if (what) { ... } }` (main.js:16838), so a
+    // falsy argument is a SILENT NO-OP. A bare vi.fn() happily green-lit windStance passing numeric
+    // 0 (= X formation) — which is exactly why this suite was blind to the bug for so long. The
+    // expectations below are STRINGS because that is what the game's own UI passes
+    // (`setFormation("0")`, main.js:2779) and what setFormation parseInts.
+    ;(globalThis as any).setFormation = vi.fn((f: unknown) => {
+      if (!f) throw new Error(`setFormation(${JSON.stringify(f)}) is a silent no-op in the real game — pass a string`)
+      formationCalls.push(f)
+    })
     ;(globalThis as any).calcCurrentStance = () => currentStance
     for (const h of ['lowHeirloom', 'highHeirloom', 'dlowHeirloom', 'dhighHeirloom']) {
       ;(globalThis as any)[h] = () => heirloomCalls.push(h)
@@ -171,28 +180,28 @@ describe('stance.windStance — stance-tier mapping', () => {
   it('non-daily stance 5 → setFormation(5) + lowHeirloom', () => {
     setup(5)
     windStance()
-    expect(formationCalls).toEqual([5])
+    expect(formationCalls).toEqual(['5'])
     expect(heirloomCalls).toEqual(['lowHeirloom'])
   })
 
   it('non-daily stance 15 → setFormation(5) + highHeirloom (the high-tier arm)', () => {
     setup(15)
     windStance()
-    expect(formationCalls).toEqual([5])
+    expect(formationCalls).toEqual(['5'])
     expect(heirloomCalls).toEqual(['highHeirloom'])
   })
 
   it('non-daily stance 10 → setFormation(0) + highHeirloom', () => {
     setup(10)
     windStance()
-    expect(formationCalls).toEqual([0])
+    expect(formationCalls).toEqual(['0'])
     expect(heirloomCalls).toEqual(['highHeirloom'])
   })
 
   it('daily stance 12 → setFormation(2) + dhighHeirloom (daily branch)', () => {
     setup(12, 'Daily')
     windStance()
-    expect(formationCalls).toEqual([2])
+    expect(formationCalls).toEqual(['2'])
     expect(heirloomCalls).toEqual(['dhighHeirloom'])
   })
 
