@@ -14747,6 +14747,8 @@
           type,
           enabled: loaded === void 0 ? defaultValue || false : loaded
         };
+      if (typeof defaultValue === "boolean" && typeof autoTrimpSettings[id].enabled === "string")
+        autoTrimpSettings[id].enabled = autoTrimpSettings[id].enabled === "true";
       btn.setAttribute("style", "font-size: 1.1vw;");
       btn.setAttribute("class", "noselect settingsBtn settingKind-toggle settingBtn" + autoTrimpSettings[id].enabled);
       btn.setAttribute("onclick", 'settingChanged("' + id + '")');

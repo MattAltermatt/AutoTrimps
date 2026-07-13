@@ -67,6 +67,25 @@ export function createSetting(id: any, name: any, description: any, type: any, d
                 type: type,
                 enabled: loaded === undefined ? (defaultValue || false) : loaded
             };
+        // #69: ~36 boolean settings were declared with the STRING 'false'/'true'. A string is truthy, and
+        // JS `==` never coerces it, so `'false' == true` AND `'false' == false` are BOTH false while
+        // `if (x)` sees ON — the setting's effective value depended on how each reader happened to test it.
+        //
+        // Unquoting the declarations alone repairs NOBODY: serializeSettings() flattens each boolean to a
+        // bare `enabled` value, so localStorage holds `{"Rhypostorage":"false"}` — a raw string, not a
+        // record. On reload that string comes back through `: loaded` above and `defaultValue` is never
+        // even consulted. The persisted value is the load-bearing half, and this is where it is repaired.
+        //
+        // Click-safe by construction: settingChanged() writes `!enabled`, i.e. a REAL boolean. So a value
+        // that is still a *string* proves the user has never clicked this toggle, and coercing it cannot
+        // discard a user's choice.
+        //
+        // Gated on `typeof defaultValue === 'boolean'` deliberately. That makes the coercion INERT until a
+        // given setting's declaration is actually unquoted, so the 36 can be repaired one reviewable group
+        // at a time instead of all flipping at once — which matters enormously, because exactly one of them
+        // (RBuyBuildingsNew) moves 1167 oracle traces and the other 35 move none.
+        if (typeof defaultValue === 'boolean' && typeof autoTrimpSettings[id].enabled === 'string')
+            autoTrimpSettings[id].enabled = autoTrimpSettings[id].enabled === 'true';
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn settingKind-toggle settingBtn' + autoTrimpSettings[id].enabled);
         btn.setAttribute("onclick", 'settingChanged("' + id + '")');
