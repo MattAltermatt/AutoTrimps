@@ -5,6 +5,19 @@
 **Quality plan:** [`2026-07-12-code-review-v2-quality-plan.md`](2026-07-12-code-review-v2-quality-plan.md)
 **Tracker:** [Milestone #9 — Phase 5 — Code Review v2](https://github.com/MattAltermatt/AutoTrimps/milestone/9) · issues **#67–#87**
 
+> ### ✅ Progress since this report
+> **#67 (the blocker) SHIPPED 2026-07-12 (`79f96935`) — the deploy gate is real, and #68–#87 are unblocked.**
+> The fix departed from this report's recommendation: rather than fetch the clone in a CI step and hard-fail
+> on its absence (which fixes the runner but leaves every laptop with the same silent-skip hole), the clone
+> became a SHA-pinned dependency `npm ci` materializes — so `tests/sim/guard.ts` could be **deleted** outright.
+> This report's ⚠️ "load-bearing risk" — that the traces might not be reproducible on a linux runner and might
+> force an oracle re-record — **was measured and does not exist.** The keystone reproduces darwin/arm64 traces
+> on linux/x64, and the positive control fails there with identical divergence counts.
+> Two holes this report did not name were found by running the gate: **`deploy.yml` needed the fix, not just a
+> new `ci.yml`**, and **`boot.mjs` implicitly booted the gitignored `dist/`**, making the net's input ambient.
+> New issues filed during the fix: **#88–#92** (notably **#90** — the net records zero `runMap`/`selectMap`/
+> `setFormation`/`recycleMap` events corpus-wide, so it proves the *buy path*, not the whole bot).
+
 ## Fix order — read this first
 
 The issues are numbered in the order they should be worked. That order is load-bearing, not cosmetic.
