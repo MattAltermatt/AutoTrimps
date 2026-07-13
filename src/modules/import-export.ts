@@ -966,16 +966,45 @@ export function cleanupAutoTrimps(): string[] {
 }
 export function exportModuleVars(){return JSON.stringify(compareModuleVars())}
 
+// #102 — WAS: `var b = MODULESdefault[mod][vj]` with no guard on `MODULESdefault[mod]`.
+//
+// MODULESdefault was populated in exactly ONE place — `delayStartAgain()` (AutoTrimps2.js), the second
+// link of the `setTimeout` startup chain, i.e. `2 × startupDelay` = 8s after page load. Until then it
+// is the bare `var MODULESdefault = {}` (AutoTrimps2.js:103), so `MODULESdefault[mod]` is `undefined`
+// and this line throws `TypeError: Cannot read properties of undefined`. The settings GUI is already
+// mounted at 4s (`delayStart` → `initializeAutoTrimps`), so for a full four seconds the Import/Export
+// tab's Export button and "Reset Module Vars" are clickable and both land in the hole. Reset is the
+// nastier one: it throws AFTER `ATrunning = false` and BEFORE the line that restores it, so AT stays
+// dead until reload — the same shape as #71a.
+//
+// Fixed at BOTH ends, because neither end suffices alone:
+//
+//  1. `MODULESdefault` is now seeded EAGERLY at bundle-eval time (src/main.ts), which removes the
+//     window rather than papering over it. It is a deep clone of MODULES, and MODULES is fully
+//     constructed by then — for every module the src bundle owns.
+//
+//  2. …but NOT for `graphs`. ⚠️ `MODULES.graphs` is registered by `legacy/Graphs.js`, which the build
+//     emits AFTER the src IIFE (see MANIFEST) — so at end-of-main.ts it does not exist yet, and an
+//     eager seed alone would leave `MODULESdefault['graphs']` undefined while `MODULES.graphs` exists.
+//     compareModuleVars() iterates `Object.keys(MODULES)`, so it would have thrown on exactly the same
+//     line, for exactly the same reason. The eager fix ALONE IS NOT A FIX. So the read is also made
+//     total: a module with no recorded default has no knowable overrides, and reports none. (After
+//     delayStartAgain re-seeds at 8s, `graphs` has a default and diffs normally — unchanged from today.)
+//
+// Consequence: compareModuleVars() is now TOTAL. With MODULESdefault entirely unpopulated it returns
+// `{}` — "no overrides yet", which is also exactly what it returns right after resetModuleVars().
 export function compareModuleVars() {
     var diffs: Record<string, any> = {};
     var mods = Object.keys(MODULES);
     for (var i in mods) {
         var mod = mods[i];
+        var defaults = MODULESdefault[mod];
+        if (defaults === undefined || defaults === null) continue;
         var vars = Object.keys(MODULES[mods[i]]);
         for (var j in vars) {
             var vj = vars[j];
             var a = MODULES[mod][vj];
-            var b = MODULESdefault[mod][vj];
+            var b = defaults[vj];
             if (JSON.stringify(a)!=JSON.stringify(b)) {
                 if (typeof diffs[mod] === 'undefined')
                     diffs[mod] = {};
@@ -984,6 +1013,19 @@ export function compareModuleVars() {
         }
     }
     return diffs;
+}
+
+/**
+ * #102 — seed MODULESdefault at bundle-eval time, closing the 8-second window in which
+ * compareModuleVars()/exportModuleVars()/resetModuleVars() threw (see the comment above).
+ *
+ * Called from src/main.ts AFTER every side-effect import, so every `MODULES["x"] = {…}` the src bundle
+ * performs has already run. `delayStartAgain()` still re-seeds later; that pass is a superset (it also
+ * catches `MODULES.graphs`, registered by the post-IIFE legacy Graphs.js) and leaves steady-state
+ * behavior byte-identical to before.
+ */
+export function seedModuleDefaults() {
+    MODULESdefault = JSON.parse(JSON.stringify(MODULES));
 }
 
 // #76(B) — WAS: split the import textarea on newlines, truncate each line at its first `;`, strip

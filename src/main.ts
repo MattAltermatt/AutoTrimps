@@ -2,6 +2,7 @@
 // The build emits this src bundle right after AutoTrimps2.js (before the remaining
 // legacy modules), so still-legacy load-time callers resolve the published functions.
 import './legacy-bridge'
+import { seedModuleDefaults } from './modules/import-export'
 
 // perks has no exports — its API is the AutoPerks/RAutoPerks globals it assigns, and its
 // top-level AutoPerks.displayGUI() calls converted utils (safeSetItems) by bare name. So it
@@ -19,5 +20,14 @@ import './modules/performance'
 // NOTE: settings-boot is imported+published by legacy-bridge (its bootSettingsUI export must be a
 // global). It no longer self-invokes at bundle-eval time — initializeAutoTrimps() calls it after
 // loadPageVariables() so the 570 createSetting calls rehydrate the loaded save, not empty defaults.
+
+// #102 — MUST be the last statement: it deep-clones MODULES into MODULESdefault, so every
+// `MODULES["x"] = {…}` above has to have run. Until this existed, MODULESdefault was seeded only by
+// delayStartAgain() — 8s (2 × startupDelay) into the page — while the settings GUI was already live at
+// 4s, so compareModuleVars()/exportModuleVars()/resetModuleVars() threw a TypeError for anyone who
+// clicked Export or "Reset Module Vars" in between. Reset left AT dead until reload (it throws with
+// ATrunning already false). See the long comment on compareModuleVars() — the eager seed alone is NOT
+// sufficient (MODULES.graphs is registered by the post-IIFE legacy Graphs.js), so the read is total too.
+seedModuleDefaults()
 
 console.log('[AutoTrimps] modern build booted')

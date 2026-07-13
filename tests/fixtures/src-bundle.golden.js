@@ -10624,6 +10624,7 @@
     parseModuleVars: () => parseModuleVars,
     resetAutoTrimps: () => resetAutoTrimps,
     resetModuleVars: () => resetModuleVars,
+    seedModuleDefaults: () => seedModuleDefaults,
     settingsProfileDropdownHandler: () => settingsProfileDropdownHandler,
     settingsProfileMakeGUI: () => settingsProfileMakeGUI2
   });
@@ -11519,11 +11520,13 @@
     var mods = Object.keys(MODULES);
     for (var i in mods) {
       var mod = mods[i];
+      var defaults = MODULESdefault[mod];
+      if (defaults === void 0 || defaults === null) continue;
       var vars = Object.keys(MODULES[mods[i]]);
       for (var j in vars) {
         var vj = vars[j];
         var a = MODULES[mod][vj];
-        var b = MODULESdefault[mod][vj];
+        var b = defaults[vj];
         if (JSON.stringify(a) != JSON.stringify(b)) {
           if (typeof diffs[mod] === "undefined")
             diffs[mod] = {};
@@ -11532,6 +11535,9 @@
       }
     }
     return diffs;
+  }
+  function seedModuleDefaults() {
+    MODULESdefault = JSON.parse(JSON.stringify(MODULES));
   }
   var PROTO_KEYS = /* @__PURE__ */ new Set(["__proto__", "constructor", "prototype"]);
   function isPlainObject(v) {
@@ -17715,5 +17721,6 @@
   })(MODULES, window);
 
   // src/main.ts
+  seedModuleDefaults();
   console.log("[AutoTrimps] modern build booted");
 })();
