@@ -52,6 +52,32 @@ export function renderControlFace(el: any, rec: any) {
     }
 }
 
+// #81 / #61 — a multitoggle's stored value is restored VERBATIM: loadPageVariables() drops the whole
+// localStorage blob onto autoTrimpSettings, and createSetting's `loaded === undefined ? default : loaded`
+// keeps whatever was there. Nothing ever checked the value against the option list. So an index that no
+// longer exists survives every load and goes straight to the dispatch table, where NO arm matches it and
+// the feature silently does nothing — forever, with no error. The shipped "550+ AT Settings" preset does
+// exactly this: it writes BetterAutoFight = 3 into a 3-option (0..2) setting, so a player who loads that
+// preset gets no AutoFight management at all.
+//
+// The class is wider than the one preset — a hand-edited save, or any save written before an option was
+// removed upstream, smuggles the same corruption. So the recovery lives here, at the one chokepoint every
+// value must pass. `defaultValue` is the only NON-ARBITRARY target: it is the fallback the setting itself
+// already declares, so this invents no behavior.
+//
+// Deliberately SURGICAL: an in-range value is left byte-identical, including the four settings whose
+// default is the *string* '0' rather than 0 (dfightforever, Rdfightforever, AutoPortalDaily,
+// RAutoPortalDaily — a #69-family string-default defect, latent because getPageSetting parseInt()s and
+// `btn.value++` coerces). Normalizing those here would change what serializeSettings() writes for every
+// user, which is a separate decision from closing this hole.
+function clampMultitoggle(id: any, name: any, defaultValue: any) {
+    var stored = parseInt(autoTrimpSettings[id].value);
+    if (Number.isInteger(stored) && stored >= 0 && stored < name.length) return;
+    var fallback = parseInt(defaultValue);
+    autoTrimpSettings[id].value =
+        Number.isInteger(fallback) && fallback >= 0 && fallback < name.length ? fallback : 0;
+}
+
 export function createSetting(id: any, name: any, description: any, type: any, defaultValue: any, list: any, container: any) {
     var btnParent = document.createElement("DIV");
     btnParent.setAttribute('style', 'display: inline-block; vertical-align: top; margin-left: 1vw; margin-bottom: 1vw; width: 13.142vw;');
@@ -202,6 +228,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
                 type: type,
                 value: loaded === undefined ? defaultValue || 0 : loaded
             };
+        clampMultitoggle(id, name, defaultValue);
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn settingKind-cycle settingBtn' + autoTrimpSettings[id].value);
         btn.setAttribute("onclick", 'settingChanged("' + id + '")');

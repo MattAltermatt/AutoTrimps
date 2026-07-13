@@ -212,7 +212,7 @@ describe('legacy-bridge spread — no module may silently shadow another module 
     // it. Those paths are unexercised by the current corpus, which is why the counts are pinned too.)
     const at = (n: string) => (byName.get(n) ?? []).map((d) => `${d.file}:${d.line}`)
     expect(at('byId')).toContain('src/modules/utils.ts:181')
-    expect(at('createSetting')).toContain('src/modules/settings-engine.ts:55')
+    expect(at('createSetting')).toContain('src/modules/settings-engine.ts:81')
     // Every bridged module must have contributed at least one export; a module whose walk returned
     // nothing is a module this net is not watching at all.
     const contributing = new Set([...byName.values()].flat().map((d) => d.alias))

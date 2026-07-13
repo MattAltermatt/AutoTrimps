@@ -14755,6 +14755,12 @@
       label.textContent = " " + rec.name;
     }
   }
+  function clampMultitoggle(id, name, defaultValue) {
+    var stored = parseInt(autoTrimpSettings[id].value);
+    if (Number.isInteger(stored) && stored >= 0 && stored < name.length) return;
+    var fallback = parseInt(defaultValue);
+    autoTrimpSettings[id].value = Number.isInteger(fallback) && fallback >= 0 && fallback < name.length ? fallback : 0;
+  }
   function createSetting2(id, name, description, type, defaultValue, list, container) {
     var btnParent = document.createElement("DIV");
     btnParent.setAttribute("style", "display: inline-block; vertical-align: top; margin-left: 1vw; margin-bottom: 1vw; width: 13.142vw;");
@@ -14888,6 +14894,7 @@
           type,
           value: loaded === void 0 ? defaultValue || 0 : loaded
         };
+      clampMultitoggle(id, name, defaultValue);
       btn.setAttribute("style", "font-size: 1.1vw;");
       btn.setAttribute("class", "noselect settingsBtn settingKind-cycle settingBtn" + autoTrimpSettings[id].value);
       btn.setAttribute("onclick", 'settingChanged("' + id + '")');

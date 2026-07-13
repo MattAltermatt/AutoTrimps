@@ -208,14 +208,20 @@ function mainLoop() {
         computeTopTarget();
 
         //Buildings
+        // #81: the `== 3` ("Buy Storage") arm used to sit OUTSIDE this block — the `}` closed the
+        // `if (!usingRealTimeOffline)`, making `else if (... == 3)` the OUTER else, so its guard was
+        // usingRealTimeOffline === TRUE. That flag is set only while the game replays offline progress
+        // right after a load, so option 3 ran during the replay and NEVER in live play: a player who
+        // picked "Buy Storage" got no buildings and no storage for the whole session. The two halves
+        // were exactly inverted. Every option now dispatches inside the live-play block.
         if (!usingRealTimeOffline) {
         if (getPageSetting('BuyBuildingsNew') === 0 && getPageSetting('hidebuildings') == true) buyBuildings();
         else if (getPageSetting('BuyBuildingsNew') == 1) {
             buyBuildings();
             buyStorage();
         } else if (getPageSetting('BuyBuildingsNew') == 2) buyBuildings();
-	}
         else if (getPageSetting('BuyBuildingsNew') == 3) buyStorage();
+	}
         if (getPageSetting('UseAutoGen') == true && game.global.world > 229) autoGenerator();
 
         //Jobs
