@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import ts from 'typescript'
+import { MANIFEST } from '../../scripts/build-userscript.mjs'
 
 // #68 / #69 / #74 — the REVERSE settings nets.
 //
@@ -37,7 +38,11 @@ const ROOT = resolve(__dirname, '..', '..')
 
 // The corpus is the SHIPPED bundle's inputs (scripts/build-userscript.mjs MANIFEST), not the whole tree.
 // legacy/GraphsOnly.js and legacy/FastPriorityQueue.js are NOT bundled; counting them would launder a bug.
-const LEGACY_MANIFEST = ['legacy/AutoTrimps2.js', 'legacy/Graphs.js']
+// Derived from the BUILD's own MANIFEST, never hardcoded. A hardcoded copy is how this net went stale
+// when #75 vendored legacy/FastPriorityQueue.js: the file became part of the shipped bundle, but the net
+// still believed it wasn't — so it kept treating FastPriorityQueue as externally-provided. Read the
+// manifest and a newly-bundled legacy file joins every net's corpus for free, with nothing to remember.
+const LEGACY_MANIFEST = MANIFEST.map((f: string) => join('legacy', f))
 
 function tsSources(dir: string, acc: string[] = []): string[] {
   for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {

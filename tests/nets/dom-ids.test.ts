@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import ts from 'typescript'
+import { MANIFEST } from '../../scripts/build-userscript.mjs'
 
 // #73 — the DOM-id resolution net.
 //
@@ -28,7 +29,11 @@ const ROOT = resolve(__dirname, '..', '..')
 // two legacy files; legacy/GraphsOnly.js and legacy/FastPriorityQueue.js are NOT bundled, and a
 // lookup that only "resolves" in an unshipped file resolves to nothing at runtime. A test below pins
 // this list against the real MANIFEST so a future bundle change cannot silently widen the corpus.
-const LEGACY_MANIFEST = ['legacy/AutoTrimps2.js', 'legacy/Graphs.js']
+// Derived from the BUILD's own MANIFEST, never hardcoded. A hardcoded copy is how this net went stale
+// when #75 vendored legacy/FastPriorityQueue.js: the file became part of the shipped bundle, but the net
+// still believed it wasn't — so it kept treating FastPriorityQueue as externally-provided. Read the
+// manifest and a newly-bundled legacy file joins every net's corpus for free, with nothing to remember.
+const LEGACY_MANIFEST = MANIFEST.map((f: string) => join('legacy', f))
 
 // The SHA-pinned clone `npm ci` materializes (scripts/fetch-game-clone.mjs). NOT the dev workspace at
 // ../trimps-game — that one does not exist on CI, and a test that cannot run on the runner is exactly

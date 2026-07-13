@@ -16815,11 +16815,6 @@
   globalThis.AutoPerks = {};
   MODULES["perks"] = {};
   MODULES["perks"].showDetails = true;
-  var head = document.getElementsByTagName("head")[0];
-  var queuescript = document.createElement("script");
-  queuescript.type = "text/javascript";
-  queuescript.src = "https://Zorn192.github.io/AutoTrimps/FastPriorityQueue.js";
-  head.appendChild(queuescript);
   if (game.global.universe == 1) {
     preset_space = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     preset_Zek059 = [7, 0.6, 3, 0.8, 0.3, 3, 25, 0.6, 0, 0, 0, 0, 0, 0];
@@ -17485,11 +17480,6 @@
   var presetListHtml;
   globalThis.RAutoPerks = {};
   MODULES["perks"].RshowDetails = true;
-  var Rhead = document.getElementsByTagName("head")[0];
-  var Rqueuescript = document.createElement("script");
-  queuescript.type = "text/javascript";
-  queuescript.src = "https://Zorn192.github.io/AutoTrimps/FastPriorityQueue.js";
-  head.appendChild(queuescript);
   var preset_Rspace = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   var preset_RZek059 = [7, 10, 5, 1, 0.5, 2, 12, 9, 0.5, 2, 5, 0, 0, 0, 0];
   var preset_RZekmelt = [10, 0.5, 2, 0.5, 0.3, 1.2, 3, 0.5, 1, 3, 6, 18, 20, 0, 0];

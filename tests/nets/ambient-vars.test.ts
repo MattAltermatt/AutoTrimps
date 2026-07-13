@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import ts from 'typescript'
+import { MANIFEST } from '../../scripts/build-userscript.mjs'
 
 // #71 — the ambient-var read-but-never-written net.
 //
@@ -35,7 +36,11 @@ import ts from 'typescript'
 // launders the bug it exists to find is worse than no net. The corpus pin below is load-bearing.
 
 const ROOT = resolve(__dirname, '..', '..')
-const LEGACY_MANIFEST = ['legacy/AutoTrimps2.js', 'legacy/Graphs.js']
+// Derived from the BUILD's own MANIFEST, never hardcoded. A hardcoded copy is how this net went stale
+// when #75 vendored legacy/FastPriorityQueue.js: the file became part of the shipped bundle, but the net
+// still believed it wasn't — so it kept treating FastPriorityQueue as externally-provided. Read the
+// manifest and a newly-bundled legacy file joins every net's corpus for free, with nothing to remember.
+const LEGACY_MANIFEST = MANIFEST.map((f: string) => join('legacy', f))
 const DTS = 'src/game/at-legacy.d.ts'
 
 function tsSources(dir: string, acc: string[] = []): string[] {
@@ -193,12 +198,13 @@ const EXTERNALLY_PROVIDED: Record<string, string> = {
   // top-level var, i.e. a real global by the time our userscript runs. calc.ts reads it bare (:124).
   dailyModifiers: 'game global — .trimps-game/main.js:14396 `var dailyModifiers = {`',
 
-  // Provided by a REMOTE <script>. perks.ts:21 appends `Zorn192.github.io/AutoTrimps/FastPriorityQueue.js`
-  // to <head> at module-eval time; perks.ts then does `new FastPriorityQueue(…)` (:333, :422, :1072, :1161).
-  // ⚠️ THE TRAP THIS NET EXISTS TO NOT FALL INTO: `legacy/FastPriorityQueue.js` exists IN THE TREE and is
-  // NOT in the build MANIFEST. A scan over `legacy/**` would count it as a writer and report this name
-  // as healthy — a false pass on a name whose runtime existence depends on a third-party CDN being up.
-  FastPriorityQueue: 'remote <script> injected at perks.ts:21 — NOT the in-tree legacy/FastPriorityQueue.js',
+  // ✅ FastPriorityQueue LEFT THIS LIST in #75. It used to be provided by a REMOTE <script> — perks.ts
+  // injected `https://Zorn192.github.io/AutoTrimps/FastPriorityQueue.js`, i.e. the name's runtime
+  // existence depended on a third party's GitHub Pages account staying alive and uncompromised. The file
+  // was already sitting in legacy/, just never bundled; it is now in the MANIFEST, so the name has a real
+  // writer in our own shipped bytes and an allowlist entry would be a lie. This is what it looks like when
+  // an EXTERNALLY_PROVIDED entry gets *fixed* rather than accumulated: the entry is deleted, not annotated.
+  // Guarded going forward by tests/nets/supply-chain.test.ts.
 
   // Provided by the DOM. import-export.ts:15 sets `$settingsProfiles.id = 'settingsProfiles'` and mounts
   // the <select>; the browser then reflects it as `window.settingsProfiles` (named access on window).
@@ -244,8 +250,12 @@ describe('at-legacy.d.ts — every ambient var must have a writer in the shipped
     // net starts certifying names that do not exist at runtime. This is the #71 false-pass, pinned.
     expect(CORPUS).not.toContain(join('legacy', 'mods.js'))
     expect(CORPUS).not.toContain(join('legacy', 'GraphsOnly.js'))
-    expect(CORPUS).not.toContain(join('legacy', 'FastPriorityQueue.js'))
     expect(CORPUS).toContain(join('legacy', 'AutoTrimps2.js'))
+    // FastPriorityQueue.js IS bundled as of #75 (it was a third-party <script> fetch before), so it now
+    // legitimately donates a writer. The corpus is derived from the build MANIFEST rather than hardcoded
+    // precisely so this kind of change lands in ONE place — the previous hardcoded list asserted the
+    // opposite and went stale the moment the file was vendored.
+    expect(CORPUS).toContain(join('legacy', 'FastPriorityQueue.js'))
 
     // Pin one writer of each mechanism, so a regression in any single writer-detection arm shows up
     // HERE (as a precise failure) instead of downstream (as a flood of phantom "bugs").

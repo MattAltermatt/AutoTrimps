@@ -15,11 +15,16 @@ globalThis.AutoPerks = {};
 MODULES["perks"] = {};
 MODULES["perks"].showDetails = true;
 
-var head = document.getElementsByTagName('head')[0];
-var queuescript = document.createElement('script');
-queuescript.type = 'text/javascript';
-queuescript.src = 'https://Zorn192.github.io/AutoTrimps/FastPriorityQueue.js';
-head.appendChild(queuescript);
+// #75: this used to inject `<script src="https://Zorn192.github.io/AutoTrimps/FastPriorityQueue.js">`
+// into the page — EXECUTABLE third-party JS, from an unpinned origin, with no integrity hash, running
+// in every user's game. If that GitHub account were ever deleted or taken over, whoever claimed the name
+// would get arbitrary code execution in every AutoTrimps install. It was also an async load racing four
+// `new FastPriorityQueue(...)` call sites.
+//
+// `legacy/FastPriorityQueue.js` was already sitting in this repo — it simply was not in the build
+// MANIFEST. It is now bundled, so the global is defined by our own shipped bytes, synchronously, with no
+// network fetch and no third-party trust. `tests/nets/supply-chain.test.ts` now fails on ANY new
+// executable remote origin in the emitted userscript.
 if (game.global.universe == 1) {
 //[looting,toughness,power,motivation,pheromones,artisanistry,carpentry,resilience,coordinated,resourceful,overkill,cunning,curious,classy]
 var preset_space = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -751,13 +756,11 @@ AutoPerks.displayGUI();
 globalThis.RAutoPerks = {};
 MODULES["perks"].RshowDetails = true;
 
-// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-var Rhead = document.getElementsByTagName('head')[0];
-// oxlint-disable-next-line no-unused-vars -- faithful legacy port: dead local — verified not a live bug (#92)
-var Rqueuescript = document.createElement('script');
-queuescript.type = 'text/javascript';
-queuescript.src = 'https://Zorn192.github.io/AutoTrimps/FastPriorityQueue.js';
-head.appendChild(queuescript);
+// #75: the U2 twin of the same third-party <script> injection, deleted for the same reason —
+// FastPriorityQueue is now bundled from legacy/FastPriorityQueue.js. This copy also carried a
+// copy-paste bug worth recording: it built `Rqueuescript` but then set `queuescript.src` and appended
+// `queuescript` — i.e. it re-appended the *U1* element rather than the one it had just created, so
+// `Rqueuescript`/`Rhead` were dead locals. Both are gone with the injection.
 //[looting,toughness,power,motivation,pheromones,artisanistry,carpentry,prismal,equality,criticality,resilience,tenacity,greed,frenzy,championism]
 // #22: appended championism (index 14, default 0 = no ratio allocation) — arrays predated the perk, so index 14 was undefined → NaN efficiency.
 var preset_Rspace = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];

@@ -8,7 +8,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const LEGACY = resolve(ROOT, 'legacy')
 
 // Concat manifest — exact original load order (from legacy/AutoTrimps2.js).
-const MANIFEST = [
+export const MANIFEST = [
   'AutoTrimps2.js',
   // modules/utils.js — converted to src/modules/utils.ts (Phase 1); published via legacy-bridge.
   // modules/calc.js — converted to src/modules/calc.ts (Phase 2)
@@ -23,6 +23,13 @@ const MANIFEST = [
   // Bundling our local copy too caused a double-define (Highcharts error #16).
   // Vendoring Highcharts self-contained (and neutering that CDN inject) is deferred
   // to the later Graphs modernization phase.
+  // #75 SECURITY: vendored. perks.ts used to inject this from
+  // `https://Zorn192.github.io/AutoTrimps/FastPriorityQueue.js` — executable third-party JS from an
+  // unpinned origin, no integrity hash, in every user's game. The file was already sitting in legacy/;
+  // it just was never bundled. Emitted here (after the src IIFE) rather than first: all four
+  // `new FastPriorityQueue(...)` sites are inside functions called from mainLoop, so the global only has
+  // to exist by first TICK, not by module-eval. tests/nets/supply-chain.test.ts guards the class.
+  'FastPriorityQueue.js',
   'Graphs.js',
 ]
 
