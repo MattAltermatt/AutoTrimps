@@ -590,6 +590,20 @@ export function updateCustomButtons() {
     !radonon && getPageSetting('ATGA2') == true ? turnOn("ATGA2timer") : turnOff("ATGA2timer");
     !radonon && getPageSetting('ATGA2') == true ? turnOn("ATGA2gen") : turnOff("ATGA2gen");
     var ATGAon = (getPageSetting('ATGA2') == true && getPageSetting('ATGA2timer') > 0);
+
+    // #115 — the ONE genuinely under-signalled state in this tab.
+    //
+    // The gate itself is correct: ATGA2timer is the base target and every override is a conditional
+    // overwrite of it, so with no base there is nothing to override (breedtimer.ts:139 — `var target`
+    // has no other initialiser). The visibility rule below enforces the same invariant, so a user cannot
+    // configure an override while the base is unset: the boxes are not rendered.
+    //
+    // But absence is a weak teacher. Turn the master switch ON with the timer still at its default -1 and
+    // you get a tab with two boxes and no explanation of where the other ten went. Flag the box that is
+    // actually holding everything shut. Cosmetic only — no automation behaviour changes.
+    const atgaIdle = getPageSetting('ATGA2') == true && !(getPageSetting('ATGA2timer') > 0);
+    const atgaTimerEl = document.getElementById('ATGA2timer');
+    if (atgaTimerEl) atgaTimerEl.style.border = atgaIdle ? '2px solid orange' : '';
     (!radonon && ATGAon) ? turnOn("zATGA2timer") : turnOff("zATGA2timer");
     (!radonon && ATGAon && getPageSetting('zATGA2timer') > 0) ? turnOn("ztATGA2timer") : turnOff("ztATGA2timer");
     (!radonon && ATGAon) ? turnOn("ATGA2timerz") : turnOff("ATGA2timerz");

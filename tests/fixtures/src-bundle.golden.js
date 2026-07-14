@@ -15303,6 +15303,9 @@
     !radonon && getPageSetting("ATGA2") == true ? turnOn("ATGA2timer") : turnOff("ATGA2timer");
     !radonon && getPageSetting("ATGA2") == true ? turnOn("ATGA2gen") : turnOff("ATGA2gen");
     var ATGAon = getPageSetting("ATGA2") == true && getPageSetting("ATGA2timer") > 0;
+    const atgaIdle = getPageSetting("ATGA2") == true && !(getPageSetting("ATGA2timer") > 0);
+    const atgaTimerEl = document.getElementById("ATGA2timer");
+    if (atgaTimerEl) atgaTimerEl.style.border = atgaIdle ? "2px solid orange" : "";
     !radonon && ATGAon ? turnOn("zATGA2timer") : turnOff("zATGA2timer");
     !radonon && ATGAon && getPageSetting("zATGA2timer") > 0 ? turnOn("ztATGA2timer") : turnOff("ztATGA2timer");
     !radonon && ATGAon ? turnOn("ATGA2timerz") : turnOff("ATGA2timerz");
