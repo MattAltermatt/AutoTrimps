@@ -153,6 +153,41 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **⚡ #129 CLOSED WONTFIX — AT IS NOT SLOW, AND ITS 10Hz CADENCE IS BEHAVIOURALLY INERT** (2026-07-14) — the
+  issue demanded a measurement before a patch, and the measurement killed it. **No code changed.**
+  📊 **`mainLoop` COSTS 0.4–0.6% OF FRAME TIME.** 0.675ms at world 14, **0.756ms at world 40** — it does *not*
+  scale with depth (everything it iterates is bounded: 98 `atGuard` blocks, ~30 buildings, 13 equipment slots, a
+  100-cell grid, the 100-map cap). 12s at 10Hz: **0 dropped frames, 0 long tasks**, p99 frame 9.3ms. The **game's
+  own** `gameLoop` is 0.232ms, so AT is only ~3x the work the browser already does ⇒ **a perfect optimisation
+  would be invisible.** `getPageSetting` memoization / dirty-checking / DOM batching are not wrong, they are
+  **pointless**.
+  🕰️ **THE 10Hz CADENCE BUYS NOTHING.** Running `mainLoop` every Nth tick (200/500/1000ms) reaches the same zones
+  at the same ticks — **inside the seed-to-seed noise floor at every zone**, and *non-monotonic* (500ms crossed
+  zone 8 **earlier** than 100ms). No reason to slow it either: it would re-record the whole corpus for ~0.3% of a
+  frame.
+  🪤 **THE L0 TRACE DIVERGES ANYWAY — AND `baseline-zero` IS THE WRONG INSTRUMENT HERE.** 06-deep goes 2013 → 291
+  events at 1000ms, which *looks* like a 7x behaviour change. It isn't: the trace is a **CALL LOG**, and the count
+  falls almost exactly **linearly** with cadence — the arithmetic signature of pure redundancy (~1800 of 06-deep's
+  events are `setFormation`; 04-u2-radon's are `buyJob` **no-op top-ups**). **AT wasn't deciding differently; it
+  was repeating itself less.** Ask an **outcome** metric (zone-crossing tick), not the call sequence, when the
+  change is "call it less often".
+  ⏱️ **THE GAME'S TICK IS 100ms, NOT 1000ms — SO THE PROOF NET'S CADENCE IS FAITHFUL.** `game.settings.speed = 10`
+  (config.js:8190) and `gameTimeout` computes `tick = 1000 / speed` (main.js:20016) ⇒ `driver.stepWithAT`'s one
+  `mainLoop()` per tick **IS** the shipping 100ms `runInterval`. I first read it as a 1-second tick and was one
+  step from filing a phantom "the net runs AT at 1/10th speed" harness bug. **The user's one-line correction
+  ("attack can be much faster than every 1 second — make sure that isn't just a perk") reversed the premise:**
+  fast attacks are `battleCoordinator` (main.js:11082) accruing 100ms/tick against `num` — base 1000ms, cut by
+  the **Agility perk** + hyperspeed talents — **not** a faster loop.
+  🕵️ **YOU CANNOT SPY ON `mainLoop` BY REASSIGNING THE GLOBAL** (the #127 shape again). `AutoTrimps2.js:93` does
+  `setInterval(mainLoop, runInterval)`, capturing the reference **at registration** — a wrapper on
+  `window.mainLoop` counted **0 calls** while AT demonstrably looped at 10Hz. **Intercept `setInterval` itself.**
+  🔬 **A MEASUREMENT TAKEN WHILE OTHER MEASUREMENTS RUN IS NOT A MEASUREMENT.** The first depth sweep showed a
+  **6x spike** at z32–36 that "recovered" at z37 — so plausible that the mechanism was already drafted (map list
+  grows → 100-map cap → `recycleBelow` prunes → cost collapses). **It did not reproduce** (same fixture, same
+  seed: 4.8ms, flat). It was **CPU contention from my own concurrent background jobs**, and the "recovery" was
+  the competing job exiting. **A cost that returns to baseline on its own usually means something EXTERNAL
+  stopped.** Reproduce a perf anomaly before explaining it.
+
 - **⛔ #57 CLOSED WONTFIX — THE SAVE-UP IDEA'S CEILING IS *ZERO*, AND THE DEEP GAME IS NOW REACHABLE (#128)**
   (2026-07-14) — the rebuild gate ran in full for the first time (it was blocked on #122) and returned a
   **negative answer**.
