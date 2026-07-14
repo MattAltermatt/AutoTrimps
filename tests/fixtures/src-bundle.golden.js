@@ -3596,6 +3596,7 @@
     return x / 2;
   }
   function buyJobs() {
+    const noJobsC2 = game.global.runningChallengeSquared && getPageSetting2("buynojobsc") == true;
     let freeWorkers = freeWorkerSlots();
     let totalDistributableWorkers = freeWorkers + game.jobs.Farmer.owned + game.jobs.Miner.owned + game.jobs.Lumberjack.owned;
     let farmerRatio = parseFloat(getPageSetting2("FarmerRatio"));
@@ -3647,7 +3648,7 @@
     } else {
       let breeding = game.resources.trimps.owned - game.resources.trimps.employed;
       if (!(game.global.challengeActive === "Trapper") && game.resources.trimps.owned < game.resources.trimps.realMax() * 0.9 && !breedFire) {
-        if (breeding > game.resources.trimps.realMax() * 0.33) {
+        if (breeding > game.resources.trimps.realMax() * 0.33 && !noJobsC2) {
           freeWorkers = freeWorkerSlots();
           if (freeWorkers > 0 && game.resources.trimps.realMax() <= 3e5) {
             if (challengeActive("Metal") === false) {
@@ -3714,11 +3715,13 @@
       } else
         return false;
     }
-    ratiobuy("Farmer", farmerRatio);
-    if (!ratiobuy("Miner", minerRatio) && breedFire && game.global.turkimpTimer === 0 && challengeActive("Metal") === false)
-      safeBuyJob("Miner", game.jobs.Miner.owned * -1);
-    if (!ratiobuy("Lumberjack", lumberjackRatio) && breedFire)
-      safeBuyJob("Lumberjack", game.jobs.Lumberjack.owned * -1);
+    if (!noJobsC2) {
+      ratiobuy("Farmer", farmerRatio);
+      if (!ratiobuy("Miner", minerRatio) && breedFire && game.global.turkimpTimer === 0 && challengeActive("Metal") === false)
+        safeBuyJob("Miner", game.jobs.Miner.owned * -1);
+      if (!ratiobuy("Lumberjack", lumberjackRatio) && breedFire)
+        safeBuyJob("Lumberjack", game.jobs.Lumberjack.owned * -1);
+    }
     if (game.jobs.Magmamancer.locked) return;
     let timeOnZone = Math.floor(((/* @__PURE__ */ new Date()).getTime() - game.global.zoneStarted) / 6e4);
     if (game.talents.magmamancer.purchased) {
@@ -16289,7 +16292,10 @@
       ignoredWhen: "No Challenge\xB2 is currently running \u2014 it has no effect on a normal run."
     }), "value", -1, null, "C2");
     createSetting("buynojobsc", "No F/L/M in C2", tip({
-      what: 'Named "No F/L/M in C2" \u2014 but nothing in AutoTrimps reads this setting. Toggling it does nothing.'
+      what: "Stops AutoTrimps hiring Farmers, Lumberjacks and Miners while you are on a Challenge&sup2; run.",
+      how: "On a C&sup2; you are pushing with gear you already own, so the resources those three gather buy you little &mdash; and every one of them is a Trimp that could be breeding instead. This leaves them unemployed for the duration.",
+      cannot: "Does not <i>fire</i> the Farmers, Lumberjacks and Miners you already have &mdash; it only stops hiring more. Scientists, Trainers, Explorers and Magmamancers are untouched.",
+      ignoredWhen: "You are not on a Challenge&sup2;, or you are in Universe 2."
     }), "boolean", false, null, "C2");
     createSetting("cfightforever", "Tox/Nom Fight Always", tip({
       what: "Forces trimps to fight during the Electricity, Toxicity and Nom Challenge\xB2 runs, even when they would otherwise sit idle \u2014 ignoring your Better Auto Fight setting.",

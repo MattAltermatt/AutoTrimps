@@ -133,6 +133,22 @@ export function safeFireJob(job: string, amount?: number): number {
 }
 
 export function buyJobs() {
+    // #117 — "No F/L/M in C2". This setting had been createSetting'd, rendered, visibility-toggled and
+    // saved to localStorage for years, and NOTHING read it: `getPageSetting('buynojobsc')` appeared
+    // nowhere in src/ or legacy/. A control that accepts input and dispatches nothing is a lie told to
+    // the user, so it is wired here rather than deleted.
+    //
+    // Meaning: during a Challenge² run you are pushing on gear you already have — Farmers, Lumberjacks
+    // and Miners buy resources you do not need, at the cost of Trimps that could be breeding. With this
+    // on, AT stops HIRING the three of them for the duration of the C2.
+    //
+    // It does NOT fire the ones you already have: firing is destructive and the label says "No ... in C2",
+    // not "fire my workforce". Scientists/Trainers/Explorers/Magmamancers are untouched.
+    //
+    // U1 only, matching its visibility rule (settings-visibility.ts gates it on !radonon). Default OFF ⇒
+    // an untouched install is byte-identical, which is what keeps the L0 traces still.
+    const noJobsC2 = game.global.runningChallengeSquared && getPageSetting('buynojobsc') == true;
+
     let freeWorkers = freeWorkerSlots();
     let totalDistributableWorkers = freeWorkers + game.jobs.Farmer.owned + game.jobs.Miner.owned + game.jobs.Lumberjack.owned;
     let farmerRatio = parseFloat(getPageSetting('FarmerRatio'));
@@ -197,7 +213,9 @@ export function buyJobs() {
     } else {
         let breeding = (game.resources.trimps.owned - game.resources.trimps.employed);
         if (!(game.global.challengeActive === "Trapper") && game.resources.trimps.owned < game.resources.trimps.realMax() * 0.9 && !breedFire) {
-            if (breeding > game.resources.trimps.realMax() * 0.33) {
+            // #117 — the early-game F/L/M trickle. Also skipped under "No F/L/M in C2": it is the same
+            // three jobs by another path, and leaving it live would make the setting silently partial.
+            if (breeding > game.resources.trimps.realMax() * 0.33 && !noJobsC2) {
                 freeWorkers = freeWorkerSlots();
                 if (freeWorkers > 0 && game.resources.trimps.realMax() <= 3e5) {
                     if (challengeActive("Metal") === false) {
@@ -266,11 +284,17 @@ export function buyJobs() {
         } else
             return false;
     }
-    ratiobuy('Farmer', farmerRatio);
-    if (!ratiobuy('Miner', minerRatio) && breedFire && game.global.turkimpTimer === 0 && challengeActive("Metal") === false)
-        safeBuyJob('Miner', game.jobs.Miner.owned * -1);
-    if (!ratiobuy('Lumberjack', lumberjackRatio) && breedFire)
-        safeBuyJob('Lumberjack', game.jobs.Lumberjack.owned * -1);
+    // #117 — the main F/L/M hire path. Skipped wholesale under "No F/L/M in C2", including the two
+    // fire-on-failure arms: those fire Miners/Lumberjacks only as a CONSEQUENCE of ratiobuy declining,
+    // and if we never asked, there is nothing to react to. Gating the whole block (rather than each
+    // ratiobuy call) is what keeps that side effect from firing workers the user did not ask to lose.
+    if (!noJobsC2) {
+        ratiobuy('Farmer', farmerRatio);
+        if (!ratiobuy('Miner', minerRatio) && breedFire && game.global.turkimpTimer === 0 && challengeActive("Metal") === false)
+            safeBuyJob('Miner', game.jobs.Miner.owned * -1);
+        if (!ratiobuy('Lumberjack', lumberjackRatio) && breedFire)
+            safeBuyJob('Lumberjack', game.jobs.Lumberjack.owned * -1);
+    }
 
     if (game.jobs.Magmamancer.locked) return;
     let timeOnZone = Math.floor((new Date().getTime() - game.global.zoneStarted) / 60000);

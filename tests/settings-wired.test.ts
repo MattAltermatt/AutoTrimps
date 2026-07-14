@@ -33,6 +33,12 @@ const ALLOWED_UNREAD: Record<string, string> = {
   // Not a toggle: a Windstacking-tab section header/signage pseudo-button. Its description literally
   // reads "These settings are for fillers ONLY."
   windstackingfiller: 'signage pseudo-button, not a functional toggle',
+  // #117 — "Turn WS On!" reads as dead (no code reads its value) but is SIGNAGE, and deleting it would
+  // remove a real affordance. settings-visibility.ts renders it ONLY when `!wson`, i.e. exactly when
+  // AutoStance is not Windstacking — which is exactly when every other control on that tab is hidden.
+  // It exists to explain WHY the tab is empty and where the real switch is (Combat -> AutoStance).
+  // Same class as windstackingfiller above; same idea as the #115 warning border on ATGA2timer.
+  turnwson: 'signage pseudo-button — shown only while Windstacking is OFF, to explain the empty tab',
   // infoclick settings act through their defaultValue, which settings-engine.ts wires straight into
   // an onclick="ImportExportTooltip('<defaultValue>', 'update')" — there is no getPageSetting read.
   DefaultAutoTrimps: 'infoclick — behavior comes from defaultValue, not a settings read',
@@ -153,9 +159,14 @@ describe('every setting the UI renders is actually wired to code (#65)', () => {
     // because the text was never there.
     expect(/turnOn\("turnwson"\)/.test(rawCorpus)).toBe(true) // the visibility toggle is real…
     expect(rawCorpus).toContain('"buynojobsc":true') //          …and so is the frozen-blob mention.
-    // …and neither survives into the corpus the read-check actually runs against.
-    expect(isRead('turnwson', corpus)).toBe(false)
-    expect(isRead('buynojobsc', corpus)).toBe(false)
+    // …and NEITHER survives into the corpus the read-check runs against.
+    //
+    // Note buynojobsc is now genuinely READ (#117 wired it), so it can no longer serve as the example of
+    // a blob-only mention. Assert the STRIPPING itself instead — that is the property, and it does not
+    // rot when a setting's wiring changes underneath it.
+    expect(corpus).not.toContain('"buynojobsc":true') // the frozen preset blob is gone from the corpus
+    expect(corpus).not.toContain('turnOn("turnwson")') // …and so is every visibility toggle
+    expect(isRead('turnwson', corpus)).toBe(false) // still signage: rendered, never read (ALLOWED_UNREAD)
     // A REAL read still resolves — otherwise the stripping is over-broad and the net is now blind.
     expect(isRead('AutoStance', corpus)).toBe(true)
     expect(isRead('MaxPraidZone', corpus)).toBe(true) // via `maxPraidZSetting = 'MaxPraidZone'`
@@ -177,10 +188,14 @@ describe('every setting the UI renders is actually wired to code (#65)', () => {
    * Both are features that were never wired, not code to delete casually: removing a createSetting
    * changes the ordered id list, which is the persistence contract.
    */
-  const KNOWN_DEAD: Record<string, string> = {
-    turnwson: '#117 — "Turn WS On!" button. Nothing reads it; the real switch is the AutoStance dropdown.',
-    buynojobsc: '#117 — "No F/L/M in C2". Rendered, visibility-toggled, read by nobody.',
-  }
+  // ✅ EMPTY — #117 is CLOSED, and both entries left for opposite reasons:
+  //   buynojobsc  WIRED (jobs.ts). It was a real feature nobody built: rendered, saved, dispatching
+  //               nothing. It now stops F/L/M hiring during a Challenge². Opt-in, default off.
+  //   turnwson    NOT dead — it is SIGNAGE, and moved to ALLOWED_UNREAD above. "No reads" was true and
+  //               misleading: it renders only while Windstacking is OFF, to explain the empty tab.
+  //               Reference-counting told me it was dead; reading the visibility rule told me why it
+  //               exists. Deleting it would have destroyed a real affordance to satisfy a metric.
+  const KNOWN_DEAD: Record<string, string> = {}
 
   it('no setting is defined-but-never-read', () => {
     const unread = ids.filter(

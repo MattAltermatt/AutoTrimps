@@ -638,7 +638,10 @@ export function initializeAllSettings() {
         ignoredWhen: 'No Challenge² is currently running — it has no effect on a normal run.',
     }), 'value', -1, null, 'C2');
     createSetting('buynojobsc', 'No F/L/M in C2',tip({
-        what: 'Named "No F/L/M in C2" — but nothing in AutoTrimps reads this setting. Toggling it does nothing.',
+        what: 'Stops AutoTrimps hiring Farmers, Lumberjacks and Miners while you are on a Challenge&sup2; run.',
+        how: 'On a C&sup2; you are pushing with gear you already own, so the resources those three gather buy you little &mdash; and every one of them is a Trimp that could be breeding instead. This leaves them unemployed for the duration.',
+        cannot: 'Does not <i>fire</i> the Farmers, Lumberjacks and Miners you already have &mdash; it only stops hiring more. Scientists, Trainers, Explorers and Magmamancers are untouched.',
+        ignoredWhen: 'You are not on a Challenge&sup2;, or you are in Universe 2.',
     }), 'boolean', false, null, "C2");
     createSetting('cfightforever', 'Tox/Nom Fight Always',tip({
         what: 'Forces trimps to fight during the Electricity, Toxicity and Nom Challenge² runs, even when they would otherwise sit idle — ignoring your Better Auto Fight setting.',
