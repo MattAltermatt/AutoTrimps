@@ -1470,7 +1470,13 @@ export function RcalcBadGuyDmg(enemy?: any, attack?: number, equality?: boolean)
     if (game.global.world > 200 && getPageSetting('Rmutecalc') > 0 && game.global.world >= getPageSetting('Rmutecalc')) {
         number = rCalcMutationAttack();
     }
-    if (game.global.challengeActive === "Extermination" && getPageSetting('Rexterminateon') == true && getPageSetting('Rexterminatecalc') == true) {
+    // #111: was `=== "Extermination"`. The game's challenge id is "Exterminate" (config.js:5451) — AT's
+    // own other.ts:522/543 and the getSwarmMult() block below both spell it correctly. The comparison
+    // could never match, so E: Calc has been inert since it shipped: a dead refinement, not a subtle one.
+    // This REPLACES the base estimate with the Mantimp-at-cell-90 prediction; the getSwarmMult() block
+    // below still applies on top, as it always has. Both settings default OFF, so nothing changes for a
+    // user who has not opted in.
+    if (game.global.challengeActive === "Exterminate" && getPageSetting('Rexterminateon') == true && getPageSetting('Rexterminatecalc') == true) {
         number = RgetEnemyMaxAttack(game.global.world, 90, 'Mantimp', 1.0)
     }
     if (game.portal.Equality.radLevel > 0 && getPageSetting('Rcalcmaxequality') == 0 && !equality) {
@@ -1574,7 +1580,13 @@ export function RcalcEnemyHealth(world?: any): number | undefined {
 
     if (!mute) health = RcalcEnemyBaseHealth(world, 50, "Snimp");
 
-    if (game.global.challengeActive === "Extermination" && getPageSetting('Rexterminateon') == true && getPageSetting('Rexterminatecalc') == true) {
+    // #111: was `=== "Extermination"`. The game's challenge id is "Exterminate" (config.js:5451) — AT's
+    // own other.ts:522/543 and the getSwarmMult() block below both spell it correctly. The comparison
+    // could never match, so E: Calc has been inert since it shipped: a dead refinement, not a subtle one.
+    // This REPLACES the base estimate with the Mantimp-at-cell-90 prediction; the getSwarmMult() block
+    // below still applies on top, as it always has. Both settings default OFF, so nothing changes for a
+    // user who has not opted in.
+    if (game.global.challengeActive === "Exterminate" && getPageSetting('Rexterminateon') == true && getPageSetting('Rexterminatecalc') == true) {
         health = RcalcEnemyBaseHealth(world, 90, "Beetlimp");
     }
     if (game.global.challengeActive === "Daily") {

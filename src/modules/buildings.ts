@@ -78,7 +78,14 @@ export function safeBuyBuilding(building: string) {
 
     game.global.firing = false;
 
-    if (building === 'Gym' && getPageSetting('GymWall')) {
+    // #112: was a bare truthiness test on GymWall. Its default is -1 and its own description says
+    // "-1 or 0 to disable" — but -1 is TRUTHY, so for every user on the default this clamped Gym
+    // purchases to one at a time, silently discarding the DecaBuild/DoubleBuild bulk-buy bonus. The
+    // wall math itself (line ~252) correctly gates on `> 1`, so the two consumers of this setting
+    // disagreed about what -1 meant: the feature was off while its side effect stayed on.
+    // `> 0` matches the documented semantics: -1/0 disable; 1 clamps to single buys only; >1 also
+    // applies the wood wall.
+    if (building === 'Gym' && getPageSetting('GymWall') > 0) {
         game.global.buyAmt = 1;
     }
     if (building === 'Warpstation' && !game.buildings[building].locked && canAffordBuilding(building)) {

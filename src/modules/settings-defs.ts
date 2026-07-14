@@ -762,9 +762,8 @@ export function initializeAllSettings() {
     createSetting('GymWall', 'Gym Wall',tip({
         what: 'Slows Gym buying to conserve wood \u2014 only buys 1 Gym at a time once you can afford <b>X</b> Gyms\' worth of wood (at the first one\'s price), instead of AT\'s normal bulk-buy amount.',
         how: 'Takes decimals. In other words, only allows a Gym purchase once it costs less than 1/X of your current wood \u2014 handy for saving wood for Nurseries once you\'re on the z230+ Magma nursery strategy.',
-        cannot: 'Cannot be fully disabled with -1 the way its own convention elsewhere suggests: JS treats -1 as "on", so the default value of -1 still forces Gym purchases down to 1 at a time, even though the wood-wall math itself is skipped. Only <b>0</b> restores AT\'s normal bulk-buy amount for Gyms.',
-        ignoredWhen: 'You are playing Universe 2 (Radon) \u2014 Gyms are not automated there at all.',
-    }), 'value', -1, null, 'Buildings'); //remove?
+        ignoredWhen: '<b>-1</b> or <b>0</b> \u2014 both fully disable it, restoring AT\'s normal bulk Gym buying. <b>1</b> only stops Gyms being bought 2-at-a-time by the mastery; above <b>1</b> the wood wall applies as well. Also ignored in Universe 2, where Gyms are not automated at all.',
+    }), 'value', -1, null, 'Buildings');
 
     //Line 3
     // #107 — both of these are written back by firstGiga() (upgrades.ts:132) whenever Auto Gigas is on,
@@ -1219,7 +1218,6 @@ export function initializeAllSettings() {
         what: 'Forces AutoTrimps to farm up to your full Map Bonus cap starting at this zone (inclusive), every time you reach it.',
         how: '<b>0</b> applies it from the very first zone. <b>-1</b> disables it entirely. While active, this also delays weapon/armor purchases until the map-bonus cap is hit for that zone.',
         cannot: 'Cannot lower the actual stack target below what the sibling setting <b>Max MapBonus Limit</b> allows &mdash; that is what sets the cap, not a console command. (An earlier version of this tooltip pointed at a hidden console command, <code>MODULES["maps"].maxMapBonusAfterZ</code>, that nothing in the code reads &mdash; ignore it.)',
-        ignoredWhen: 'Setting this to exactly <b>0</b> ("always") still forces the map-farming behavior, but does <b>not</b> get the extra armor-buying delay that a positive zone gets &mdash; that check only treats a nonzero value as "on".',
     }), 'value', '-1', null, 'Maps');
     createSetting('MaxMapBonuslimit', 'Max MapBonus Limit',tip({
         what: 'Caps how many Map Bonus stacks AutoTrimps will farm for before moving on.',
@@ -1583,7 +1581,7 @@ export function initializeAllSettings() {
     }), 'value', '-1', null, 'Spire');
     createSetting('SpireBreedTimer', 'Spire Breed Timer',tip({
         what: 'Overrides the game\'s own GA (breed) timer while you are in an active, non-Daily Spire above <b>Ignore Spires Until</b>, so you can breed more or less aggressively than your normal target.',
-        cannot: 'Cannot reliably restore the GA timer you had before entering the Spire. AT is meant to remember it and put it back when you leave, but a bug in that restore logic means it usually resets your GA timer to blank on exit instead, rather than your original value.',
+        how: 'Your previous GA timer is remembered on the way in and put back when you leave the Spire. <b>-1</b> disables the override.',
     }), 'value', -1, null, 'Spire');
     createSetting('PreSpireNurseries', 'Nurseries pre-Spire',tip({
         what: 'Sets a separate Nursery cap that applies specifically while preparing for or running a Spire, above zone 200 (or any zone once <b>Ignore Spires Until</b> allows Spire settings that early).',
@@ -2022,12 +2020,12 @@ export function initializeAllSettings() {
 
     //Exterminate
     createSetting('Rexterminateon', 'Exterminate',tip({
-        what: 'Turns on Exterminate-specific automation: enables E: Equality\'s equality management, and (in principle) E: Calc\'s enemy-stat override.',
-        ignoredWhen: 'Universe 1, outside the Exterminate challenge, or \u2014 by itself, with both E: Calc and E: Equality off \u2014 always, since it has no effect on its own. Note E: Calc is currently broken; see its own tooltip.',
+        what: 'Turns on Exterminate-specific automation: the master switch for E: Calc and E: Equality.',
+        ignoredWhen: 'Universe 1, outside the Exterminate challenge, or with both E: Calc and E: Equality off \u2014 it has no effect on its own.',
     }), 'boolean', false, null, 'Challenges');
     createSetting('Rexterminatecalc', 'E: Calc',tip({
-        what: 'Intended to size your damage/health math against Exterminate\'s toughest fixed mobs (Mantimp for attack, Beetlimp for health) instead of the normal zone-scaled enemy.',
-        ignoredWhen: 'Always, currently \u2014 the code that reads this checks for a challenge id of <code>"Extermination"</code>, but the game\'s actual id for this challenge is <code>"Exterminate"</code>. The check can never match, so this setting has no effect no matter how it\'s set.',
+        what: 'Sizes your damage and health math against Exterminate\'s toughest fixed mobs (Mantimp for attack, Beetlimp for health) instead of the normal zone-scaled enemy, so AT does not under-rate the swarm.',
+        ignoredWhen: 'Universe 1, outside Exterminate, or with the <b>Exterminate</b> master switch off.',
     }), 'boolean', false, null, 'Challenges');
     createSetting('Rexterminateeq', 'E: Equality',tip({
         what: 'Manages Equality stacking against Exterminate\'s bug-type mobs (Arachnimp, Beetlimp, Mantimp, Butterflimp): builds Equality up while you lack the challenge\'s Experienced buff against them, and lets it decay once you have it.',

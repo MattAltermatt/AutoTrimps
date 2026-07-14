@@ -38,34 +38,172 @@ const ALLOWED_UNREAD: Record<string, string> = {
   DefaultAutoTrimps: 'infoclick — behavior comes from defaultValue, not a settings read',
 }
 
+// -------------------------------------------------------------------------------------------------
+// #120 — A MENTION IS NOT A READ.
+//
+// This net used to ask `/['"`]<id>['"`]/.test(corpus)` — "is this id quoted ANYWHERE?" That is not the
+// question. The net's job is to prove a setting is READ, and two things satisfied a bare mention with
+// no read at all:
+//
+//   1. `turnOn("turnwson")` in settings-visibility.ts — a VISIBILITY mention. The control is shown and
+//      hidden correctly; nothing ever looks at its value.
+//   2. The two frozen serializeSettings preset blobs (utils.ts:51, :54) — giant JSON strings naming
+//      ~200 setting ids ("buynojobsc":true). They sit inside this net's own corpus, so every id they
+//      name auto-passed the check that was supposed to prove it was wired.
+//
+// That is how `turnwson` and `buynojobsc` (#117) stayed dead inside the net built to find exactly them.
+//
+// So: ask for a real read. The catch — and the reason the loose form was written in the first place —
+// is that ~50 settings are read through DYNAMICALLY CONSTRUCTED ids, and a naive literal-read check
+// goes red on all of them. Those constructions are enumerated below, each resolved to the exact ids it
+// reaches, so they are ACCOUNTED FOR rather than excused.
+// -------------------------------------------------------------------------------------------------
+
+/** Ids reached by a dynamic getPageSetting(...) — each entry names the callsite that builds them. */
+function dynamicallyReadIds(ids: string[], corpus: string): Map<string, string> {
+  const reached = new Map<string, string>()
+  const claim = (id: string, why: string) => { if (ids.includes(id)) reached.set(id, why) }
+
+  // buildings.ts:123,170 — `getPageSetting('Max' + b)` over the housing list.
+  for (const b of ['Hut', 'House', 'Mansion', 'Hotel', 'Resort', 'Gateway', 'Collector', 'Warpstation'])
+    for (const p of ['', 'R']) claim(`${p}Max${b}`, `buildings.ts — getPageSetting('Max' + '${b}')`)
+
+  // other.ts:627-631 — the shrine table: getPageSetting(shrineSettings[universe][mode].<field>).
+  for (const fam of ['Hshrine', 'Hdshrine', 'Rshrine', 'Rdshrine'])
+    for (const f of ['', 'zone', 'cell', 'amount', 'charge'])
+      claim(fam + f, 'other.ts — getPageSetting(shrineSettings[universe][mode].<field>)')
+
+  // MAZ.ts popup editors address their rows through a table; the '*maz' ids are the popup handles.
+  for (const id of ids)
+    if (/maz$/i.test(id) && new RegExp(`['"\`]${id}['"\`]`).test(corpus))
+      claim(id, 'MAZ.ts — popup editor row, addressed through its table')
+
+  return reached
+}
+
+/**
+ * Strip the two constructs that FAKE a read, then any surviving quoted use is a genuine one.
+ *
+ * Matching the read syntactically does not work: AT reaches settings through real indirections —
+ *   mapfunctions.ts:444  getPageSettingAt(daily ? 'Rdtimefarmmap' : 'Rtimefarmmap', i)   (ternary)
+ *   other-praiding.ts:1206  maxPraidZSetting = 'MaxPraidZone'; … getPageSetting(maxPraidZSetting)  (variable)
+ *   MAZ.ts:40  gather = 'Rdtimefarmgather'                                                (table key)
+ * — so a `getPageSetting\(\s*'id'` regex reports ~7 live settings as dead, and chasing it properly
+ * means dataflow analysis. Subtracting the liars is both simpler and stricter than what was there.
+ */
+function readableCorpus(files: string[], contents: string[]): string {
+  return contents
+    .map((src, i) => {
+      const rel = files[i]
+      // utils.ts:51,54 — the two FROZEN serializeSettings preset blobs: JSON strings naming ~200 ids.
+      // They are persistence fixtures, not code that reads anything. Any id they name used to auto-pass.
+      if (rel.endsWith('utils.ts')) src = src.replace(/return '\{".*?\}';/gs, "return '{}';")
+      // settings-visibility.ts — turnOn/turnOff mention an id to SHOW or HIDE its control. That proves
+      // the control renders, not that anything reads its value. `turnwson` (#117) hid in exactly this.
+      src = src.replace(/turn(On|Off)\(\s*["'`][^"'`]+["'`]\s*\)/g, 'turnX()')
+      return src
+    })
+    .join('\n')
+}
+
+/** A genuine use of the setting — not a visibility toggle, not a mention in a frozen preset blob. */
+function isRead(id: string, corpus: string): boolean {
+  const esc = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(
+    // quoted anywhere in real code: getPageSetting('id'), a ternary, a table value, a variable assignment…
+    `['"\`]${esc}['"\`]` +
+      // …or an UNQUOTED record property access: `autoTrimpSettings.zonetracker` (AutoTrimps2.js:188).
+      `|autoTrimpSettings\\.${esc}\\b`,
+  ).test(corpus)
+}
+
 describe('every setting the UI renders is actually wired to code (#65)', () => {
   const defsSrc = readFileSync(join(ROOT, DEFS), 'utf8')
   const ids = [...defsSrc.matchAll(/createSetting\(\s*'([^']+)'/g)].map((m) => m[1])
 
-  const corpus = sourceFiles('src')
-    .concat(sourceFiles('legacy'))
-    .filter((f) => f !== DEFS)
-    .map((f) => readFileSync(join(ROOT, f), 'utf8'))
-    .join('\n')
+  const files = sourceFiles('src').concat(sourceFiles('legacy')).filter((f) => f !== DEFS)
+  const rawCorpus = files.map((f) => readFileSync(join(ROOT, f), 'utf8')).join('\n')
+  // #120 — the corpus the read-check runs against, with the two liars removed.
+  const corpus = readableCorpus(files, files.map((f) => readFileSync(join(ROOT, f), 'utf8')))
+
+  /**
+   * 'action' and 'infoclick' settings are BUTTONS. settings-engine.ts wires their behaviour from the
+   * `defaultValue` argument straight into an onclick — there is no getPageSetting read, by design, and
+   * there never will be. Excluded BY TYPE rather than by name, so a new button cannot land on a
+   * hand-maintained allowlist and a renamed one cannot fall off it.
+   */
+  // NB: parsed per-call, NOT with a lazy `[\s\S]*?` between the id and the type. A lazy span runs PAST a
+  // non-button setting into the next button's type token and consumes it, so the button silently drops
+  // out of the set. (It did: every `*maz` infoclick went missing.) A regex that can skip a setting is
+  // how a net starts lying — bound the scan to the one call.
+  const BUTTON_IDS = new Set(
+    [...defsSrc.matchAll(/createSetting\(\s*'([^']+)'((?:(?!createSetting\()[\s\S])*?),\s*'(action|infoclick)'\s*,/g)]
+      .map((m) => m[1]),
+  )
 
   it('parses the full settings inventory (guards against the regex silently matching nothing)', () => {
     expect(ids.length).toBeGreaterThan(500)
     expect(new Set(ids).size).toBe(ids.length) // no duplicate ids
   })
 
+  const DYNAMIC = dynamicallyReadIds(ids, corpus)
+
+  it('anti-false-green: the read-detector can tell a real read from a mere mention (#120)', () => {
+    // Both liars EXIST in the raw corpus — assert that first, or the checks below could pass simply
+    // because the text was never there.
+    expect(/turnOn\("turnwson"\)/.test(rawCorpus)).toBe(true) // the visibility toggle is real…
+    expect(rawCorpus).toContain('"buynojobsc":true') //          …and so is the frozen-blob mention.
+    // …and neither survives into the corpus the read-check actually runs against.
+    expect(isRead('turnwson', corpus)).toBe(false)
+    expect(isRead('buynojobsc', corpus)).toBe(false)
+    // A REAL read still resolves — otherwise the stripping is over-broad and the net is now blind.
+    expect(isRead('AutoStance', corpus)).toBe(true)
+    expect(isRead('MaxPraidZone', corpus)).toBe(true) // via `maxPraidZSetting = 'MaxPraidZone'`
+    expect(isRead('Rtimefarmmap', corpus)).toBe(true) // via a ternary inside getPageSettingAt(...)
+    // The dynamic families resolve, or this net would be red for ~50 legitimate settings.
+    expect(DYNAMIC.size).toBeGreaterThan(30)
+    expect(DYNAMIC.has('MaxHut')).toBe(true) // getPageSetting('Max' + b)
+    expect(DYNAMIC.has('Hdshrinezone')).toBe(true) // getPageSetting(shrineSettings[u][m].zone)
+    // Buttons are excluded by TYPE, not by name.
+    expect(BUTTON_IDS.has('CleanupAutoTrimps')).toBe(true)
+    expect(BUTTON_IDS.has('AutoStance')).toBe(false)
+  })
+
+  /**
+   * The shrinking baseline: settings that are CONFIRMED dead and are awaiting a product decision (#117).
+   * This is a fix queue, not an allowlist — a NEW dead setting fails on arrival, and fixing one of these
+   * turns the net RED until its entry is deleted (guard below).
+   *
+   * Both are features that were never wired, not code to delete casually: removing a createSetting
+   * changes the ordered id list, which is the persistence contract.
+   */
+  const KNOWN_DEAD: Record<string, string> = {
+    turnwson: '#117 — "Turn WS On!" button. Nothing reads it; the real switch is the AutoStance dropdown.',
+    buynojobsc: '#117 — "No F/L/M in C2". Rendered, visibility-toggled, read by nobody.',
+  }
+
   it('no setting is defined-but-never-read', () => {
-    const unread = ids.filter((id) => {
-      if (id in ALLOWED_UNREAD) return false
-      const quoted = new RegExp(`['"\`]${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"\`]`)
-      return !quoted.test(corpus)
-    })
+    const unread = ids.filter(
+      (id) =>
+        !(id in ALLOWED_UNREAD) &&
+        !(id in KNOWN_DEAD) &&
+        !DYNAMIC.has(id) &&
+        !BUTTON_IDS.has(id) &&
+        !isRead(id, corpus),
+    )
     expect(unread).toEqual([])
+  })
+
+  it('the baseline only ever SHRINKS — wire or remove one of these and delete its entry', () => {
+    for (const [id, why] of Object.entries(KNOWN_DEAD)) {
+      expect(isRead(id, corpus), `${id} is now read (${why}) — delete it from KNOWN_DEAD`).toBe(false)
+      expect(ids, `${id} no longer exists — delete it from KNOWN_DEAD`).toContain(id)
+    }
   })
 
   it('the allowlist stays honest — an allowlisted id that IS read should leave the allowlist', () => {
     for (const id of Object.keys(ALLOWED_UNREAD)) {
-      const quoted = new RegExp(`['"\`]${id}['"\`]`)
-      expect(quoted.test(corpus), `${id} is now read; drop it from ALLOWED_UNREAD`).toBe(false)
+      expect(isRead(id, corpus), `${id} is now read; drop it from ALLOWED_UNREAD`).toBe(false)
     }
   })
 })

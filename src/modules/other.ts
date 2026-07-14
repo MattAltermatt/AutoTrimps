@@ -169,9 +169,23 @@ export function avoidempower() {
 
 globalThis.spirebreeding = false;
 
+// #113 — the player's Geneticistassist timer from BEFORE we overrode it for the Spire.
+//
+// This was `var prespiretimer` INSIDE ATspirebreed(). `var` is function-scoped and ATspirebreed() is
+// called fresh from the mainLoop every tick, so the value was re-initialised to `undefined` on every
+// call. Worse, the two branches are mutually exclusive by construction: the capture requires
+// `spireActive === true` and the restore requires `spireActive === false`. They can NEVER run in the
+// same invocation — so the restore assigned `undefined` to game.global.GeneticistassistSetting every
+// single time, blanking the player's timer instead of putting it back.
+//
+// Module scope (not globalThis: nothing outside this function reads it) so it survives across ticks.
+// `null` = nothing captured, which the restore below must refuse to write back — restoring a value we
+// never captured is precisely the bug.
+let prespiretimer: any = null;
+
 export function ATspirebreed() {
     if (!spirebreeding && getPageSetting('SpireBreedTimer') > 0 && getPageSetting('IgnoreSpiresUntil') <= game.global.world && game.global.spireActive)
-        var prespiretimer = game.global.GeneticistassistSetting;
+        prespiretimer = game.global.GeneticistassistSetting;
     if (getPageSetting('SpireBreedTimer') > 0 && getPageSetting('IgnoreSpiresUntil') <= game.global.world && game.global.spireActive && game.global.GeneticistassistSetting != getPageSetting('SpireBreedTimer')) {
         spirebreeding = true;
         if (game.global.GeneticistassistSetting != getPageSetting('SpireBreedTimer'))
@@ -179,8 +193,12 @@ export function ATspirebreed() {
     }
     if (getPageSetting('SpireBreedTimer') > 0 && getPageSetting('IgnoreSpiresUntil') <= game.global.world && !game.global.spireActive && game.global.GeneticistassistSetting == getPageSetting('SpireBreedTimer')) {
         spirebreeding = false;
-        if (game.global.GeneticistassistSetting == getPageSetting('SpireBreedTimer')) {
+        // Only restore what we actually captured. If AT was started mid-Spire (or the capture branch
+        // never ran for any other reason) there is no pre-Spire value to return to, and the old code's
+        // unconditional write is what blanked the timer.
+        if (prespiretimer !== null && game.global.GeneticistassistSetting == getPageSetting('SpireBreedTimer')) {
             game.global.GeneticistassistSetting = prespiretimer;
+            prespiretimer = null;
             toggleGeneticistassist();
             toggleGeneticistassist();
             toggleGeneticistassist();

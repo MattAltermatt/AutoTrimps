@@ -66,7 +66,22 @@ const sourceOf = (rel: string) =>
 
 type Lookup = { id: string; file: string; line: number }
 
-/** AST, not regex: `byId("x")`, `byId<HTMLSelectElement>("x")`, `document.getElementById("x")`. */
+/**
+ * Every function that ultimately hands its argument to document.getElementById — i.e. every place a
+ * typo'd id dies silently.
+ *
+ * #120: this list used to be just byId/getElementById, and that is how #118 shipped.
+ * `turnOn`/`turnOff` (settings-visibility.ts:86-92) are a one-call INDIRECTION onto the same sink:
+ *
+ *     function toggleElem(elem) { var $item = document.getElementById(elem); if ($item == null) return; ... }
+ *
+ * — note the `return` on null, which is exactly the silent no-op this whole net exists to catch. So
+ * `turnOn("RABfarmsolve")` (an id that does not exist; the setting is "RABsolve") was invisible to a net
+ * that only walked direct lookups. A sink one call deep is still a sink.
+ */
+const DOM_ID_SINKS = new Set(['byId', 'getElementById', 'turnOn', 'turnOff', 'toggleElem'])
+
+/** AST, not regex: `byId("x")`, `byId<HTMLSelectElement>("x")`, `document.getElementById("x")`, `turnOn("x")`. */
 function collectLookups(): { literal: Lookup[]; dynamic: number } {
   const literal: Lookup[] = []
   let dynamic = 0
@@ -76,8 +91,8 @@ function collectLookups(): { literal: Lookup[]; dynamic: number } {
       if (ts.isCallExpression(node)) {
         const callee = node.expression
         const isLookup =
-          (ts.isIdentifier(callee) && callee.text === 'byId') ||
-          (ts.isPropertyAccessExpression(callee) && callee.name.text === 'getElementById')
+          (ts.isIdentifier(callee) && DOM_ID_SINKS.has(callee.text)) ||
+          (ts.isPropertyAccessExpression(callee) && DOM_ID_SINKS.has(callee.name.text))
         if (isLookup) {
           const arg = node.arguments[0]
           // A NoSubstitutionTemplateLiteral is a literal; a template WITH substitutions is not.
@@ -121,6 +136,37 @@ function callArgs(rel: string, fn: string): string[] {
 const SETTING_IDS = callArgs('src/modules/settings-defs.ts', 'createSetting')
 // settings-engine.ts:159 — `dropdownLabel.id = id + "Label"`.
 const SETTING_LABEL_IDS = SETTING_IDS.map((id) => id + 'Label')
+
+/**
+ * Elements the FORK mints itself at runtime: `someEl.id = 'hiddenBreedTimer'` (breedtimer.ts:214).
+ *
+ * #120: without this source the net accuses `turnOff("hiddenBreedTimer")` of targeting a nonexistent
+ * element — but the element is real, AT just creates it in code rather than in the game's HTML. A net
+ * that reports a false positive gets muted, and a muted net is a deleted net. The id set must include
+ * every way an id comes into existence, not only the ways that are convenient to scan.
+ */
+function runtimeAssignedIds(): string[] {
+  const out: string[] = []
+  for (const rel of CORPUS) {
+    const sf = sourceOf(rel)
+    const visit = (node: ts.Node): void => {
+      // `<expr>.id = '<literal>'`
+      if (
+        ts.isBinaryExpression(node) &&
+        node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+        ts.isPropertyAccessExpression(node.left) &&
+        node.left.name.text === 'id' &&
+        ts.isStringLiteralLike(node.right)
+      ) {
+        out.push(node.right.text)
+      }
+      ts.forEachChild(node, visit)
+    }
+    visit(sf)
+  }
+  return out
+}
+const RUNTIME_IDS = runtimeAssignedIds()
 // settings-menu.ts:117/122 — createTabs(name) mints the `tab<name>` <li> AND the `<name>` tabcontent div.
 const TAB_NAMES = callArgs('src/modules/settings-menu.ts', 'createTabs')
 const TAB_IDS = TAB_NAMES.flatMap((n) => ['tab' + n, n])
@@ -203,6 +249,7 @@ const RESOLVED = new Set<string>([
   ...SETTING_IDS,
   ...SETTING_LABEL_IDS,
   ...TAB_IDS,
+  ...RUNTIME_IDS, // #120 — ids the fork mints itself (`el.id = 'hiddenBreedTimer'`), derived not listed
   ...Object.keys(AT_CREATED),
 ])
 
@@ -252,6 +299,11 @@ describe('DOM-id lookups must resolve to an element that exists (#73)', () => {
     expect(SETTING_IDS).toContain('AdvMapSpecialModifier') // AT setting
     expect(SETTING_LABEL_IDS).toContain('AdvMapSpecialModifierLabel') // derived label sibling
     expect(TAB_IDS).toContain('tabScryer') // AT tab <li>
+    expect(RUNTIME_IDS).toContain('hiddenBreedTimer') // #120 — minted at breedtimer.ts:214 (`el.id = …`)
+    // #120 — turnOn/turnOff are DOM-id sinks one call deep (toggleElem → getElementById). If this
+    // resolver regresses, every visibility typo in settings-visibility.ts silently stops being checked
+    // — which is exactly how #118 (`RABfarmsolve`) shipped.
+    expect(LOOKUPS.some((l) => l.file.endsWith('settings-visibility.ts'))).toBe(true)
     expect(TAB_IDS).toContain('Import Export') // AT tabcontent <div> — note the space
     // And the lookups themselves. This pins a CORRECTLY-spelled sibling of the bug, on purpose: it
     // survives the #73 fix, so fixing #73 edits exactly one place (KNOWN_DEAD). That the scan sees the

@@ -198,8 +198,6 @@ export function updateCustomButtons() {
     //DWind
     !radonon ? turnOn("use3daily") : turnOff("use3daily");
     !radonon ? turnOn("liqstack") : turnOff("liqstack");
-    !radonon && getPageSetting('use3daily') == true ? turnOn("dwindhealthy") : turnOff("dwindhealthy");
-    !radonon && getPageSetting('use3daily') == true ? turnOn("dusebstance") : turnOff("dusebstance");
     !radonon && getPageSetting('use3daily') == true ? turnOn("dWindStackingMin") : turnOff("dWindStackingMin");
     !radonon && getPageSetting('use3daily') == true ? turnOn("dWindStackingMinHD") : turnOff("dWindStackingMinHD");
     !radonon && getPageSetting('use3daily') == true ? turnOn("dWindStackingMax") : turnOff("dWindStackingMax");
@@ -238,8 +236,6 @@ export function updateCustomButtons() {
 
     //RDaily
     radonon ? turnOn("buyradony") : turnOff("buyradony");
-    radonon ? turnOn("Rdscryvoidmaps") : turnOff("Rdscryvoidmaps");
-    radonon ? turnOn("RdIgnoreSpiresUntil") : turnOff("RdIgnoreSpiresUntil");
     radonon ? turnOn("RDailyVoidMod") : turnOff("RDailyVoidMod");
     radonon ? turnOn("RdRunNewVoidsUntilNew") : turnOff("RdRunNewVoidsUntilNew");
     radonon ? turnOn("Ravoidempower") : turnOff("Ravoidempower");
@@ -580,8 +576,6 @@ export function updateCustomButtons() {
     //Windstacking
     var wson = (getPageSetting('AutoStance') == 3);
     (!radonon && !wson) ? turnOn("turnwson") : turnOff("turnwson");
-    (!radonon && wson) ? turnOn("windhealthy") : turnOff("windhealthy");
-    (!radonon && wson) ? turnOn("usebstance") : turnOff("usebstance");
     (!radonon && wson) ? turnOn("WindStackingMin") : turnOff("WindStackingMin");
     (!radonon && wson) ? turnOn("WindStackingMinHD") : turnOff("WindStackingMinHD");
     (!radonon && wson) ? turnOn("WindStackingMax") : turnOff("WindStackingMax");
@@ -612,7 +606,6 @@ export function updateCustomButtons() {
 
     //Combat
     !radonon ? turnOn("AutoStance") : turnOff("AutoStance");
-    !radonon ? turnOn("AutoStanceNew") : turnOff("AutoStanceNew");
     !radonon ? turnOn("DynamicGyms") : turnOff("DynamicGyms");
     !radonon ? turnOn("AutoRoboTrimp") : turnOff("AutoRoboTrimp");
     !radonon ? turnOn("fightforever") : turnOff("fightforever");
@@ -879,7 +872,11 @@ export function updateCustomButtons() {
     radonon && getPageSetting('RAB') == true ? turnOn("RABfarm") : turnOff("RABfarm");
     radonon && getPageSetting('RAB') == true ? turnOn("RABfarmswitch") : turnOff("RABfarmswitch");
     radonon && getPageSetting('RAB') == true ? turnOn("RABfarmstring") : turnOff("RABfarmstring");
-    radonon && getPageSetting('RAB') == true ? turnOn("RABfarmsolve") : turnOff("RABfarmsolve");
+    // #118: was turnOn/turnOff("RABfarmsolve") — an id that does not exist. The setting is "RABsolve".
+    // toggleElem no-ops silently on a missing element, so the Solver checkbox never hid with its four
+    // siblings: it stayed visible in U1 and with the RAB master switch off. Visibility only — the
+    // setting's actual function was already correctly gated by RAB in the mainLoop.
+    radonon && getPageSetting('RAB') == true ? turnOn("RABsolve") : turnOff("RABsolve");
 
 
     //Nature

@@ -467,7 +467,14 @@ export function autoLevelEquipment() {
                 $eqName.style.color = Best[stat].Wall ? 'orange' : 'red';
                 $eqName.style.border = '2px solid red';
             }
-            const maxmap = getPageSetting('MaxMapBonusAfterZone') && doMaxMapBonus;
+            // #116: was `getPageSetting('MaxMapBonusAfterZone') && doMaxMapBonus`. That guard was both
+            // redundant and wrong. `doMaxMapBonus` (maps.ts:476) is already computed as
+            // `maxMapBonusZ >= 0 && mapBonus < MaxMapBonuslimit && world >= maxMapBonusZ` — it ALREADY
+            // encodes "the setting is enabled". Re-testing the raw setting added nothing except a
+            // truthiness trap: `0` means "from zone 0", i.e. always on, but `0` is FALSY, so the one
+            // value documented as "use it always" was the one value that silently disabled this branch.
+            // (-1, the off sentinel, is truthy — so the guard was backwards on both ends.)
+            const maxmap = doMaxMapBonus;
             if (BuyArmorLevels && (DaThing.Stat === 'health' || DaThing.Stat === 'block') && (!enoughHealthE || maxmap || investSpareMetal)) {
                 game.global.buyAmt = gearamounttobuy;
                 if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true)) {
