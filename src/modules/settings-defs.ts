@@ -1801,7 +1801,7 @@ export function initializeAllSettings() {
     (document.getElementById('dsATGA2timer') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('dATGA2Auto', ['ATGA: Manual', 'ATGA: Auto No Spire', 'ATGA: Auto Dailies'],tip({
         what: '<b>EXPERIMENTAL.</b> Computes a Bogged/Plague-tuned breed timer automatically instead of using a fixed number, overriding every other ATGA Daily timer when it applies.',
-        how: '<b>Auto Dailies</b> applies whenever the active Daily is Bogged or Plague. <b>Auto No Spire</b> applies under that same Bogged/Plague condition, but only while a Daily Spire is also active &mdash; the opposite of what the name suggests, so double-check this matches what you expect before relying on it.',
+        how: '<b>Auto Dailies</b> applies whenever the active Daily is Bogged or Plague. <b>Auto No Spire</b> applies under that same Bogged/Plague condition, but stands down inside a Daily Spire, leaving your Spire timer in charge there.',
         ignoredWhen: 'Not a Daily, the Daily is not Bogged or Plague, or <b>ATGA: Timer</b> is not a positive number.',
     }), 'multitoggle', 2, null, 'ATGA');
     createSetting('dATGA2timer', 'ATGA: T: Dailies',tip({

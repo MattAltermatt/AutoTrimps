@@ -499,7 +499,7 @@
         target = new Decimal(getPageSetting2("sATGA2timer"));
       if (game.global.challengeActive == "Daily" && getPageSetting2("dsATGA2timer") > 0 && disActiveSpireAT() == true)
         target = new Decimal(getPageSetting2("dsATGA2timer"));
-      if ((getPageSetting2("dATGA2Auto") == 2 || getPageSetting2("dATGA2Auto") == 1 && disActiveSpireAT() && game.global.challengeActive == "Daily") && game.global.challengeActive == "Daily" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined")) {
+      if ((getPageSetting2("dATGA2Auto") == 2 || getPageSetting2("dATGA2Auto") == 1 && !disActiveSpireAT() && game.global.challengeActive == "Daily") && game.global.challengeActive == "Daily" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined")) {
         var plagueDamagePerStack = game.global.dailyChallenge.plague !== void 0 ? dailyModifiers.plague.getMult(game.global.dailyChallenge.plague.strength, 1) : 0;
         var boggedDamage = game.global.dailyChallenge.bogged !== void 0 ? dailyModifiers.bogged.getMult(game.global.dailyChallenge.bogged.strength) : 0;
         var atl = Math.ceil((Math.sqrt((plagueDamagePerStack / 2 + boggedDamage) ** 2 - 2 * plagueDamagePerStack * (boggedDamage - 1)) - (plagueDamagePerStack / 2 + boggedDamage)) / plagueDamagePerStack);
@@ -17303,7 +17303,7 @@
     document.getElementById("dsATGA2timer").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("dATGA2Auto", ["ATGA: Manual", "ATGA: Auto No Spire", "ATGA: Auto Dailies"], tip({
       what: "<b>EXPERIMENTAL.</b> Computes a Bogged/Plague-tuned breed timer automatically instead of using a fixed number, overriding every other ATGA Daily timer when it applies.",
-      how: "<b>Auto Dailies</b> applies whenever the active Daily is Bogged or Plague. <b>Auto No Spire</b> applies under that same Bogged/Plague condition, but only while a Daily Spire is also active &mdash; the opposite of what the name suggests, so double-check this matches what you expect before relying on it.",
+      how: "<b>Auto Dailies</b> applies whenever the active Daily is Bogged or Plague. <b>Auto No Spire</b> applies under that same Bogged/Plague condition, but stands down inside a Daily Spire, leaving your Spire timer in charge there.",
       ignoredWhen: "Not a Daily, the Daily is not Bogged or Plague, or <b>ATGA: Timer</b> is not a positive number."
     }), "multitoggle", 2, null, "ATGA");
     createSetting("dATGA2timer", "ATGA: T: Dailies", tip({

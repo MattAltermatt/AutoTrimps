@@ -160,7 +160,11 @@ export function ATGA2() {
 		if (game.global.challengeActive == "Daily" && getPageSetting('dsATGA2timer') > 0 && disActiveSpireAT() == true)
 		target = new Decimal(getPageSetting('dsATGA2timer'));
 
-		if ((getPageSetting('dATGA2Auto')==2||(getPageSetting('dATGA2Auto')==1 && disActiveSpireAT() && game.global.challengeActive == "Daily")) && game.global.challengeActive == "Daily" && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined')){
+		// #119 — mode 1 is labelled "ATGA: Auto No Spire" and required disActiveSpireAT() to be TRUE.
+		// disActiveSpireAT() (other.ts:92) returns true exactly when a Daily Spire IS active, so the
+		// option fired ONLY inside a Spire — the precise inverse of its own name. Negated.
+		// Mode 2 ("Auto Dailies", the default) is unconditional on a Daily and is unchanged.
+		if ((getPageSetting('dATGA2Auto')==2||(getPageSetting('dATGA2Auto')==1 && !disActiveSpireAT() && game.global.challengeActive == "Daily")) && game.global.challengeActive == "Daily" && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined')){
 			var plagueDamagePerStack = (game.global.dailyChallenge.plague !== undefined) ? dailyModifiers.plague.getMult(game.global.dailyChallenge.plague.strength, 1) : 0;
 			var boggedDamage =  (game.global.dailyChallenge.bogged !== undefined) ? dailyModifiers.bogged.getMult(game.global.dailyChallenge.bogged.strength) : 0;
 			var atl = Math.ceil((Math.sqrt((plagueDamagePerStack/2+boggedDamage)**2 - 2 * plagueDamagePerStack * (boggedDamage-1)) - (plagueDamagePerStack/2+boggedDamage)) / plagueDamagePerStack);
