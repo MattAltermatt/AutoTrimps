@@ -167,19 +167,29 @@ export function buyJobs() {
     }
     let scientistRatio = totalRatio / scientistDivisor(getPageSetting('ScientistPercent'), legacyDivisor);
 
+    // #125 — the zone-1 bootstrap arm. It used to hire only while `trimps.owned < realMax * 0.9`, and it
+    // returns unconditionally, so — unlike the general arm below, which falls through to the ratio
+    // allocator once the colony fills — it had NO full-colony path at all. A trap catches `1 + Bait`
+    // Trimps and the zone-1 population cap is 10, so at Bait >= 9 the FIRST trap fills the colony to
+    // 100% of realMax and the gate reads `10 < 9` = false from that trap onward, forever. Zero workers
+    // hired, and the `return` denied every other hiring path — which starved the run of food, and so of
+    // the 15 food the game's `upgrades` trigger needs to reveal Science. The whole run soft-locked at
+    // zone 1 for every player with Bait >= 9, i.e. essentially every post-portal veteran.
+    //
+    // The gate was protecting the breeding pool, but `freeWorkers > 0` already does that: freeWorkerSlots()
+    // is `ceil(realMax/2) - employed`, so half the colony is reserved for breeding no matter what. The
+    // 0.9 check was redundant with it, and at high Bait it was fatal.
     if (game.global.world === 1 && game.global.totalHeliumEarned <= 5000) {
-        if (game.resources.trimps.owned < game.resources.trimps.realMax() * 0.9) {
-            if (game.resources.food.owned > 5 && freeWorkers > 0) {
-                if (game.jobs.Farmer.owned === game.jobs.Lumberjack.owned)
-                    safeBuyJob('Farmer', 1);
-                else if (game.jobs.Farmer.owned > game.jobs.Lumberjack.owned && !game.jobs.Lumberjack.locked)
-                    safeBuyJob('Lumberjack', 1);
-            }
-            freeWorkers = freeWorkerSlots();
-            if (game.resources.food.owned > 20 && freeWorkers > 0) {
-                if (game.jobs.Farmer.owned === game.jobs.Lumberjack.owned && !game.jobs.Miner.locked && challengeActive("Metal") === false)
-                    safeBuyJob('Miner', 1);
-            }
+        if (game.resources.food.owned > 5 && freeWorkers > 0) {
+            if (game.jobs.Farmer.owned === game.jobs.Lumberjack.owned)
+                safeBuyJob('Farmer', 1);
+            else if (game.jobs.Farmer.owned > game.jobs.Lumberjack.owned && !game.jobs.Lumberjack.locked)
+                safeBuyJob('Lumberjack', 1);
+        }
+        freeWorkers = freeWorkerSlots();
+        if (game.resources.food.owned > 20 && freeWorkers > 0) {
+            if (game.jobs.Farmer.owned === game.jobs.Lumberjack.owned && !game.jobs.Miner.locked && challengeActive("Metal") === false)
+                safeBuyJob('Miner', 1);
         }
         return;
     } else if (game.jobs.Farmer.owned === 0 && game.jobs.Lumberjack.locked && freeWorkers > 0) {
