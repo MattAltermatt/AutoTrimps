@@ -153,6 +153,29 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **⏱️ #126 SHIPPED — THE SIM HAS REAL TIMERS NOW** (2026-07-14, `928e84c9`) — 1062 tests, all gates green.
+  The `setTimeout = () => 0` stub's **third** victim, after #66 (`usingRealTimeOffline`) and #122
+  (`checkTriggers`). On a **stacked** void map the game grants one heirloom **per stack** and schedules each
+  on a timer (main.js:15679) ⇒ under the stub **every stacked-void completion silently dropped its rewards.**
+  🔑 **WHEN THE CALLBACK IS ANONYMOUS, YOU CANNOT HAND-FIX IT — MAKE THE PRIMITIVE WORK.** #122 was patchable
+  because `checkTriggers` is a *named* function the driver could call. The heirloom rewards are **anonymous
+  closures**, so the only honest fix is a real (virtual, game-time, deterministic) timer queue —
+  `scripts/sim/timers.mjs`, pumped by `driver.tickOnce()`.
+  ⛔ **BLOCKLIST THE SELF-DRIVING LOOPS BY IDENTITY, or the "fix" is worse than the bug.** `gameTimeout`
+  **re-enters the game loop** — the driver exists to replace it, so letting it run would **double-drive every
+  tick and make every trace a lie**. Also dropped: `autoSave` (LZString-compresses the whole save on a 10s
+  loop) and `costUpdatesTimeout` (its only state-bearing call is `checkTriggers`, which the driver already
+  makes — #122). **Install AFTER `load()`** (the offline replay is itself a setTimeout loop, torn down per #66)
+  **and after the AT bundle eval** (AT's startup chain would otherwise double-fire).
+  ✅ **TRACE-NEUTRAL, and that is a *measured* claim** — `baseline-zero` stays green: no corpus save runs voids.
+  Which is exactly why the net is a **direct** test: `void-heirlooms.test.ts` drives the **game's own**
+  `fight()` completion path and carries its own mutation check — stacked=2 gives **1** `createHeirloom` call
+  under the old stub (the synchronous reward; both deferred ones dropped) and **3** with the queue.
+  🚪 **AND IT FOUND #127: `doPortal()` HAS NEVER EXECUTED IN A SIM RUN.** `portal.ts:45` schedules the portal
+  on a timer too — so AT's **highest-consequence action** (it resets the run) is unexercised by the net. Now
+  *reachable*, but no fixture arms `OKtoPortal`. A blind spot, not a regression — and the next person to add a
+  deep fixture will otherwise meet it as a "mysterious divergence."
+
 - **🕳️ #105 SHIPPED — ZERO BLIND ROWS IN THE CENSUS, AND THE STALE ORACLE BEHIND THEM** (2026-07-14,
   `5c14e8ed`) — 1055 tests, all gates green by exit code. Corpus 8 → **10 saves**; oracle **re-pinned v3 → v4**.
   🎯 **THE ACCEPTANCE CRITERION IS A RED, NOT A NEW SAVE.** `housing-hut-divisor` **0 → 13** (`09-housing-u2`)
