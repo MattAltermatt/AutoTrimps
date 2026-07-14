@@ -123,6 +123,16 @@ The fork is structurally immune to changes it *delegates* to native game code (i
 `locked`/unlock flags, calls native `buyJob`/`buyUpgrade`); drift lives only in its own
 from-scratch prediction math. Mirror game constants exactly — **never change game balance numbers.**
 
+**A DISABLED GATE REPORTS SUCCESS — audit the gates themselves, not just their output.** Three times now
+a gate was silently incapable of failing, and each time everything downstream looked green:
+`tests/sim/guard.ts` skipped 11 suites whenever the clone was absent (#67); `| grep -cE '(error|warning)'`
+never matched oxlint's format, so lint "passed" for a dozen runs while the deploy was RED
+([[feedback-check-exit-codes-not-grep]]); and a **wrapped comment line** beginning `// @ts-nocheck` exempted
+`buildings.ts` from `tsc` entirely — for months, while this file claimed zero remained (found by a *doc
+audit*, 2026-07-13). **`tsc` exits 0 precisely BECAUSE the file is skipped.** So: check **exit codes**, not
+output; **mutation-check every net** (break it on purpose, watch it go red); and when a doc claims a class is
+closed, **probe it** — `npm run typecheck` passing is not evidence that a given file is typechecked.
+
 **The gate is real — do not re-open the hole (#67).** Three invariants, each enforced by a net that has
 been mutation-tested to prove it can go red. Breaking any of them is how the gate silently dies again:
 1. **No test may ever be skipped in CI.** There is no `describeSim`, no conditional-skip mechanism, and
@@ -339,7 +349,8 @@ by CI on every push — never committed).
 - **🕸️ THE `needs-net` CLUSTER SHIPPED — #68–#74 + #88, five permanent nets + every fix** (2026-07-12, `10494e92`…`bd0cc71d`)
   — 725 tests green, Pages deploy green. Each bug class is now closed by a **mechanical set-difference**, not by
   reading, and each net carries a **shrinking baseline**: fix a bug and the net goes RED until you delete its
-  entry. Nets: `tests/nets/{modules-fields,bridge-collision,ambient-vars,dom-ids,settings-reverse}.test.ts`.
+  entry. That cluster added 5; **`tests/nets/` now holds 15** — `ls tests/nets/` is the list, don't
+  hand-maintain one here.
   🎯 **The nets caught MY OWN errors, repeatedly — that is the argument for them.** My first MODULES net was blind
   to `const customVars = MODULES["maps"]` (31 reads hidden); my ambient-var mutation-check was inadequate and the
   agent said so; my DOM-id resolution rule was over-broad in exactly the way that lets typos survive. Each would
@@ -535,9 +546,20 @@ by CI on every push — never committed).
 - **Phase Bugs (#22) shipped** (2026-07-08) — an adversarial multi-agent review found 26 confirmed bugs,
   all fixed HIGH→LOW + pushed to `gh-pages`. Also landed the **true-TS modernization** design spec + a
   proven Phase-0 characterization harness (see Conventions), and the `other.ts` missing-setting fix.
-- **Phase 1 true-TS (milestone #5) — COMPLETE** (2026-07-09) — all 31 modules `@ts-nocheck` → strict TS;
-  **ZERO `@ts-nocheck` remain in `src/`**, and the ambient seam (`trimps.d.ts` + `at-legacy.d.ts`) is
-  stable. **GOTCHA — the byte-diff gate invocation:** `npx esbuild <file> --tsconfig-raw='{}'` on BOTH
+- **Phase 1 true-TS (milestone #5) — COMPLETE** (2026-07-09) — all 31 modules `@ts-nocheck` → strict TS,
+  and the ambient seam (`trimps.d.ts` + `at-legacy.d.ts`) is stable.
+  🚨 **THE "ZERO `@ts-nocheck` REMAIN" CLAIM WAS FALSE FOR MONTHS, AND THIS FILE IS WHERE IT LIVED**
+  (found 2026-07-13 by a *doc audit*, not by any gate). `buildings.ts:5` — the project's most
+  game-coupled module — had a header comment that *wrapped* onto a line beginning
+  `// @ts-nocheck original, the conversion gate).` That is **prose**, but **TypeScript honours
+  `@ts-nocheck` ANYWHERE in a file's leading comment block**, so the entire module was exempt from
+  `tsc`. Proven by probe: appending `const x: number = "s"` produced **ZERO** typecheck errors. It hid
+  because every signal agreed it was fine — the file *looks* converted, this doc said the class was
+  closed, and **`tsc` exits 0 precisely BECAUSE the file is skipped: a disabled gate reports success.**
+  (Re-checked, it typechecks clean — no latent bugs, just an unverified module.) Now netted:
+  `tests/nets/no-ts-nocheck.test.ts` forbids the token from *beginning* a comment line in `src/`
+  (mid-sentence mentions, which five modules have, stay legal).
+  **GOTCHA — the byte-diff gate invocation:** `npx esbuild <file> --tsconfig-raw='{}'` on BOTH
   sides (`--tsconfig-raw='{}'` normalizes the `"use strict";` esbuild otherwise emits only for in-tree
   files); **NEVER pass `--loader=ts` with a file arg — it errors and emits nothing = a false green.**
 - **A prior from-scratch rewrite was abandoned** — refactor in place via the strangler, don't

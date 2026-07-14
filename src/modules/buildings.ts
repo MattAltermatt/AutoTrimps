@@ -2,9 +2,18 @@
 // strict-typed. Housing / storage / building-purchase logic (U1 + U2 radon R* family).
 // Deeply game-coupled (127 game.* touches) — native/AT globals typed ambient in
 // src/game/*.d.ts and read by bare name (no imports → esbuild byte-identical to the
-// @ts-nocheck original, the conversion gate). getPageSetting + debug imported from
+// pre-conversion original, the conversion gate). getPageSetting + debug imported from
 // converted utils. Module-level vars (housingList, RhousingList, smithybought) are
-// buildings-internal. TWO seam notes:
+// buildings-internal.
+//
+// ⚠️ DO NOT let the token `@ts`-`nocheck` begin a line of this header. TypeScript honours it
+// ANYWHERE in a file's leading comment block, prose or not — and a re-wrap once left line 5
+// starting with it, which silently exempted this entire module from type checking. It went
+// unnoticed because the file still *looked* converted and CLAUDE.md claimed zero remained;
+// a `const x: number = "s"` probe produced ZERO tsc errors. Other modules mention the token
+// mid-line, which is inert. Found by the 2026-07-13 doc audit, not by a gate.
+//
+// TWO seam notes:
 //   1. bestFoodBuilding: was a sloppy-mode implicit global (missing var) used only inside
 //      buyFoodEfficientHousing; localized to a const here (no external reader) to avoid a
 //      strict-mode ReferenceError. bestBuilding stays bare — it resolves to the
