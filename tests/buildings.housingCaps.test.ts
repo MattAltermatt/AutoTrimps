@@ -106,6 +106,10 @@ beforeEach(() => {
   }
   ;(globalThis as any).getMaxAffordable = () => 1
   ;(globalThis as any).isBuildingInQueue = () => false
+  // #123 — the housing buyer now asks bulkBuyAmount() how large a queue stack to ask for, which reads the
+  // Bone-Portal rewards. Free global from the legacy seam, same as the ones above; false = no reward, so
+  // stacks stay at 1 and this fixture's cap assertions are unaffected.
+  ;(globalThis as any).bwRewardUnlocked = () => false
   ;(globalThis as any).calcHeirloomBonus = (_a: unknown, _b: unknown, v: number) => v
   ;(globalThis as any).Rhyposhouldwood = true
 })

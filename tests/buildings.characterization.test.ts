@@ -678,9 +678,14 @@ describe('buildings.RbuyStorage — L1b actuator spy-log', () => {
   it('universe==1 path: buys storage for each requested resource over max', () => {
     ;(globalThis as any).game = game({ global: { buyAmt: 1, firing: false, maxSplit: 1, universe: 1, mapsActive: false, currentMapId: '', mapsOwnedArray: [] } })
     buildings.RbuyStorage(true, true, true)
-    // owned*1.1=110 > max 50 → each buys via native buyBuilding(name,true,true,1)
+    // owned*1.1=110 > max 50 → each buys.
     expect(buyCalls.map((c) => c.building).sort()).toEqual(['Barn', 'Forge', 'Shed'])
-    expect(buyCalls[0].args).toEqual(['Barn', true, true, 1])
+    // #123 — the 4th `forceAmt` argument is GONE: RbuyStorage now routes through safeBuyBuilding, the
+    // same chokepoint U1's buyStorage() has always used, which sizes the buy with game.global.buyAmt via
+    // the DecaBuild/DoubleBuild ladder instead of forcing a single unit. `bwRewardUnlocked` is stubbed
+    // false here, so the ladder settles on buyAmt=1 and one Barn is still bought — only the ARGUMENT
+    // SHAPE moves, not the count.
+    expect(buyCalls[0].args).toEqual(['Barn', true, true])
   })
 
   it('universe==2 path buys too (radLevel packrat)', () => {
@@ -776,10 +781,14 @@ describe('buildings.RbuyBuildings — L1b orchestrator spy-log', () => {
     // Shed: targetprice(≈1.05e18) >= 1e10 && woodmax(100)*2^0 < targetprice → buy.
     // RbuyStorage: food(110>50)→Barn, metal(110>50)→Forge. Everything else locked → no further buys.
     expect(buyCalls.map((c) => c.building)).toEqual(['Shed', 'Barn', 'Forge'])
+    // #123 — the bonfire Shed KEEPS its forced single unit (it converges on the bonfire target one
+    // doubling at a time; a stack would overshoot by 2^9), while Barn/Forge lose the 4th argument because
+    // RbuyStorage now routes through safeBuyBuilding. That asymmetry is the deliberate part of #123 and
+    // this line is what pins it: if someone later "finishes the job" and routes the Shed too, this goes red.
     expect(buyCalls.map((c) => c.args)).toEqual([
       ['Shed', true, true, 1],
-      ['Barn', true, true, 1],
-      ['Forge', true, true, 1],
+      ['Barn', true, true],
+      ['Forge', true, true],
     ])
     expect((globalThis as any).toggleAutoStorage).toHaveBeenCalledWith(false)
   })
@@ -822,12 +831,18 @@ describe('buildings.RbuyBuildings — L1b orchestrator spy-log', () => {
       Rnurtureon: { type: 'boolean', enabled: true },
       RMaxLabs: { type: 'valueNegative', value: -1 },
     }
-    ;(globalThis as any).canAffordBuilding = () => false // suppress smithy/microchip/housing
+    // #123 — the Laboratory buy is now gated on affordability, because it routes through
+    // safeBuyBuilding. That is not new behaviour in the GAME: the native buyBuilding() has always
+    // refused an unaffordable purchase itself (main.js:4848), so the old `canAffordBuilding = () => false`
+    // fixture was only ever "buying" a Laboratory because the spy records the call the real game would
+    // have rejected. Everything else stays locked, so Laboratory is still the only buy.
+    ;(globalThis as any).canAffordBuilding = (name: string) => name === 'Laboratory'
     ;(globalThis as any).game = baseGame({
       buildings: bld({
         Hut: { locked: 1 }, House: { locked: 1 }, Mansion: { locked: 1 }, Hotel: { locked: 1 }, Resort: { locked: 1 },
         Gateway: { locked: 1 }, Collector: { locked: 1 },
-        Smithy: { locked: 1 }, Microchip: { locked: 1 }, Tribute: { locked: 1 }, Laboratory: { locked: 0, owned: 0 },
+        Smithy: { locked: 1 }, Microchip: { locked: 1 }, Tribute: { locked: 1 },
+        Laboratory: { locked: 0, owned: 0, purchased: 0 },
       }),
     })
     buildings.RbuyBuildings()

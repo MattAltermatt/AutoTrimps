@@ -46,12 +46,55 @@ MODULES["buildings"].storageLowlvlCutoff2 = 0.5;
 //Helium
 
 
-export function safeBuyBuilding(building: string) {
+/**
+ * #123 — the largest stack worth queueing, and the reason U2 was building at a tenth of U1's rate.
+ *
+ * The game crafts ONE queue entry per craft cycle (`craftBuildings()` calls `removeQueueItem('first')`
+ * at most once, main.js:4939), and that entry yields `Math.min(DecaBuild ? 10 : DoubleBuild ? 2 : 1,
+ * <this entry's own stack amount>)` buildings (updates.js:5438-5444). So:
+ *
+ *   - ten separate `Hut.1` entries  ⇒ min(10, 1) = 1 building per craft cycle. DecaBuild does NOTHING.
+ *   - one `Hut.10` entry            ⇒ min(10,10) = 10 buildings in a SINGLE craft cycle.
+ *
+ * U2's buyers passed `forceAmt = 1` at every site, so every U2 player with the DecaBuild Bone-Portal
+ * reward — which is universe-agnostic and permanent, i.e. essentially all of them — got no benefit from
+ * it at all. Queue DEPTH is not throughput; queue-entry STACK SIZE is.
+ *
+ * Note a stack larger than this buys nothing extra (the min caps it), so this is the only amount worth
+ * asking for. Without either reward it returns 1, which is what every U2 site passed before — so a
+ * player without the rewards is unaffected.
+ */
+export function bulkBuyAmount(): number {
+    return bwRewardUnlocked("DecaBuild") ? 10 : bwRewardUnlocked("DoubleBuild") ? 2 : 1;
+}
+
+/**
+ * @param amount  Optional explicit stack size. When given, the buy is made with the native `forceAmt`
+ *                argument, which SELF-CLAMPS to what is actually affordable (main.js:4844) — so it buys
+ *                7 when 7 are affordable, where the ladder below would step 10 → 2. It is also the only
+ *                way to express a stack larger than 10, which Tribute needs.
+ */
+export function safeBuyBuilding(building: string, amount?: number) {
     if (isBuildingInQueue(building))
         return false;
     if (game.buildings[building].locked)
         return false;
     const oldBuy = preBuy2();
+
+    if (amount !== undefined) {
+        // Price the affordability gate for ONE unit; `buyBuilding` clamps the rest. Asking
+        // canAffordBuilding for the full stack would refuse the whole buy when only part is affordable.
+        game.global.buyAmt = 1;
+        if (amount < 1 || !canAffordBuilding(building)) {
+            postBuy2(oldBuy);
+            return false;
+        }
+        game.global.firing = false;
+        debug('Building ' + amount + ' ' + building, "buildings", '*hammer2');
+        buyBuilding(building, true, true, amount);
+        postBuy2(oldBuy);
+        return true;
+    }
 
     if (bwRewardUnlocked("DecaBuild")) {
         game.global.buyAmt = 10;
@@ -446,9 +489,10 @@ export function RbuyStorage(buyFood: boolean, buyWood: boolean, buyMetal: boolea
 
 
         if (resMax < jestImps[Res]) {
-            if (canAffordBuilding(Resources[Res]) && !(game.buildings[Resources[Res]].locked)) {
-                buyBuilding(Resources[Res], true, true, 1);
-            }
+            // #123 — the exact twin of U1's buyStorage() (which already routes through safeBuyBuilding,
+            // line ~334). The ladder's affordability step-down is what keeps storage's x2 cost scaling in
+            // check: it asks for 10, and falls to 2 then 1 when 10 is not affordable.
+            safeBuyBuilding(Resources[Res]);
         }
     }
 
@@ -516,8 +560,14 @@ export function RbuyBuildings() {
                 toggleAutoStorage(false);
             }
 
+            // #123 — DELIBERATELY the one U2 site left on a raw single buy. This converges on the bonfire
+            // target ONE doubling at a time: its own predicate is `woodmax * 2^(purchased - owned) <
+            // targetprice`, a single-Shed ladder. A 10-stack would overshoot it by 2^9, and routing it
+            // through safeBuyBuilding's isBuildingInQueue guard would stall the convergence outright.
+            // Hypothermia is also a measured blind spot of the L0 net (blind-spot census), so this is the
+            // last place to move behaviour on faith. `tests/nets/no-raw-buybuilding.test.ts` allowlists it.
             if (targetprice >= 1e10 && ((woodmax * Math.pow(2, game.buildings.Shed.purchased - game.buildings.Shed.owned)) < targetprice)) {
-                buyBuilding('Shed', true, true, 1);
+                buyBuilding('Shed', true, true, 1); /* raw-buyBuilding-allowlist: Hypothermia bonfire Shed ladder (#123) */
             }
 
             RbuyStorage(true, false, true);
@@ -529,28 +579,31 @@ export function RbuyBuildings() {
 
 
     //Smithy
-    // NOTE (from #57's removal): every buyBuilding() below — and throughout RbuyBuildings/RbuyStorage —
-    // calls the native buyBuilding() DIRECTLY, bypassing safeBuyBuilding. So every invariant that lives
-    // in safeBuyBuilding (the DecaBuild/DoubleBuild bulk-buy ladder, the GymWall clamp, the Warpstation
-    // maxSplit case, preBuy2/postBuy2) is simply ABSENT in U2. That is a real, independent defect; it is
-    // NOT fixed here, and it outlived the coordinator that first surfaced it.
+    // #123 — these all used to call the native buyBuilding() directly with forceAmt=1, so every U2 buy
+    // was a `X.1` queue entry and the DecaBuild/DoubleBuild reward bought nothing (see bulkBuyAmount()).
+    // They are routed through safeBuyBuilding now. The GymWall and Warpstation branches inside it never
+    // fire here: both buildings are `blockU2: true` in the game's own config, so they are structurally
+    // unreachable from U2 and no universe guard is needed.
     if (!game.buildings.Smithy.locked && canAffordBuilding("Smithy", false, false, false, false, 1) && Rhyposhouldwood) {
         // On quest challenge
         if (game.global.challengeActive === 'Quest') {
             if (smithybought > game.global.world) { smithybought = 0; }
 
             if (smithybought < game.global.world && (questcheck() === 7 || (RcalcHDratio() * 10 >= getPageSetting('Rmapcuntoff')))) {
-                buyBuilding("Smithy", true, true, 1);
-                smithybought = game.global.world;
+                // Pinned to 1: the Quest is "buy a Smithy", one completes it, and `smithybought` is a
+                // once-per-zone flag. A stack would pay 10 escalating costs for no extra progress. The
+                // flag is now set only if the buy actually happened — a Smithy already in the queue means
+                // retry next tick rather than burning the zone's flag on a no-op.
+                if (safeBuyBuilding("Smithy", 1)) smithybought = game.global.world;
             }
         } else {
-            buyBuilding("Smithy", true, true, 1);
+            safeBuyBuilding("Smithy");
         }
     }
 
     //Microchip
-    if (!game.buildings.Microchip.locked && canAffordBuilding('Microchip')) {
-        buyBuilding('Microchip', true, true, 1);
+    if (!game.buildings.Microchip.locked) {
+        safeBuyBuilding('Microchip');
     }
 
     // Housing
@@ -575,9 +628,23 @@ export function RbuyBuildings() {
 
         // #94: House/Mansion/Hotel/Resort all cost metal. A blocked buy leaves boughtHousing false,
         // which ends the do/while — the loop defers rather than spinning.
-        if (housing != null && canAffordBuilding(housing) && game.buildings[housing].purchased < (getPageSetting('RMax' + housing) === -1 ? Infinity : getPageSetting('RMax' + housing))) {
-            buyBuilding(housing, true, true, 1);
-            boughtHousing = true;
+        // The affordability check that used to sit here is now safeBuyBuilding's own (it returns false
+        // when it cannot afford, which ends the loop exactly as before) — checking twice would be
+        // redundant, and the cap check below is the only condition it does not already make.
+        if (housing != null && game.buildings[housing].purchased < (getPageSetting('RMax' + housing) === -1 ? Infinity : getPageSetting('RMax' + housing))) {
+            // #123 — THE site that cost U2 its build throughput. This loop used to queue dozens of `X.1`
+            // entries per tick, but the game crafts one entry per craft cycle and takes min(10, amount)
+            // from it — so a deep queue of singles builds at 1 per cycle no matter how deep it is. Buying
+            // one stack of `bulkBuyAmount()` instead builds TEN per cycle. Queue depth was never
+            // throughput; stack size is. safeBuyBuilding's isBuildingInQueue guard then ends the loop
+            // after one stack per building type, which is also what stops housing head-of-line-blocking
+            // Smithy/Tribute/Laboratory behind forty craft cycles.
+            //
+            // Clamped to the room left under RMax<housing> so a stack cannot overshoot the user's cap;
+            // `purchased` (not `owned`) is the right term because in-queue units already count against it.
+            const cap = getPageSetting('RMax' + housing) === -1 ? Infinity : getPageSetting('RMax' + housing);
+            const room = cap - game.buildings[housing].purchased;
+            boughtHousing = safeBuyBuilding(housing, Math.min(bulkBuyAmount(), room)) === true;
         }
     } while (boughtHousing)
 
@@ -588,18 +655,24 @@ export function RbuyBuildings() {
         if (getPageSetting('RMaxTribute') > game.buildings.Tribute.owned) {
             buyTributeCount = Math.min(buyTributeCount, getPageSetting('RMaxTribute') - game.buildings.Tribute.owned);
         }
-        // Tribute costs food only, so the metal guard is a no-op for it today — routed anyway, because
-        // the invariant #94 is buying is "no AT building purchase happens outside the chokepoint", and
-        // an exception here is exactly how the next reserved pool would leak.
+        // #123 — Tribute is the one U2 site that ALREADY stacked correctly (buyTributeCount is a computed
+        // bulk count, often far above 10, and one `Tribute.N` entry already gets the full min(10, N) per
+        // craft cycle). It is routed for the chokepoint invariant, NOT for the stack — hence the explicit
+        // amount: putting it through the 10 → 2 → 1 ladder would have capped it at 10 and regressed the
+        // only site that worked.
         if ((getPageSetting('RMaxTribute') < 0 || (getPageSetting('RMaxTribute') > game.buildings.Tribute.owned))) {
-            buyBuilding('Tribute', true, true, buyTributeCount);
+            safeBuyBuilding('Tribute', buyTributeCount);
         }
     }
 
     //Labs
     if (!game.buildings.Laboratory.locked && getPageSetting('Rnurtureon') == true) {
-        if (!isBuildingInQueue('Laboratory') && (getPageSetting('RMaxLabs') < 0 || (getPageSetting('RMaxLabs') > game.buildings.Laboratory.owned))) {
-            buyBuilding('Laboratory', true, true, 1);
+        // #123 — the local isBuildingInQueue guard is now safeBuyBuilding's own first line, so it is
+        // dropped rather than duplicated. Clamped to the room under RMaxLabs, same as housing.
+        if (getPageSetting('RMaxLabs') < 0 || (getPageSetting('RMaxLabs') > game.buildings.Laboratory.owned)) {
+            const labCap = getPageSetting('RMaxLabs') < 0 ? Infinity : getPageSetting('RMaxLabs');
+            const labRoom = labCap - game.buildings.Laboratory.purchased;
+            safeBuyBuilding('Laboratory', Math.min(bulkBuyAmount(), labRoom));
         }
     }
 

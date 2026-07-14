@@ -3079,6 +3079,7 @@
     RbuyBuildings: () => RbuyBuildings,
     RbuyStorage: () => RbuyStorage,
     __syncAutoStorageOnce: () => __syncAutoStorageOnce,
+    bulkBuyAmount: () => bulkBuyAmount,
     buyBuildings: () => buyBuildings,
     buyFoodEfficientHousing: () => buyFoodEfficientHousing,
     buyGemEfficientHousing: () => buyGemEfficientHousing,
@@ -3090,12 +3091,27 @@
   MODULES["buildings"].storageMainCutoff = 0.85;
   MODULES["buildings"].storageLowlvlCutoff1 = 0.7;
   MODULES["buildings"].storageLowlvlCutoff2 = 0.5;
-  function safeBuyBuilding2(building) {
+  function bulkBuyAmount() {
+    return bwRewardUnlocked("DecaBuild") ? 10 : bwRewardUnlocked("DoubleBuild") ? 2 : 1;
+  }
+  function safeBuyBuilding2(building, amount) {
     if (isBuildingInQueue(building))
       return false;
     if (game.buildings[building].locked)
       return false;
     const oldBuy = preBuy2();
+    if (amount !== void 0) {
+      game.global.buyAmt = 1;
+      if (amount < 1 || !canAffordBuilding(building)) {
+        postBuy2(oldBuy);
+        return false;
+      }
+      game.global.firing = false;
+      debug2("Building " + amount + " " + building, "buildings", "*hammer2");
+      buyBuilding(building, true, true, amount);
+      postBuy2(oldBuy);
+      return true;
+    }
     if (bwRewardUnlocked("DecaBuild")) {
       game.global.buyAmt = 10;
       if (!canAffordBuilding(building)) {
@@ -3395,9 +3411,7 @@
         jestImps[Res] = curRes * 1.1;
       }
       if (resMax < jestImps[Res]) {
-        if (canAffordBuilding(Resources[Res]) && !game.buildings[Resources[Res]].locked) {
-          buyBuilding(Resources[Res], true, true, 1);
-        }
+        safeBuyBuilding2(Resources[Res]);
       }
     }
   }
@@ -3447,23 +3461,23 @@
           smithybought = 0;
         }
         if (smithybought < game.global.world && (questcheck() === 7 || RcalcHDratio() * 10 >= getPageSetting2("Rmapcuntoff"))) {
-          buyBuilding("Smithy", true, true, 1);
-          smithybought = game.global.world;
+          if (safeBuyBuilding2("Smithy", 1)) smithybought = game.global.world;
         }
       } else {
-        buyBuilding("Smithy", true, true, 1);
+        safeBuyBuilding2("Smithy");
       }
     }
-    if (!game.buildings.Microchip.locked && canAffordBuilding("Microchip")) {
-      buyBuilding("Microchip", true, true, 1);
+    if (!game.buildings.Microchip.locked) {
+      safeBuyBuilding2("Microchip");
     }
     let boughtHousing = false;
     do {
       boughtHousing = false;
       const housing = mostEfficientHousing();
-      if (housing != null && canAffordBuilding(housing) && game.buildings[housing].purchased < (getPageSetting2("RMax" + housing) === -1 ? Infinity : getPageSetting2("RMax" + housing))) {
-        buyBuilding(housing, true, true, 1);
-        boughtHousing = true;
+      if (housing != null && game.buildings[housing].purchased < (getPageSetting2("RMax" + housing) === -1 ? Infinity : getPageSetting2("RMax" + housing))) {
+        const cap = getPageSetting2("RMax" + housing) === -1 ? Infinity : getPageSetting2("RMax" + housing);
+        const room = cap - game.buildings[housing].purchased;
+        boughtHousing = safeBuyBuilding2(housing, Math.min(bulkBuyAmount(), room)) === true;
       }
     } while (boughtHousing);
     if (!game.buildings.Tribute.locked) {
@@ -3472,12 +3486,14 @@
         buyTributeCount = Math.min(buyTributeCount, getPageSetting2("RMaxTribute") - game.buildings.Tribute.owned);
       }
       if (getPageSetting2("RMaxTribute") < 0 || getPageSetting2("RMaxTribute") > game.buildings.Tribute.owned) {
-        buyBuilding("Tribute", true, true, buyTributeCount);
+        safeBuyBuilding2("Tribute", buyTributeCount);
       }
     }
     if (!game.buildings.Laboratory.locked && getPageSetting2("Rnurtureon") == true) {
-      if (!isBuildingInQueue("Laboratory") && (getPageSetting2("RMaxLabs") < 0 || getPageSetting2("RMaxLabs") > game.buildings.Laboratory.owned)) {
-        buyBuilding("Laboratory", true, true, 1);
+      if (getPageSetting2("RMaxLabs") < 0 || getPageSetting2("RMaxLabs") > game.buildings.Laboratory.owned) {
+        const labCap = getPageSetting2("RMaxLabs") < 0 ? Infinity : getPageSetting2("RMaxLabs");
+        const labRoom = labCap - game.buildings.Laboratory.purchased;
+        safeBuyBuilding2("Laboratory", Math.min(bulkBuyAmount(), labRoom));
       }
     }
     postBuy2(oldBuy);
