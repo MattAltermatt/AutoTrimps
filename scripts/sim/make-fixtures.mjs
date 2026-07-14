@@ -27,6 +27,14 @@
 // no amount of waiting clears (measured: world 6 for 25,000 consecutive ticks). Grant perks — the state
 // every real player is in after their first portal — and AT advances, maps, and changes formation
 // immediately. 05/06 below do exactly that. Cf. [[feedback-verify-the-harness-measures-what-it-claims]].
+//
+// #57/#128 UPDATE (2026-07-14): that world-6 damage wall was ALSO half a harness bug, and the DEEP GAME
+// IS NOW REACHABLE. #122 unfroze the metal economy (checkTriggers never fired, so Forge never unlocked and
+// metal.max was pinned at 500); with it fixed, 06-deep plays forward UNAIDED from world 6 to **world 47**
+// (380k ticks, no soft-lock), and a real post-portal perk spread carries it to **world 63 with Warpstation
+// UNLOCKED**. The z47 wall is a DAMAGE wall — 06's perk spread is deliberately modest — not a structural
+// one. So the corpus's z4–8 ceiling is a CHOICE, not a limit, and Warpstation (42.5% of deep metal spend),
+// Gigastation and Nursery are currently invisible to the net. Tracked in #128.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { bootGame } from './boot.mjs'

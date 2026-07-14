@@ -153,6 +153,29 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **⛔ #57 CLOSED WONTFIX — THE SAVE-UP IDEA'S CEILING IS *ZERO*, AND THE DEEP GAME IS NOW REACHABLE (#128)**
+  (2026-07-14) — the rebuild gate ran in full for the first time (it was blocked on #122) and returned a
+  **negative answer**.
+  💀 **RUN THE UPPER-BOUND CONTROL BEFORE OPTIMISING ANYTHING — it is the cheapest possible kill.** Infinite
+  metal, every tick, **no tradeoff**, is the ceiling of *any* reserve however perfect (a reserve can only
+  *approach* it by sacrificing something else). Measured: **ZERO extra Coordination and ZERO extra progress**
+  — at z6 (`4 → 4` bought, world 7 either way; only *earlier*, and earlier bought nothing) **and at z63**
+  (`62 → 67` on ticks `[847,1347,1847,2347,2847]`, world 68 — **IDENTICAL**, not merely no-better). Purchases
+  are capped by the game's **`allowed`** counter, not by metal: `done == allowed`, one per zone, bought **the
+  instant the game permits one**. **AT is never behind ⇒ the reserve has nothing to do.** Its only funding
+  source is **equipment (52.3% of metal spend)** — exactly where #108 measured spending *sooner* is **−19.5%**.
+  🔄 **I PREDICTED THE WRONG CAUSE AND MEASURING CORRECTED ME — TWICE.** I expected **population** to be the
+  binding gate (`canAffordCoordinationTrimps`: `realMax >= send*3`; the post-mortem's "blocked population to buy
+  population" pointed there). **Population NEVER binds — 0 ticks.** At z6 metal is the *only* short resource, on
+  all **1,187** blocked ticks — so the reserve briefly looked **mechanically viable**, until the upper-bound
+  control showed the lever moves nothing. **A mechanism can be capable of acting and still be worth zero.**
+  🎁 **THE BY-PRODUCT OUTLIVES THE ISSUE — #128.** Running the gate proved **the deep game is reachable now that
+  #122 unfroze the economy**: z6 → **z47** by unaided play-forward (380k ticks, **no soft-lock** — it used to
+  freeze at world 6 for 25,000 ticks), then → **z63 with Warpstation UNLOCKED** on a real post-portal perk
+  spread (the z47 wall is a *damage* wall, not a structural one). The corpus tops out at z8, so **Warpstation
+  (42.5% of deep metal spend), Gigastation and Nursery are entirely invisible to the net.** `make-fixtures.mjs`
+  still carries the stale "deep states are unreachable" note — it is wrong.
+
 - **🚪 #127 SHIPPED — THE NET CAN SEE AT *PORTAL* NOW** (2026-07-14, `709e8da6`) — 1066 tests, all gates green.
   `doPortal()` **RESETS THE RUN** and it had **never once executed in a sim run** — AT's single
   highest-blast-radius action was wholly unexercised. Corpus is **11 saves**; census `portal-noop` → **510
