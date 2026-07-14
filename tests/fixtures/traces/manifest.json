@@ -1,11 +1,16 @@
 {
   "waivers": [],
   "oracle": {
-    "tag": "oracle/v3-u2-autobuildings",
-    "commit": "see scripts/sim/build-oracle.mjs TAG — this block had drifted and said v2 long after #69 re-pinned to v3; corrected 2026-07-13 (#90/#98)",
-    "supersedes": "oracle/v2-post-bugfix (514b790d) <- oracle/phase1-faithful (5e51f56d)",
-    "repinned": "2026-07-12 (#69 ship C)",
-    "issue": "#69 (current pin) / #66 (previous pin, rationale below)",
+    "tag": "oracle/v4-post-fix-sweep",
+    "commit": "abd6b1c0 — see scripts/sim/build-oracle.mjs TAG",
+    "supersedes": "oracle/v3-u2-autobuildings <- oracle/v2-post-bugfix (514b790d) <- oracle/phase1-faithful (5e51f56d)",
+    "repinned": "2026-07-14 (#105)",
+    "issue": "#105 (current pin) / #69, #66 (previous pins, rationale below)",
+    "repinRationale": {
+      "why": "THE FROZEN ORACLE CARRIED THE VERY BUGS THE NEW FIXTURES EXIST TO CATCH. v3 is pinned at 2026-07-12; #93 (mostEfficientHousing's divisor), #96 and #101 (Rhypo's bonfire clause) all shipped AFTER it. So the v3 bundle contained, verbatim, `let housingBonus = game.buildings.Hut.increase.by` (#93's bug) and `bonfire > getPageSetting2(\"Rhypofarmstack\").slice(-1)` (#101's). Nobody noticed because THE CORPUS NEVER REACHED EITHER REGION — which is precisely what the blind-spot census measured (both rows BLIND, 0/17). The stale oracle and the blind spots were the SAME phenomenon, and adding the coverage is what exposed it.",
+      "andItInvertsTheCensus": "The census counts divergences of a MUTATED build against the committed oracle traces. Against a v3 oracle, restoring #93's bug makes the mutated build AGREE with the oracle — zero divergences, reported as BLIND — while the CLEAN build is the one that diverges. A census number only means anything when baseline-zero is zero, so the re-pin is a precondition for the fixtures, not a side effect of them.",
+      "proofItLaundersNothing": "baseline-zero was GREEN against v3 immediately before the re-pin: current src and the v3 bundle produce identical traces across the whole existing corpus. So re-recording 01-08 against v4 must reproduce them BYTE-IDENTICALLY — and it does, 17/17 cmp-clean, verified twice (once bare, once after the new fixtures landed). The re-pin therefore changes behavior ONLY in the regions the old corpus could not see, where v3 was carrying the predecessors of known, reviewed, shipped fixes. REPEAT THIS CHECK ON ANY FUTURE RE-PIN — it is what separates a re-pin from a laundered regression."
+    },
     "lastRecord": {
       "date": "2026-07-14",
       "issue": "#122",

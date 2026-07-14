@@ -84,6 +84,14 @@ describe('corpus mutator coverage (loud, pinned)', () => {
       // can still flip a decision. A 1e6x damage injection produces 1542 divergences here and ZERO on
       // every other save in the corpus. See tests/sim/damage-sensitivity.test.ts.
       '08-starved-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyUpgrade', 'setFormation'],
+      // 09 and 10 (#105) are the census-driven fixtures, and their mutator lists are deliberately THIN.
+      // Their value is not reach — it is SENSITIVITY, and reach is exactly the wrong way to judge them:
+      // 04-u2-radon reaches mostEfficientHousing and is still blind to #93's real bug. What makes these
+      // two count is that the census rows flipped BLIND -> SEEN (housing 0 -> 27, rhypo 0 -> 13), which
+      // tests/sim/blind-spot-sensitivity.test.ts pins as a mutation self-test. Do not "improve" them by
+      // chasing more mutator names.
+      '09-housing-u2': ['buyBuilding', 'buyUpgrade'],
+      '10-hypo-u2': ['buyEquipment', 'buyUpgrade'],
     })
   })
 

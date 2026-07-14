@@ -163,7 +163,15 @@ const dir = mkdtempSync(join(tmpdir(), 'at-census-'))
 
 // Every (save, seed) the real gate runs. The census must use the SAME contract as baseline-zero, or a
 // green cell here would not tell us anything about the gate that actually protects production.
-const RUNS = CORPUS.flatMap(({ name, seeds, ticks }) => seeds.map((seed) => ({ name, seed, ticks })))
+//
+// ⚠️ `settings` IS PART OF THAT CONTRACT (#105). This line used to destructure only {name, seeds, ticks}
+// and call runTrace WITHOUT atSettings — while the committed oracle traces were recorded WITH them. So
+// for any settings-gated fixture EVERY mutant diverged, because the mutant ran a differently-CONFIGURED
+// bot, not a differently-behaving one. It was caught the moment 10-hypo-u2 landed: it reported exactly
+// 13 divergences for `canary-buildings-noop` — a mutation to U1's buyBuildings(), which is provably
+// inert in U2 (04-u2-radon scores it 0). A census that reports a detection it did not make is worse
+// than no census: it certifies coverage that does not exist.
+const RUNS = CORPUS.flatMap(({ name, seeds, ticks, settings }) => seeds.map((seed) => ({ name, seed, ticks, settings })))
 
 const results = []
 for (const m of mutations) {
@@ -182,12 +190,12 @@ for (const m of mutations) {
   const perSave = {}
   let total = 0
   process.stdout.write(`\n${m.name.padEnd(24)} `)
-  for (const { name, seed, ticks } of RUNS) {
+  for (const { name, seed, ticks, settings } of RUNS) {
     const oracle = JSON.parse(readFileSync(resolve(TRACES, `${name}.${seed}.trace.json`), 'utf8'))
     const saveString = readFileSync(resolve(SAVES, `${name}.txt`), 'utf8')
     let n
     try {
-      n = diffTraces(oracle, runTrace({ atBundlePath: mutantPath, saveString, seed, ticks })).length
+      n = diffTraces(oracle, runTrace({ atBundlePath: mutantPath, saveString, seed, ticks, atSettings: settings })).length
     } catch {
       n = -1 // the mutant crashed the sim — that IS a detection, and a loud one
     }

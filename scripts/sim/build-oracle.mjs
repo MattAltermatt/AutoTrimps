@@ -44,6 +44,33 @@
 // states (+68% max population, +75% population, +22% science, no stall, no over-buy, no throw) plus a
 // crash audit of the never-executed body, NOT a green net. See #98.
 //
+// ORACLE v4 (#105, 2026-07-14) — re-pinned from `oracle/v3-u2-autobuildings` to
+// `oracle/v4-post-fix-sweep` (abd6b1c0). Forced, and the reason is the whole point of #105:
+//
+//   THE FROZEN ORACLE CARRIED THE VERY BUGS THE NEW FIXTURES EXIST TO CATCH.
+//
+//   v3 is pinned at 2026-07-12. #93 (mostEfficientHousing's divisor), #96 and #101 (Rhypo's bonfire
+//   clause) all shipped AFTER it. So the v3 bundle contains, verbatim:
+//
+//       let housingBonus = game.buildings.Hut.increase.by                        <- #93's bug
+//       if (reset && (gofarmbonfire || bonfire > getPageSetting2("Rhypofarmstack").slice(-1)))  <- #101's
+//
+//   Nobody noticed because THE CORPUS NEVER REACHED EITHER REGION — which is exactly what the
+//   blind-spot census measured (both rows BLIND, 0/17). The stale oracle and the blind spots are the
+//   SAME phenomenon, and adding the coverage is what exposes it.
+//
+//   It also INVERTS the census. That tool counts divergences of a mutated build against the committed
+//   oracle traces. Restore #93's bug on a housing fixture and the mutated build AGREES with a v3
+//   oracle — zero divergences, reported as BLIND — while the clean build is the one that diverges. A
+//   census number only means anything when baseline-zero is zero.
+//
+// WHY THIS RE-PIN IS SAFE, AND HOW IT WAS CHECKED. baseline-zero was GREEN against v3 immediately
+// before the re-pin: current src and the v3 bundle produce identical traces on the whole existing
+// corpus. So re-recording 01-08 against v4 must reproduce them BYTE-IDENTICALLY — and it does (17/17,
+// cmp-clean). That byte-identity is the proof this re-pin launders nothing: it changes behavior ONLY
+// in the regions the old corpus could not see, where v3 is provably carrying known, reviewed, shipped
+// fixes' predecessors. Repeat that check on any future re-pin.
+//
 // Re-pinning is otherwise NOT routine: a naked oracle change is exactly the accidental-drift alarm
 // this net exists to raise. Only re-pin behind a root-caused, reviewed, intentional behavior change.
 import { execFileSync } from 'node:child_process'
@@ -51,7 +78,7 @@ import { mkdtempSync, copyFileSync, rmSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve, join } from 'node:path'
 
-const TAG = 'oracle/v3-u2-autobuildings'
+const TAG = 'oracle/v4-post-fix-sweep'
 const OUT = resolve('tests/fixtures/oracle/autotrimps.oracle.user.js')
 const wt = mkdtempSync(join(tmpdir(), 'at-oracle-'))
 

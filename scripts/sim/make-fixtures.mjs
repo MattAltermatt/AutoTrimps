@@ -39,10 +39,23 @@ const ORACLE = resolve('tests/fixtures/oracle/autotrimps.oracle.user.js')
 
 const SAVES = resolve('tests/fixtures/saves')
 mkdirSync(SAVES, { recursive: true })
+
+// `--only 09-housing-u2,10-hypo-u2` regenerates just those saves. This exists because regeneration is
+// deliberately NOT byte-reproducible (see the header: load() stamps wall-clock fields before the clock
+// can be frozen), so a full run rewrites all eight committed saves and forces a full re-record for no
+// behavioural reason. Adding a fixture should cost only that fixture's trace.
+const onlyArg = process.argv.includes('--only') ? process.argv[process.argv.indexOf('--only') + 1] : null
+const only = onlyArg ? new Set(onlyArg.split(',')) : null
+const want = (name) => !only || only.has(name)
+
+// `str` may be a thunk, so a skipped save costs no play-forward (05's is 20,000 ticks).
 const writeSave = (name, str) => {
-  writeFileSync(resolve(SAVES, name + '.txt'), str, 'utf8')
-  console.log('[make-fixtures]', name, '·', str.length, 'chars')
+  if (!want(name)) return
+  const s = typeof str === 'function' ? str() : str
+  writeFileSync(resolve(SAVES, name + '.txt'), s, 'utf8')
+  console.log('[make-fixtures]', name, '·', s.length, 'chars')
 }
+const readSave = (name) => readFileSync(resolve(SAVES, name + '.txt'), 'utf8')
 
 // Base = the #45 progressed z4 save (a state where AT is non-inert). Prefer the dist artifact;
 // fall back to the committed baseline so the corpus regenerates without the gitignored dist file.
@@ -55,8 +68,10 @@ function loadBase() {
 }
 
 // Load, seed + freeze, optionally mutate, play AT forward, return the resulting save string.
-function playForward(saveString, { ticks, seed = 1, mutate } = {}) {
-  const { window: w, game: g } = bootGame({ withAutoTrimps: true, atBundlePath: ORACLE, saveString })
+// atSettings matters for the settings-gated fixtures (09/10): a state generated with the feature OFF
+// is not the state the recorder will replay with it ON.
+function playForward(saveString, { ticks, seed = 1, mutate, atSettings } = {}) {
+  const { window: w, game: g } = bootGame({ withAutoTrimps: true, atBundlePath: ORACLE, saveString, atSettings })
   installSeededRandom(w, seed)
   installFrozenClock(w)
   if (mutate) mutate(w, g)
@@ -73,12 +88,12 @@ writeSave('01-early-u1', base)
 // enough (8000 ticks) that a 1500-tick oracle recording lands in an ACTIVE window (~85 mutator
 // events: buyJob + a building-buy wave) rather than the plateau a shallower forward-play left it in
 // (the pre-#47 4000-tick save recorded a single quiet buyUpgrade — a degenerate trace). #47.
-writeSave('02-mid-u1', playForward(base, { ticks: 8000, seed: 1 }))
+writeSave('02-mid-u1', () => playForward(base, { ticks: 8000, seed: 1 }))
 
 // 03 · challenge-Watch — arms AT's challengeActive('Watch') override (jobs.ts:118). The flag is
 // field-set: the differential feeds the SAME save to both builds, so exact challenge-state
 // consistency is unnecessary — only that the branch arms and the run does not throw.
-writeSave('03-challenge-watch', playForward(base, { ticks: 300, seed: 1, mutate: (_w, g) => { g.global.challengeActive = 'Watch' } }))
+writeSave('03-challenge-watch', () => playForward(base, { ticks: 300, seed: 1, mutate: (_w, g) => { g.global.challengeActive = 'Watch' } }))
 
 // 04 · U2-radon — arms the Universe-2 (radon) decision paths, above all RbuyJobs (the radon-universe
 // job buyer the U1 corpus can NEVER reach — see the #32 manifest note). newGame() deep-instantiates
@@ -87,7 +102,7 @@ writeSave('03-challenge-watch', playForward(base, { ticks: 300, seed: 1, mutate:
 // is a top-level global read directly by perk/preset code, so it must be set alongside game.global.universe.
 // This is a field-poked switch on a shallow (z4) base — a Frankenstein state whose live behavior is
 // RbuyJobs-dominated; it is recorded bounded (corpus.mjs) and is not a deep-U2 run. #47/#58.
-writeSave('04-u2-radon', playForward(base, {
+writeSave('04-u2-radon', () => playForward(base, {
   ticks: 300, seed: 1,
   mutate: (w, g) => { g.global.universe = 2; w.portalUniverse = 2; g.global.newUniverse = 2 },
 }))
@@ -128,8 +143,11 @@ writeSave('04-u2-radon', playForward(base, {
 // damage-WALLED with maps available, so maps.ts:253 passes THROUGH the calcOurDmg call instead of
 // short-circuiting on it. Recorded at one seed — AT is stuck in a map here, so its trace is a quiet
 // buy loop and extra seeds would buy nothing (cf. 04's note).
-const mapsBase = playForward(base, { ticks: 20000, seed: 1 })
-writeSave('05-maps-u1', mapsBase)
+// Memoised: 05/06/08 all derive from it, and it is a 20,000-tick play-forward. Lazy so that
+// regenerating only a late fixture (--only) does not pay for it.
+let _mapsBase = null
+const mapsBase = () => (_mapsBase ??= playForward(base, { ticks: 20000, seed: 1 }))
+writeSave('05-maps-u1', () => mapsBase())
 
 // 06 · deep-U1 — a post-portal player: perks + the three formation upgrades, played forward from 05.
 // THIS IS THE SAVE THAT MAKES THE NET SEE THE BOT. Measured reach over a 2000-tick window:
@@ -140,7 +158,7 @@ writeSave('05-maps-u1', mapsBase)
 //
 // The perk levels are a fixture constant, chosen to clear the z6 damage wall with headroom — they are
 // not tuning and nothing reads them outside this file.
-writeSave('06-deep-u1', playForward(mapsBase, {
+writeSave('06-deep-u1', () => playForward(mapsBase(), {
   ticks: 8000, seed: 1,
   mutate: (w, g) => {
     // A modest post-portal perk spread. Anticipation is the important one: it is the ONLY thing that
@@ -178,7 +196,7 @@ writeSave('06-deep-u1', playForward(mapsBase, {
 // `recycleBelow(true)` clears them, buyMap succeeds, and `recycleMap` still never fires. Only a cap of
 // maps ABOVE AT's target level makes recycleBelow a no-op (it only recycles `item.level < level`,
 // main.js:10685) and forces the final `recycleMap(lowestMap)` fallback. Hence world + 6.
-writeSave('07-map-cap-u1', playForward(readFileSync(resolve(SAVES, '06-deep-u1.txt'), 'utf8'), {
+writeSave('07-map-cap-u1', () => playForward(readSave('06-deep-u1'), {
   ticks: 0, seed: 1,
   mutate: (w, g) => {
     g.resources.fragments.owned = 1e12
@@ -213,7 +231,7 @@ writeSave('07-map-cap-u1', playForward(readFileSync(resolve(SAVES, '06-deep-u1.t
 // THE LESSON, because it will recur: a proof net needs its predicates near a BOUNDARY, not merely
 // executed. When you add a fixture to cover a calculation, ask whether the calculation's result can
 // still change an outcome there — then prove it by mutation. "The code ran" is not coverage.
-writeSave('08-starved-u1', playForward(mapsBase, {
+writeSave('08-starved-u1', () => playForward(mapsBase(), {
   ticks: 200, seed: 1,
   mutate: (w, g) => {
     g.portal.Anticipation.level = 10 // The ONLY perk. Damage perks would re-saturate the threshold.
@@ -228,5 +246,87 @@ writeSave('08-starved-u1', playForward(mapsBase, {
   },
 }))
 
-console.log('[make-fixtures] corpus written (8 saves: 3×U1 shallow + U2-radon + maps + deep + map-cap + starved).')
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+// #105 — THE TWO SAVES THE BLIND-SPOT CENSUS *MEASURED* AS MISSING.
+//
+// The census (tests/sim/blind-spot-census.md) injects each real shipped bug into the built bundle and
+// counts divergences. Two rows came back 0/17 — the gate could not see them AT ALL:
+//
+//     housing-hut-divisor   #93's actual bug    BLIND
+//     rhypo-invert          #101's actual bug   BLIND
+//
+// The acceptance criterion for these two fixtures is therefore NOT "the code executes". It is that the
+// census row flips to SEEN. Adding saves until a function merely RUNS is precisely the #98 mistake.
+//
+// ⚠️ AND THEY ARE WHAT FORCED THE ORACLE RE-PIN (v3 -> v4, see build-oracle.mjs). v3 predates #93/#96/
+// #101, so the FROZEN ORACLE LITERALLY CONTAINED BOTH BUGS — nobody noticed because the corpus never
+// reached either region. The stale oracle and the blind spots were the same phenomenon. Against a v3
+// oracle the census even INVERTS: restoring #93's bug makes the build AGREE with the oracle (0
+// divergences, reported BLIND) while the clean build is the one that diverges.
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+const toU2 = (w, g) => { g.global.universe = 2; w.portalUniverse = 2; g.global.newUniverse = 2 }
+
+// 09 · housing-U2 — the fixture that makes mostEfficientHousing's DIVISOR load-bearing.
+//
+// Reaching the function is not enough, and 04-u2-radon is the proof: the census's crude break (always
+// return "Hut") lights 04 up with 592 divergences, while #93's REAL bug diverges by ZERO there. On 04
+// only Hut and House are unlocked, and dividing by the Hut's population gain instead of each building's
+// own does not change which of those two wins — the function runs, its answer is not load-bearing.
+//
+// So unlock the tiers whose population gains actually differ (Hut 3, House 5, Mansion 10, Hotel 20,
+// Resort 40, Gateway 100, Collector 5000) via the game's OWN unlockBuilding(). Measured on this state:
+//
+//     BUGGY (Hut divisor)  picks Hut       <- degenerates to "buy the cheapest"
+//     FIXED (own divisor)  picks Mansion
+//
+// The argmin FLIPS, so the bug is now observable. U2 because mostEfficientHousing is only reached from
+// RbuyBuildings(), the U2 building automation (AutoTrimps2.js:486).
+writeSave('09-housing-u2', () => playForward(readSave('06-deep-u1'), {
+  ticks: 300, seed: 1,
+  mutate: (w, g) => {
+    toU2(w, g)
+    for (const h of ['Mansion', 'Hotel', 'Resort', 'Gateway', 'Collector']) w.unlockBuilding(h)
+    // Enough of every housing currency that the CHOICE is what is under test, not affordability.
+    g.resources.gems.owned = 1e9
+    g.resources.food.owned = 1e9
+    g.resources.wood.owned = 1e9
+    g.resources.metal.owned = 1e9
+  },
+}))
+
+// 10 · hypothermia-U2 — the fixture that makes Rhypo's conserve clause load-bearing.
+//
+// `Rhyposhouldwood === false` means CONSERVE wood: it blocks Smithy (buildings.ts), deprioritizes
+// wood-costing housing, and skips Shield levelling (equipment.ts). #101 had the comparison INVERTED —
+// spend freely until the goal, then hoard forever after overshooting.
+//
+// Three things must all hold or the fixture proves nothing:
+//   1. A CONFIGURED bonfire target. The default Rhypofarmstack is the [-1] "unset" sentinel, which
+//      leaves hasBonfireTarget false and the clause INERT (#96). Seeded to [5] via corpus.mjs.
+//   2. totalBonfires (0) < that target (5). Then the FIXED build conserves and the INVERTED one does
+//      not — which is the whole divergence. Equal or above and both agree.
+//   3. Requipon seeded TRUE. It defaults FALSE, and the Shield-conserve gate lives inside RautoEquip()
+//      (AutoTrimps2.js:523) — without it that consumer never runs and the clause loses a sink.
+// RAutoMaps must be > 0 too: the Rhypo(reset) call site is inside RautoMap() (maps.ts:1265).
+//
+// The world is deliberately NOT in Rhypofarmzone (left at its [-1] default), which makes this the
+// clause under test and nothing else: outside a farm zone the other two conserve conditions are inert
+// by construction (hypofarmzone.includes(world) is false, and hypoamountzones is undefined so
+// targetprice is NaN and gofarmbonfire can never fire).
+writeSave('10-hypo-u2', () => playForward(readSave('06-deep-u1'), {
+  ticks: 300, seed: 1,
+  atSettings: { RAutoMaps: 1, Requipon: true, Rhypoon: true, Rhypofarmstack: [5] },
+  mutate: (w, g) => {
+    toU2(w, g)
+    g.global.challengeActive = 'Hypothermia'
+    g.challenges.Hypothermia.totalBonfires = 0 // < the target of 5 (see 2 above)
+    w.unlockBuilding('Smithy') // U2-only building (blockU1) — the wood sink the clause gates
+    g.resources.wood.owned = 1e9
+    g.resources.food.owned = 1e9
+    g.resources.metal.owned = 1e9
+  },
+}))
+
+console.log('[make-fixtures] corpus written (10 saves: 3×U1 shallow + U2-radon + maps + deep + map-cap + starved + housing + hypo).')
 console.log('[make-fixtures] reach is ASSERTED, not assumed — tests/sim/corpus-coverage.test.ts pins it. Re-record with `node scripts/sim/record-oracle.mjs`.')
