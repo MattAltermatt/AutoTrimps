@@ -2,6 +2,7 @@
 // Was: relocated verbatim from legacy/modules/jobs.js.
 // Job hire/fire, worker ratios, quest jobs (U1 + U2 radon R* family). Deeply game-coupled (174 game.* touches), @ts-nocheck. Module vars tierMagmamancers/reservedJobs are jobs-internal. No shared vars, no implicit globals, no collisions.
 import { getPageSetting, getPageSettingAt, debug, setPageSetting } from './utils'
+import { ratioFor } from './jobs-ratios'
 
 MODULES["jobs"] = {};
 
@@ -11,14 +12,16 @@ MODULES["jobs"].scientistRatio = 25;
 MODULES["jobs"].scientistRatio2 = 10;
 MODULES["jobs"].scientistRatio3 = 100;
 MODULES["jobs"].magmamancerRatio = 0.1;
-//Worker Ratios = [Farmer,Lumber,Miner]
-MODULES["jobs"].autoRatio7 = [1, 1, 98];
-MODULES["jobs"].autoRatio6 = [1, 7, 12];
-MODULES["jobs"].autoRatio5 = [1, 2, 22];
-MODULES["jobs"].autoRatio4 = [1, 1.1, 10];
-MODULES["jobs"].autoRatio3 = [3, 1, 4];
-MODULES["jobs"].autoRatio2 = [3, 3.1, 5];
-MODULES["jobs"].autoRatio1 = [1.1, 1.15, 1.2];
+// Worker Ratios = [Farmer,Lumber,Miner]. #107 — the numbers now live in jobs-ratios.ts, which the
+// BuyJobsNew tooltip renders from directly. Same values, published under the same keys the bot already
+// reads; the point is that the tooltip and the allocator can no longer disagree about what they are.
+MODULES["jobs"].autoRatio7 = ratioFor('autoRatio7');
+MODULES["jobs"].autoRatio6 = ratioFor('autoRatio6');
+MODULES["jobs"].autoRatio5 = ratioFor('autoRatio5');
+MODULES["jobs"].autoRatio4 = ratioFor('autoRatio4');
+MODULES["jobs"].autoRatio3 = ratioFor('autoRatio3');
+MODULES["jobs"].autoRatio2 = ratioFor('autoRatio2');
+MODULES["jobs"].autoRatio1 = ratioFor('autoRatio1');
 // #88: was a bare `MODULES["jobs"].customRatio;` — the `= …` had been dropped, so the key never
 // existed. `if (customRatio)` (the highest-priority branch of workerRatios) could never fire, AND
 // exportModuleVars() builds its list from Object.keys(MODULES[mod]), so the feature was invisible in
@@ -355,14 +358,15 @@ MODULES["jobs"].RscientistRatio = 8;
 MODULES["jobs"].RscientistRatio2 = 4;
 MODULES["jobs"].RscientistRatio3 = 16;
 MODULES["jobs"].RscientistRatio4 = 64;
-//Worker Ratios = [Farmer,Lumber,Miner]
-MODULES["jobs"].RautoRatio7 = [1, 1, 98];
-MODULES["jobs"].RautoRatio6 = [1, 7, 12];
-MODULES["jobs"].RautoRatio5 = [1, 2, 22];
-MODULES["jobs"].RautoRatio4 = [1, 1.1, 10];
-MODULES["jobs"].RautoRatio3 = [3, 1, 4];
-MODULES["jobs"].RautoRatio2 = [3, 3.1, 5];
-MODULES["jobs"].RautoRatio1 = [1.1, 1.15, 1.2];
+// Worker Ratios = [Farmer,Lumber,Miner]. U2 uses the SAME seven tiers as U1 (only the challenge
+// override differs: Transmute here, Watch/Metal in U1), so it publishes from the same single source.
+MODULES["jobs"].RautoRatio7 = ratioFor('autoRatio7');
+MODULES["jobs"].RautoRatio6 = ratioFor('autoRatio6');
+MODULES["jobs"].RautoRatio5 = ratioFor('autoRatio5');
+MODULES["jobs"].RautoRatio4 = ratioFor('autoRatio4');
+MODULES["jobs"].RautoRatio3 = ratioFor('autoRatio3');
+MODULES["jobs"].RautoRatio2 = ratioFor('autoRatio2');
+MODULES["jobs"].RautoRatio1 = ratioFor('autoRatio1');
 // #88: the U2 twin of the same dropped assignment. See the customRatio note above.
 MODULES["jobs"].RcustomRatio = null;
 

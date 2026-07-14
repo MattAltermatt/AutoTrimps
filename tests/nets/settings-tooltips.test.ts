@@ -131,6 +131,9 @@ describe('the escape is real, not incidental (#110)', () => {
     expect(compiles(src)).toBe(true)
     // 2. and the text is carried verbatim, escaped only for transport. JSON.stringify emits the same
     //    \" / \\ escaping the seam applies, so this pins the payload without re-deriving the escaper.
-    expect(src).toBe(`tooltip(${JSON.stringify('Quote "Probe"')}, "customText", event, ${JSON.stringify(NASTY)})`)
+    //    #107 appends the DERIVED default line, so the payload is description + that footer — pinned here
+    //    too, since the footer is spliced into the same string literal and must survive the same escaping.
+    const withDefault = NASTY + '<br><br><i>Default: Off</i>'
+    expect(src).toBe(`tooltip(${JSON.stringify('Quote "Probe"')}, "customText", event, ${JSON.stringify(withDefault)})`)
   })
 })

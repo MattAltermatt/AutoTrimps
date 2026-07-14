@@ -100,9 +100,29 @@ export const definedSettingIds = new Set<string>();
 // untouched: both are stored on the settings record and rendered as the visible label, and for a
 // multitoggle `name` is an ARRAY of option labels (renderControlFace reads rec.name[rec.value]) — so
 // coercing or escaping them in place would corrupt the UI text, not just the tooltip.
-const tipAttr = (name: any, description: any) => {
+// #107 — the "Default: x" line is DERIVED here, never typed into a description. Dozens of tooltips
+// used to hand-copy their own default ("recommend: -1", "default is 0%") and several had drifted away
+// from the value createSetting actually installs. The default is already an argument to this function,
+// so the only copy that can exist is the true one. A description that still spells out its default is
+// a bug, not a style choice.
+// 'action'/'infoclick' are buttons, not values — they have no meaningful default, so they get no line.
+const defaultFacet = (type: any, defaultValue: any, name: any): string => {
+    if (type === 'action' || type === 'infoclick') return '';
+    let shown: string;
+    if (type === 'multitoggle')
+        // defaultValue is an INDEX into the option-label array; show the label the user actually sees.
+        shown = Array.isArray(name) && name[defaultValue] !== undefined ? name[defaultValue] : String(defaultValue);
+    else if (type === 'boolean')
+        // Tolerates the legacy string 'false'/'true' declarations (#69) as well as real booleans.
+        shown = (defaultValue === true || defaultValue === 'true') ? 'On' : 'Off';
+    else shown = String(defaultValue);
+    return '<br><br><i>Default: ' + shown + '</i>';
+};
+
+const tipAttr = (label: any, description: any, type?: any, defaultValue?: any, name?: any) => {
     const esc = (s: any) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    return 'tooltip("' + esc(name) + '", "customText", event, "' + esc(description) + '")';
+    const body = String(description) + defaultFacet(type, defaultValue, name);
+    return 'tooltip("' + esc(label) + '", "customText", event, "' + esc(body) + '")';
 };
 
 export function createSetting(id: any, name: any, description: any, type: any, defaultValue: any, list: any, container: any) {
@@ -143,7 +163,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn settingKind-toggle settingBtn' + autoTrimpSettings[id].enabled);
         btn.setAttribute("onclick", 'settingChanged("' + id + '")');
-        btn.setAttribute("onmouseover", tipAttr(name, description));
+        btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         renderControlFace(btn, autoTrimpSettings[id]);
         btnParent.appendChild(btn);
@@ -161,7 +181,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn btn-info settingKind-input');
         btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == 'valueNegative'}, ${type == 'multiValue'})`);
-        btn.setAttribute("onmouseover", tipAttr(name, description));
+        btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = name;
         btnParent.appendChild(btn);
@@ -179,7 +199,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn btn-info settingKind-input');
         btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == 'valueNegative'}, ${type == 'multiValue'})`);
-        btn.setAttribute("onmouseover", tipAttr(name, description));
+        btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = name;
         btnParent.appendChild(btn);
@@ -197,7 +217,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn btn-info settingKind-input');
         btn.setAttribute("onclick", `autoSetTextToolTip("${id}", "${name}", ${type == 'textValue'})`);
-        btn.setAttribute("onmouseover", tipAttr(name, description));
+        btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.textContent = name;
         btnParent.appendChild(btn);
@@ -218,7 +238,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         if (game.options.menu.darkTheme.enabled == 2) btn.setAttribute("style", "color: #C8C8C8; font-size: 1.0vw;");
         else btn.setAttribute("style", "color:black; font-size: 1.0vw;");
         btn.setAttribute("class", "noselect settingKind-select");
-        btn.setAttribute("onmouseover", tipAttr(name, description));
+        btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.setAttribute("onchange", 'settingChanged("' + id + '")');
         for (var item in list) {
@@ -239,7 +259,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
     } else if (type == 'infoclick') {
         btn.setAttribute('class', 'noselect settingsBtn settingKind-action settingKind-info');
         btn.setAttribute("onclick", 'ImportExportTooltip(\'' + defaultValue + '\', \'update\')');
-        btn.setAttribute("onmouseover", tipAttr(name, description));
+        btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         btn.setAttribute("style", "font-size: 1.1vw;");
         renderControlFace(btn, { type: 'infoclick', name: name });
@@ -260,7 +280,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn settingKind-cycle settingBtn' + autoTrimpSettings[id].value);
         btn.setAttribute("onclick", 'settingChanged("' + id + '")');
-        btn.setAttribute("onmouseover", tipAttr(name.join(' / '), description));
+        btn.setAttribute("onmouseover", tipAttr(name.join(' / '), description, type, defaultValue, name));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         renderControlFace(btn, autoTrimpSettings[id]);
         btnParent.appendChild(btn);
@@ -270,7 +290,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn settingKind-action settingBtn3'); // keep native teal (additive)
         btn.setAttribute('onclick', defaultValue);
-        btn.setAttribute("onmouseover", tipAttr(name, description));
+        btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
         btn.setAttribute("onmouseout", 'tooltip("hide")');
         renderControlFace(btn, { type: 'action', name: name });
         btnParent.appendChild(btn);

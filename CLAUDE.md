@@ -143,6 +143,44 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **📖 #107 — TOOLTIPS ARE COMPOSED RECORDS NOW, AND THE DRIFT IS DEAD AT THE SEAM** (2026-07-13) — all 574
+  descriptions rewritten against the code that implements them; 1022 tests green; persistence contract proven
+  byte-identical.
+  🧨 **THE AUDIT FOUND NINE CODE BUGS (#111–#119), NOT NINE TYPOS.** A tooltip that disagrees with the code is
+  evidence *about the code*. `Rexterminateon`/`Rexterminatecalc` compare `challengeActive === "Extermination"`
+  but the game's id is **`Exterminate`** (config.js:5451) ⇒ both settings **dead forever**. `GymWall`'s default
+  is **`-1`**, and `buildings.ts:81` tests `if (getPageSetting('GymWall'))` — **`-1` is truthy**, so the default
+  silently pins Gym buys to 1-at-a-time and eats the DecaBuild bonus (same species: `MaxMapBonusAfterZone = 0`
+  is *falsy*, so the documented "always" value disables the feature). `SpireBreedTimer` captures
+  `var prespiretimer` inside a `spireActive === true` branch and restores it in a `!spireActive` branch of the
+  **same per-tick function** ⇒ always `undefined`. `Hdshrine`'s "DAS: Normal" **never reads its own value**.
+  ⚠️ **NONE were fixed in #107** — descriptions-only is what keeps L0 baseline-zero green and makes the change
+  provably safe. Fix them alone; each is behavioural and will move the traces.
+  🎯 **DON'T RETYPE A TABLE — DELETE THE SECOND COPY.** `BuyJobsNew`'s tooltip hand-copied the seven worker-ratio
+  tiers and got **all six documented ones wrong**, omitted the 7th, and implied an ordering the selector does not
+  use (`world >= 300` is tested FIRST and beats every Tribute tier). Correcting the numbers would have rebuilt the
+  cause. The table now lives in **`src/modules/jobs-ratios.ts`**; `jobs.ts` publishes it onto MODULES and the
+  tooltip renders from it. Being wrong is no longer representable.
+  🔩 **DERIVE AT THE SEAM, NOT PER-CALLSITE.** The `Default: x` line is composed inside `createSetting`
+  (`settings-engine.ts` `defaultFacet`) from its **own `defaultValue` argument** — so it reaches all 574 settings
+  with **zero call sites touched**, and a description can no longer disagree with its default. Multitoggles resolve
+  the index to its **label** ("Default: Auto Worker Ratios", not "1"). A net now **fails any description that
+  hand-types its own default** — that second copy is exactly how `recommend: -1` outlived the code.
+  🕳️ **`MODULES` IS AMBIENT RUNTIME STATE — DO NOT READ IT FROM `settings-defs`.** Rendering the tiers from
+  `MODULES["jobs"]` made `initializeAllSettings()` **throw `ReferenceError: MODULES is not defined`** in every
+  harness that mounts settings without booting the bot. A pure import has no ordering hazard. (Found by running,
+  not reading.)
+  🚫 **A CANNED "AT OVERWRITES THIS" BADGE WOULD HAVE BEEN A *NEW* LIE.** My first design auto-badged all 12
+  `setPageSetting`'d ids. The code falsified it: the ratio boxes are rewritten every tick *but only while
+  `BuyJobsNew == 1`*; `AutoMaps` is written by the **user's own** AutoMaps button; `TrimpleZ` is a one-shot. So
+  `overwritten` is a **hand-written condition** and the net enforces its **PRESENCE, not its wording** — a 13th
+  write site fails CI.
+  🛠️ **METHOD (reusable):** 9 agents authored in parallel, each *verifying claims against consuming code*, each
+  writing **JSON to scratchpad — never editing `settings-defs.ts`** (subagents share one working tree; parallel
+  writes to the persistence-contract file would clobber). A lead-side applier swaps **only argument 3**, so ids,
+  order, types and defaults are *structurally* out of reach — then a contract check proved all six non-description
+  args byte-identical to `main`. Pre-apply validator caught a hand-typed default an agent slipped in **twice**.
+
 - **🏦 THE BOT WAS SATISFICING — #108/#109/#110 shipped** (2026-07-13, `81d78114`) — 1015 tests, deploy green,
   published userscript verified to carry all three.
   💰 **AT DECLINED AN AFFORDABLE GEAR LEVEL ON 18,503 OF 20,000 TICKS.** `autoLevelEquipment` gates armor on
