@@ -37,6 +37,9 @@ function tickOnce(window) {
   g.global.lastOnline = g.global.start + g.global.time
   window.gameLoop(null)
   window.checkTriggers()
+  // #126 — deliver any timers the game scheduled this tick (stacked-void heirloom rewards are the one
+  // that pays out state; the rest are DOM). boot.mjs installs the queue; timers.mjs says what it drops.
+  window.__simTimers?.pump()
 }
 
 // Never gameLoop(true) (offline craft divergence). Drive the active path via tickOnce.

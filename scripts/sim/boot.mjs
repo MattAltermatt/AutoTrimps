@@ -2,6 +2,7 @@ import { JSDOM } from 'jsdom'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { installVirtualTimers } from './timers.mjs'
 
 const HERE = fileURLToPath(new URL('.', import.meta.url))
 // The clone is a MANAGED, SHA-pinned dependency that `npm ci` materializes (scripts/fetch-game-clone.mjs),
@@ -119,6 +120,21 @@ export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, a
       }
     }
   }
+
+  // #126 — REAL (virtual) TIMERS, installed LAST and deliberately so.
+  //
+  // The `setTimeout = () => 0` stub above is what the game loads under, and it must stay that way for
+  // the load: the offline-progress replay is itself a setTimeout loop (main.js:2971) which boot tears
+  // down with finish(true) (#66) — a live queue during load() would re-drive it. AT's own startup chain
+  // is also a setTimeout, and boot deliberately runs its init directly (above) instead; installing after
+  // the bundle eval keeps that startup dropped rather than double-firing it.
+  //
+  // From here on, timers WORK, in game time, pumped per tick by the driver. That is what makes the
+  // game's stacked-void heirloom rewards — scheduled as ANONYMOUS closures (main.js:15679), so unlike
+  // #122's checkTriggers there is nothing to call by name — actually pay out. See timers.mjs for which
+  // three self-driving loops stay blocklisted and why.
+  const gameNow = () => (window.game?.global?.start || 0) + (window.game?.global?.time || 0)
+  window.__simTimers = installVirtualTimers(window, gameNow)
 
   // Anti-false-green tripwire (mirrors tests/harness/gameFixture.ts:44): a hydrated game keeps its
   // methods. If this fails, the game object was replaced by method-less data and any trace is a lie.
