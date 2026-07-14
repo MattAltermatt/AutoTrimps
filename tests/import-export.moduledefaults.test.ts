@@ -4,7 +4,7 @@
 // the same instrument the sim suites use). bootGame() evaluates the bundle and stubs setTimeout, which
 // is EXACTLY the pre-delayStartAgain state a real player is in for the first 8 seconds:
 //
-//   MODULES keys: 17   MODULESdefault keys: 0
+//   MODULES keys: 16   MODULESdefault keys: 0
 //   window.exportModuleVars()   → TypeError: Cannot read properties of undefined (reading 'voidCheckPercent')
 //   window.compareModuleVars()  → TypeError: Cannot read properties of undefined (reading 'voidCheckPercent')
 //
