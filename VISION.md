@@ -24,11 +24,14 @@ not a zero-config tool. The distributed artifact is a single built userscript.
 ## How we get there — the strangler
 
 The migration is an **incremental strangler**, not a big-bang rewrite (a prior from-scratch
-rewrite was abandoned — "don't reinvent the wheel"). The legacy `.js` files live untouched in
-`legacy/` as a behavioral oracle; a build assembles one userscript from `legacy concat` +
-`esbuild(src/main.ts)`; modules are ported one at a time behind a stable seam and verified in
-a live local clone of the game before the legacy copy is retired. Faithful port first, refactor
-second. The full architecture and rationale are in the
+rewrite was abandoned — "don't reinvent the wheel"). Legacy `.js` stays untouched in `legacy/` as
+a behavioral oracle; the build assembles one userscript from `legacy concat` +
+`esbuild(src/main.ts)`; modules are ported one at a time behind a stable seam and verified in a
+live local clone of the game before the legacy copy is retired. Faithful port first, refactor
+second — and the port is now essentially done: the automation is strict TypeScript in
+`src/modules/`, and what is left in `legacy/` is the loader/mainLoop (`AutoTrimps2.js`), the
+Graphs stack (`Graphs.js` + highcharts), and the graphs-only distribution artifacts. The full
+architecture and rationale are in the
 [design spec](docs/superpowers/specs/2026-07-08-autotrimps-modernization-design.md).
 
 ## What it deliberately is NOT
@@ -42,8 +45,11 @@ second. The full architecture and rationale are in the
 
 ## Status
 
-A long-horizon, multi-session side project (started 2026-07-08). Foundation and the bulk of the
-module conversion are shipped; the runtime is TypeScript-first with only two legacy files left,
-and automation is synced to the current Trimps release. Live phase status is always the
-[open milestones](https://github.com/MattAltermatt/AutoTrimps/milestones) — this file stays
-north-star, not a changelog.
+A long-horizon, multi-session side project (started 2026-07-08). The conversion is shipped: the
+runtime is TypeScript-first, the automation is synced to the current Trimps release, and only the
+loader and the Graphs stack remain as legacy. Work has moved from *porting* to *correctness* —
+behavioral proof nets that can prove the bot's decisions haven't drifted, and the defects they
+keep surfacing. Live status is always the
+[open issues](https://github.com/MattAltermatt/AutoTrimps/issues) and
+[milestones](https://github.com/MattAltermatt/AutoTrimps/milestones) — this file stays north-star,
+not a changelog.
