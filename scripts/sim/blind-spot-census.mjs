@@ -123,6 +123,15 @@ const MUTATIONS = [
     why: 'Forces an all-farmer worker ratio, so every hire decision is wrong.',
     apply: (s) => spliceAfter(s, 'function workerRatios() {', ' return [1, 0, 0, 0];', 'jobs'),
   },
+  {
+    name: 'portal-noop',
+    area: 'portal (autoPortal)',
+    why: "#127: AT's highest-consequence action — a portal RESETS the run — and doPortal() had never once " +
+      'executed in a sim run. AutoPortal defaults to Off and no save had portalActive, and in He/Hr mode ' +
+      'the portal is SCHEDULED, so the old setTimeout stub swallowed it too. 11-portal-u1 is the fixture ' +
+      'that arms it; this mutation makes AT never portal.',
+    apply: (s) => spliceAfter(s, 'function autoPortal() {', ' return;', 'portal'),
+  },
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────

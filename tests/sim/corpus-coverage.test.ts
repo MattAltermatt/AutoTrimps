@@ -92,6 +92,11 @@ describe('corpus mutator coverage (loud, pinned)', () => {
       // chasing more mutator names.
       '09-housing-u2': ['buyBuilding', 'buyUpgrade'],
       '10-hypo-u2': ['buyEquipment', 'buyUpgrade'],
+      // 11 (#127) spans a PORTAL — AT's highest-consequence action, and the one the net had never seen.
+      // Its mutator list looks unremarkable and that is expected: what makes it count is that suppressing
+      // autoPortal() diverges by 510 (tests/sim/portal.test.ts pins it). A portal resets the run, so the
+      // trace is the approach, the portal, and the fresh zone-1 run that follows.
+      '11-portal-u1': ['buyBuilding', 'buyJob', 'setFormation'],
     })
   })
 

@@ -67,4 +67,13 @@ export const CORPUS = [
   // which is where the Shield-conserve consumer lives. RAutoMaps gates RautoMap(), which is where the
   // Rhypo(reset) call site is. Drop any one of the three and this fixture goes quietly blind.
   { name: '10-hypo-u2', seeds: [1], ticks: 2000, settings: { RAutoMaps: 1, Requipon: true, Rhypoon: true, Rhypofarmstack: [5] } },
+  // #127 — AT's HIGHEST-CONSEQUENCE action, and the net had never once seen it: doPortal() had never
+  // executed in a sim run. A portal RESETS THE RUN, so this trace deliberately spans one — it records the
+  // approach, the portal, and the fresh z1 run that follows. That is the point: any regression in the
+  // portal decision moves an enormous amount of trace.
+  //
+  // AutoPortal defaults to "Off" and the He/Hr mode SCHEDULES the portal 5100ms out (portal.ts:45), so
+  // this fixture needs both the seeded settings AND #126's timer queue. 600 ticks = 60s of game time,
+  // comfortably past that deadline with room for the new run to act.
+  { name: '11-portal-u1', seeds: [1], ticks: 600, settings: { AutoPortal: 'Helium Per Hour', HeHrDontPortalBefore: 5, HeliumHrBuffer: 10 } },
 ]

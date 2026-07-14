@@ -328,5 +328,38 @@ writeSave('10-hypo-u2', () => playForward(readSave('06-deep-u1'), {
   },
 }))
 
-console.log('[make-fixtures] corpus written (10 saves: 3×U1 shallow + U2-radon + maps + deep + map-cap + starved + housing + hypo).')
+// 11 · portal-U1 — the fixture for AT's HIGHEST-CONSEQUENCE action, which the net had never once seen.
+//
+// doPortal() had NEVER EXECUTED in a sim run (#127), for two independent reasons, and it is worth
+// separating them because only one of them was the setTimeout stub:
+//
+//   1. `autoPortal()` returns immediately unless `game.global.portalActive` — no corpus save has it — and
+//      the AutoPortal setting defaults to "Off". So the path was dark before timers even came into it.
+//   2. In "Helium Per Hour" mode the portal itself is SCHEDULED (portal.ts:45, MODULES.portal.timeout +
+//      100 = 5100ms), so the old `setTimeout = () => 0` stub swallowed it. Measured: with #126's timer
+//      queue this save portals; with the stub reinstated it does not. ("Custom" mode calls doPortal()
+//      synchronously, so it never depended on the timers — which is exactly why the two causes must not
+//      be conflated.)
+//
+// He/Hr is the mode under test precisely BECAUSE it is the one the stub killed.
+//
+// It needs a He/hr HISTORY, and that is the non-obvious part: it portals when the current rate has fallen
+// below the run's best by more than the buffer, and a synthetic save has NEITHER stat — `0 < 0` is false,
+// so it never arms and the fixture would prove nothing (reach != sensitivity, again). Giving it a real
+// best-this-run is what a genuine mid-run player carries. bestHeliumHourThisRun.evaluate() only ever
+// RAISES storedValue (config.js:6378), so the value survives the load rather than being recomputed away.
+//
+// Generated at ticks: 0 ON PURPOSE. Play it forward at all and AT portals DURING GENERATION, and the
+// committed save would be the post-portal state — a fresh z1 run, i.e. the exact thing the fixture exists
+// to capture the approach to.
+writeSave('11-portal-u1', () => playForward(readSave('06-deep-u1'), {
+  ticks: 0, seed: 1,
+  mutate: (_w, g) => {
+    g.global.portalActive = true // the "Time portal" story unlock (config.js:10061)
+    g.stats.bestHeliumHourThisRun.storedValue = 1e9
+    g.stats.bestHeliumHourThisRun.atZone = 5
+  },
+}))
+
+console.log('[make-fixtures] corpus written (11 saves: 3×U1 shallow + U2-radon + maps + deep + map-cap + starved + housing + hypo + portal).')
 console.log('[make-fixtures] reach is ASSERTED, not assumed — tests/sim/corpus-coverage.test.ts pins it. Re-record with `node scripts/sim/record-oracle.mjs`.')
