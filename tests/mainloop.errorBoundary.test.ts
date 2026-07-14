@@ -38,6 +38,23 @@ function boot() {
 let window: Record<string, any>
 let consoleError: ReturnType<typeof vi.spyOn>
 
+// THE LATE-U1 CANARY. It used to be `computeTopTarget` — an unconditional dispatch that needed no
+// settings — but that was the #57 coordinator's pre-pass, removed with the feature. Its replacement is
+// `autoGoldenUpgradesAT`, the LAST dispatch in the U1 block (AutoTrimps2.js), so the span this net
+// covers is strictly LONGER than before, not shorter. The cost is that it is settings-gated: its
+// wrapper reads AutoGoldenUpgrades (a 'dropdown', so getPageSetting returns `.selected`) and requires
+// a non-'Off' value outside a Daily / Challenge². armLateCanary() sets that up and returns the spy.
+// MUTATION-CHECKED: with the pre-#87 dispatch restored (a bare call, no atGuard), every test below
+// that uses this canary goes red — which is the only thing that makes it a net.
+function armLateCanary() {
+  window.autoTrimpSettings.AutoGoldenUpgrades.selected = 'Helium'
+  window.game.global.challengeActive = ''
+  window.game.global.runningChallengeSquared = false
+  const later = vi.fn()
+  window.autoGoldenUpgradesAT = later
+  return later
+}
+
 beforeEach(() => {
   consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
   window = boot()
@@ -57,14 +74,12 @@ describe('#87 — a throw in one automation no longer decapitates the rest of th
     expect(window.atGuardErrors).toEqual({})
   })
 
-  it('mainCleanup() throwing does not stop computeTopTarget() — the two ends of the U1 tick', () => {
-    // mainCleanup is dispatched in the PREAMBLE (before the universe blocks) and computeTopTarget is
-    // dispatched UNCONDITIONALLY partway down U1, so this pair needs no settings to be set up and it
-    // spans most of the loop. Pre-#87 this was a total kill: mainCleanup threw, and computeTopTarget —
-    // along with every building, job, portal, combat, stance, spire, raid and golden dispatch below it
-    // — never ran again, on any tick, for the rest of the session.
-    const later = vi.fn()
-    window.computeTopTarget = later
+  it('mainCleanup() throwing does not stop the LAST U1 dispatch — the two ends of the tick', () => {
+    // mainCleanup is dispatched in the PREAMBLE (before the universe blocks) and autoGoldenUpgradesAT is
+    // the FINAL dispatch of the U1 block, so this pair spans the whole loop. Pre-#87 this was a total
+    // kill: mainCleanup threw, and every building, job, portal, combat, stance, spire, raid and golden
+    // dispatch below it never ran again, on any tick, for the rest of the session.
+    const later = armLateCanary()
     window.mainCleanup = () => {
       throw new Error('injected: mainCleanup')
     }
@@ -75,12 +90,11 @@ describe('#87 — a throw in one automation no longer decapitates the rest of th
     expect(later).toHaveBeenCalledTimes(1) // …and the automation below it still ran
   })
 
-  it('an early U1 automation throwing does not stop a late one (buyUpgrades -> computeTopTarget)', () => {
+  it('an early U1 automation throwing does not stop a late one (buyUpgrades -> autoGoldenUpgradesAT)', () => {
     // The #87 issue's own U1 walkthrough, minus the magmite bug (#84 fixed it): a throw at the top of
-    // the U1 block used to kill upgrades, shrine, coordinator, ALL buildings, ALL jobs, the portal, ALL
-    // combat, stance, spire, raiding and golden. Here the throw is contained to one name.
-    const later = vi.fn()
-    window.computeTopTarget = later
+    // the U1 block used to kill upgrades, shrine, ALL buildings, ALL jobs, the portal, ALL combat,
+    // stance, spire, raiding and golden. Here the throw is contained to one name.
+    const later = armLateCanary()
     window.buyUpgrades = () => {
       throw new Error('injected: buyUpgrades')
     }
@@ -138,8 +152,7 @@ describe('#87 — a throw in one automation no longer decapitates the rest of th
     window.debug = () => {
       throw new Error('the reporter is broken too')
     }
-    const later = vi.fn()
-    window.computeTopTarget = later
+    const later = armLateCanary()
     window.mainCleanup = () => {
       throw new Error('injected')
     }

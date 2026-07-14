@@ -261,7 +261,7 @@ describe('at-legacy.d.ts — every ambient var must have a writer in the shipped
     // HERE (as a precise failure) instead of downstream (as a flood of phantom "bugs").
     expect(WRITTEN.has('MODULES')).toBe(true) // `var MODULES = {}`      — AutoTrimps2.js top-level var
     expect(WRITTEN.has('Rshouldtributefarm')).toBe(true) // `globalThis.X = …`      — mapfunctions.ts:51
-    expect(WRITTEN.has('coordinatorAllows')).toBe(true) // `export function …`    — coordinator.ts, kind-1 var
+    expect(WRITTEN.has('safeBuyBuilding')).toBe(true) // `export function …`    — buildings.ts:49, kind-1 var
     expect(WRITTEN.has('MODULESdefault')).toBe(true) // written by AutoTrimps2.js — the exemplar's stated case
 
     // Pin the read arm too, including the typeof/bare split that the severity test depends on.

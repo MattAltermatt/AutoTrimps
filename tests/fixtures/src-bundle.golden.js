@@ -3112,10 +3112,6 @@
       postBuy2(oldBuy);
       return false;
     }
-    if (!coordinatorAllowsBuilding(building, game.global.buyAmt === "Max" ? 1 : game.global.buyAmt)) {
-      postBuy2(oldBuy);
-      return false;
-    }
     game.global.firing = false;
     if (building === "Gym" && getPageSetting2("GymWall") > 0) {
       game.global.buyAmt = 1;
@@ -3399,7 +3395,7 @@
         jestImps[Res] = curRes * 1.1;
       }
       if (resMax < jestImps[Res]) {
-        if (canAffordBuilding(Resources[Res]) && !game.buildings[Resources[Res]].locked && coordinatorAllowsBuilding(Resources[Res], 1)) {
+        if (canAffordBuilding(Resources[Res]) && !game.buildings[Resources[Res]].locked) {
           buyBuilding(Resources[Res], true, true, 1);
         }
       }
@@ -3437,7 +3433,7 @@
         if (game.global.autoStorage) {
           toggleAutoStorage(false);
         }
-        if (targetprice >= 1e10 && woodmax * Math.pow(2, game.buildings.Shed.purchased - game.buildings.Shed.owned) < targetprice && coordinatorAllowsBuilding("Shed", 1)) {
+        if (targetprice >= 1e10 && woodmax * Math.pow(2, game.buildings.Shed.purchased - game.buildings.Shed.owned) < targetprice) {
           buyBuilding("Shed", true, true, 1);
         }
         RbuyStorage(true, false, true);
@@ -3445,7 +3441,7 @@
     } else {
       __syncAutoStorageOnce();
     }
-    if (!game.buildings.Smithy.locked && canAffordBuilding("Smithy", false, false, false, false, 1) && Rhyposhouldwood && coordinatorAllowsBuilding("Smithy", 1)) {
+    if (!game.buildings.Smithy.locked && canAffordBuilding("Smithy", false, false, false, false, 1) && Rhyposhouldwood) {
       if (game.global.challengeActive === "Quest") {
         if (smithybought > game.global.world) {
           smithybought = 0;
@@ -3458,14 +3454,14 @@
         buyBuilding("Smithy", true, true, 1);
       }
     }
-    if (!game.buildings.Microchip.locked && canAffordBuilding("Microchip") && coordinatorAllowsBuilding("Microchip", 1)) {
+    if (!game.buildings.Microchip.locked && canAffordBuilding("Microchip")) {
       buyBuilding("Microchip", true, true, 1);
     }
     let boughtHousing = false;
     do {
       boughtHousing = false;
       const housing = mostEfficientHousing();
-      if (housing != null && canAffordBuilding(housing) && game.buildings[housing].purchased < (getPageSetting2("RMax" + housing) === -1 ? Infinity : getPageSetting2("RMax" + housing)) && coordinatorAllowsBuilding(housing, 1)) {
+      if (housing != null && canAffordBuilding(housing) && game.buildings[housing].purchased < (getPageSetting2("RMax" + housing) === -1 ? Infinity : getPageSetting2("RMax" + housing))) {
         buyBuilding(housing, true, true, 1);
         boughtHousing = true;
       }
@@ -3475,12 +3471,12 @@
       if (getPageSetting2("RMaxTribute") > game.buildings.Tribute.owned) {
         buyTributeCount = Math.min(buyTributeCount, getPageSetting2("RMaxTribute") - game.buildings.Tribute.owned);
       }
-      if ((getPageSetting2("RMaxTribute") < 0 || getPageSetting2("RMaxTribute") > game.buildings.Tribute.owned) && coordinatorAllowsBuilding("Tribute", buyTributeCount)) {
+      if (getPageSetting2("RMaxTribute") < 0 || getPageSetting2("RMaxTribute") > game.buildings.Tribute.owned) {
         buyBuilding("Tribute", true, true, buyTributeCount);
       }
     }
     if (!game.buildings.Laboratory.locked && getPageSetting2("Rnurtureon") == true) {
-      if (!isBuildingInQueue("Laboratory") && (getPageSetting2("RMaxLabs") < 0 || getPageSetting2("RMaxLabs") > game.buildings.Laboratory.owned) && coordinatorAllowsBuilding("Laboratory", 1)) {
+      if (!isBuildingInQueue("Laboratory") && (getPageSetting2("RMaxLabs") < 0 || getPageSetting2("RMaxLabs") > game.buildings.Laboratory.owned)) {
         buyBuilding("Laboratory", true, true, 1);
       }
     }
@@ -14184,50 +14180,6 @@
     }
   }
 
-  // src/modules/coordinator.ts
-  var coordinator_exports = {};
-  __export(coordinator_exports, {
-    computeTopTarget: () => computeTopTarget,
-    coordinatorAllows: () => coordinatorAllows,
-    coordinatorAllowsBuilding: () => coordinatorAllowsBuilding2
-  });
-  MODULES["coordinator"] = {
-    active: false,
-    topTarget: null,
-    reserved: {}
-  };
-  function coordinatorAllows(name, costResource, cost) {
-    const co = MODULES["coordinator"];
-    if (!co.active || co.topTarget == null) return true;
-    if (name === co.topTarget.name) return true;
-    const keep = co.reserved[costResource] ?? 0;
-    return game.resources[costResource].owned - cost >= keep;
-  }
-  function coordinatorAllowsBuilding2(building, amt) {
-    const co = MODULES["coordinator"];
-    if (!co?.active) return true;
-    if (game.buildings[building]?.cost?.metal === void 0) return true;
-    const metalCost = getBuildingItemPrice(game.buildings[building], "metal", false, amt);
-    return coordinatorAllows(building, "metal", metalCost);
-  }
-  function computeTopTarget() {
-    const co = MODULES["coordinator"];
-    co.active = getPageSetting2("PurchaseCoordinator") === true;
-    co.topTarget = null;
-    co.reserved = {};
-    if (!co.active) return;
-    const needCoord = game.upgrades.Coordination.allowed - game.upgrades.Coordination.done > 0;
-    if (!needCoord || game.buildings.Warpstation.locked || canAffordCoordinationTrimps()) return;
-    const toTip = game.buildings.Warpstation;
-    if (toTip.increase.what !== "trimps.max") return;
-    const nextCount = game.portal.Coordinated.level ? game.portal.Coordinated.currentSend : game.resources.trimps.maxSoldiers;
-    const amtToGo = nextCount * 3 - game.resources.trimps.realMax();
-    if (amtToGo <= 0) return;
-    co.topTarget = { kind: "building", name: "Warpstation" };
-    co.reserved = { metal: getBuildingItemPrice(toTip, "metal", false, 1) };
-    safeBuyBuilding("Warpstation");
-  }
-
   // src/modules/settings-engine.ts
   var settings_engine_exports = {};
   __export(settings_engine_exports, {
@@ -16350,11 +16302,6 @@
       what: "Controls whether AT buys non-storage Buildings (Huts, Warpstations, Gateways, Nurseries, etc.), Storage (Barn/Shed/Forge), both, or neither.",
       how: "<b>Buy Buildings & Storage</b> runs both automations. <b>Buy Buildings</b> buys non-storage buildings only \u2014 hand Storage to the game's own AutoStorage instead. <b>Buy Storage</b> buys Storage only. <b>Buy Neither</b> stops both (Gyms are the one exception \u2014 see <b>Hide Buildings</b>).<br><br>Storage purchases anticipate Jestimp and buy shortly before a resource would overflow, rather than waiting for it to actually cap out."
     }), "multitoggle", 1, null, "Buildings");
-    createSetting("PurchaseCoordinator", "Purchase Coordinator", tip({
-      what: "EXPERIMENTAL (#57). Makes AT save metal toward a high-value purchase instead of always spending it on whatever is affordable right now.",
-      how: "Today it only reserves metal toward your next Warpstation when Coordination is pending and you still need the population it grants \u2014 every other building purchase still runs first-come-first-served. Turning it on with no Coordination pending is a no-op. Turning it OFF gives exactly the behavior AT has always had.",
-      cannot: "Cannot reserve for anything else yet \u2014 there is no general priority list, just this one Warpstation-for-Coordination case."
-    }), "boolean", false, null, "Buildings");
     createSetting("WarpstationCap", "Warpstation Cap", tip({
       what: "Stops AT from leveling Warpstations past what your current Gigastation cycle needs.",
       how: "The cap is <b>First Gigastation</b> + (Gigastations owned &times; <b>Delta Gigastation</b>). It only starts enforcing once you've bought your first Gigastation (or <b>Auto Gigas</b> is off) \u2014 before that, Warpstations build up uncapped.",
@@ -18374,7 +18321,7 @@
   }
 
   // src/legacy-bridge.ts
-  Object.assign(globalThis, { ...utils_exports, ...guard_exports, ...time_exports, ...buystate_exports, ...dynprestige_exports, ...breedtimer_exports, ...nature_exports, ...magmite_exports, ...calc_exports, ...equipment_exports, ...buildings_exports, ...jobs_exports, ...upgrades_exports, ...gather_exports, ...heirlooms_exports, ...fight_exports, ...scryer_exports, ...ab_exports, ...MAZ_exports, ...stance_exports, ...maps_exports, ...mapfunctions_exports, ...mapfunctions_amp_exports, ...portal_exports, ...import_export_exports, ...query_exports, ...other_exports, ...other_praiding_exports, ...coordinator_exports, ...settings_engine_exports, ...settings_menu_exports, ...settings_visibility_exports, ...settings_defs_exports, ...settings_boot_exports });
+  Object.assign(globalThis, { ...utils_exports, ...guard_exports, ...time_exports, ...buystate_exports, ...dynprestige_exports, ...breedtimer_exports, ...nature_exports, ...magmite_exports, ...calc_exports, ...equipment_exports, ...buildings_exports, ...jobs_exports, ...upgrades_exports, ...gather_exports, ...heirlooms_exports, ...fight_exports, ...scryer_exports, ...ab_exports, ...MAZ_exports, ...stance_exports, ...maps_exports, ...mapfunctions_exports, ...mapfunctions_amp_exports, ...portal_exports, ...import_export_exports, ...query_exports, ...other_exports, ...other_praiding_exports, ...settings_engine_exports, ...settings_menu_exports, ...settings_visibility_exports, ...settings_defs_exports, ...settings_boot_exports });
 
   // src/modules/perks.ts
   globalThis.AutoPerks = {};

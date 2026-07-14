@@ -47,7 +47,6 @@ import * as other from './modules/other'
 // other-praiding: Phase 3 (#51) byte-faithful extraction of the U1 Prestige/BW-Raid state machine
 // from other.ts. No import-order constraint (its globals have no placeholder-race); kept adjacent.
 import * as otherPraiding from './modules/other-praiding'
-import * as coordinator from './modules/coordinator'
 import * as settingsEngine from './modules/settings-engine'
 import * as settingsMenu from './modules/settings-menu'
 import * as settingsVisibility from './modules/settings-visibility'
@@ -58,4 +57,4 @@ import * as settingsDefs from './modules/settings-defs'
 // call resolves. Its module body only DEFINES the function, so bridge-eval order is irrelevant.
 import * as settingsBoot from './modules/settings-boot'
 
-Object.assign(globalThis, { ...utils, ...guard, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...mapfunctionsAmp, ...portal, ...importExport, ...query, ...other, ...otherPraiding, ...coordinator, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs, ...settingsBoot })
+Object.assign(globalThis, { ...utils, ...guard, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...mapfunctionsAmp, ...portal, ...importExport, ...query, ...other, ...otherPraiding, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs, ...settingsBoot })

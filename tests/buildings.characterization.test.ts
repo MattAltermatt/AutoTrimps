@@ -19,18 +19,10 @@ import { makeMinimalGame } from './harness/gameFixture'
 // (native buyBuilding + game-global helper fns) are stubbed on globalThis.
 
 let buildings: typeof import('../src/modules/buildings')
-let coordinatorAllowsFn: typeof import('../src/modules/coordinator').coordinatorAllows
-let coordinatorAllowsBuildingFn: typeof import('../src/modules/coordinator').coordinatorAllowsBuilding
 
 beforeAll(async () => {
   ;(globalThis as any).MODULES = {}
   buildings = await import('../src/modules/buildings')
-  // #57/#94: safeBuyBuilding, RbuyBuildings and RbuyStorage all call the coordinator by bare name
-  // through the bridge. Wire the REAL guards so the coordinator tests exercise genuine integration
-  // (import after MODULES exists — coordinator.ts sets MODULES["coordinator"] at load).
-  const coordinator = await import('../src/modules/coordinator')
-  coordinatorAllowsFn = coordinator.coordinatorAllows
-  coordinatorAllowsBuildingFn = coordinator.coordinatorAllowsBuilding
 })
 
 // ── native-mutator spy: ordered buyBuilding calls WITH the smuggled decision state ──────────────
@@ -104,12 +96,7 @@ beforeEach(() => {
   ;(globalThis as any).MODULES = {
     buildings: { storageMainCutoff: 0.85, storageLowlvlCutoff1: 0.7, storageLowlvlCutoff2: 0.5 },
     upgrades: { autoGigas: false },
-    // #57 coordinator: inert by default (active:false → guard returns true) so every existing
-    // safeBuyBuilding assertion stays byte-faithful. Individual tests flip it on to exercise blocking.
-    coordinator: { active: false, topTarget: null, reserved: {} },
   }
-  ;(globalThis as any).coordinatorAllows = coordinatorAllowsFn
-  ;(globalThis as any).coordinatorAllowsBuilding = coordinatorAllowsBuildingFn
 })
 
 afterEach(() => {
@@ -145,47 +132,6 @@ describe('buildings.safeBuyBuilding — L1b actuator spy-log', () => {
       ...over,
     })
   }
-
-  // #57 coordinator guard at the safeBuyBuilding chokepoint. Gym is given an explicit metal cost so
-  // the metal-reserve guard actually engages (real Gym costs wood — see the non-metal test below).
-  const withMetalCost = { buildings: { Gym: { cost: { metal: [100, 1.5] } } }, resources: { metal: { owned: 1000 } } }
-
-  it('coordinator inert when inactive: the guard does not block a normal buy (byte-faithful)', () => {
-    ;(globalThis as any).game = game(withMetalCost)
-    MODULES['coordinator'] = { active: false, topTarget: { kind: 'building', name: 'Warpstation' }, reserved: { metal: 1e9 } }
-    expect(buildings.safeBuyBuilding('Gym')).toBe(true) // inactive → guard allows despite the huge reserve
-    expect(buyCalls.length).toBe(1)
-  })
-
-  it('coordinator blocks a lesser metal buy when active with a reserve it would dip into', () => {
-    ;(globalThis as any).game = game(withMetalCost)
-    MODULES['coordinator'] = { active: true, topTarget: { kind: 'building', name: 'Warpstation' }, reserved: { metal: 1000 } }
-    // Gym metal cost 100 (stubbed) → owned 1000 - 100 = 900 < reserved 1000 → deferred.
-    expect(buildings.safeBuyBuilding('Gym')).toBe(false)
-    expect(buyCalls.length).toBe(0)
-  })
-
-  it('coordinator never blocks the target building itself', () => {
-    ;(globalThis as any).game = game(withMetalCost)
-    MODULES['coordinator'] = { active: true, topTarget: { kind: 'building', name: 'Gym' }, reserved: { metal: 1e9 } }
-    expect(buildings.safeBuyBuilding('Gym')).toBe(true) // it IS the target → allowed
-    expect(buyCalls.length).toBe(1)
-  })
-
-  it('coordinator skips a building with NO metal cost — never asks its metal price (regression)', () => {
-    // Reproduce the native getBuildingItemPrice throw on a missing cost key. Tribute costs food only;
-    // a metal-only guard would crash mainLoop the instant the setting is on. The cost?.metal guard
-    // must skip the lookup entirely.
-    ;(globalThis as any).getBuildingItemPrice = (toBuy: any, costItem: string) => {
-      const c = toBuy.cost?.[costItem]
-      if (c === undefined) throw new TypeError("Cannot read properties of undefined (reading '1')")
-      return 100
-    }
-    ;(globalThis as any).game = game({ buildings: { Tribute: { cost: { food: [100, 1.5] } } }, resources: { metal: { owned: 1000 } } })
-    MODULES['coordinator'] = { active: true, topTarget: { kind: 'building', name: 'Warpstation' }, reserved: { metal: 1e9 } }
-    expect(() => buildings.safeBuyBuilding('Tribute')).not.toThrow() // no metal cost → guard skipped, no crash
-    expect(buyCalls.length).toBe(1) // and it buys normally
-  })
 
   it('normal building (non-Gym/Warpstation/Trap): buyAmt=1, firing cleared, buys, returns true', () => {
     ;(globalThis as any).game = game()

@@ -18,7 +18,6 @@ housing-hut-divisor    BLIND ⚠      0               0            0            
 rhypo-invert           BLIND ⚠      0               0            0            0            0            0            0            0            0            0            0            0            0            0            0            0            0            0
 equipment-noop         SEEN      1997              12            9            9           73           76           78            7            6            9            0            0            0            0            0            0          859          859
 jobs-ratio-flip        SEEN     10715              42           45           42           85           85           91           39           39           39            0           16         1760         1732         1674         1763         1627         1636
-coordinator-deny-all   SEEN     11156              32           32           32           72           75           77           29           29           29          513           19         1765         1737         1706         1768         1603         1638
 ```
 
 ## 🔴 Areas the gate CANNOT see
@@ -34,4 +33,14 @@ coordinator-deny-all   SEEN     11156              32           32           32 
 - **buildings (mostEfficientHousing)** `housing-always-hut` — 592 divergences, on 1/17 runs (**only** 04-u2-radon.1 — a single point of failure)
 - **equipment (autoLevelEquipment)** `equipment-noop` — 1997 divergences, on 11/17 runs
 - **jobs (workerRatios)** `jobs-ratio-flip` — 10715 divergences, on 16/17 runs
-- **coordinator** `coordinator-deny-all` — 11156 divergences, on 17/17 runs
+
+## Removed rows
+
+**`coordinator-deny-all` (removed 2026-07-13 with #57).** It was false comfort, and it is worth saying why.
+The mutation spliced `return false` in *ahead* of the `active` check, so it fired **even with the
+coordinator setting OFF** — which means its 11,156 divergences proved only that *building buys* are
+visible to the net, never that the *coordinator's own logic* was. The coordinator hardcoded Warpstation,
+a `world: 60` unlock, and every corpus save is world 4-6: with `PurchaseCoordinator` forced ON across the
+whole corpus, `topTarget` was null on 100% of ticks and the ON/OFF trace differential was **0**. A row
+that reports SEEN for a feature the net cannot see is exactly the reach-vs-sensitivity trap this file
+exists to teach — and this file was carrying one.

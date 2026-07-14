@@ -704,11 +704,10 @@ export function initializeAllSettings() {
         what: 'Controls whether AT buys non-storage Buildings (Huts, Warpstations, Gateways, Nurseries, etc.), Storage (Barn/Shed/Forge), both, or neither.',
         how: '<b>Buy Buildings & Storage</b> runs both automations. <b>Buy Buildings</b> buys non-storage buildings only \u2014 hand Storage to the game\'s own AutoStorage instead. <b>Buy Storage</b> buys Storage only. <b>Buy Neither</b> stops both (Gyms are the one exception \u2014 see <b>Hide Buildings</b>).<br><br>Storage purchases anticipate Jestimp and buy shortly before a resource would overflow, rather than waiting for it to actually cap out.',
     }), 'multitoggle', 1, null, "Buildings");
-    createSetting('PurchaseCoordinator', 'Purchase Coordinator',tip({
-        what: 'EXPERIMENTAL (#57). Makes AT save metal toward a high-value purchase instead of always spending it on whatever is affordable right now.',
-        how: 'Today it only reserves metal toward your next Warpstation when Coordination is pending and you still need the population it grants \u2014 every other building purchase still runs first-come-first-served. Turning it on with no Coordination pending is a no-op. Turning it OFF gives exactly the behavior AT has always had.',
-        cannot: 'Cannot reserve for anything else yet \u2014 there is no general priority list, just this one Warpstation-for-Coordination case.',
-    }), 'boolean', false, null, "Buildings");
+    // NOTE: 'PurchaseCoordinator' (#57) was removed on 2026-07-13. DO NOT RE-MINT THAT ID \u2014 createSetting
+    // applies its default only when nothing is stored, and serializeSettings round-trips unknown keys
+    // forever, so re-minting it would silently re-activate a rewritten coordinator for exactly the users
+    // who opted into the removed one. Any successor must use a NEW id.
     createSetting('WarpstationCap', 'Warpstation Cap',tip({
         what: 'Stops AT from leveling Warpstations past what your current Gigastation cycle needs.',
         how: 'The cap is <b>First Gigastation</b> + (Gigastations owned &times; <b>Delta Gigastation</b>). It only starts enforcing once you\'ve bought your first Gigastation (or <b>Auto Gigas</b> is off) \u2014 before that, Warpstations build up uncapped.',

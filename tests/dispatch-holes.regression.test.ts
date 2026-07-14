@@ -69,7 +69,6 @@ describe('#81 — the BuyBuildingsNew dispatch, executed verbatim from legacy/Au
       usingRealTimeOffline: offline,
       buyBuildings: () => calls.push('buyBuildings'),
       buyStorage: () => calls.push('buyStorage'),
-      computeTopTarget: () => {},
       // #87 — the REAL boundary, imported, not a pass-through stub. The block under test is now
       // dispatched through atGuard(), and a stub would quietly hide the one thing that could go wrong
       // with wrapping it: a guard that never invokes its closure would make every assertion below read

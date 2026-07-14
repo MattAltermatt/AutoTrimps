@@ -258,10 +258,6 @@ function mainLoop() {
             if ((getPageSetting('Hshrine') == true) || (getPageSetting('Hdshrine') == 1) || (getPageSetting('Hdshrine') == 2)) autoshrine();
         });
 
-        //#57 purchase coordinator: compute the current top-priority target + metal reserve before
-        //the buyers run (no-op unless the PurchaseCoordinator setting is on).
-        atGuard('computeTopTarget', computeTopTarget);
-
         //Buildings
         // #81: the `== 3` ("Buy Storage") arm used to sit OUTSIDE this block — the `}` closed the
         // `if (!usingRealTimeOffline)`, making `else if (... == 3)` the OUTER else, so its guard was

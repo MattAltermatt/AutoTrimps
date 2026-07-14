@@ -20,11 +20,6 @@ declare global {
   // Shared module config registry — `var MODULES = {}` in AutoTrimps2.js. Converted
   // modules register `MODULES["x"] = {}` and read each other's config by bare name.
   var MODULES: any
-
-  // Purchase Coordinator (#57) — the reservation guard + per-tick pre-pass, read via the bare-name seam.
-  var coordinatorAllows: typeof import('../modules/coordinator').coordinatorAllows
-  var coordinatorAllowsBuilding: typeof import('../modules/coordinator').coordinatorAllowsBuilding
-  var computeTopTarget: typeof import('../modules/coordinator').computeTopTarget
   // Log helpers defined in still-legacy modules.
   function getCurrentTime(): string
   function updatePortalTimer(flag?: boolean): string

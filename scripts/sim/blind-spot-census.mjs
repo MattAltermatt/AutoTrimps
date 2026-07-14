@@ -123,12 +123,6 @@ const MUTATIONS = [
     why: 'Forces an all-farmer worker ratio, so every hire decision is wrong.',
     apply: (s) => spliceAfter(s, 'function workerRatios() {', ' return [1, 0, 0, 0];', 'jobs'),
   },
-  {
-    name: 'coordinator-deny-all',
-    area: 'coordinator',
-    why: 'Forces the purchase guard to refuse every metal building, even with the coordinator setting OFF.',
-    apply: (s) => spliceAfter(s, 'function coordinatorAllowsBuilding2(building, amt) {', ' return false;', 'coordinator'),
-  },
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────

@@ -151,7 +151,7 @@ function scan(files: string[]) {
       }
 
       // Namespace seeding: `MODULES.maps = { foo: 1 }` / `M["fightinfo"] = { Update: … }` writes ns.foo.
-      // coordinator.ts:12 and fight-info.ts:9 both use this style; missing it would false-positive them.
+      // fight-info.ts:9 uses this style; missing it would false-positive it.
       if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
         const ns = nsOf(node.left, roots)
         if (ns && ts.isObjectLiteralExpression(node.right)) {
@@ -273,8 +273,8 @@ describe('a test fixture may only seed MODULES fields production can produce (#7
           }
         }
 
-        // Namespace replacement: `MODULES['coordinator'] = { active: …, topTarget: … }`. Each key is a
-        // field claim about production, so check them individually — NOT as a field named 'coordinator'.
+        // Namespace replacement: `MODULES['maps'] = { shouldFarm: …, mapRepeats: … }`. Each key is a
+        // field claim about production, so check them individually — NOT as a field named 'maps'.
         const nsSeed = nsOf(l, roots)
         if (nsSeed && ts.isObjectLiteralExpression(node.right)) {
           for (const f of node.right.properties) {
@@ -285,7 +285,7 @@ describe('a test fixture may only seed MODULES fields production can produce (#7
         }
 
         // Direct field poke: `MODULES.jobs.customRatio = [9, 8, 7]`. The object must ITSELF be a MODULES
-        // access, or `MODULES['coordinator'] = …` mis-reads as ns=coordinator/field=coordinator.
+        // access, or `MODULES['maps'] = …` mis-reads as ns=maps/field=maps.
         if (ts.isPropertyAccessExpression(l) || ts.isElementAccessExpression(l)) {
           const ns = nsOf(l.expression, roots)
           const field = fieldOf(l)
@@ -304,12 +304,12 @@ describe('a test fixture may only seed MODULES fields production can produce (#7
     // production never writes, and that injection is exactly what kept the dead branch looking alive. The
     // production bug is fixed and the injection is deleted; the test now reads production's real MODULES
     // shape and drives the H:D arm through the setting it actually reads.
-    'tests/buildings.characterization.test.ts:106': '#70 (inst. 3) — injects upgrades.autoGigas',
-    'tests/buildings.characterization.test.ts:358': '#70 (inst. 3) — injects upgrades.autoGigas',
+    'tests/buildings.characterization.test.ts:98': '#70 (inst. 3) — injects upgrades.autoGigas',
+    'tests/buildings.characterization.test.ts:304': '#70 (inst. 3) — injects upgrades.autoGigas',
   }
 
   it('finds the test-side MODULES injections (anti-false-green)', () => {
-    expect(injected.length).toBeGreaterThan(5)
+    expect(injected.length).toBeGreaterThanOrEqual(5)
   })
 
   it('no test injects a MODULES field that production never writes', () => {

@@ -44,7 +44,7 @@ let settingCount = 0
  * renderControlFace walks as childNodes[1] — and a self-returning callable Proxy everywhere else, so the
  * incidental layout pokes scattered through settings-defs (`.parentNode.style.setProperty`,
  * `.lastChild.insertAdjacentHTML`, …) all no-op instead of having to be enumerated one crash at a time.
- * Same Proxy idiom as tests/nets/settings-types.test.ts, the other test that has to execute all ~574 defs.
+ * Same Proxy idiom as tests/nets/settings-types.test.ts, the other test that has to execute all ~573 defs.
  */
 function makeEl(tag = 'div'): any {
   const attrs: Record<string, string> = {}

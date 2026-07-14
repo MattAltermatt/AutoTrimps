@@ -2,12 +2,12 @@
 //
 // This does NOT exist to catch someone editing a description: the settings-defs diff already shows that.
 // It exists to catch the edit that shows up NOWHERE in a diff — a change to `tip()`'s renderer or to the
-// derived `Default:` footer, either of which silently rewrites all 574 tooltips at once. That is exactly
+// derived `Default:` footer, either of which silently rewrites all 573 tooltips at once. That is exactly
 // the class of change a reviewer nods through ("it's a one-line helper tweak") and exactly the class that
 // last time shipped `RVoidMaps` with no tooltip at all.
 //
 // So the snapshot is of the FULLY COMPOSED text every setting actually shows the user, not the source
-// strings. Changing the composer moves 574 lines of snapshot, which is precisely the review signal.
+// strings. Changing the composer moves 573 lines of snapshot, which is precisely the review signal.
 import { describe, it, expect, beforeAll } from 'vitest'
 
 /** id -> the fully composed description the user is shown (facets + derived footer). */

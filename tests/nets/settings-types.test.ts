@@ -213,7 +213,7 @@ describe('settings runtime type contract · fresh install (#96)', () => {
       [
         [
           "boolean",
-          157,
+          156,
         ],
         [
           "dropdown",

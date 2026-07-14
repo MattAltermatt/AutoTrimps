@@ -44,7 +44,7 @@ describe('#102 · MODULESdefault is seeded at bundle-eval, so the module-var fns
 
   it('anti-false-green: the fixture really is the pre-startup-chain state, with MODULES fully built', () => {
     // If MODULES were empty, every assertion below would pass vacuously — this is the #66 failure mode.
-    expect(Object.keys(w.MODULES).length).toBeGreaterThanOrEqual(17)
+    expect(Object.keys(w.MODULES).length).toBeGreaterThanOrEqual(16)
     expect(w.MODULES.breedtimer.voidCheckPercent).toBe(95) // the field the pre-fix TypeError named
     // The startup chain has NOT run: delayStartAgain (which also starts mainLoop/guiLoop) never fired.
     // So anything MODULESdefault contains was put there by the bundle itself, which is the fix.
@@ -54,7 +54,7 @@ describe('#102 · MODULESdefault is seeded at bundle-eval, so the module-var fns
 
   it('MODULESdefault is populated at bundle-eval time — every src-owned module has a default', () => {
     const mods = Object.keys(w.MODULES).filter((m: string) => m !== 'graphs')
-    expect(mods.length).toBeGreaterThanOrEqual(16)
+    expect(mods.length).toBeGreaterThanOrEqual(15)
     for (const m of mods)
       expect(Object.prototype.hasOwnProperty.call(w.MODULESdefault, m), `MODULESdefault is missing '${m}'`).toBe(true)
     expect(w.MODULESdefault.breedtimer.voidCheckPercent).toBe(95)
@@ -95,7 +95,7 @@ describe('#102 · MODULESdefault is seeded at bundle-eval, so the module-var fns
 
     expect(() => deferred[0]()).not.toThrow()
     expect(w.ATrunning).toBe(true) // …and it closed, so AT is not dead
-    expect(Object.keys(w.MODULES).length).toBeGreaterThanOrEqual(16) // NOT {}
+    expect(Object.keys(w.MODULES).length).toBeGreaterThanOrEqual(15) // NOT {}
     expect(w.MODULES.jobs.scientistRatio).toBe(25) // the declared default, restored
     expect(w.localStorage.getItem('storedMODULES')).toBe('{}') // "no overrides" (#71a)
   })
