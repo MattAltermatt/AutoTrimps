@@ -10,14 +10,14 @@ corpus. A cell is that run's divergence count. **0 = the net saw NOTHING.**
 ```text
 mutation               VERDICT  total   01-early-u1.101-early-u1.201-early-u1.3  02-mid-u1.1  02-mid-u1.2  02-mid-u1.303-challenge-watch.103-challenge-watch.203-challenge-watch.304-u2-radon.1 05-maps-u1.1 06-deep-u1.1 06-deep-u1.2 06-deep-u1.307-map-cap-u1.108-starved-u1.108-starved-u1.2
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-canary-buildings-noop  SEEN     10790              32           32           32           94           94           96           29           29           29            0           19         1765         1737         1717         1768         1634         1683
-damage-1e6             SEEN      2990               0            0            0            0            0            0            0            0            0            0            0            0            0            0            0         1542         1448
-health-1e6             SEEN      9688              12            7            7           44           43           62            3            5            8            0            0         1600         1562         1534         1603         1584         1614
-housing-always-hut     SEEN       592               0            0            0            0            0            0            0            0            0          592            0            0            0            0            0            0            0
+canary-buildings-noop  SEEN     12009              32           32           32           96           94           95           29           29           29            0           27         1924         2033         1964         1927         1840         1826
+damage-1e6             SEEN      3917               0            0            0            0            0            0            0            0            0            0            0            0          420            8            0         1813         1676
+health-1e6             SEEN     11331              15           11           11           55           58           63            7            7           10            0            3         1824         1887         1867         1827         1855         1831
+housing-always-hut     SEEN      1012               0            0            0            0            0            0            0            0            0         1012            0            0            0            0            0            0            0
 housing-hut-divisor    BLIND ⚠      0               0            0            0            0            0            0            0            0            0            0            0            0            0            0            0            0            0
 rhypo-invert           BLIND ⚠      0               0            0            0            0            0            0            0            0            0            0            0            0            0            0            0            0            0
-equipment-noop         SEEN      1997              12            9            9           73           76           78            7            6            9            0            0            0            0            0            0          859          859
-jobs-ratio-flip        SEEN     10715              42           45           42           85           85           91           39           39           39            0           16         1760         1732         1674         1763         1627         1636
+equipment-noop         SEEN     10619              14           11           11           63           67           62            7            7           10            0            5         1893         1897         1879         1896         1432         1365
+jobs-ratio-flip        SEEN     12272              42           42           42           86           83           91           40           40           40            0           24         1990         2020         2034         1993         1860         1845
 ```
 
 ## 🔴 Areas the gate CANNOT see
@@ -27,20 +27,9 @@ jobs-ratio-flip        SEEN     10715              42           45           42 
 
 ## ✅ Areas the gate CAN see
 
-- **buildings** `canary-buildings-noop` — 10790 divergences, on 16/17 runs
-- **combat (calcOurDmg)** `damage-1e6` — 2990 divergences, on 2/17 runs (**only** 08-starved-u1.1, 08-starved-u1.2 — a single point of failure)
-- **combat (calcOurHealth)** `health-1e6` — 9688 divergences, on 15/17 runs
-- **buildings (mostEfficientHousing)** `housing-always-hut` — 592 divergences, on 1/17 runs (**only** 04-u2-radon.1 — a single point of failure)
-- **equipment (autoLevelEquipment)** `equipment-noop` — 1997 divergences, on 11/17 runs
-- **jobs (workerRatios)** `jobs-ratio-flip` — 10715 divergences, on 16/17 runs
-
-## Removed rows
-
-**`coordinator-deny-all` (removed 2026-07-13 with #57).** It was false comfort, and it is worth saying why.
-The mutation spliced `return false` in *ahead* of the `active` check, so it fired **even with the
-coordinator setting OFF** — which means its 11,156 divergences proved only that *building buys* are
-visible to the net, never that the *coordinator's own logic* was. The coordinator hardcoded Warpstation,
-a `world: 60` unlock, and every corpus save is world 4-6: with `PurchaseCoordinator` forced ON across the
-whole corpus, `topTarget` was null on 100% of ticks and the ON/OFF trace differential was **0**. A row
-that reports SEEN for a feature the net cannot see is exactly the reach-vs-sensitivity trap this file
-exists to teach — and this file was carrying one.
+- **buildings** `canary-buildings-noop` — 12009 divergences, on 16/17 runs
+- **combat (calcOurDmg)** `damage-1e6` — 3917 divergences, on 4/17 runs
+- **combat (calcOurHealth)** `health-1e6` — 11331 divergences, on 16/17 runs
+- **buildings (mostEfficientHousing)** `housing-always-hut` — 1012 divergences, on 1/17 runs (**only** 04-u2-radon.1 — a single point of failure)
+- **equipment (autoLevelEquipment)** `equipment-noop` — 10619 divergences, on 16/17 runs
+- **jobs (workerRatios)** `jobs-ratio-flip` — 12272 divergences, on 16/17 runs

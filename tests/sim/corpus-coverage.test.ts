@@ -67,14 +67,18 @@ describe('corpus mutator coverage (loud, pinned)', () => {
       // 05 is the honest play-forward to mapsUnlocked. AT is damage-walled inside a map here (measured
       // HD ratio 23x, fragments=1), so it makes no map calls. Its value is not a rich trace — it is that
       // maps.ts:253 EVALUATES calcOurDmg here instead of short-circuiting past it.
-      '05-maps-u1': ['buyBuilding', 'buyJob'],
+      // #122 GREW THIS: buyEquipment + buyUpgrade are new. With the metal economy unfrozen (checkTriggers
+      // now fires, so Forge unlocks and metal.max is no longer pinned at 500) AT can finally afford gear
+      // here — and the buyUpgrade is COORDINATION, the first one AT has ever bought in the net's history.
+      '05-maps-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyUpgrade'],
       // 06 is the fixture that made the net able to see combat: a post-portal state where AT sets a
       // formation nearly every tick (stance.ts survive() reads calcOurDmg) and buys/selects/runs maps at
       // each zone transition (maps.ts enoughDamage -> shouldDoMaps reads calcOurDmg).
-      '06-deep-u1': ['buyBuilding', 'buyJob', 'buyMap', 'buyUpgrade', 'runMap', 'selectMap', 'setFormation'],
+      // #122: buyEquipment is new here for the same reason — a 500-metal cap could not fund a single piece.
+      '06-deep-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyMap', 'buyUpgrade', 'runMap', 'selectMap', 'setFormation'],
       // 07 sits ON the game's 100-map cap — the sole gate behind every recycleBelow/recycleMap callsite
       // in AT (`buyMap() == -2`, main.js:6597). It is the only save that can reach either.
-      '07-map-cap-u1': ['buyBuilding', 'buyJob', 'buyMap', 'buyUpgrade', 'recycleBelow', 'recycleMap', 'runMap', 'selectMap', 'setFormation'],
+      '07-map-cap-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyMap', 'buyUpgrade', 'recycleBelow', 'recycleMap', 'runMap', 'selectMap', 'setFormation'],
       // 08 is the DAMAGE-SENSITIVITY fixture. Its mutator list is unremarkable on purpose — its value is
       // not reach but SATURATION: it is the only save where enoughDamage is false, so calcOurDmg's output
       // can still flip a decision. A 1e6x damage injection produces 1542 divergences here and ZERO on

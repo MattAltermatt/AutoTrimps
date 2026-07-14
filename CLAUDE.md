@@ -153,6 +153,53 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **🧊 #122 SHIPPED — THE SIM'S METAL ECONOMY WAS FROZEN, AND THE NET WAS BLIND TO GEAR BECAUSE OF IT**
+  (2026-07-14, `7fdae3bb`) — 1050 tests, all gates green by exit code.
+  🚨 **`checkTriggers()` NEVER FIRED IN ANY SIM RUN, EVER.** `boot.mjs` stubs `window.setTimeout = () => 0`,
+  and the game calls `checkTriggers()` during play from exactly ONE place — `costUpdatesTimeout()`, a
+  `setTimeout(costUpdatesTimeout, 250)` loop (main.js:17970). **Forge is a *trigger*, not an upgrade**
+  (config.js:13226, fires at ≥350 metal) ⇒ Forge never unlocked ⇒ `metal.max` pinned at **500** on every
+  save ⇒ Coordination (507 metal at `done=2`) permanently unaffordable. **AT bought Coordination ZERO times
+  in the entire history of the proof net**, and the deep fixtures ran **metal-capped on up to 100% of ticks**.
+  Fix: `driver.mjs` `tickOnce()` calls `checkTriggers()` after `gameLoop()`.
+  👁️ **THE REAL PRIZE WAS A HOLE NOBODY HAD NAMED: the net could not see the EQUIPMENT subsystem on its own
+  deep fixtures.** Re-running the blind-spot census, `equipment-noop` — which rips out `autoLevelEquipment`
+  ENTIRELY — went from **0 divergences on all three `06-deep` runs and on `07-map-cap`** to **~1890 each**
+  (total 1997 → 10619). With a 500-metal cap the bot had nothing to spend, so deleting its gear automation
+  changed *nothing* and the net stayed green. That is **reach ≠ sensitivity (#98) inside the very fixtures
+  built to watch the bot.** `damage-1e6` also spread from 2 runs to 4. ⚠️ `housing-hut-divisor` (#93) and
+  `rhypo-invert` (#101) remain **BLIND 0/17** — unfreezing does not reach them; still #105's scope.
+  📐 **EARN THE RIGHT TO A ONE-LINER.** `costUpdatesTimeout` is FIVE calls. The four `checkButtons(...)` are
+  state-pure *here* — they resolve to `updateButtonColor` (DOM class swaps) + `updateSRBuyAmt`, which **no-ops
+  while `usingScreenReader` is false** (boot sets it), and the one call that could mutate,
+  `Archaeology.checkAutomator()`, only buys when passed `makePurchase`. Cherry-picking `checkTriggers` is
+  **shown, not assumed** — otherwise the "fix" is itself unaudited.
+  🧾 **HARNESS RE-RECORD, NOT A RE-PIN — and NOT additive, so don't claim it is.** The oracle bundle
+  (`v3-u2-autobuildings`) and `src/` are both **untouched**; the *simulated game* changed. **COUNT THE EVENTS**
+  (LCS over fn+args, not by index): `04-u2-radon` reproduces **BYTE-IDENTICAL** (1204→1204, 0 in / 0 out — the
+  control proving the change is inert where it should be), the shallow saves move explicably (+`buyBuilding(Forge)`),
+  and the **deep saves genuinely RESHAPE** (06-deep 1765→2013 events, 303 in / 55 out; setFormation churn, because
+  the bot now has metal, buys gear, and crosses its thresholds on different ticks). The manifest records that
+  honestly rather than borrowing #90/#98's byte-identity claim.
+  🦷 **RE-VERIFY THE NET STILL HAS TEETH AFTER ANY CORPUS CHANGE.** `08-starved-u1` earns its seat by leaving the
+  damage threshold **unsaturated**, and a live economy buys it more gear (equipment levels 70 → 79) — which could
+  have **saturated** it and quietly blunted the net. Checked: `damage-sensitivity`'s **positive control still goes
+  RED** against the fresh traces. ⚠️ My own saturation probe read `MODULES.maps.enoughDamage` and sampled **0
+  ticks** (the field is module-local, cf. the #70 note) — **a probe looking in the wrong place reports 0.0% and
+  looks like an answer.** The existing mutation self-test was the authoritative check; don't build a proxy when a
+  positive control already exists.
+  🎭 **THE ADVERSARIAL REVIEW EARNED ITS SEAT — AND WAS ALSO WRONG ONCE.** It caught (a) my comment's false
+  absolute — once-per-tick is **exact only for RESOURCE-cost triggers**; `Lumberjack` costs `jobs:{Farmer:1}` and
+  `breeding` reads `trimps.employed`, both moved by AT's own `mainLoop` **after** `checkTriggers` ⇒ a 1-tick lag;
+  (b) that my net proved "fires at least once", **not** "every tick" — a once-per-run regression passed all three
+  behavioural tests (now pinned by a cadence assertion, mutation-checked `expected 1 to be 50`); and (c) **a second
+  casualty of the same stub → #126** (stacked void-map completions schedule `createHeirloom` via `setTimeout`, so
+  those rewards are silently dropped). But it also **asserted `corpus-coverage` needed no update** — it had no Bash
+  and reasoned statically; the suite proved the pin **did** move (05 gains `buyEquipment` + `buyUpgrade` — the first
+  Coordination purchase in the net's history; 06/07 gain `buyEquipment`). **A static read is not a test run.**
+  🪤 **`npm run test:ci | tail` REPORTS `EXIT=0` — that is `tail`'s status, not the suite's.** I walked straight into
+  the trap CLAUDE.md already warns about, with **one test failing**. Redirect to a file, then read `$?`.
+
 - **🐛 THE TOOLTIP AUDIT'S NINE BUGS — #111/#112/#113/#114/#116/#117/#118/#119/#120 SHIPPED** (2026-07-13) —
   1046 tests, deploys green. #115 closed as **not-a-bug**. Every fix is mutation-checked; none rest on a green
   L0 (see below).
