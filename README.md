@@ -1,19 +1,30 @@
 # AutoTrimps - Zek Fork
 
-## 🛠️ Development (modernized build)
+AutoTrimps is a large automation userscript for the incremental game
+**[Trimps](https://trimps.github.io/)**: it plays the grind so you don't have to. It buys
+buildings, jobs, equipment and upgrades, runs maps, manages stances and the Spire, allocates
+perks, farms heirlooms and nature tokens, and handles dailies and Challenge² runs — across both
+universes. It is configured heavily and deliberately: it is not a zero-config tool.
 
-This fork is being modernized into a Vite + TypeScript build. All planning and shipped
-history lives in **[GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/issues)**
-(grouped by milestone/phase; completed work is closed issues — see the
-[Phases 0–2 record](https://github.com/MattAltermatt/AutoTrimps/issues/23)). The full
-architecture is in the [design spec](docs/superpowers/specs/2026-07-08-autotrimps-modernization-design.md).
+This repository is a **modernization fork** of the Zek/GenBTC lineage. Why it exists and what it
+deliberately is *not* are in [VISION.md](VISION.md).
+
+## 🛠️ Development
+
+The runtime is TypeScript, built with esbuild into a single userscript. All planning and shipped
+history lives in **[GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/issues)** (grouped
+by milestone; completed work is closed issues — see the
+[Phases 0–2 record](https://github.com/MattAltermatt/AutoTrimps/issues/23)). There is no
+ROADMAP/CHANGELOG in the repo, by design. The architecture is in the
+[design spec](docs/superpowers/specs/2026-07-08-autotrimps-modernization-design.md).
 
 ```bash
 npm install           # also fetches the pinned Trimps clone → .trimps-game/ (postinstall)
 npm run build         # → dist/autotrimps.user.js
 npm run build:watch   # rebuild on change
-npm run serve         # static-serve the local Trimps clone (:8080) with the bundle injected
+npm run serve         # static-serve a local Trimps clone (:8080) with the bundle injected
 npm test              # vitest
+npm run test:ci       # what CI runs: vitest + the zero-skip census
 npm run typecheck     # tsc --noEmit
 npm run lint          # oxlint --deny-warnings
 ```
@@ -21,9 +32,13 @@ npm run lint          # oxlint --deny-warnings
 No manual setup is needed to run the tests: `npm install` fetches the SHA-pinned copy of the
 game that the behavioral test suite boots. That suite is the **deploy gate** — it replays the
 bot's decisions against recorded traces, and a missing clone fails loudly rather than skipping.
+`test:ci` additionally asserts that **no test may be skipped**: a gate optimized for greenness is
+not a gate.
 
-The legacy runtime lives untouched in `legacy/` as a behavioral oracle during migration;
-files leave it only once their `src/` port is verified in the live game.
+The port is essentially complete — the automation lives in `src/modules/` as strict TypeScript.
+What remains in `legacy/` is the loader/mainLoop (`AutoTrimps2.js`) and the Graphs stack
+(`Graphs.js` + highcharts), which is still the behavioral oracle the build concatenates ahead of
+the TypeScript bundle.
 
 
 
@@ -33,10 +48,14 @@ Discord is a chat program. Come to talk about AutoTrimps, for help, or suggestio
 
 
 
-## Current Version - Ongoing Development!
-- Zek Fork (changes by Zek, GenBTC as base). This modernization fork (MattAltermatt) ports
-  the runtime to TypeScript/Vite and re-syncs automation to current Trimps — automation parity
-  is current as of **Trimps v5.10.1** (synced 2026-07-08). See [GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/issues) for phase-by-phase status.
+## Current version — ongoing development
+
+- Zek Fork (changes by Zek, GenBTC as base). This modernization fork (MattAltermatt) ported the
+  runtime to TypeScript and re-synced the automation to current Trimps.
+- Automation parity is current as of **Trimps v5.10.1**. The game clone is SHA-pinned in
+  `package.json` (`trimpsGame`), and a test fails if that pin and the recorded oracle disagree.
+- Live status is always the [open issues](https://github.com/MattAltermatt/AutoTrimps/issues) and
+  [milestones](https://github.com/MattAltermatt/AutoTrimps/milestones).
 
 
 
@@ -121,4 +140,10 @@ Red - Will buy next
 
 ## Troubleshooting
 
-**Combat won't start** - Make sure you have enabled the Better Auto Fight/Vanilla setting in Combat & Stance Settings. If you're not on dark theme, you may see a tiny thin black bar in combat, click it to show this setting.
+**Combat won't start** — set **Better Auto Fight** (or **Vanilla**) on the **Combat** tab. With
+it Off, the game can sit idle after a portal until you click Fight yourself. If you're not on the
+dark theme you may see only a thin black bar in combat — click it to reveal the setting.
+
+**A setting seems to do nothing** — hover it. Every tooltip states when a setting is *ignored*,
+what it *cannot* do, and whether AutoTrimps overwrites the box itself (several are outputs, not
+inputs — the worker-ratio boxes are rewritten every tick in Auto mode).
