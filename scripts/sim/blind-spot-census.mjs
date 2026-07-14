@@ -124,6 +124,40 @@ const MUTATIONS = [
     apply: (s) => spliceAfter(s, 'function workerRatios() {', ' return [1, 0, 0, 0];', 'jobs'),
   },
   {
+    name: 'warpstation-noop',
+    area: 'buildings (Warpstation, deep)',
+    why: "#128: Warpstation is the dominant metal sink at depth (42.5% of metal spend at z63) and unlocks " +
+      'at world 60 — the whole corpus topped out at world 8, so this branch had NEVER executed. Makes ' +
+      "safeBuyBuilding's Warpstation branch buy nothing. 12-warp-u1 is the fixture that arms it.",
+    apply: (s) =>
+      spliceAfter(
+        s,
+        'if (building === "Warpstation" && !game.buildings[building].locked && canAffordBuilding(building)) {',
+        ' return;',
+        'warpstation',
+      ),
+  },
+  {
+    name: 'gem-housing-rank',
+    area: 'buildings (buyGemEfficientHousing ranking, deep)',
+    why: "#128: INVERTS buyGemEfficientHousing's gem-efficiency sort so it picks the WORST housing, not the " +
+      'best. A #93-shaped ranking break, not a crude no-op — it proves the RANKING is load-bearing, which ' +
+      'only shows once the deep tiers (Collector/Warpstation) are unlocked (never below world 8).',
+    apply: (s) => {
+      // Scope to buyGemEfficientHousing before matching the sort. The anchor is globally UNIQUE today
+      // (buyFoodEfficientHousing sorts by a different comparator), so this is future-proofing against a
+      // U2 gem twin, not disambiguation of existing copies — do not weaken it into an unscoped match.
+      const fn = s.indexOf('function buyGemEfficientHousing() {')
+      if (fn < 0) throw new Error('[gem-rank] buyGemEfficientHousing not found')
+      const A = 'return obj[a] - obj[b];'
+      const at = s.indexOf(A, fn)
+      if (at < 0) throw new Error('[gem-rank] U1 sort anchor not found after buyGemEfficientHousing')
+      const out = s.slice(0, at) + 'return obj[b] - obj[a];' + s.slice(at + A.length)
+      if (!out.includes('return obj[b] - obj[a]')) throw new Error('[gem-rank] splice no-op')
+      return out
+    },
+  },
+  {
     name: 'portal-noop',
     area: 'portal (autoPortal)',
     why: "#127: AT's highest-consequence action — a portal RESETS the run — and doPortal() had never once " +

@@ -97,6 +97,12 @@ describe('corpus mutator coverage (loud, pinned)', () => {
       // autoPortal() diverges by 510 (tests/sim/portal.test.ts pins it). A portal resets the run, so the
       // trace is the approach, the portal, and the fresh zone-1 run that follows.
       '11-portal-u1': ['buyBuilding', 'buyJob', 'setFormation'],
+      // 12 (#128) is the DEEP fixture: a world-62 post-portal state, the only save that reaches the
+      // late-game metal sinks. Its value is that two census rows flipped BLIND -> SEEN — warpstation-noop
+      // (0 -> 1722) and gem-housing-rank (0 -> 1774), both caught ONLY here — pinned as a mutation
+      // self-test in tests/sim/blind-spot-sensitivity.test.ts. The rich combat mutator list is incidental
+      // to that; do not judge this fixture by reach. Warpstation buys land under buyBuilding.
+      '12-warp-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyMap', 'buyUpgrade', 'runMap', 'selectMap', 'setFormation'],
     })
   })
 

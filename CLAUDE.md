@@ -153,6 +153,31 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **🌌 #128 SHIPPED — THE NET CAN SEE THE DEEP GAME NOW** (2026-07-14) — 1070 tests, all gates green by exit code.
+  The corpus topped out at world 8, so the entire late game — where players live — was **structurally invisible**.
+  `12-warp-u1` is a **world-62 post-portal** state (the first save past the Warpstation unlock), reached by
+  granting `06-deep-u1` a realistic perk spread and playing forward **~39k ticks** — constructible only because
+  #122 unfroze the metal economy (pre-#122 AT soft-locked at world 6).
+  🎯 **ACCEPTANCE IS A CENSUS RED, per #105 — not "the code executed".** `warpstation-noop` **0 → 1722** and
+  `gem-housing-rank` **0 → 1774**, both caught **ONLY on 12-warp-u1** (zero on all 20 other runs), pinned as
+  permanent positive controls in `blind-spot-sensitivity.test.ts`. **The census now has ZERO blind rows.** Bonus:
+  the deep fixture is damage-unsaturated enough that `damage-1e6` **also** lights up on it (+1684) — it strengthens
+  combat coverage too, not just buildings.
+  🕰️ **Warpstation unlocks via the game's OWN honest path** — `planetBreaker()` fires on the z60 Improbability
+  kill (config.js:9295), sets `brokenPlanet`, and Warpstation (`world: 60, brokenPlanet: 1`) unlocks. No poke; the
+  only fixture constant is the perk spread (**player state, not tuning**, exactly as 06/08 use it). Added an
+  `untilWorld` option to `playForward` — a deep fixture is defined by the STATE it must reach, and a fixed tick
+  count would land at an unpredictable zone as RNG drifts.
+  📐 **SIZED FOR SENSITIVITY, NOT VOLUME (#105).** 1500 ticks captures ~7 Warpstation + ~65 Nursery buys with live
+  combat; a full run to z73 banks **388 Nurseries** and would drown the trace. **Additive re-record, PROVEN:** all
+  11 existing traces re-recorded **byte-identical** (git showed only the new trace file); the new one is 1783 events,
+  exactly matching the pre-generation window probe.
+  ⛔ **GIGASTATION STAYS BLIND EVEN HERE, and it is worth knowing why:** `firstGiga()` only arms when AT **cannot
+  afford Coordination** (upgrades.ts:119 → `canAffordCoordinationTrimps` = `realMax >= send*3`), but **Coordination
+  tracks world 1:1 the whole way** (the invariant #128 itself observed — AT is never pop-blocked below z230). So
+  Gigastation is a separate *reach≠sensitivity* fixture needing a pop-STARVED state — a follow-up, not this issue.
+  📊 **Also filed #131** (improve Graphs: bigger text + data export) at user request.
+
 - **⚡ #129 CLOSED WONTFIX — AT IS NOT SLOW, AND ITS 10Hz CADENCE IS BEHAVIOURALLY INERT** (2026-07-14) — the
   issue demanded a measurement before a patch, and the measurement killed it. **No code changed.**
   📊 **`mainLoop` COSTS 0.4–0.6% OF FRAME TIME.** 0.675ms at world 14, **0.756ms at world 40** — it does *not*

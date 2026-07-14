@@ -76,4 +76,11 @@ export const CORPUS = [
   // this fixture needs both the seeded settings AND #126's timer queue. 600 ticks = 60s of game time,
   // comfortably past that deadline with room for the new run to act.
   { name: '11-portal-u1', seeds: [1], ticks: 600, settings: { AutoPortal: 'Helium Per Hour', HeHrDontPortalBefore: 5, HeliumHrBuffer: 10 } },
+  // #128 — the deep fixture. A world-62 post-portal state (Warpstation unlocked) is the ONLY save that
+  // reaches the late-game metal sinks: Warpstation (buildings.ts:130), Nursery, and buyGemEfficientHousing's
+  // gem-efficiency ranking over the deep housing tiers. Single seed — the state is not combat-RNG-decided
+  // in a way extra seeds would broaden (its subject is building-purchase argmins), matching 04/05/09/10.
+  // 1500 ticks captures ~7 Warpstation + ~65 Nursery buys with live combat; sized for sensitivity, not
+  // volume — a full run to z73 banks 388 Nurseries and drowns the trace (#105).
+  { name: '12-warp-u1', seeds: [1], ticks: 1500 },
 ]

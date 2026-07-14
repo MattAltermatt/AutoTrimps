@@ -78,12 +78,26 @@ function loadBase() {
 // Load, seed + freeze, optionally mutate, play AT forward, return the resulting save string.
 // atSettings matters for the settings-gated fixtures (09/10): a state generated with the feature OFF
 // is not the state the recorder will replay with it ON.
-function playForward(saveString, { ticks, seed = 1, mutate, atSettings } = {}) {
+//
+// `untilWorld` (optional, #128) plays until `game.global.world >= untilWorld` instead of a fixed tick
+// count, capped at `ticks` as a runaway guard. A deep fixture is defined by the STATE it must reach
+// (Warpstation unlocks at world 60), not by a tick number — and the exact world at a fixed tick drifts
+// run-to-run with RNG, so a fixed count would land at an unpredictable zone. It throws rather than
+// silently committing a too-shallow save if the cap is hit first.
+function playForward(saveString, { ticks, seed = 1, mutate, atSettings, untilWorld } = {}) {
   const { window: w, game: g } = bootGame({ withAutoTrimps: true, atBundlePath: ORACLE, saveString, atSettings })
   installSeededRandom(w, seed)
   installFrozenClock(w)
   if (mutate) mutate(w, g)
-  stepWithAT(w, ticks)
+  if (untilWorld) {
+    let i = 0
+    for (; i < ticks && g.global.world < untilWorld; i++) stepWithAT(w, 1)
+    if (g.global.world < untilWorld) {
+      throw new Error(`playForward: hit ${ticks}-tick cap at world ${g.global.world}, wanted world ${untilWorld}`)
+    }
+  } else {
+    stepWithAT(w, ticks)
+  }
   return w.save(true)
 }
 
@@ -369,5 +383,47 @@ writeSave('11-portal-u1', () => playForward(readSave('06-deep-u1'), {
   },
 }))
 
-console.log('[make-fixtures] corpus written (11 saves: 3×U1 shallow + U2-radon + maps + deep + map-cap + starved + housing + hypo + portal).')
+// 12 · warp-U1 — THE DEEP FIXTURE. The corpus topped out at world 8 (except 11's portal), so the entire
+// late game — where players actually live — was structurally invisible to the net (#128). Above all:
+//   · Warpstation — the dominant metal sink at depth (42.5% of metal spend at z63), unlocks at world 60
+//   · Nursery     — heavily stacked at depth (measured 65 buys in this window alone)
+//   · buyGemEfficientHousing's gem-efficiency ranking (buildings.ts) — only reaches Warpstation/Collector
+//     tiers deep enough that they are unlocked, which never happened below z8
+//
+// This is CONSTRUCTIBLE only because #122 unfroze the metal economy. Pre-#122 AT soft-locked at world 6
+// (metal.max pinned at 500, Forge never unlocked), which is why the note above USED to say deep states
+// were unreachable. With the economy alive, a real post-portal perk spread carries 06-deep straight up:
+// Warpstation unlocks at world 60 when planetBreaker() fires on the z60 Improbability kill (config.js:9295)
+// — the game's OWN honest path, no poke. Measured: ~39k ticks to the unlock, world 62 shortly after.
+//
+// The perk spread is a fixture constant — PLAYER STATE, not game balance, exactly as 06/08 use it — and
+// nothing outside this file reads it. It is a realistic mid-game portal spread chosen to clear the z6→z60
+// damage walls with headroom; the levels are not tuning and were picked by measuring reach, not balance.
+//
+// untilWorld: 62 (not a fixed tick count) so the save lands JUST PAST the Warpstation unlock, where AT is
+// still actively buying Warpstations — the recording window (corpus.mjs, 1500 ticks) then captures ~7
+// Warpstation buys + ~65 Nursery buys + the full gem-housing ranking, live combat included. Sized for
+// SENSITIVITY not volume (#105): a full run to z73 would bank 388 Nurseries and drown the trace.
+//
+// ACCEPTANCE IS A CENSUS RED, per #105: the `warpstation-noop` and `gem-housing-rank` mutations
+// (blind-spot-census.mjs) must flip BLIND -> SEEN on this save. Reaching Warpstation is not the goal;
+// making a Warpstation bug VISIBLE is. NB Gigastation stays blind even here — firstGiga() only arms when
+// AT cannot afford Coordination (upgrades.ts:119), but Coordination tracks world 1:1 the whole way, so AT
+// is never pop-blocked below z230. That is a separate reach≠sensitivity fixture (#128 follow-up).
+writeSave('12-warp-u1', () => playForward(readSave('06-deep-u1'), {
+  ticks: 200000, seed: 1, untilWorld: 62,
+  mutate: (_w, g) => {
+    // A realistic post-portal perk spread. Anticipation arms antiStacks (main.js:11682); the damage +
+    // economy perks clear the z6→z60 walls. Player state only — no balance constant is touched.
+    const perks = {
+      Looting: 60, Toughness: 60, Power: 60, Motivation: 60, Pheromones: 30, Artisanistry: 40,
+      Carpentry: 40, Resilience: 40, Coordinated: 20, Anticipation: 10, Siphonology: 3, Range: 10,
+      Agility: 20, Bait: 10, Trumps: 20, Packrat: 20, Resourceful: 30, Overkill: 15,
+    }
+    for (const [perk, level] of Object.entries(perks)) if (g.portal[perk]) g.portal[perk].level = level
+    g.global.totalPortals = 5
+  },
+}))
+
+console.log('[make-fixtures] corpus written (12 saves: 3×U1 shallow + U2-radon + maps + deep + map-cap + starved + housing + hypo + portal + warp).')
 console.log('[make-fixtures] reach is ASSERTED, not assumed — tests/sim/corpus-coverage.test.ts pins it. Re-record with `node scripts/sim/record-oracle.mjs`.')

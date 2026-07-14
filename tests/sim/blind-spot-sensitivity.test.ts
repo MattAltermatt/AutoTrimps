@@ -52,6 +52,19 @@ function replaceOnce(source: string, find: string, replace: string): string {
   return mutant
 }
 
+/** Replace the first `find` that appears AFTER `scope`, and prove the splice landed. For anchors that
+ *  should be pinned to a named function rather than matched globally — either because they are not
+ *  globally unique, or as future-proofing if a sibling function might grow the same text later. */
+function replaceOnceAfter(source: string, scope: string, find: string, replace: string): string {
+  const from = source.indexOf(scope)
+  expect(from, `scope "${scope}" not found in the bundle — its shape changed`).toBeGreaterThan(-1)
+  const at = source.indexOf(find, from)
+  expect(at, `anchor "${find}" not found after "${scope}"`).toBeGreaterThan(-1)
+  const mutant = source.slice(0, at) + replace + source.slice(at + find.length)
+  expect(mutant).not.toBe(source)
+  return mutant
+}
+
 function traceWith(mutate: (s: string) => string, save: string, ticks: number, settings?: Record<string, unknown>) {
   const dir = mkdtempSync(join(tmpdir(), 'at-blindspot-'))
   const mutantPath = join(dir, 'mutant.user.js')
@@ -124,6 +137,78 @@ describe('blind-spot sensitivity — the net can SEE #93 and #101 (#105 positive
         'again. The usual cause: 10-hypo-u2 lost its seeded settings — Rhypofarmstack must carry a ' +
         'CONFIGURED target above totalBonfires, or hasBonfireTarget is false and the clause under test ' +
         'is inert (#96). Fix the corpus, not the test.',
+    ).toBeGreaterThan(5)
+  }, 180_000)
+})
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+// #128 — THE DEEP FIXTURE'S POSITIVE CONTROLS. Same doctrine, one milestone deeper. The corpus topped
+// out at world 8, so the entire late game was structurally invisible: Warpstation (the dominant metal
+// sink at depth) unlocks at world 60, and buyGemEfficientHousing's gem-efficiency ranking only reaches
+// the deep tiers (Collector/Warpstation) that were never unlocked. Both branches had NEVER executed.
+//
+// 12-warp-u1 is a world-62 post-portal state. Measured on it (blind-spot-census.md): warpstation-noop
+// 0 -> 1722 and gem-housing-rank 0 -> 1774, and — the part that matters — ZERO on every other save in
+// the corpus. Reaching the deep tiers is not enough by itself; these two mutations are the proof the
+// SELECTION and the PURCHASE are load-bearing here, the way #93/#101 are above.
+//
+// ⚠️ If this FAILED: the net has gone blind to the deep game again. The usual cause is 12-warp-u1 no
+// longer reaching world 60+ with Warpstation unlocked (make-fixtures plays it forward untilWorld: 62;
+// a perk-spread or economy regression could wall it short). Fix the corpus, not the test.
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+describe('blind-spot sensitivity — the net can SEE the deep game (#128 positive controls)', () => {
+  const warp = entry('12-warp-u1')
+
+  it('NEGATIVE control: the clean build reproduces the deep trace exactly (diff = ∅)', () => {
+    const clean = runTrace({
+      atBundlePath: TEST_BUNDLE,
+      saveString: readFileSync(resolve(SAVES, `${warp.name}.txt`), 'utf8'),
+      seed: 1,
+      ticks: warp.ticks,
+      atSettings: warp.settings,
+    })
+    expect(diffTraces(oracleTrace(warp.name), clean), `${warp.name} diverges on a CLEAN build`).toEqual([])
+  }, 180_000)
+
+  it('POSITIVE control: Warpstation buying suppressed makes the net go RED — it was BLIND corpus-wide', () => {
+    const mutant = traceWith(
+      // safeBuyBuilding's Warpstation branch buys nothing. AT still reaches it (picks Warpstation as best
+      // gem housing) but the purchase never lands, so metal accumulates and downstream buys shift.
+      (s) =>
+        replaceOnce(
+          s,
+          'if (building === "Warpstation" && !game.buildings[building].locked && canAffordBuilding(building)) {',
+          'if (building === "Warpstation" && !game.buildings[building].locked && canAffordBuilding(building)) { return;',
+        ),
+      warp.name,
+      warp.ticks,
+      warp.settings,
+    )
+    const divergences = diffTraces(oracleTrace(warp.name), mutant)
+    expect(
+      divergences.length,
+      'Suppressing Warpstation purchases produced ZERO divergences. The net is blind to the deep-game ' +
+        'metal sink again — the usual cause is 12-warp-u1 no longer reaching world 60+ with Warpstation ' +
+        'unlocked. Fix the corpus, not the test.',
+    ).toBeGreaterThan(5)
+  }, 180_000)
+
+  it('POSITIVE control: gem-efficiency ranking inverted makes the net go RED — it was BLIND corpus-wide', () => {
+    const mutant = traceWith(
+      // Invert buyGemEfficientHousing's sort so it picks the WORST gem-efficiency housing. Scoped to the
+      // function even though the anchor is globally unique today — future-proofing against a U2 gem twin,
+      // not disambiguation of existing copies.
+      (s) => replaceOnceAfter(s, 'function buyGemEfficientHousing() {', 'return obj[a] - obj[b];', 'return obj[b] - obj[a];'),
+      warp.name,
+      warp.ticks,
+      warp.settings,
+    )
+    const divergences = diffTraces(oracleTrace(warp.name), mutant)
+    expect(
+      divergences.length,
+      'Inverting the gem-efficiency ranking produced ZERO divergences. The net is blind to housing ' +
+        'SELECTION at depth again — the usual cause is 12-warp-u1 no longer unlocking the deep housing ' +
+        'tiers (Collector/Warpstation) whose gem efficiency differs. Fix the corpus, not the test.',
     ).toBeGreaterThan(5)
   }, 180_000)
 })
