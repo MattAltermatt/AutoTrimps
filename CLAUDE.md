@@ -153,6 +153,43 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **🕳️ #105 SHIPPED — ZERO BLIND ROWS IN THE CENSUS, AND THE STALE ORACLE BEHIND THEM** (2026-07-14,
+  `5c14e8ed`) — 1055 tests, all gates green by exit code. Corpus 8 → **10 saves**; oracle **re-pinned v3 → v4**.
+  🎯 **THE ACCEPTANCE CRITERION IS A RED, NOT A NEW SAVE.** `housing-hut-divisor` **0 → 13** (`09-housing-u2`)
+  and `rhypo-invert` **0 → 19** (`10-hypo-u2`). Adding fixtures until the code *executes* is the #98 mistake;
+  a fixture only counts when the census row flips **BLIND → SEEN**.
+  📐 **REACH ≠ SENSITIVITY, demonstrated inside ONE function.** The crude break (always return `"Hut"`) lights
+  up `04-u2-radon` with **592** divergences while **#93's REAL bug diverges by ZERO there** — same function,
+  same save. On 04 only Hut and House are unlocked, so the divisor never moves the argmin. `09` unlocks the
+  tiers whose population gains differ (Hut **3** … Collector **5000**), where buggy picks **Hut** and correct
+  picks **Mansion**. Design it by **measuring the argmin flip first**, not by hoping.
+  🕰️ **THE FROZEN ORACLE *WAS* THE BUG — and this is the finding that generalizes.** v3 is pinned 2026-07-12;
+  **#93/#96/#101 all shipped AFTER it**, so the oracle bundle literally contained
+  `housingBonus = game.buildings.Hut.increase.by` and `bonfire > …slice(-1)`. **Nobody noticed because the
+  corpus never reached either region — the stale oracle and the blind spots are the SAME phenomenon.** It also
+  **INVERTS the census**: against a stale oracle, restoring the bug makes the mutant **AGREE** with the oracle
+  (0 divergences → reported *BLIND*) while the **clean** build is the one that diverges. **A census number is
+  meaningless unless `baseline-zero` is zero.** ⇒ **Whenever you add coverage for a region the corpus never
+  reached, ASK WHETHER THE ORACLE IS STALE THERE FIRST.**
+  🔒 **HOW TO PROVE A RE-PIN LAUNDERS NOTHING** (repeat this every time): `baseline-zero` was green against v3,
+  so current src and the v3 bundle already agree everywhere the old corpus could see ⇒ re-recording 01–08
+  against v4 **must** reproduce them **byte-identically**. It did — **17/17 cmp-clean**, checked before *and*
+  after the new fixtures landed. The re-pin therefore changes behavior **only** where the corpus was blind.
+  🚨 **THE CENSUS WAS REPORTING A DETECTION IT DID NOT MAKE.** Its run loop destructured
+  `{name, seeds, ticks}` — **dropping `settings`** — and called `runTrace` without `atSettings`, while the
+  oracle traces were recorded **with** them. So on any settings-gated fixture **every** mutant "diverged",
+  because it ran a differently-**CONFIGURED** bot, not a differently-behaving one. My `rhypo-invert` red was a
+  **false positive**. **Caught by tripwire, not by reading:** `10-hypo-u2` reported 13 divergences for
+  `canary-buildings-noop` — a mutation to **U1's** `buyBuildings()`, which is **provably inert in U2**
+  (`04-u2-radon` scores it **0**). **When a mutation that CANNOT touch a fixture reports a hit, the harness is
+  broken — not the code.** A net that certifies coverage it never measured is worse than no net.
+  🔩 **A settings-gated feature is untestable by construction without the `settings` hook.** `10` needs THREE
+  seeded settings or it goes quietly blind: `Rhypofarmstack` (default is the `[-1]` *unset* sentinel ⇒
+  `hasBonfireTarget` false ⇒ **the clause under test is inert**, #96), `Requipon` (default **false**, and it
+  gates `RautoEquip()` where the Shield-conserve consumer lives), and `RAutoMaps` (gates `RautoMap()`, where the
+  `Rhypo(reset)` call site is). Also: `make-fixtures.mjs` now takes `--only` — a full regen rewrites all eight
+  committed saves (it is deliberately **not** byte-reproducible), so adding a fixture should cost one trace.
+
 - **🧊 #122 SHIPPED — THE SIM'S METAL ECONOMY WAS FROZEN, AND THE NET WAS BLIND TO GEAR BECAUSE OF IT**
   (2026-07-14, `7fdae3bb`) — 1050 tests, all gates green by exit code.
   🚨 **`checkTriggers()` NEVER FIRED IN ANY SIM RUN, EVER.** `boot.mjs` stubs `window.setTimeout = () => 0`,
