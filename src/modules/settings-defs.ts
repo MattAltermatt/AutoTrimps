@@ -73,9 +73,9 @@ export function initializeAllSettings() {
 
     //Line 2
     createSetting('fastallocate', 'Fast Allocate',tip({
-        what: 'Switches Auto Allocate to a faster, less precise helium-spending algorithm.',
-        how: 'Recommended once your helium is above roughly 500Qa, where the precise algorithm gets slow. Not recommended for smaller amounts of helium.',
-        cannot: 'This box only appears in the U1 (Helium) view, but the same stored value also controls whether U2\'s Radon Auto Allocate uses the fast algorithm — there is no separate control for U2.'
+        what: 'Switches Auto Allocate to a faster, less precise resource-spending algorithm.',
+        how: 'Recommended once your helium is above roughly 500Qa, where the precise algorithm gets slow. Not recommended for smaller amounts.',
+        cannot: 'This is ONE setting shared by both universes: it selects the fast algorithm for U1\'s helium Auto Allocate and for U2\'s radon Auto Allocate alike. Ticking it under either tab changes both.'
     }), 'boolean', false, null, 'Core');
     createSetting('TrapTrimps', 'Trap Trimps',tip({
         what: 'Automatically traps trimps when needed in U1, including building traps.',
@@ -483,6 +483,7 @@ export function initializeAllSettings() {
         what: 'The zone at which Universe 2 Daily shield swapping switches from your first defined heirloom to your second.',
         ignoredWhen: 'Daily Shields is off, or this is 0 or negative (in which case swapping never triggers).',
         how: 'Example: 75 equips DHSh: First below zone 75 and switches to DHSh: Second at zone 75 and above.',
+        cannot: 'DHSh: First and DHSh: Second stay hidden until this is set above 0, because until then neither of them can ever equip.',
     }), 'value', '-1', null, 'Daily');
     createSetting('Rdhs1', 'DHSh: First',tip({
         what: 'The name of the first Shield heirloom to equip during Universe 2 Dailies, used below the zone set in DHSh: Zone.',
@@ -2456,7 +2457,7 @@ export function initializeAllSettings() {
     createSetting('Rhsz', 'HS: Zone',tip({
         what: 'The world zone where U2 Heirloom Swapping switches your shield from <b>HS: First</b> to <b>HS: Second</b>.',
         how: 'Below this zone, HS: First stays equipped; at or above it, HS: Second is equipped instead.',
-        cannot: 'A value of 0 or below does not fall back to always-equipping something &mdash; it disables the shield swap outright, even with Shields turned on.',
+        cannot: 'A value of 0 or below does not fall back to always-equipping something &mdash; it disables the shield swap outright. HS: First and HS: Second stay hidden until this is set above 0, because until then neither of them can ever equip.',
     }), 'value', '-1', null, 'Heirlooms');
     createSetting('Rhs1', 'HS: First',tip({
         what: 'The exact, case-sensitive name of the shield U2 Heirloom Swapping equips before <b>HS: Zone</b> is reached.',
@@ -2508,7 +2509,7 @@ export function initializeAllSettings() {
 
     //Shield Line
     (document.getElementById('raretokeep') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
-    createSetting('keepshields', 'Shields',tip({
+    createSetting('keepshields', 'Show Shield Mods',tip({
         what: 'Shows the per-slot Shield modifier pickers below in the settings panel.',
         cannot: 'This is a display toggle only. Whatever those pickers are set to is scored when ranking Shields for carrying whether this row is shown or hidden &mdash; hiding it does not turn the modifiers off.',
         ignoredWhen: 'The row itself stays hidden unless Auto Heirlooms is on.',
@@ -2551,7 +2552,7 @@ export function initializeAllSettings() {
 
     //Staff Line
     (document.getElementById('slot7modsh') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
-    createSetting('keepstaffs', 'Staffs',tip({
+    createSetting('keepstaffs', 'Show Staff Mods',tip({
         what: 'Shows the per-slot Staff modifier pickers below in the settings panel.',
         cannot: 'This is a display toggle only. Whatever those pickers are set to is scored when ranking Staffs for carrying whether this row is shown or hidden &mdash; hiding it does not turn the modifiers off.',
         ignoredWhen: 'The row itself stays hidden unless Auto Heirlooms is on.',
@@ -2594,9 +2595,10 @@ export function initializeAllSettings() {
 
     //Core Line
     (document.getElementById('slot7modst') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
-    createSetting('keepcores', 'Cores',tip({
+    createSetting('keepcores', 'Show Core Mods',tip({
         what: 'Shows the per-slot Core modifier pickers below in the settings panel.',
-        cannot: 'This is a display toggle only, same as Shields/Staffs above: the picks are scored regardless of whether this row is shown. Unlike Shields and Staffs, this checkbox does not hide itself when Auto Heirlooms is off &mdash; it stays visible either way, though it still has no effect until Auto Heirlooms is on.',
+        cannot: 'This is a display toggle only, same as Shields/Staffs above: the picks are scored regardless of whether this row is shown.',
+        ignoredWhen: 'The row itself stays hidden unless Auto Heirlooms is on.',
     }), 'boolean', false, null, 'Heirlooms');
     createSetting('slot1modcr', 'Cores: Modifier 1',tip({
         what: 'Gives a Core a +5 carrying-score bonus when its Modifier 1 matches this pick.',

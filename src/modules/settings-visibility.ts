@@ -136,7 +136,14 @@ export function updateCustomButtons() {
     !radonon && getPageSetting('amalcoord') == true ? turnOn("amalcoordhd") : turnOff("amalcoordhd");
     !radonon && getPageSetting('amalcoord') == true ? turnOn("amalcoordz") : turnOff("amalcoordz");
     !radonon ? turnOn("AutoAllocatePerks") : turnOff("AutoAllocatePerks");
-    !radonon && getPageSetting('AutoAllocatePerks') == 1 ? turnOn("fastallocate") : turnOff("fastallocate");
+    // #121 §4 — `fastallocate` is read by BOTH universes: perks.ts:307 (U1) and perks.ts:1050, where it
+    // picks U2's radon-allocation algorithm (spendRadon2 vs spendRadon). It used to render only under U1,
+    // so a pure-U2 player had NO control for a setting that governed their run, and a U1+U2 player who
+    // ticked it for helium silently got fast radon allocation too. One key, one control, both universes —
+    // minting an `Rfastallocate` twin would instead reset every existing player's U2 behaviour to the new
+    // id's default at first load (#68).
+    (!radonon && getPageSetting('AutoAllocatePerks') == 1) || (radonon && getPageSetting('RAutoAllocatePerks') == 1)
+        ? turnOn("fastallocate") : turnOff("fastallocate");
     boneShrinePurchased ? turnOn('AutoBoneChargeMax') : turnOff("AutoBoneChargeMax");
     boneShrinePurchased ? turnOn("AutoBoneChargeMaxStartZone") : turnOff("AutoBoneChargeMaxStartZone");
 
@@ -270,8 +277,10 @@ export function updateCustomButtons() {
     radonon && dhson ? turnOn('Rdhsshield') : turnOff('Rdhsshield');
     var dhsshieldon = (getPageSetting('Rdhsshield') == true);
     radonon && dhson && dhsshieldon ? turnOn('Rdhsz') : turnOff('Rdhsz');
-    radonon && dhson && dhsshieldon ? turnOn('Rdhs1') : turnOff('Rdhs1');
-    radonon && dhson && dhsshieldon ? turnOn('Rdhs2') : turnOff('Rdhs2');
+    // #121 §1 — same invariant as the non-Daily twin above (heirlooms.ts:412/415).
+    const dhszSet = getPageSetting('Rdhsz') > 0;
+    radonon && dhson && dhsshieldon && dhszSet ? turnOn('Rdhs1') : turnOff('Rdhs1');
+    radonon && dhson && dhsshieldon && dhszSet ? turnOn('Rdhs2') : turnOff('Rdhs2');
 
     //RDStaffs
     // #79: was `radonon && hson` — the wrong variable. This is the DAILY U2 block; every other line in
@@ -934,8 +943,14 @@ export function updateCustomButtons() {
     radonon && hson ? turnOn('Rhsshield') : turnOff('Rhsshield');
     var hsshieldon = (getPageSetting('Rhsshield') == true);
     radonon && hson && hsshieldon ? turnOn('Rhsz') : turnOff('Rhsz');
-    radonon && hson && hsshieldon ? turnOn('Rhs1') : turnOff('Rhs1');
-    radonon && hson && hsshieldon ? turnOn('Rhs2') : turnOff('Rhs2');
+    // #121 §1 — heirlooms.ts:377/380 equips NEITHER shield unless `Rhsz > 0`, and the default is -1.
+    // The old rule showed HS: First/Second alongside HS: Zone, so a user could fill both pickers, leave
+    // the zone at its default, and get silently nothing. Gating the two pickers on the same predicate the
+    // runtime already enforces makes that user unreachable — the render gate and the runtime gate are one
+    // invariant, and this is the #115 pattern applied where it was actually missing.
+    const hszSet = getPageSetting('Rhsz') > 0;
+    radonon && hson && hsshieldon && hszSet ? turnOn('Rhs1') : turnOff('Rhs1');
+    radonon && hson && hsshieldon && hszSet ? turnOn('Rhs2') : turnOff('Rhs2');
 
     //Staffs
     radonon && hson ? turnOn('Rhsstaff') : turnOff('Rhsstaff');
@@ -953,6 +968,10 @@ export function updateCustomButtons() {
     (autoheirloomenable) ? turnOn('raretokeep') : turnOff('raretokeep');
     (autoheirloomenable) ? turnOn('keepshields') : turnOff('keepshields');
     (autoheirloomenable) ? turnOn('keepstaffs') : turnOff('keepstaffs');
+    // #121 §3 — keepcores was the only one of the three with no entry here, so the Cores checkbox stayed
+    // visible while its Shield/Staff siblings hid themselves. Its pickers were already gated correctly
+    // (keepcoreenable ANDs in autoheirloomenable above); only the checkbox itself was orphaned.
+    (autoheirloomenable) ? turnOn('keepcores') : turnOff('keepcores');
 
     (keepshieldenable) ? turnOn('slot1modsh') : turnOff('slot1modsh');
     (keepshieldenable) ? turnOn('slot2modsh') : turnOff('slot2modsh');

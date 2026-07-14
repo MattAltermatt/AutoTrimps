@@ -14920,7 +14920,7 @@
     !radonon && getPageSetting("amalcoord") == true ? turnOn("amalcoordhd") : turnOff("amalcoordhd");
     !radonon && getPageSetting("amalcoord") == true ? turnOn("amalcoordz") : turnOff("amalcoordz");
     !radonon ? turnOn("AutoAllocatePerks") : turnOff("AutoAllocatePerks");
-    !radonon && getPageSetting("AutoAllocatePerks") == 1 ? turnOn("fastallocate") : turnOff("fastallocate");
+    !radonon && getPageSetting("AutoAllocatePerks") == 1 || radonon && getPageSetting("RAutoAllocatePerks") == 1 ? turnOn("fastallocate") : turnOff("fastallocate");
     boneShrinePurchased ? turnOn("AutoBoneChargeMax") : turnOff("AutoBoneChargeMax");
     boneShrinePurchased ? turnOn("AutoBoneChargeMaxStartZone") : turnOff("AutoBoneChargeMaxStartZone");
     !radonon ? turnOn("AutoPortal") : turnOff("AutoPortal");
@@ -15013,8 +15013,9 @@
     radonon && dhson ? turnOn("Rdhsshield") : turnOff("Rdhsshield");
     var dhsshieldon = getPageSetting("Rdhsshield") == true;
     radonon && dhson && dhsshieldon ? turnOn("Rdhsz") : turnOff("Rdhsz");
-    radonon && dhson && dhsshieldon ? turnOn("Rdhs1") : turnOff("Rdhs1");
-    radonon && dhson && dhsshieldon ? turnOn("Rdhs2") : turnOff("Rdhs2");
+    const dhszSet = getPageSetting("Rdhsz") > 0;
+    radonon && dhson && dhsshieldon && dhszSet ? turnOn("Rdhs1") : turnOff("Rdhs1");
+    radonon && dhson && dhsshieldon && dhszSet ? turnOn("Rdhs2") : turnOff("Rdhs2");
     radonon && dhson ? turnOn("Rdhsstaff") : turnOff("Rdhsstaff");
     var dhsstaffon = getPageSetting("Rdhsstaff") == true;
     radonon && dhson && dhsstaffon ? turnOn("Rdhsworldstaff") : turnOff("Rdhsworldstaff");
@@ -15516,8 +15517,9 @@
     radonon && hson ? turnOn("Rhsshield") : turnOff("Rhsshield");
     var hsshieldon = getPageSetting("Rhsshield") == true;
     radonon && hson && hsshieldon ? turnOn("Rhsz") : turnOff("Rhsz");
-    radonon && hson && hsshieldon ? turnOn("Rhs1") : turnOff("Rhs1");
-    radonon && hson && hsshieldon ? turnOn("Rhs2") : turnOff("Rhs2");
+    const hszSet = getPageSetting("Rhsz") > 0;
+    radonon && hson && hsshieldon && hszSet ? turnOn("Rhs1") : turnOff("Rhs1");
+    radonon && hson && hsshieldon && hszSet ? turnOn("Rhs2") : turnOff("Rhs2");
     radonon && hson ? turnOn("Rhsstaff") : turnOff("Rhsstaff");
     var hsstaffon = getPageSetting("Rhsstaff") == true;
     radonon && hson && hsstaffon ? turnOn("Rhsworldstaff") : turnOff("Rhsworldstaff");
@@ -15531,6 +15533,7 @@
     autoheirloomenable ? turnOn("raretokeep") : turnOff("raretokeep");
     autoheirloomenable ? turnOn("keepshields") : turnOff("keepshields");
     autoheirloomenable ? turnOn("keepstaffs") : turnOff("keepstaffs");
+    autoheirloomenable ? turnOn("keepcores") : turnOff("keepcores");
     keepshieldenable ? turnOn("slot1modsh") : turnOff("slot1modsh");
     keepshieldenable ? turnOn("slot2modsh") : turnOff("slot2modsh");
     keepshieldenable ? turnOn("slot3modsh") : turnOff("slot3modsh");
@@ -15733,9 +15736,9 @@
       how: "<b>Auto Allocate On</b> runs the ratio-based AutoPerks preset to spend your helium (it never touches the Fixed Perks: siphonology, anticipation, meditation, relentlessness, range, agility, bait, trumps, packrat, capable). <b>Dump into Looting II</b> instead spends your available helium to max out the Looting II perk on every portal, ahead of any ratio-based allocation."
     }), "multitoggle", 0, null, "Core");
     createSetting("fastallocate", "Fast Allocate", tip({
-      what: "Switches Auto Allocate to a faster, less precise helium-spending algorithm.",
-      how: "Recommended once your helium is above roughly 500Qa, where the precise algorithm gets slow. Not recommended for smaller amounts of helium.",
-      cannot: "This box only appears in the U1 (Helium) view, but the same stored value also controls whether U2's Radon Auto Allocate uses the fast algorithm \u2014 there is no separate control for U2."
+      what: "Switches Auto Allocate to a faster, less precise resource-spending algorithm.",
+      how: "Recommended once your helium is above roughly 500Qa, where the precise algorithm gets slow. Not recommended for smaller amounts.",
+      cannot: "This is ONE setting shared by both universes: it selects the fast algorithm for U1's helium Auto Allocate and for U2's radon Auto Allocate alike. Ticking it under either tab changes both."
     }), "boolean", false, null, "Core");
     createSetting("TrapTrimps", "Trap Trimps", tip({
       what: "Automatically traps trimps when needed in U1, including building traps.",
@@ -16100,7 +16103,8 @@
     createSetting("Rdhsz", "DHSh: Zone", tip({
       what: "The zone at which Universe 2 Daily shield swapping switches from your first defined heirloom to your second.",
       ignoredWhen: "Daily Shields is off, or this is 0 or negative (in which case swapping never triggers).",
-      how: "Example: 75 equips DHSh: First below zone 75 and switches to DHSh: Second at zone 75 and above."
+      how: "Example: 75 equips DHSh: First below zone 75 and switches to DHSh: Second at zone 75 and above.",
+      cannot: "DHSh: First and DHSh: Second stay hidden until this is set above 0, because until then neither of them can ever equip."
     }), "value", "-1", null, "Daily");
     createSetting("Rdhs1", "DHSh: First", tip({
       what: "The name of the first Shield heirloom to equip during Universe 2 Dailies, used below the zone set in DHSh: Zone."
@@ -17842,7 +17846,7 @@
     createSetting("Rhsz", "HS: Zone", tip({
       what: "The world zone where U2 Heirloom Swapping switches your shield from <b>HS: First</b> to <b>HS: Second</b>.",
       how: "Below this zone, HS: First stays equipped; at or above it, HS: Second is equipped instead.",
-      cannot: "A value of 0 or below does not fall back to always-equipping something &mdash; it disables the shield swap outright, even with Shields turned on."
+      cannot: "A value of 0 or below does not fall back to always-equipping something &mdash; it disables the shield swap outright. HS: First and HS: Second stay hidden until this is set above 0, because until then neither of them can ever equip."
     }), "value", "-1", null, "Heirlooms");
     createSetting("Rhs1", "HS: First", tip({
       what: "The exact, case-sensitive name of the shield U2 Heirloom Swapping equips before <b>HS: Zone</b> is reached.",
@@ -17888,7 +17892,7 @@
       ignoredWhen: "Has no effect unless Auto Heirlooms is on and Kept Type is not None."
     }), "dropdown", "Any", ["Any", "Common", "Uncommon", "Rare", "Epic", "Legendary", "Magnificent", "Ethereal", "Magmatic", "Plagued", "Radiating", "Hazardous", "Enigmatic", "Mutated"], "Heirlooms");
     document.getElementById("raretokeep").parentNode.insertAdjacentHTML("afterend", "<br>");
-    createSetting("keepshields", "Shields", tip({
+    createSetting("keepshields", "Show Shield Mods", tip({
       what: "Shows the per-slot Shield modifier pickers below in the settings panel.",
       cannot: "This is a display toggle only. Whatever those pickers are set to is scored when ranking Shields for carrying whether this row is shown or hidden &mdash; hiding it does not turn the modifiers off.",
       ignoredWhen: "The row itself stays hidden unless Auto Heirlooms is on."
@@ -17929,7 +17933,7 @@
       cannot: "Still scored even while its picker row is hidden (Shields unticked above) &mdash; hiding the row does not turn this pick off."
     }), "dropdown", "empty", ["empty", "playerEfficiency", "trainerEfficiency", "storageSize", "breedSpeed", "trimpHealth", "trimpAttack", "trimpBlock", "critDamage", "critChance", "voidMaps", "plaguebringer", "prismatic", "gammaBurst", "inequality", "doubleCrit"], "Heirlooms");
     document.getElementById("slot7modsh").parentNode.insertAdjacentHTML("afterend", "<br>");
-    createSetting("keepstaffs", "Staffs", tip({
+    createSetting("keepstaffs", "Show Staff Mods", tip({
       what: "Shows the per-slot Staff modifier pickers below in the settings panel.",
       cannot: "This is a display toggle only. Whatever those pickers are set to is scored when ranking Staffs for carrying whether this row is shown or hidden &mdash; hiding it does not turn the modifiers off.",
       ignoredWhen: "The row itself stays hidden unless Auto Heirlooms is on."
@@ -17970,9 +17974,10 @@
       cannot: "Still scored even while its picker row is hidden (Staffs unticked above) &mdash; hiding the row does not turn this pick off."
     }), "dropdown", "empty", ["empty", "metalDrop", "foodDrop", "woodDrop", "gemsDrop", "fragmentsDrop", "MinerSpeed", "FarmerSpeed", "LumberjackSpeed", "DragimpSpeed", "ExplorerSpeed", "ScientistSpeed", "FluffyExp", "ParityPower", "SeedDrop"], "Heirlooms");
     document.getElementById("slot7modst").parentNode.insertAdjacentHTML("afterend", "<br>");
-    createSetting("keepcores", "Cores", tip({
+    createSetting("keepcores", "Show Core Mods", tip({
       what: "Shows the per-slot Core modifier pickers below in the settings panel.",
-      cannot: "This is a display toggle only, same as Shields/Staffs above: the picks are scored regardless of whether this row is shown. Unlike Shields and Staffs, this checkbox does not hide itself when Auto Heirlooms is off &mdash; it stays visible either way, though it still has no effect until Auto Heirlooms is on."
+      cannot: "This is a display toggle only, same as Shields/Staffs above: the picks are scored regardless of whether this row is shown.",
+      ignoredWhen: "The row itself stays hidden unless Auto Heirlooms is on."
     }), "boolean", false, null, "Heirlooms");
     createSetting("slot1modcr", "Cores: Modifier 1", tip({
       what: "Gives a Core a +5 carrying-score bonus when its Modifier 1 matches this pick.",
