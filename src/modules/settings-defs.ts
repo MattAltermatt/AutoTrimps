@@ -342,8 +342,8 @@ export function initializeAllSettings() {
     //Shrine - U1 (Daily)
     (document.getElementById('dBWraidingmax') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Hdshrine', ['Daily AutoShrine Off', 'Daily AutoShrine On', 'DAS: Normal'],tip({
-        what: 'Turns on automatic Bone Shrine charge use during Dailies, using the zone/cell/amount list configured in Daily AutoShrine Settings.',
-        how: 'Click <b>Daily AutoShrine Settings</b> to edit the list.',
+        what: 'Spends Bone Shrine charges automatically while you are on a Daily.',
+        how: '<b>Daily AutoShrine On</b> uses the Daily zone/cell/amount list — click <b>Daily AutoShrine Settings</b> to edit it.<br><br><b>DAS: Normal</b> uses your ordinary (non-daily) <b>AutoShrine</b> settings from the Maps tab instead, so you do not have to configure a second list. Your normal AutoShrine must be switched on for it to do anything.',
     }), 'multitoggle', 0, null, 'Daily');
     createSetting('Hdshrinemaz', 'Daily AutoShrine Settings',tip({
         what: 'Opens the Daily AutoShrine settings popup, where you configure the zone/cell/amount list Daily AutoShrine uses.',
@@ -513,8 +513,8 @@ export function initializeAllSettings() {
     //Shrine - U2 (Daily)
     (document.getElementById('Rdhstributestaff') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('Rdshrine', ['Daily AutoShrine Off', 'Daily AutoShrine On', 'DAS: Normal'],tip({
-        what: 'Turns on automatic Bone Shrine charge use during Universe 2 Dailies, using the zone/cell/amount list configured in Daily AutoShrine Settings.',
-        how: 'Click <b>Daily AutoShrine Settings</b> to edit the list.',
+        what: 'Spends Bone Shrine charges automatically while you are on a Universe 2 Daily.',
+        how: '<b>Daily AutoShrine On</b> uses the Daily zone/cell/amount list — click <b>Daily AutoShrine Settings</b> to edit it.<br><br><b>DAS: Normal</b> uses your ordinary (non-daily) <b>AutoShrine</b> settings instead, so you do not have to configure a second list. Your normal AutoShrine must be switched on for it to do anything.',
     }), 'multitoggle', 0, null, 'Daily');
     createSetting('Rdshrinemaz', 'Daily AutoShrine Settings',tip({
         what: 'Opens the Daily AutoShrine settings popup, where you configure the zone/cell/amount list Daily AutoShrine uses.',

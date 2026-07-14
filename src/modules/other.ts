@@ -578,8 +578,7 @@ export function Rmanageequality() {
 
 export function autoshrine() {
     var universe: any;
-    var mode = game.global.challengeActive == "Daily" ? "Daily" : "Standard";
-  
+
     switch (game.global.universe) {
       case 1:
         universe = "Helium";
@@ -588,6 +587,24 @@ export function autoshrine() {
         universe = "Radon";
         break;
     }
+
+    // #114 — "DAS: Normal" (option 2) used to do NOTHING.
+    //
+    // `mode` was `challengeActive == "Daily" ? "Daily" : "Standard"` and this function never looked at
+    // Hdshrine/Rdshrine's value at all, so option 1 ("Daily AutoShrine On") and option 2 ("DAS: Normal")
+    // ran identically: on a Daily, both read the Daily-specific shrine ids. The dispatcher
+    // (AutoTrimps2.js:258) calls autoshrine() for `== 1 || == 2` alike, which is why nothing looked wrong.
+    //
+    // What the label promises is the choice this line was making blindly: on a Daily, use my NORMAL
+    // (non-daily) shrine settings instead of the Daily set. Its sibling multitoggles (Praiding, Time
+    // Farm) already implement exactly this redirect at their call sites. Now so does AutoShrine.
+    // NB compare the universe NUMBER, not the derived "Helium"/"Radon" string: the settings-reverse net
+    // resolves a variable back to the first string literal in its initializer, so
+    // `universe === "Helium" ? 'Hdshrine' : …` makes it believe the id being read is 'Helium'. Reading
+    // game.global.universe directly is both clearer and keeps the net's resolver honest.
+    const dailyCore = game.global.universe === 1 ? 'Hdshrine' : 'Rdshrine';
+    const useNormalOnDaily = getPageSetting(dailyCore) == 2;
+    var mode = (game.global.challengeActive == "Daily" && !useNormalOnDaily) ? "Daily" : "Standard";
 
     var shrineSettings: any = {
       Helium: {
