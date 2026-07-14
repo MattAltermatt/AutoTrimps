@@ -153,6 +153,26 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **🚪 #127 SHIPPED — THE NET CAN SEE AT *PORTAL* NOW** (2026-07-14, `709e8da6`) — 1066 tests, all gates green.
+  `doPortal()` **RESETS THE RUN** and it had **never once executed in a sim run** — AT's single
+  highest-blast-radius action was wholly unexercised. Corpus is **11 saves**; census `portal-noop` → **510
+  divergences** on `11-portal-u1` alone. **Every census row is SEEN.**
+  🧩 **TWO INDEPENDENT CAUSES — DO NOT CONFLATE THEM.** (1) `autoPortal()` returns unless
+  `game.global.portalActive` (no save had it) **and** `AutoPortal` defaults to **"Off"** ⇒ dark before timers
+  even matter. (2) In **"Helium Per Hour"** mode the portal is **SCHEDULED** (`portal.ts:45`, timeout+100 =
+  **5100ms**) ⇒ the old `setTimeout` stub swallowed it. **"Custom" mode calls `doPortal()` SYNCHRONOUSLY** and
+  never depended on timers — measured **both ways**. He/Hr is the fixture's mode *because* it is the one the
+  stub killed, which makes it the end-to-end exercise of #126's queue.
+  📈 **THE FIXTURE NEEDS A *HISTORY*, NOT JUST A STATE.** He/Hr portals when the current rate falls below the
+  **run's best** by more than the buffer — and a synthetic save has **neither stat**, so `0 < 0` is false and it
+  **never arms**. Seeding `bestHeliumHourThisRun` is what a real mid-run player carries; `evaluate()` only ever
+  **RAISES** `storedValue` (config.js:6378), so it survives the load. *Reach ≠ sensitivity, third time.*
+  ⏳ **GENERATE IT AT `ticks: 0`.** Play it forward at all and AT **portals during generation**, committing the
+  **post-portal** state — the exact thing the fixture exists to capture the approach to.
+  🕵️ **YOU CANNOT SPY ON A CONVERTED MODULE'S INTERNAL CALLS BY REASSIGNING THE GLOBAL.** `w.doPortal = spy`
+  counted **0** while the portal demonstrably fired — `autoPortal()` calls it as a module-internal reference,
+  not through `window`. Assert on **state** (`totalPortals`, `world`), not on a global spy.
+
 - **⏱️ #126 SHIPPED — THE SIM HAS REAL TIMERS NOW** (2026-07-14, `928e84c9`) — 1062 tests, all gates green.
   The `setTimeout = () => 0` stub's **third** victim, after #66 (`usingRealTimeOffline`) and #122
   (`checkTriggers`). On a **stacked** void map the game grants one heirloom **per stack** and schedules each
