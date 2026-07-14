@@ -143,6 +143,49 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **🐛 THE TOOLTIP AUDIT'S NINE BUGS — #111/#112/#113/#114/#116/#117/#118/#119/#120 SHIPPED** (2026-07-13) —
+  1046 tests, deploys green. #115 closed as **not-a-bug**. Every fix is mutation-checked; none rest on a green
+  L0 (see below).
+  📖 **A TOOLTIP THAT DISAGREES WITH THE CODE IS EVIDENCE *ABOUT THE CODE*.** Asking "is this sentence true?"
+  of 574 descriptions found nine real defects. The recurring shape is a **sentinel whose truthiness
+  contradicts its documented meaning**: `GymWall` defaults to **-1** and `buildings.ts` tested
+  `if (getPageSetting('GymWall'))` — **-1 is TRUTHY**, so the "disabled" default silently clamped Gym buys to
+  1-at-a-time and ate the DecaBuild bonus **for every default user**. Its mirror: `MaxMapBonusAfterZone = 0`
+  means "always" and **0 is FALSY**, so the one value documented as "use it always" disabled the feature.
+  Also: `Rexterminate*` compared `"Extermination"` (the game's id is **`Exterminate`**) ⇒ dead since it
+  shipped; `SpireBreedTimer` captured `var prespiretimer` under `spireActive` and restored it under
+  `!spireActive` — mutually exclusive branches in a per-tick function ⇒ it wrote **`undefined`** over the
+  player's GA timer on every Spire exit; `"DAS: Normal"` never read its own value; `"Auto **No** Spire"` fired
+  **only inside** a Spire.
+  🕳️ **THE L0 NET'S GREEN MEANT NOTHING FOR HALF OF THESE — CHECK WHAT THE TRACES RECORD.** The traces log
+  `buyBuilding("Gym", …)` but **not `game.global.buyAmt`**, which is the only thing #112 changes; and the
+  corpus has no DecaBuild reward, so the bug **cannot even fire** there. ATGA is worse: **zero traces touch
+  `Geneticist`**. `baseline-zero` is green before and after. Evidence was hand-built and each test
+  mutation-checked by restoring the bug (`expected 1 to be 10`; `expected undefined to be 42`).
+  👁️ **READ `settings-visibility.ts` BEFORE JUDGING A SETTING — the runtime gate and the render gate are often
+  ONE INVARIANT EXPRESSED TWICE.** This reversed me **twice**. **#115**: I claimed `ATGA2timer` was a silent
+  trap (configure a Spire override, get nothing) — but `settings-visibility.ts:592` `turnOff()`s **all ten**
+  overrides unless the base timer is positive, *every tick*. The trapped user **cannot exist**; verified live,
+  overrides are **0/5 visible**. The gate is also semantically load-bearing (`var target` has no other
+  initialiser), so "fixing" it would mean **inventing a fallback breed-timer** = sacrosanct tuning. **#117**:
+  `turnwson` reads as dead (zero reads — true) but renders **only while Windstacking is OFF**, to explain why
+  the tab is empty. It is **signage**, not a dead control. A reference count answers "is it read?", never
+  "why does this control exist?"
+  🕸️ **TWO NETS HAD HOLES, AND THE AUDIT FOUND THEM (#120).** `settings-wired` asked *"is this id quoted
+  ANYWHERE?"* — which a `turnOn("turnwson")` mention satisfies, **and so do the two frozen
+  `serializeSettings` preset blobs in `utils.ts`**, JSON strings naming ~200 setting ids sitting **inside the
+  net's own corpus**. Every id they name auto-passed the check meant to prove it was wired. It was written
+  loosely on purpose (~50 settings are read via *dynamically constructed* ids — `getPageSetting('Max' + b)`,
+  `getPageSetting(shrineSettings[u][m].zone)`), so the fix is to **strip the constructs that fake a read** and
+  resolve the dynamic families explicitly, not to tighten the regex. `dom-ids` walked only
+  `byId`/`getElementById` — but `turnOn`/`turnOff` are a **one-call indirection onto the same sink**
+  (`toggleElem` → `getElementById`, returning on null: the exact silent no-op the net exists to catch).
+  Making them sinks **immediately found 7 more dead toggles**. ⚠️ A net that reports a false positive gets
+  muted, so ids the fork mints at runtime (`el.id = 'hiddenBreedTimer'`) are now a **derived** id source.
+  🎭 **THE FALSIFIER EARNED ITS SEAT.** A 3-agent panel on #115 (advocate-for / advocate-against / falsifier)
+  landed **2-1 against my own recommendation**, and the lone dissenter was the only one that never opened
+  `settings-visibility.ts`. Never hand a panel your premise as fact.
+
 - **📖 #107 — TOOLTIPS ARE COMPOSED RECORDS NOW, AND THE DRIFT IS DEAD AT THE SEAM** (2026-07-13) — all 574
   descriptions rewritten against the code that implements them; 1022 tests green; persistence contract proven
   byte-identical.
@@ -385,11 +428,15 @@ by CI on every push — never committed).
   gate, because `tests/sim/guard.ts` skipped 11 suites whenever the clone was absent (i.e. always, on CI).
   `guard.ts` no longer exists and the gate is verified in both directions. **#68–#87 are unblocked and will
   now land behind a net that actually runs.**
-  🏛️ **#87 — `mainLoop` has NO error boundary** (`grep "try {\|catch" legacy/AutoTrimps2.js` → nothing; bare
-  `setInterval` over ~30 automations in fixed tick order). Any throw silently skips **everything ordered after
-  it, every tick, forever**. This *amplifies* every crash-class bug (#77 `ab.ts` `equips[0][1]`, #78
-  `resetModuleVars` ReferenceError, #79 `portal.ts` bare `loom`) from a local crash into a permanent cascading
-  outage. Fix LAST and ALONE — it changes emitted JS and moves the L0 traces (behavioral, not mechanism).
+  ✅ **#87 — SHIPPED (`d99702ca`). The mainLoop HAS an error boundary.** 99 `atGuard(...)` sites in
+  `legacy/AutoTrimps2.js`; `src/modules/guard.ts` catches, throttles and reports, and
+  `tests/sim/guard-silence.test.ts` demands the whole L0 corpus run with **zero** caught errors. A throw
+  inside one automation is contained to that automation.
+  ⚠️ **This bullet used to read "mainLoop has NO error boundary … fix LAST and ALONE", and on 2026-07-13 I
+  quoted that stale text as a live risk in TWO design analyses (#115, #119)** — pricing changes against a
+  "permanent cascading outage" that cannot happen. A subagent caught it, not me. **Do not argue from the
+  cascade.** When a `Recent decisions` bullet describes an OPEN problem, check whether it has since shipped
+  before you reason from it.
   🕸️ **Systemic classes (#68–#74), each `needs-net`:** 28 phantom `getPageSetting` ids (dead guards; ⚠️ do NOT
   fix by defining them — `MaxTox`'s phantom is *accidentally protective*); ~34 booleans `createSetting`'d with
   a **string** default (`'false'` is truthy → behavior differs per reader); ambient state read-but-never-written
