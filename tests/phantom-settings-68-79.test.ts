@@ -62,6 +62,8 @@ describe('#79 — (R)doPortal dispatches the heirloom equip on Daily, and no lon
       'viewPortalUpgrades', 'numTab', 'buyPortalUpgrade', 'c2runner', 'selectChallenge',
       'checkCompleteDailies', 'getDailyChallenge', 'getDailyTimeString', 'swapPortalUniverse',
       'activatePortal', 'RactivatePortal', 'resetVars', 'RresetVars',
+      // #124 — both auto-portal paths now write a verified pre-portal backup before firing.
+      'writePrePortalBackup',
     ]) {
       ;(globalThis as any)[name] = vi.fn()
     }

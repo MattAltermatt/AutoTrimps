@@ -57,6 +57,10 @@ declare global {
   function cancelPortal(...args: any[]): void
   function portalClicked(...args: any[]): void
   function activatePortal(...args: any[]): void
+  /** main.js:53. `save(true)` RETURNS the save string without touching localStorage (#124). */
+  function save(exportThis?: boolean, fromManual?: boolean): string
+  /** updates.js:5098 — the game's own message log. */
+  function message(messageString: string, type: string, lootIcon?: string, extraClass?: string, extraTag?: string, htmlPrefix?: string, extraStyle?: string): void
   function swapPortalUniverse(...args: any[]): void
   function checkCompleteDailies(...args: any[]): void
   function getDailyTimeString(...args: any[]): any

@@ -41,6 +41,9 @@ import * as mapfunctions from './modules/mapfunctions'
 // globals have no placeholder-race, so import position is unconstrained; kept adjacent for readability.
 import * as mapfunctionsAmp from './modules/mapfunctions-amp'
 import * as portal from './modules/portal'
+// #124 — "Backup & Portal". Exported through the bridge because the button's onclick attribute calls
+// backupAndPortal() as a bare global, exactly as the game's own portal buttons call activateClicked().
+import * as saveBackup from './modules/save-backup'
 import * as importExport from './modules/import-export'
 import * as query from './modules/query'
 import * as other from './modules/other'
@@ -57,4 +60,4 @@ import * as settingsDefs from './modules/settings-defs'
 // call resolves. Its module body only DEFINES the function, so bridge-eval order is irrelevant.
 import * as settingsBoot from './modules/settings-boot'
 
-Object.assign(globalThis, { ...utils, ...guard, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...mapfunctionsAmp, ...portal, ...importExport, ...query, ...other, ...otherPraiding, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs, ...settingsBoot })
+Object.assign(globalThis, { ...utils, ...guard, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...mapfunctionsAmp, ...portal, ...saveBackup, ...importExport, ...query, ...other, ...otherPraiding, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs, ...settingsBoot })

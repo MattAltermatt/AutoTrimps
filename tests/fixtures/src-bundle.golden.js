@@ -158,7 +158,7 @@
     if (autoTrimpSettings["ATversion"] === void 0) autoTrimpSettings["ATversion"] = ATversion;
     safeSetItems2("autoTrimpSettings", serializeSettings2());
   }
-  function debug2(message, type, lootIcon) {
+  function debug2(message3, type, lootIcon) {
     var general = getPageSetting2("SpamGeneral");
     var upgrades = getPageSetting2("SpamUpgrades");
     var equips = getPageSetting2("SpamEquipment");
@@ -210,8 +210,8 @@
     }
     if (output) {
       if (enableDebug)
-        console.log(timeStamp() + " " + message);
-      message2(message, "AutoTrimps", lootIcon, type);
+        console.log(timeStamp() + " " + message3);
+      message2(message3, "AutoTrimps", lootIcon, type);
     }
   }
   function setTitle() {
@@ -292,8 +292,8 @@
       fn();
     } catch (e) {
       const first = !atGuardErrors[name];
-      const message = e && e.message || String(e);
-      if (first) atGuardErrors[name] = { count: 1, message, stack: e && e.stack };
+      const message3 = e && e.message || String(e);
+      if (first) atGuardErrors[name] = { count: 1, message: message3, stack: e && e.stack };
       else atGuardErrors[name].count++;
       if (!first) return;
       try {
@@ -302,7 +302,7 @@
       }
       try {
         debug(
-          `AutoTrimps: ${name}() threw and was skipped \u2014 ${message}. The rest of the tick still ran; this automation is disabled until the error is fixed (further failures are silenced).`,
+          `AutoTrimps: ${name}() threw and was skipped \u2014 ${message3}. The rest of the tick still ran; this automation is disabled until the error is fixed (further failures are silenced).`,
           "other"
         );
       } catch {
@@ -10498,6 +10498,7 @@
       buyPortalUpgrade("Looting_II");
       debug2("Second Stage: Bought Max Looting II");
     }
+    writePrePortalBackup();
     activatePortal();
     lastHeliumZone = 0;
     zonePostpone = 0;
@@ -10719,9 +10720,141 @@
       }
     }
     RresetVars();
+    writePrePortalBackup();
     activatePortal();
     lastRadonZone = 0;
     RresetVars();
+  }
+
+  // src/modules/save-backup.ts
+  var save_backup_exports = {};
+  __export(save_backup_exports, {
+    backupAndPortal: () => backupAndPortal,
+    backupFilename: () => backupFilename,
+    downloadLatestBackup: () => downloadLatestBackup,
+    downloadPrePortalBackup: () => downloadPrePortalBackup,
+    downloadSaveFile: () => downloadSaveFile,
+    listPrePortalBackups: () => listPrePortalBackups,
+    mountBackupPortalButton: () => mountBackupPortalButton,
+    writePrePortalBackup: () => writePrePortalBackup2
+  });
+  var RING_SIZE = 3;
+  var KEY = (i) => `atPrePortalBackup.${i}`;
+  function writePrePortalBackup2() {
+    let payload;
+    try {
+      const record = {
+        save: save(true),
+        universe: game.global.universe,
+        world: game.global.world,
+        ts: (/* @__PURE__ */ new Date()).getTime()
+      };
+      payload = JSON.stringify(record);
+    } catch (e) {
+      debug("Pre-portal backup FAILED to serialize: " + e, "portal");
+      return false;
+    }
+    for (let i = RING_SIZE - 1; i > 0; i--) {
+      const prev = localStorage.getItem(KEY(i - 1));
+      if (prev !== null) {
+        try {
+          localStorage.setItem(KEY(i), prev);
+        } catch {
+        }
+      }
+    }
+    try {
+      localStorage.setItem(KEY(0), payload);
+    } catch (e) {
+      for (let i = 1; i < RING_SIZE; i++) localStorage.removeItem(KEY(i));
+      try {
+        localStorage.setItem(KEY(0), payload);
+      } catch {
+        debug("Pre-portal backup FAILED to store (localStorage full?): " + e, "portal");
+        return false;
+      }
+    }
+    return localStorage.getItem(KEY(0)) === payload;
+  }
+  function listPrePortalBackups() {
+    const out = [];
+    for (let i = 0; i < RING_SIZE; i++) {
+      const raw = localStorage.getItem(KEY(i));
+      if (raw === null) continue;
+      try {
+        out.push(JSON.parse(raw));
+      } catch {
+      }
+    }
+    return out;
+  }
+  function backupFilename(b) {
+    const stamp = new Date(b.ts).toISOString().slice(0, 16).replace(/[-:]/g, "").replace("T", "-");
+    return `trimps-u${b.universe}-z${b.world}-${stamp}.txt`;
+  }
+  function downloadSaveFile(text, filename) {
+    try {
+      const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 6e4);
+    } catch (e) {
+      debug("Save file download failed (the localStorage backup is unaffected): " + e, "portal");
+    }
+  }
+  function downloadPrePortalBackup(index) {
+    const b = listPrePortalBackups()[index];
+    if (!b) return;
+    downloadSaveFile(b.save, backupFilename(b));
+  }
+  function downloadLatestBackup() {
+    const backups = listPrePortalBackups();
+    if (backups.length === 0) {
+      message("No pre-portal backup stored yet. One is written every time you portal from here.", "Story", "*question3", "");
+      return;
+    }
+    const b = backups[0];
+    downloadPrePortalBackup(0);
+    message("Downloading your pre-portal backup from Universe " + b.universe + ", zone " + b.world + ".", "Story", "*download3", "");
+  }
+  function backupAndPortal() {
+    if (!writePrePortalBackup2()) {
+      message("Backup FAILED \u2014 the portal was NOT fired. Your run is untouched. Export your save manually before portaling.", "Story", "*exclamation-triangle", "corruptionMessage");
+      return;
+    }
+    const latest = listPrePortalBackups()[0];
+    if (latest) downloadSaveFile(latest.save, backupFilename(latest));
+    activateClicked();
+  }
+  function mountBackupPortalButton() {
+    const container = document.getElementById("portalBtnContainer");
+    const vanilla = document.getElementById("activatePortalBtn");
+    if (!container || !vanilla || document.getElementById("atBackupPortalBtn")) return;
+    const btn = document.createElement("div");
+    btn.id = "atBackupPortalBtn";
+    btn.className = "btn btn-success inPortalBtn";
+    btn.style.fontSize = "1.3em";
+    btn.style.fontWeight = "bold";
+    btn.innerHTML = "Backup &amp; Portal";
+    btn.setAttribute("onclick", "backupAndPortal()");
+    btn.setAttribute("onmouseover", "tooltip('Backup &amp; Portal', 'customText', event, 'Saves a backup inside your browser, downloads a copy of your save as a file, and THEN portals. If the in-browser backup cannot be written, the portal is cancelled instead.&lt;br/&gt;&lt;br/&gt;The downloaded file is best-effort: a browser gives a page no way to confirm a download finished, so this does not promise a file reached your disk. The in-browser backup is the one that is verified.')");
+    btn.setAttribute("onmouseout", "tooltip('hide')");
+    vanilla.style.fontSize = "0.8em";
+    container.insertBefore(btn, vanilla);
+    const restore = document.createElement("div");
+    restore.id = "atRestoreBackupBtn";
+    restore.className = "btn btn-info inPortalBtn";
+    restore.style.fontSize = "0.8em";
+    restore.innerHTML = "Download Last Backup";
+    restore.setAttribute("onclick", "downloadLatestBackup()");
+    restore.setAttribute("onmouseover", "tooltip('Download Last Backup', 'customText', event, 'Re-downloads the most recent pre-portal backup stored in your browser. AutoTrimps keeps the last 3, and writes one before every portal \u2014 including the ones it fires for you automatically.')");
+    restore.setAttribute("onmouseout", "tooltip('hide')");
+    container.appendChild(restore);
   }
 
   // src/modules/import-export.ts
@@ -18340,7 +18473,7 @@
   }
 
   // src/legacy-bridge.ts
-  Object.assign(globalThis, { ...utils_exports, ...guard_exports, ...time_exports, ...buystate_exports, ...dynprestige_exports, ...breedtimer_exports, ...nature_exports, ...magmite_exports, ...calc_exports, ...equipment_exports, ...buildings_exports, ...jobs_exports, ...upgrades_exports, ...gather_exports, ...heirlooms_exports, ...fight_exports, ...scryer_exports, ...ab_exports, ...MAZ_exports, ...stance_exports, ...maps_exports, ...mapfunctions_exports, ...mapfunctions_amp_exports, ...portal_exports, ...import_export_exports, ...query_exports, ...other_exports, ...other_praiding_exports, ...settings_engine_exports, ...settings_menu_exports, ...settings_visibility_exports, ...settings_defs_exports, ...settings_boot_exports });
+  Object.assign(globalThis, { ...utils_exports, ...guard_exports, ...time_exports, ...buystate_exports, ...dynprestige_exports, ...breedtimer_exports, ...nature_exports, ...magmite_exports, ...calc_exports, ...equipment_exports, ...buildings_exports, ...jobs_exports, ...upgrades_exports, ...gather_exports, ...heirlooms_exports, ...fight_exports, ...scryer_exports, ...ab_exports, ...MAZ_exports, ...stance_exports, ...maps_exports, ...mapfunctions_exports, ...mapfunctions_amp_exports, ...portal_exports, ...save_backup_exports, ...import_export_exports, ...query_exports, ...other_exports, ...other_praiding_exports, ...settings_engine_exports, ...settings_menu_exports, ...settings_visibility_exports, ...settings_defs_exports, ...settings_boot_exports });
 
   // src/modules/perks.ts
   globalThis.AutoPerks = {};

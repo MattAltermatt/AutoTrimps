@@ -72,6 +72,14 @@ declare global {
   // Free-id reads by settings-visibility.ts (#31), resolved via the bridge.
   var debug: typeof import('../modules/utils').debug
   var findOutCurrentPortalLevel: typeof import('../modules/portal').findOutCurrentPortalLevel
+  // #124 — save-backup.ts. writePrePortalBackup is read as a free id by portal.ts (both auto-portal
+  // paths); backupAndPortal + mountBackupPortalButton are called by name from DOM onclick attributes
+  // and from AutoTrimps2.js, so they resolve through the bridge like every other legacy-facing export.
+  var writePrePortalBackup: typeof import('../modules/save-backup').writePrePortalBackup
+  var backupAndPortal: typeof import('../modules/save-backup').backupAndPortal
+  var mountBackupPortalButton: typeof import('../modules/save-backup').mountBackupPortalButton
+  var downloadPrePortalBackup: typeof import('../modules/save-backup').downloadPrePortalBackup
+  var downloadLatestBackup: typeof import('../modules/save-backup').downloadLatestBackup
   // Settings accessors (utils.ts, converted) + GRAPHSETTINGS store (Graphs.js) read as
   // free-ids by settings-menu.ts (#31), resolved via the bridge / still-legacy Graphs.js.
   var getPageSetting: typeof import('../modules/utils').getPageSetting

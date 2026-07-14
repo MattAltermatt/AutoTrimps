@@ -312,6 +312,13 @@ export function doPortal(challenge?: any) {
 	buyPortalUpgrade('Looting_II');
 	debug('Second Stage: Bought Max Looting II');
     }
+    // #124 — an auto-portal is the portal most likely to hurt: it fires unattended, possibly at 3am, and
+    // it is irreversible. It gets the verified in-browser backup unconditionally (it is synchronous, it
+    // cannot be cancelled and it costs nothing) but NEVER the file download — a download with no user
+    // gesture trips Chrome's automatic-downloads permission, and once denied it fails SILENTLY forever,
+    // which is exactly the false confidence this feature exists to avoid. Deliberately not gated: unlike
+    // the manual button, refusing to portal here would strand an unattended run.
+    writePrePortalBackup();
     activatePortal();
     lastHeliumZone = 0; zonePostpone = 0;
 }
@@ -565,6 +572,8 @@ export function RdoPortal(challenge?: any) {
 	
     }
     RresetVars();
+    // #124 — same as the U1 auto-portal above: verified in-browser backup, never a silent download.
+    writePrePortalBackup();
     activatePortal();
     lastRadonZone = 0;
     RresetVars();

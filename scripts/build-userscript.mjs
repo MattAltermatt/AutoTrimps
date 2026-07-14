@@ -127,9 +127,12 @@ export function deLoaderize(src) {
   // values — getPageSetting returned undefined for all settings and Praiding threw every tick (#22).
   // This mirrors legacy's order: loadPageVariables() → ATscriptLoad('', 'SettingsGUI') (which ran
   // the same boot). bootSettingsUI is published globally by src/legacy-bridge.ts.
+  // #124: mountBackupPortalButton() belongs HERE, not in legacy/AutoTrimps2.js. This transform replaces
+  // that function's ENTIRE body, so a call added to the legacy source is silently deleted from the
+  // shipped bundle — the button would simply never mount. (The reachability net caught exactly that.)
   src = src.replace(
     /function initializeAutoTrimps\(\) \{[\s\S]*?debug\('AutoTrimps - Zek Fork Loaded!', '\*spinner3'\);\s*\}/,
-    "function initializeAutoTrimps() {\n    loadPageVariables();\n    bootSettingsUI();\n    debug('AutoTrimps ' + ATversion + ' Loaded!', '*spinner3');\n}"
+    "function initializeAutoTrimps() {\n    loadPageVariables();\n    bootSettingsUI();\n    mountBackupPortalButton();\n    debug('AutoTrimps ' + ATversion + ' Loaded!', '*spinner3');\n}"
   )
   return src
 }
