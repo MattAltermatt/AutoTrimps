@@ -17,12 +17,10 @@ export const MANIFEST = [
   //    (Phase UI, #20); nuloom relocated to heirlooms.ts. Published via src/legacy-bridge.ts;
   //    load-time self-invocations run from src/modules/settings-boot.ts (imported last in main.ts).
   // Published via src/legacy-bridge.ts (+ side-effect imports in main.ts for perks/fight-info/
-  // performance/settings-boot). Only AutoTrimps2.js + Graphs.js remain legacy below.
-  // NOTE: highcharts.js is intentionally NOT bundled — Graphs.js injects Highcharts
-  // itself from the CDN at runtime (Graphs.js:177), exactly as the original did.
-  // Bundling our local copy too caused a double-define (Highcharts error #16).
-  // Vendoring Highcharts self-contained (and neutering that CDN inject) is deferred
-  // to the later Graphs modernization phase.
+  // performance/settings-boot). Only AutoTrimps2.js remains legacy below (see #133).
+  // NOTE: Graphs.js is now src/modules/graphs/* — it CDN-injects Apache ECharts (pinned + SRI)
+  // from render.ts, so it is NOT bundled either. legacy/highcharts.js is dead (never loaded) and
+  // slated for deletion (#134). bootGraphs() is called from main.ts, after seedModuleDefaults().
   // #75 SECURITY: vendored. perks.ts used to inject this from
   // `https://Zorn192.github.io/AutoTrimps/FastPriorityQueue.js` — executable third-party JS from an
   // unpinned origin, no integrity hash, in every user's game. The file was already sitting in legacy/;
@@ -30,7 +28,6 @@ export const MANIFEST = [
   // `new FastPriorityQueue(...)` sites are inside functions called from mainLoop, so the global only has
   // to exist by first TICK, not by module-eval. tests/nets/supply-chain.test.ts guards the class.
   'FastPriorityQueue.js',
-  'Graphs.js',
 ]
 
 // Monotonic version: base package.json version locally, `<version>.<run>` in CI so

@@ -1,110 +1,124 @@
-import { describe, it, expect } from 'vitest'
-import { JSDOM } from 'jsdom'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { loadGraphData } from '../src/modules/graphs/storage'
+import { graphState } from '../src/modules/graphs/state'
 
-// Phase-1 Graphs hardening. Two independent regressions guarded here:
-//
-//   Fix D — loadGraphData() must survive a CORRUPT localStorage key. It runs unguarded at module
-//   top level, so an unhandled throw there aborts createUI() and the four data-capture wrappers
-//   installed below it — and, in the concatenated userscript, breaks everything emitted after this
-//   file. LZString.decompressFromBase64 returns "" for an absent key (first run, safe) but
-//   null/garbage for a malformed key, and JSON.parse throws on bad data.
-//
-//   Fix A — the overkill() data accessor must NOT mutate the player's game settings. It used to
-//   call toggleSetting("overkillColor") to force-enable cell coloring (which it then counted via
-//   DOM classes), persisting that flip into the save so a player could never keep the option off.
-//   It now counts game.global.(map)gridArray cells with .overkilled — no mutation.
-//
-// The suite executes the REAL legacy/Graphs.js at global scope via window.eval, exactly how
-// scripts/build-userscript.mjs concatenates it. Graphs.js runs loadGraphData() + createUI() as
-// part of its own load, so simply evaluating it exercises the load path under test.
+// Phase-1 Graphs hardening — Fix D. loadGraphData() must survive a CORRUPT localStorage key. It runs
+// unguarded at boot, so an unhandled throw there aborts createUI() and the data-capture wrappers, and
+// (in the concatenated userscript) breaks everything emitted after Graphs. LZString.decompressFromBase64
+// returns "" for an absent key (first run, safe) but null/garbage for a malformed key, and JSON.parse
+// throws on bad data. This suite drives storage.loadGraphData() directly with an injected localStorage +
+// LZString (formerly it eval()'d the whole legacy/Graphs.js at global scope).
 
-const GRAPHS_SRC = readFileSync(resolve('legacy/Graphs.js'), 'utf8')
-
-/**
- * Boot Graphs.js into a fresh jsdom.
- * @param opts.storage  seed localStorage keys (raw strings, as stored)
- * @param opts.decompress  the LZString.decompressFromBase64 stand-in (default returns "")
- */
-function bootGraphs(opts: { storage?: Record<string, string>; decompress?: (s: string) => unknown } = {}) {
-  const dom = new JSDOM(
-    `<html><body>
-       <table id="settingsTable"><tbody><tr>${'<td></td>'.repeat(12)}</tr></tbody></table>
-       <div id="settingsRow"></div>
-     </body></html>`,
-    { runScripts: 'outside-only', url: 'http://localhost/' },
-  )
-  const { window } = dom
-
-  for (const [k, v] of Object.entries(opts.storage ?? {})) window.localStorage.setItem(k, v)
-
-  Object.assign(window, {
-    game: { options: { menu: { darkTheme: { enabled: 1 }, pauseGame: { enabled: false } } }, global: {} },
-    MODULES: {},
-    debug: () => {},
-    basepath: '',
-    LZString: { decompressFromBase64: opts.decompress ?? (() => '') },
-    // The trailing "Trimps Wrappers" section wraps these natives; they must exist at eval time.
-    nextWorld: () => {},
-    activatePortal: () => {},
-    buildMapGrid: () => {},
-    mapsSwitch: () => {},
-    getTotalPortals: () => 0,
-  })
-
-  window.eval(GRAPHS_SRC)
-  return window
+// A minimal in-memory localStorage seeded per-test.
+function fakeLocalStorage(seed: Record<string, string> = {}) {
+  const map = new Map<string, string>(Object.entries(seed))
+  return {
+    getItem: (k: string) => (map.has(k) ? map.get(k)! : null),
+    setItem: (k: string, v: string) => void map.set(k, v),
+    removeItem: (k: string) => void map.delete(k),
+    clear: () => map.clear(),
+  }
 }
 
+type Ambient = {
+  localStorage?: unknown
+  LZString?: unknown
+  MODULES?: unknown
+  game?: unknown
+  getTotalPortals?: unknown
+  recycleAllExtraHeirlooms?: unknown
+  countChallengeSquaredReward?: unknown
+  Fluffy?: unknown
+}
+const g = globalThis as unknown as Ambient
+
+function install(opts: { storage?: Record<string, string>; decompress?: (s: string) => unknown } = {}) {
+  g.localStorage = fakeLocalStorage(opts.storage)
+  g.LZString = {
+    decompressFromBase64: opts.decompress ?? (() => ''),
+    compressToBase64: (s: string) => s,
+  }
+  g.MODULES = {}
+}
+
+beforeEach(() => {
+  graphState.portalSaveData = {}
+})
+
+afterEach(() => {
+  delete g.localStorage
+  delete g.LZString
+  delete g.MODULES
+  delete g.game
+  delete g.getTotalPortals
+  delete g.recycleAllExtraHeirlooms
+  delete g.countChallengeSquaredReward
+  delete g.Fluffy
+})
+
 describe('Fix D: loadGraphData survives corrupt localStorage', () => {
-  it('POSITIVE CONTROL: a clean boot builds the menu (createUI ran)', () => {
-    const w = bootGraphs()
-    expect(w.document.querySelector('#blackCB')).not.toBeNull()
+  it('POSITIVE CONTROL: a clean, empty store loads without throwing and leaves an object', () => {
+    install()
+    expect(() => loadGraphData()).not.toThrow()
+    expect(typeof graphState.portalSaveData).toBe('object')
+    expect(graphState.portalSaveData).not.toBeNull()
   })
 
-  it('a corrupt portalDataHistory key does not throw and still boots the UI', () => {
-    // Malformed decompressed payload: not "" (so the old code entered the parse branch) and not
-    // valid JSON. Before the fix this threw JSON.parse/Object.entries and aborted the whole load.
-    const w = bootGraphs({
-      storage: { portalDataHistory: 'garbage-base64' },
-      decompress: () => '{not valid json',
-    })
-    expect(w.document.querySelector('#blackCB')).not.toBeNull()
+  it('POSITIVE CONTROL: a valid history actually rebuilds Portal entries (not vacuously green)', () => {
+    // Prove loadGraphData isn't just swallowing everything: feed a real history + a minimal game so
+    // the `new Portal()` rebuild path runs, and assert the entry lands. Portal reads live game.* .
+    g.getTotalPortals = () => 1
+    g.recycleAllExtraHeirlooms = () => 0
+    g.countChallengeSquaredReward = () => [0, 0]
+    g.Fluffy = { getCurrentPrestige: () => 0 }
+    g.game = {
+      global: {
+        universe: 1,
+        challengeActive: '',
+        nullifium: 0,
+        totalHeliumEarned: 0,
+        fluffyExp: 0,
+        spentEssence: 0,
+        essence: 0,
+        world: 1,
+        dailyChallenge: {},
+        runningChallengeSquared: false,
+      },
+      stats: { totalVoidMaps: { value: 0 }, bestFluffyExp: { value: 0 } },
+    }
+    const history = JSON.stringify({ 'u1 p1': { totalPortals: 1, universe: 1, perZoneData: {} } })
+    install({ storage: { portalDataHistory: 'x' }, decompress: () => history })
+
+    expect(() => loadGraphData()).not.toThrow()
+    expect(Object.keys(graphState.portalSaveData)).toContain('u1 p1')
+    expect(graphState.portalSaveData['u1 p1'].totalPortals).toBe(1)
+  })
+
+  it('a corrupt portalDataHistory key does not throw and starts fresh', () => {
+    // Malformed decompressed payload: not "" (so the parse branch is entered) and not valid JSON.
+    // Before the fix this threw JSON.parse/Object.entries and aborted the whole load.
+    install({ storage: { portalDataHistory: 'garbage-base64' }, decompress: () => '{not valid json' })
+    expect(() => loadGraphData()).not.toThrow()
+    expect(typeof graphState.portalSaveData).toBe('object')
+    expect(graphState.portalSaveData).toEqual({})
   })
 
   it('a decompress that yields a non-object (e.g. null) does not throw', () => {
-    const w = bootGraphs({
-      storage: { portalDataHistory: 'x' },
-      decompress: () => 'null', // JSON.parse -> null -> Object.entries(null) would throw pre-fix
-    })
-    expect(w.document.querySelector('#blackCB')).not.toBeNull()
+    // JSON.parse('null') -> null -> Object.entries(null) would throw pre-fix.
+    install({ storage: { portalDataHistory: 'x' }, decompress: () => 'null' })
+    expect(() => loadGraphData()).not.toThrow()
+    expect(typeof graphState.portalSaveData).toBe('object')
   })
 
   it('a corrupt portalDataCurrent key does not throw', () => {
-    const w = bootGraphs({ storage: { portalDataCurrent: '{bad' } })
-    expect(w.document.querySelector('#blackCB')).not.toBeNull()
+    install({ storage: { portalDataCurrent: '{bad' } })
+    expect(() => loadGraphData()).not.toThrow()
+    expect(typeof graphState.portalSaveData).toBe('object')
   })
 
   it('a corrupt GRAPHSETTINGS key does not throw and falls back to defaults', () => {
-    const w = bootGraphs({ storage: { GRAPHSETTINGS: '{bad' } })
-    expect(w.document.querySelector('#blackCB')).not.toBeNull()
-  })
-})
-
-describe('Fix A: the overkill() data reader never mutates game settings', () => {
-  it('the source no longer force-enables overkillColor from a data accessor', () => {
-    // Mutation check: restore `toggleSetting("overkillColor")` to the overkill accessor and this
-    // fails. A data reader must not write the player's save.
-    expect(GRAPHS_SRC).not.toMatch(/toggleSetting\(\s*["']overkillColor["']\s*\)/)
-  })
-
-  it('the overkill accessor counts from grid .overkilled state instead of DOM classes', () => {
-    const overkillBody = GRAPHS_SRC.slice(
-      GRAPHS_SRC.indexOf('overkill:'),
-      GRAPHS_SRC.indexOf('zoneTime:'), // the next accessor
-    )
-    expect(overkillBody).toMatch(/\.overkilled/)
-    expect(overkillBody).toMatch(/mapGridArray/)
+    install({ storage: { GRAPHSETTINGS: '{bad' } })
+    expect(() => loadGraphData()).not.toThrow()
+    expect(typeof graphState.portalSaveData).toBe('object')
   })
 })

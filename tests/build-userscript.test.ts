@@ -78,15 +78,16 @@ describe('buildUserscript', () => {
 
     // Seam ordering: the converted-modules bridge must publish BEFORE any still-legacy file
     // that calls a converted function at load time. ALL legacy/modules/*.js are converted
-    // (Phase 2), and SettingsGUI.js is decomposed to src (Phase UI, #20). The only remaining
-    // legacy files are AutoTrimps2.js (first) + Graphs.js (last). The src bundle must sit after
-    // AutoTrimps2.js but before Graphs.js.
+    // (Phase 2), SettingsGUI.js is decomposed to src (#20), and Graphs.js is now src/modules/graphs
+    // (ECharts port). The only remaining first-party legacy file is AutoTrimps2.js (first, #133); the
+    // trailing legacy concat chunk is the vendored FastPriorityQueue.js. The src bundle must sit after
+    // AutoTrimps2.js but before that trailing chunk.
     const at2Idx = out.indexOf('/* ===== legacy/AutoTrimps2.js') // first legacy file
     const bridgeIdx = out.indexOf('Object.assign(globalThis') // the seam publish (src bundle)
-    const graphsIdx = out.indexOf('/* ===== legacy/Graphs.js') // still-legacy, after src
+    const trailingIdx = out.indexOf('/* ===== legacy/FastPriorityQueue.js') // last legacy chunk, after src
     expect(at2Idx).toBeGreaterThanOrEqual(0)
     expect(bridgeIdx).toBeGreaterThan(at2Idx) // src bundle emitted after AutoTrimps2.js
-    expect(graphsIdx).toBeGreaterThan(bridgeIdx) // ...but before the remaining legacy files
+    expect(trailingIdx).toBeGreaterThan(bridgeIdx) // ...but before the remaining legacy files
   })
 
   it('SettingsGUI.js is decomposed out of the legacy concat and boot is bundled (#20)', async () => {
@@ -104,9 +105,9 @@ describe('buildUserscript', () => {
     // covered by the '#22 save-reload' test below.)
     const at2Idx = out.indexOf('/* ===== legacy/AutoTrimps2.js')
     const bootIdx = out.indexOf('basepath + "tabs.css"')
-    const graphsIdx = out.indexOf('/* ===== legacy/Graphs.js')
+    const trailingIdx = out.indexOf('/* ===== legacy/FastPriorityQueue.js')
     expect(bootIdx).toBeGreaterThan(at2Idx)
-    expect(bootIdx).toBeLessThan(graphsIdx)
+    expect(bootIdx).toBeLessThan(trailingIdx)
   })
 
   it('bridge imports maps before mapfunctions (R-map-state top-level inits must eval after maps placeholders)', () => {

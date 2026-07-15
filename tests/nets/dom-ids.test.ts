@@ -233,15 +233,18 @@ const AT_CREATED: Record<string, string> = {
   // MAZ.ts — the Map-At-Zone editor, rendered into a tooltip.
   windowError: "MAZ.ts:117 — <div id='windowError'>",
   windowAddRowBtn: "MAZ.ts:284 — <div id='windowAddRowBtn'>",
-  // legacy/Graphs.js — the graphs panel (shipped: it is in the build MANIFEST).
-  graphParent: 'Graphs.js:189 — <div id="graphParent">',
-  graphFooterLine1: 'Graphs.js:192',
-  graphFooterLine2: 'Graphs.js:193',
-  clrChkbox: 'Graphs.js:224 — <input id="clrChkbox">',
-  clrAllDataBtn: 'Graphs.js:226 — <button id="clrAllDataBtn">',
-  deleteSpecificTextBox: 'Graphs.js:229',
-  blackCB: 'Graphs.js:244 — <input id="blackCB"> (dark-theme toggle)',
-  'dark-graph.css': 'Graphs.js:304 — b.id = "dark-graph.css" (a <link> AT appends to <head>)',
+  // src/modules/graphs/render.ts — the graphs panel (ECharts port of legacy Graphs.js). createUI
+  // mints these via innerHTML; the ECharts chart container #graph is now getElementById'd directly
+  // (Highcharts used a renderTo string, so this lookup is new to the port).
+  graph: 'render.ts createUI — <div id="graph"> (the ECharts chart container)',
+  graphParent: 'render.ts createUI — <div id="graphParent">',
+  graphFooterLine1: 'render.ts createUI',
+  graphFooterLine2: 'render.ts createUI',
+  clrChkbox: 'render.ts createUI — <input id="clrChkbox">',
+  clrAllDataBtn: 'render.ts createUI — <button id="clrAllDataBtn">',
+  deleteSpecificTextBox: 'render.ts createUI',
+  blackCB: 'render.ts createUI — <input id="blackCB"> (dark-theme toggle)',
+  'dark-graph.css': 'render.ts toggleDarkGraphs — b.id = "dark-graph.css" (a <link> AT appends to <head>)',
 }
 
 const RESOLVED = new Set<string>([
@@ -310,7 +313,7 @@ describe('DOM-id lookups must resolve to an element that exists (#73)', () => {
     // buggy maps.ts:144 lookup is already proven — the KNOWN_DEAD guard below asserts every baselined
     // id is still looked up somewhere, and goes red the moment it is not.
     expect(LOOKUPS).toContainEqual({ id: 'advExtraLevelSelect', file: 'src/modules/mapfunctions.ts', line: 271 })
-    expect(LOOKUPS.some((l) => l.file === 'legacy/Graphs.js')).toBe(true) // the legacy half is scanned
+    expect(LOOKUPS.some((l) => l.file === 'src/modules/graphs/render.ts')).toBe(true) // the graphs shell is scanned
   })
 
   it('the legacy corpus matches the build MANIFEST (an unshipped file must not resolve anything)', () => {

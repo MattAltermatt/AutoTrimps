@@ -61,9 +61,11 @@ describe('#102 · MODULESdefault is seeded at bundle-eval, so the module-var fns
     expect(w.MODULESdefault.jobs.autoRatio7).toEqual([1, 1, 98])
   })
 
-  it('MODULES.graphs is registered by legacy/Graphs.js AFTER the src IIFE — so it is NOT in the eager seed', () => {
-    // This is not incidental — it is the reason the eager seed alone cannot be the whole fix. Pinned so
-    // that a future MANIFEST reorder (or a Graphs port) is a red test rather than a silent re-break.
+  it('MODULES.graphs is registered by bootGraphs() AFTER seedModuleDefaults — so it is NOT in the eager seed', () => {
+    // This is not incidental — it is the reason the eager seed alone cannot be the whole fix. The Graphs
+    // ECharts port preserved the ordering: main.ts calls bootGraphs() (which registers MODULES.graphs via
+    // loadGraphData/createUI) AFTER seedModuleDefaults() clones MODULESdefault, exactly as the post-IIFE
+    // legacy Graphs.js used to. Pinned so a future reorder is a red test rather than a silent re-break.
     expect(w.MODULES.graphs).toBeDefined()
     expect(Object.prototype.hasOwnProperty.call(w.MODULESdefault, 'graphs')).toBe(false)
   })

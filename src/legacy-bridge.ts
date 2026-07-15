@@ -59,5 +59,9 @@ import * as settingsDefs from './modules/settings-defs'
 // loadPageVariables(), matching legacy's SettingsGUI load point. Spread here so that bare global
 // call resolves. Its module body only DEFINES the function, so bridge-eval order is irrelevant.
 import * as settingsBoot from './modules/settings-boot'
+// graphs: the ECharts-backed Graphs dashboard (was legacy/Graphs.js). The inline DOM handlers
+// createUI writes, the "Graphs" button, and storage's bare showHideUnusedGraphs() call all resolve
+// these names as bare globals. bootGraphs() is NOT auto-run — main.ts calls it after seedModuleDefaults.
+import * as graphs from './modules/graphs'
 
-Object.assign(globalThis, { ...utils, ...guard, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...mapfunctionsAmp, ...portal, ...saveBackup, ...importExport, ...query, ...other, ...otherPraiding, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs, ...settingsBoot })
+Object.assign(globalThis, { ...utils, ...guard, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...mapfunctionsAmp, ...portal, ...saveBackup, ...importExport, ...query, ...other, ...otherPraiding, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs, ...settingsBoot, ...graphs })

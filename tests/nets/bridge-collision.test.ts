@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import ts from 'typescript'
 
@@ -55,7 +55,12 @@ for (const st of bridge.statements) {
   if (!ts.isStringLiteralLike(st.moduleSpecifier)) continue
   const spec = st.moduleSpecifier.text
   const m = /^\.\/modules\/([\w-]+)$/.exec(spec)
-  if (m) aliasToFile.set(clause.name.text, `src/modules/${m[1]}.ts`)
+  if (m) {
+    // Resolve both a flat module (modules/x.ts) and a directory module (modules/x/index.ts, e.g. graphs).
+    const flat = `src/modules/${m[1]}.ts`
+    const barrel = `src/modules/${m[1]}/index.ts`
+    aliasToFile.set(clause.name.text, existsSync(join(ROOT, flat)) ? flat : barrel)
+  }
 }
 
 /** The spread order inside `Object.assign(globalThis, { ...a, ...b })` — index 0 loses to index n. */

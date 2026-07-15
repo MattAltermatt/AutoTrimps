@@ -3,6 +3,7 @@
 // legacy modules), so still-legacy load-time callers resolve the published functions.
 import './legacy-bridge'
 import { seedModuleDefaults } from './modules/import-export'
+import { bootGraphs } from './modules/graphs'
 
 // perks has no exports — its API is the AutoPerks/RAutoPerks globals it assigns, and its
 // top-level AutoPerks.displayGUI() calls converted utils (safeSetItems) by bare name. So it
@@ -27,7 +28,13 @@ import './modules/performance'
 // 4s, so compareModuleVars()/exportModuleVars()/resetModuleVars() threw a TypeError for anyone who
 // clicked Export or "Reset Module Vars" in between. Reset left AT dead until reload (it throws with
 // ATrunning already false). See the long comment on compareModuleVars() — the eager seed alone is NOT
-// sufficient (MODULES.graphs is registered by the post-IIFE legacy Graphs.js), so the read is total too.
+// sufficient (MODULES.graphs is registered by bootGraphs() below, AFTER this clone), so the read is total too.
 seedModuleDefaults()
+
+// The Graphs dashboard (was the post-IIFE legacy Graphs.js). Runs AFTER seedModuleDefaults so
+// MODULES.graphs — which bootGraphs registers via createUI/themeChanged — is deliberately excluded
+// from MODULESdefault, exactly as the legacy load order excluded it. createUI reads the static game
+// DOM (#settingsTable, index.html:1003), present from page load, so this bundle-eval timing is safe.
+bootGraphs()
 
 console.log('[AutoTrimps] modern build booted')

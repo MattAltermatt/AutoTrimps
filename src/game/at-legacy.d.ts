@@ -90,6 +90,10 @@ declare global {
   var getPageSettingAt: typeof import('../modules/utils').getPageSettingAt
   function byId<T extends HTMLElement = HTMLInputElement>(id: string): T  // utils.ts (typed DOM helper)
   var GRAPHSETTINGS: any                          // Graphs.js
+  // Graphs render-layer redraw of the selector list. Defined by graphs/render.ts (a later port task)
+  // and reached bare by graphs/storage.ts (clearData/deleteSpecific) via the bridge, like every other
+  // legacy-facing graphs export. Hand-written sig (kind 2): nothing to typeof-import until render lands.
+  function showHideUnusedGraphs(): void
   // Settings-UI boot fns bridged; read bare by settings-boot.ts.
   var automationMenuInit: typeof import('../modules/settings-menu').automationMenuInit
   var automationMenuSettingsInit: typeof import('../modules/settings-menu').automationMenuSettingsInit

@@ -6559,10 +6559,10 @@
     if (skippedPrestige)
       status += '<br><b style="font-size:.8em;color:pink;margin-top:0.2vw">Prestige Skipped</b>';
     const getPercent = game.stats.heliumHour.value() / (game.global.totalHeliumEarned - (game.global.heliumLeftover + game.resources.helium.owned)) * 100;
-    const lifetime = game.resources.helium.owned / (game.global.totalHeliumEarned - game.resources.helium.owned) * 100;
-    const hiderStatus = "He/hr: " + getPercent.toFixed(3) + "%<br>&nbsp;&nbsp;&nbsp;He: " + lifetime.toFixed(3) + "%";
+    const lifetime2 = game.resources.helium.owned / (game.global.totalHeliumEarned - game.resources.helium.owned) * 100;
+    const hiderStatus = "He/hr: " + getPercent.toFixed(3) + "%<br>&nbsp;&nbsp;&nbsp;He: " + lifetime2.toFixed(3) + "%";
     if (get) {
-      return [status, getPercent, lifetime];
+      return [status, getPercent, lifetime2];
     } else {
       document.getElementById("autoMapStatus").innerHTML = status;
       document.getElementById("hiderStatus").innerHTML = hiderStatus;
@@ -7256,10 +7256,10 @@
     else if (!RenoughHealth) status = "Want more health";
     else if (RenoughHealth && RenoughDamage) status = "Advancing";
     const getPercent = game.stats.heliumHour.value() / (game.global.totalRadonEarned - (game.global.radonLeftover + game.resources.radon.owned)) * 100;
-    const lifetime = game.resources.radon.owned / (game.global.totalRadonEarned - game.resources.radon.owned) * 100;
-    const hiderStatus = "Rn/hr: " + getPercent.toFixed(3) + "%<br>&nbsp;&nbsp;&nbsp;Rn: " + lifetime.toFixed(3) + "%";
+    const lifetime2 = game.resources.radon.owned / (game.global.totalRadonEarned - game.resources.radon.owned) * 100;
+    const hiderStatus = "Rn/hr: " + getPercent.toFixed(3) + "%<br>&nbsp;&nbsp;&nbsp;Rn: " + lifetime2.toFixed(3) + "%";
     if (get) {
-      return [status, getPercent, lifetime];
+      return [status, getPercent, lifetime2];
     } else {
       document.getElementById("autoMapStatus").innerHTML = status;
       document.getElementById("hiderStatus").innerHTML = hiderStatus;
@@ -18472,8 +18472,1327 @@
     initializeAllSettings();
   }
 
+  // src/modules/graphs/index.ts
+  var graphs_exports = {};
+  __export(graphs_exports, {
+    bootGraphs: () => bootGraphs,
+    clearData: () => clearData,
+    deleteSpecific: () => deleteSpecific,
+    drawGraph: () => drawGraph,
+    escapeATWindows: () => escapeATWindows,
+    saveSetting: () => saveSetting,
+    showHideUnusedGraphs: () => showHideUnusedGraphs2,
+    swapGraphUniverse: () => swapGraphUniverse,
+    toggleAllGraphs: () => toggleAllGraphs,
+    toggleClearButton: () => toggleClearButton,
+    toggleDarkGraphs: () => toggleDarkGraphs,
+    toggleSpecificGraphs: () => toggleSpecificGraphs,
+    updateGraph: () => updateGraph
+  });
+
+  // src/modules/graphs/transforms.ts
+  function formatDuration(timeSince) {
+    const timeObj = {
+      d: Math.floor(timeSince / 86400),
+      h: Math.floor(timeSince / 3600) % 24,
+      m: Math.floor(timeSince / 60) % 60,
+      s: Math.floor(timeSince % 60)
+    };
+    const milliseconds = Math.floor(timeSince % 1 * 10);
+    let timeString = "";
+    let unitsUsed = 0;
+    for (const [unit, value] of Object.entries(timeObj)) {
+      if (value === 0 && timeString === "") continue;
+      unitsUsed++;
+      if (value) timeString += value.toString() + unit + " ";
+    }
+    if (unitsUsed <= 1) {
+      timeString = [timeObj.s.toString().padStart(1, "0"), milliseconds.toString(), "s"].join(".");
+    }
+    return timeString;
+  }
+  function diff(dataVar, initial) {
+    return function(portal, i) {
+      const e1 = portal.perZoneData[dataVar][i];
+      const e2 = initial ? initial : portal.perZoneData[dataVar][i - 1];
+      if (e1 == null || e2 == null) return null;
+      return e1 - e2;
+    };
+  }
+  function perZone(portal, item, index) {
+    let x;
+    let time;
+    const cur = portal.perZoneData[item][index];
+    const prev = portal.perZoneData[item][index - 1];
+    if (prev && cur) {
+      x = cur - prev;
+      time = portal.perZoneData.currentTime[index] - portal.perZoneData.currentTime[index - 1];
+    } else {
+      x = 0;
+      time = 0;
+    }
+    return [x, time];
+  }
+  function perHr(x, time) {
+    if (x) x = x / (time / 36e5);
+    return x;
+  }
+  function lifetime(portal, item, x) {
+    let initial;
+    if (item === "heliumOwned") initial = portal.totalHelium;
+    if (item === "radonOwned") initial = portal.totalRadon;
+    if (item === "c23increase") initial = portal.cinf;
+    if (!initial) {
+      return 0;
+    }
+    if (item === "c23increase") {
+      const cinf = initial;
+      const totalBonus = (1 + cinf[1] / 100) * cinf[0];
+      let c2 = cinf[0];
+      let c3 = cinf[1];
+      portal.universe === 1 ? c2 += x : c3 += x;
+      const newBonus = (1 + c3 / 100) * c2;
+      x = (newBonus - totalBonus) / (totalBonus ? totalBonus : 1);
+    } else {
+      const init = initial;
+      x = x / (init ? init : 1);
+    }
+    return x;
+  }
+  function s3normalized(x, portalS3, maxS3) {
+    return x / 1.03 ** portalS3 * 1.03 ** maxS3;
+  }
+  function accumulate(x, prevY) {
+    return x + (prevY !== void 0 ? prevY : 0);
+  }
+  function maxS3Of(portals) {
+    return Math.max(...portals.map((portal) => portal.s3).filter((s3) => !!s3));
+  }
+
+  // src/modules/graphs/graph-defs.ts
+  var GRAPH_LIST = [
+    {
+      dataVar: "currentTime",
+      universe: false,
+      selectorText: "Clear Time",
+      id: "Clear_Time",
+      graphTitle: "Clear Time",
+      graphType: "line",
+      yType: "datetime",
+      xminFloor: 1,
+      toggles: ["perZone", "mapTime", "mapCount"],
+      conditional: () => true,
+      formatterKind: "datetime"
+    },
+    // U1 Graphs
+    {
+      dataVar: "heliumOwned",
+      universe: 1,
+      selectorText: "Helium",
+      id: "Helium",
+      graphTitle: "Helium",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      toggles: ["perHr", "perZone", "lifetime"],
+      conditional: () => true,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "fluffy",
+      universe: 1,
+      selectorText: "Fluffy Exp",
+      id: "Fluffy_Exp",
+      graphTitle: "Fluffy Exp",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      toggles: ["perHr", "perZone"],
+      customFunction: (portal, i) => diff("fluffy", portal.initialFluffy)(portal, i),
+      conditional: (g) => g.u1hze() >= 299 && g.fluffy() < 3413330078125e3,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "essence",
+      universe: 1,
+      selectorText: "Dark Essence",
+      id: "Dark_Essence",
+      graphTitle: "Dark Essence",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 181,
+      toggles: ["perHr", "perZone"],
+      customFunction: (portal, i) => diff("essence", portal.initialDE)(portal, i),
+      conditional: (g) => g.essence() < 5826e36,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "lastWarp",
+      universe: 1,
+      selectorText: "Warpstations",
+      id: "Warpstations",
+      graphTitle: "Warpstations built on previous Giga",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 60,
+      conditional: (g) => g.u1hze() >= 59 && g.totalHeliumEarned() - g.heliumLeftover() < 10 ** 10,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "amals",
+      universe: 1,
+      selectorText: "Amalgamators",
+      id: "Amalgamators",
+      graphTitle: "Amalgamators",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      conditional: () => true,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "wonders",
+      universe: 1,
+      selectorText: "Wonders",
+      id: "Wonders",
+      graphTitle: "Wonders",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 300,
+      conditional: (g) => g.challengeActive() === "Experience",
+      formatterKind: "defaultPoint"
+    },
+    // U2 Graphs
+    {
+      dataVar: "radonOwned",
+      universe: 2,
+      selectorText: "Radon",
+      id: "Radon",
+      graphTitle: "Radon",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      toggles: ["perHr", "perZone", "lifetime", "s3normalized"],
+      conditional: () => true,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "scruffy",
+      universe: 2,
+      selectorText: "Scruffy Exp",
+      id: "Scruffy_Exp",
+      graphTitle: "Scruffy Exp",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      toggles: ["perHr", "perZone"],
+      customFunction: (portal, i) => diff("scruffy", portal.initialScruffy)(portal, i),
+      conditional: () => true,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "mutatedSeeds",
+      universe: 2,
+      selectorText: "Mutated Seeds",
+      id: "Mutated_Seeds",
+      graphTitle: "Mutated Seeds",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 200,
+      toggles: ["perHr", "perZone"],
+      customFunction: (portal, i) => diff("mutatedSeeds", portal.initialMutes)(portal, i),
+      conditional: (g) => g.u2hze() >= 200,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "worshippers",
+      universe: 2,
+      selectorText: "Worshippers",
+      id: "Worshippers",
+      graphTitle: "Worshippers",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 50,
+      conditional: (g) => g.u2hze() >= 49,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "smithies",
+      universe: 2,
+      selectorText: "Smithies",
+      id: "Smithies",
+      graphTitle: "Smithies",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      conditional: () => true,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "bonfires",
+      universe: 2,
+      selectorText: "Bonfires",
+      id: "Bonfires",
+      graphTitle: "Active Bonfires",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      conditional: (g) => g.challengeActive() === "Hypothermia",
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "embers",
+      universe: 2,
+      selectorText: "Embers",
+      id: "Embers",
+      graphTitle: "Embers",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      conditional: (g) => g.challengeActive() === "Hypothermia",
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "cruffys",
+      universe: 2,
+      selectorText: "Cruffys",
+      id: "Cruffys",
+      graphTitle: "Cruffys",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      conditional: (g) => g.challengeActive() === "Nurture",
+      formatterKind: "defaultPoint"
+    },
+    // Generic Graphs
+    {
+      dataVar: "c23increase",
+      universe: false,
+      selectorText: "C2 Bonus",
+      id: "C2_Bonus",
+      graphTitle: "C2 Bonus",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      toggles: ["perHr", "perZone", "lifetime"],
+      conditional: (g) => g.runningChallengeSquared(),
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "voids",
+      universe: false,
+      selectorText: "Void Map History",
+      id: "Void_Map_History",
+      graphTitle: "Void Map History (voids finished during the same level acquired are not counted/tracked)",
+      yTitle: "Number of Void Maps",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      conditional: () => true,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "coord",
+      universe: false,
+      selectorText: "Coordinations",
+      id: "Coordinations",
+      graphTitle: "Unbought Coordinations",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      conditional: () => true,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "overkill",
+      universe: false,
+      selectorText: "Overkill Cells",
+      id: "Overkill_Cells",
+      graphTitle: "Overkill Cells",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      conditional: (g) => g.universe() === 1 && g.u1hze() >= 169 || g.universe() === 2 && g.u2hze() >= 200,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "mapbonus",
+      universe: false,
+      selectorText: "Map Bonus",
+      id: "Map_Bonus",
+      graphTitle: "Map Bonus",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      conditional: () => true,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "empower",
+      universe: false,
+      selectorText: "Empower",
+      id: "Empower",
+      graphTitle: "Empower",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      conditional: (g) => g.challengeActive() === "Daily" && g.empowerDefined(),
+      formatterKind: "defaultPoint"
+    },
+    // Multi-axis column chart (Graphs.js:964)
+    {
+      dataVar: false,
+      universe: false,
+      selectorText: "Portal Stats",
+      id: "Portal_Stats",
+      graphTitle: "Portal Stats",
+      graphType: "column",
+      yType: "value",
+      xminFloor: 1,
+      toggles: ["perHr"],
+      columns: [
+        { dataVar: "totalVoidMaps", title: "Voids", color: "#4d0e8c" },
+        { dataVar: "totalNullifium", title: "Nu", color: "#8a008a" },
+        { dataVar: "heliumOwned", universe: 1, title: "Helium", color: "#5bc0de" },
+        { dataVar: "radonOwned", universe: 2, title: "Radon", color: "#5bc0de" },
+        {
+          dataVar: "fluffy",
+          universe: 1,
+          title: "Pet Exp",
+          color: "green",
+          customFunction: (portal, x) => x - portal.initialFluffy
+        },
+        {
+          dataVar: "scruffy",
+          universe: 2,
+          title: "Pet Exp",
+          color: "green",
+          customFunction: (portal, x) => x - portal.initialScruffy
+        },
+        { dataVar: "currentTime", title: "Run Time", type: "datetime", color: "#928DAD" }
+      ],
+      conditional: () => true,
+      formatterKind: "defaultPoint"
+    }
+  ];
+  var TOGGLE_RULES = {
+    mapCount: {
+      exclude: ["mapTime", "mapPct"],
+      useAccumulator: true,
+      titleOverride: "Maps Run",
+      yAxisName: "Maps Run",
+      yAxisType: "value",
+      useDefaultPointFormatter: true,
+      transform: (p, _item, index) => p.perZoneData.mapCount[index] || 0
+    },
+    mapTime: {
+      exclude: ["mapCount", "mapPct"],
+      useAccumulator: true,
+      titleOverride: "Time in Maps",
+      transform: (p, _item, index) => p.perZoneData.timeOnMap[index] || 0
+    },
+    mapPct: {
+      exclude: ["mapCount", "mapTime"],
+      useAccumulator: true,
+      titleOverride: "% of Clear time spent Mapping",
+      yAxisName: "% Clear Time",
+      yAxisType: "value",
+      useDefaultPointFormatter: true,
+      transform: (p, _item, index, x) => p.perZoneData.timeOnMap[index] / x || 0
+    },
+    perZone: {
+      useAccumulator: false,
+      titleSuffix: " each Zone",
+      transform: (p, item, index) => perZone(p, item, index)
+    },
+    perHr: {
+      titleSuffix: " / Hour",
+      transform: (_p, _item, _index, x, time) => perHr(x, time)
+    },
+    lifetime: {
+      titleSuffix: " % of Lifetime Total",
+      yAxisNameSuffix: " % of lifetime",
+      transform: (p, item, _index, x) => lifetime(p, item, x)
+    },
+    s3normalized: {
+      titleSuffix: (ctx) => `, Normalized to z${ctx.maxS3} S3`,
+      transform: (p, _item, _index, x, _time, maxS3) => s3normalized(x, p.s3 ?? 0, maxS3)
+    }
+  };
+
+  // src/modules/graphs/option-builder.ts
+  var PALETTE = ["#e60049", "#0bb4ff", "#50e991", "#e6d800", "#9b19f5", "#ffa300", "#dc0ab4", "#b3d4ff", "#00bfa0"];
+  var TITLE_FONT = 18;
+  var BASE_FONT = 14;
+  function last(arr) {
+    return arr[arr.length - 1];
+  }
+  function pointFormatter(useDatetime) {
+    return (p) => {
+      const y = Array.isArray(p.value) ? p.value[1] : p.value;
+      const body = useDatetime ? formatDuration(y / 1e3) : prettify(y);
+      return `<span style="color:${p.color}">\u25CF</span> ${p.seriesName}: <b>${body}</b>`;
+    };
+  }
+  function axisFormatter(useDatetime) {
+    return (value) => useDatetime ? formatDuration(Number(value) / 1e3) : prettify(value);
+  }
+  function baseOption(graph) {
+    const datetime = graph.yType === "datetime";
+    return {
+      color: PALETTE,
+      textStyle: { fontSize: BASE_FONT },
+      title: { text: graph.graphTitle, left: "center", textStyle: { fontSize: TITLE_FONT } },
+      xAxis: { type: "value", min: graph.xminFloor, name: "Zone" },
+      yAxis: {
+        type: graph.yType === "log" ? "log" : "value",
+        name: graph.yTitle ?? graph.selectorText,
+        scale: true,
+        axisLabel: { formatter: axisFormatter(datetime), fontSize: BASE_FONT }
+      },
+      tooltip: { trigger: "item", formatter: pointFormatter(graph.formatterKind === "datetime") },
+      legend: { type: "scroll", orient: "vertical", right: 0, textStyle: { fontSize: BASE_FONT } },
+      dataZoom: [
+        { type: "inside", xAxisIndex: 0, filterMode: "none" },
+        { type: "inside", yAxisIndex: 0, filterMode: "none" },
+        { type: "slider" }
+      ],
+      // #131 — data export (dataView table + PNG) and zoom, built in.
+      toolbox: { feature: { dataView: { readOnly: true }, saveAsImage: {}, dataZoom: { yAxisIndex: "all" }, restore: {} } },
+      series: []
+    };
+  }
+  function activeTogglesFor(graph, settings) {
+    const on = settings.toggles[graph.id] ?? {};
+    return Object.keys(TOGGLE_RULES).filter((t) => on[t]);
+  }
+  function applyToggleEffects(option, toggles, maxS3) {
+    const title = option.title;
+    const yAxis = option.yAxis;
+    for (const t of toggles) {
+      const rule = TOGGLE_RULES[t];
+      if (rule.titleOverride !== void 0) title.text = rule.titleOverride;
+      if (rule.titleSuffix !== void 0) {
+        title.text = (title.text ?? "") + (typeof rule.titleSuffix === "function" ? rule.titleSuffix({ maxS3 }) : rule.titleSuffix);
+      }
+      if (rule.yAxisName !== void 0) yAxis.name = rule.yAxisName;
+      if (rule.yAxisNameSuffix !== void 0) yAxis.name = (yAxis.name ?? "") + rule.yAxisNameSuffix;
+      if (rule.yAxisType !== void 0) yAxis.type = rule.yAxisType;
+      if (rule.useDefaultPointFormatter) {
+        ;
+        option.tooltip.formatter = pointFormatter(false);
+      }
+    }
+  }
+  function buildLineOption(graph, portals, settings) {
+    const option = baseOption(graph);
+    const item = graph.dataVar;
+    const maxS3 = maxS3Of(portals);
+    const toggles = activeTogglesFor(graph, settings);
+    applyToggleEffects(option, toggles, maxS3);
+    let useAccumulator = false;
+    for (const t of toggles) {
+      const ua = TOGGLE_RULES[t].useAccumulator;
+      if (ua !== void 0) useAccumulator = ua;
+    }
+    const perZoneActive = toggles.includes("perZone");
+    const otherToggles = toggles.filter((t) => t !== "perZone");
+    const series = [];
+    let portalCount = 0;
+    for (const portal of [...portals].reverse()) {
+      if (!(item in portal.perZoneData)) continue;
+      if (portal.universe !== settings.universeSelection) continue;
+      const cleanData = [];
+      for (const index in portal.perZoneData[item]) {
+        const i = Number(index);
+        let x = portal.perZoneData[item][i];
+        let time = portal.perZoneData.currentTime[i];
+        if (typeof graph.customFunction === "function") {
+          x = graph.customFunction(portal, i);
+          if (x !== null && x < 0) x = null;
+        }
+        if (perZoneActive) {
+          ;
+          [x, time] = TOGGLE_RULES.perZone.transform(portal, item, i, x, time, maxS3);
+        }
+        for (const toggle of otherToggles) {
+          try {
+            x = TOGGLE_RULES[toggle].transform(portal, item, i, x, time, maxS3);
+          } catch {
+            x = 0;
+          }
+        }
+        if (useAccumulator) x = accumulate(x, last(cleanData)?.[1]);
+        if (typeof x !== "number") x = null;
+        cleanData.push([i, x]);
+      }
+      if (perZoneActive && (item === "fluffy" || item === "scruffy")) cleanData.splice(cleanData.length - 1);
+      series.push({ name: `Portal ${portal.totalPortals}: ${portal.challenge}`, type: "line", showSymbol: false, data: cleanData });
+      portalCount++;
+      if (portalCount >= settings.portalsDisplayed) break;
+    }
+    series.reverse();
+    option.series = series;
+    applyLegendSelection(option, series, settings);
+    return option;
+  }
+  function applyLegendSelection(option, series, settings) {
+    const selected = {};
+    if (settings.rememberSelected.length === series.length) {
+      series.forEach((s, i) => {
+        if (settings.rememberSelected[i] === false) selected[s.name] = false;
+      });
+    }
+    ;
+    option.legend.selected = selected;
+  }
+  function buildColumnOption(graph, portals, settings) {
+    const option = baseOption(graph);
+    const perHr2 = !!(settings.toggles[graph.id] ?? {}).perHr;
+    let activeColumns = (graph.columns ?? []).filter(
+      (column) => !(column.universe && column.universe !== settings.universeSelection)
+    );
+    if (perHr2) {
+      ;
+      option.title.text = graph.graphTitle + " / Hour";
+      activeColumns = activeColumns.filter((column) => column.dataVar !== "currentTime");
+    }
+    const universePortals = portals.filter((p) => p.universe === settings.universeSelection);
+    const categories = universePortals.map((p) => String(p.totalPortals));
+    const series = activeColumns.map((column, axisIndex) => {
+      const data = universePortals.map((portal) => {
+        let value;
+        const own = portal[column.dataVar];
+        if (own) value = own;
+        const perZone2 = portal.perZoneData[column.dataVar];
+        if (perZone2) value = last(perZone2);
+        if (column.customFunction) value = column.customFunction(portal, value);
+        if (perHr2) value = value / (last(portal.perZoneData.currentTime) / 36e5);
+        return value;
+      });
+      const useDatetime = column.type === "datetime";
+      return {
+        name: column.title,
+        type: "bar",
+        yAxisIndex: axisIndex,
+        itemStyle: { color: column.color },
+        data,
+        ...useDatetime ? { tooltip: { formatter: pointFormatter(true) } } : {}
+      };
+    });
+    option.xAxis = { type: "category", name: "Portal", data: categories };
+    option.yAxis = activeColumns.map(() => ({ show: false, scale: true }));
+    option.series = series;
+    applyLegendSelection(option, series, settings);
+    return option;
+  }
+
+  // src/modules/graphs/state.ts
+  var graphState = {
+    // Legacy `var portalSaveData = {}` — every captured portal run, keyed by getportalID().
+    portalSaveData: {},
+    // Legacy `var lastSave = new Date()` — the 450ms savePortalData throttle stamp. A ms number
+    // (Date.now()) replaces the Date; subtraction against Date.now() keeps the throttle identical.
+    lastSave: 0,
+    // render.ts (a later task) sets this; pushData calls it when a live+open chart needs a redraw.
+    // Undefined until the UI mounts, so every call site uses `?.()`.
+    requestRedraw: void 0
+  };
+  var GRAPHSETTINGS2 = {
+    universeSelection: 1,
+    u1graphSelection: null,
+    u2graphSelection: null,
+    rememberSelected: [],
+    toggles: {},
+    darkTheme: true,
+    maxGraphs: 60,
+    // Highcharts gets a bit angry rendering more graphs, 30 is the maximum you can fit on the legend before it splits into pages.
+    portalsDisplayed: 30
+  };
+
+  // src/modules/graphs/storage.ts
+  function safeLocalStorage(name, data, retry = false) {
+    try {
+      if (name === "portalDataCurrent" && !retry) {
+        if ((Date.now() - graphState.lastSave) / 450 < 1) return;
+        else graphState.lastSave = Date.now();
+      }
+      if (typeof data != "string") data = JSON.stringify(data);
+      localStorage.setItem(name, data);
+    } catch (e) {
+      if (e.code == 22 || e.code == 1014) {
+        if (Object.keys(graphState.portalSaveData).length === 0) {
+          console.warn("AT Graphs Error: LocalStorage is full and the current data won't fit even after clearing all saved graphs.", e.code, e);
+          return;
+        }
+        delete graphState.portalSaveData[Object.keys(graphState.portalSaveData)[0]];
+        savePortalData(true);
+        console.debug("AT Graphs Error: LocalStorage is full. Automatically deleting a graph to clear up space.", e.code, e);
+        safeLocalStorage(name, data, true);
+      }
+    }
+  }
+  function savePortalData(saveAll = true) {
+    var currentPortal = getportalID();
+    if (saveAll) {
+      safeLocalStorage("portalDataHistory", LZString.compressToBase64(JSON.stringify(graphState.portalSaveData)));
+    } else {
+      let portalObj = {};
+      portalObj[currentPortal] = graphState.portalSaveData[currentPortal];
+      safeLocalStorage("portalDataCurrent", portalObj);
+    }
+  }
+  function saveSetting(key, value) {
+    if (key !== null && value !== null) GRAPHSETTINGS2[key] = value;
+    safeLocalStorage("GRAPHSETTINGS", GRAPHSETTINGS2);
+  }
+  function loadGraphData() {
+    try {
+      var loadedData = LZString.decompressFromBase64(localStorage.getItem("portalDataHistory"));
+      var currentPortal = JSON.parse(localStorage.getItem("portalDataCurrent"));
+      if (loadedData) {
+        loadedData = JSON.parse(loadedData);
+        if (loadedData && typeof loadedData === "object") {
+          if (currentPortal) {
+            loadedData[Object.keys(currentPortal)[0]] = Object.values(currentPortal)[0];
+          }
+          console.log("Graphs: Found portalSaveData");
+          for (const [portalID, portalData] of Object.entries(loadedData)) {
+            graphState.portalSaveData[portalID] = new Portal();
+            for (const [k, v] of Object.entries(portalData)) {
+              graphState.portalSaveData[portalID][k] = v;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("AT Graphs: could not load saved portal history (corrupt data?); starting fresh.", e);
+      graphState.portalSaveData = {};
+    }
+    var loadedSettings = null;
+    try {
+      loadedSettings = JSON.parse(localStorage.getItem("GRAPHSETTINGS"));
+    } catch (e) {
+      console.warn("AT Graphs: could not load saved settings (corrupt data?); using defaults.", e);
+    }
+    if (loadedSettings !== null) {
+      for (const [k, v] of Object.entries(loadedSettings)) {
+        GRAPHSETTINGS2[k] = v;
+      }
+    }
+    if (GRAPHSETTINGS2.toggles == null) GRAPHSETTINGS2.toggles = {};
+    for (const graph of GRAPH_LIST) {
+      if (graph.toggles) {
+        if (GRAPHSETTINGS2.toggles[graph.id] === void 0) {
+          GRAPHSETTINGS2.toggles[graph.id] = {};
+        }
+        graph.toggles.forEach((toggle) => {
+          if (GRAPHSETTINGS2.toggles[graph.id][toggle] === void 0) {
+            GRAPHSETTINGS2.toggles[graph.id][toggle] = false;
+          }
+        });
+      }
+    }
+    GRAPHSETTINGS2.open = false;
+    MODULES.graphs = {};
+    MODULES.graphs.useDarkAlways = false;
+  }
+  function clearData(keepN, clrall = false) {
+    let changed = false;
+    let currentPortalNumber = getTotalPortals();
+    if (clrall) {
+      for (const [portalID, portalData] of Object.entries(graphState.portalSaveData)) {
+        if (portalData.totalPortals != currentPortalNumber) {
+          delete graphState.portalSaveData[portalID];
+          changed = true;
+        }
+      }
+    } else {
+      let totalSaved = Object.keys(graphState.portalSaveData).length;
+      for (const [portalID, portalData] of Object.entries(graphState.portalSaveData)) {
+        if (totalSaved > keepN && portalData.totalPortals <= currentPortalNumber - keepN) {
+          delete graphState.portalSaveData[portalID];
+          totalSaved--;
+          changed = true;
+        }
+      }
+    }
+    if (changed) {
+      savePortalData(true);
+      showHideUnusedGraphs();
+    }
+  }
+  function deleteSpecific() {
+    let portalNum = Number(document.getElementById("deleteSpecificTextBox").value);
+    if (parseInt(portalNum) < 0) {
+      clearData(Math.abs(portalNum));
+    } else {
+      for (const [portalID, portalData] of Object.entries(graphState.portalSaveData)) {
+        if (portalData.totalPortals === portalNum) delete graphState.portalSaveData[portalID];
+      }
+    }
+    savePortalData(true);
+    showHideUnusedGraphs();
+  }
+
+  // src/modules/graphs/gamedata.ts
+  var getGameData = {
+    currentTime: () => {
+      return getGameTime() - game.global.portalTime;
+    },
+    // portalTime changes on pause, 'when a portal started' is not a static concept
+    timeOnMap: () => {
+      let annoyingRemainder = 0;
+      if (game.global.mapStarted < game.global.zoneStarted) {
+        annoyingRemainder = getGameTime() - game.global.mapStarted;
+      }
+      return getGameTime() - game.global.mapStarted - annoyingRemainder;
+    },
+    world: () => {
+      return game.global.world;
+    },
+    challengeActive: () => {
+      return game.global.challengeActive;
+    },
+    voids: () => {
+      return game.global.totalVoidMaps;
+    },
+    totalVoids: () => {
+      return game.stats.totalVoidMaps.value;
+    },
+    nullifium: () => {
+      return recycleAllExtraHeirlooms(true);
+    },
+    coord: () => {
+      return game.upgrades.Coordination.allowed - game.upgrades.Coordination.done;
+    },
+    overkill: () => {
+      if (game.options.menu.liquification.enabled && game.talents.liquification.purchased && !game.global.mapsActive && game.global.gridArray && game.global.gridArray[0] && game.global.gridArray[0].name == "Liquimp")
+        return 100;
+      var grid = game.global.mapsActive ? game.global.mapGridArray : game.global.gridArray;
+      if (!grid) return 0;
+      return grid.filter((cell) => cell && cell.overkilled).length;
+    },
+    zoneTime: () => {
+      return Math.round((getGameTime() - game.global.zoneStarted) * 100) / 100;
+    },
+    // rounded to x.xs, not used
+    mapbonus: () => {
+      return game.global.mapBonus;
+    },
+    empower: () => {
+      return game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.empower !== "undefined" ? game.global.dailyChallenge.empower.stacks : 0;
+    },
+    lastWarp: () => {
+      return game.global.lastWarp;
+    },
+    essence: () => {
+      return game.global.spentEssence + game.global.essence;
+    },
+    heliumOwned: () => {
+      return game.resources.helium.owned;
+    },
+    //magmite: () => { return game.global.magmite },
+    //magmamancers: () => { return game.jobs.Magmamancer.owned },
+    fluffy: () => {
+      let maxExp = Math.floor(1e3 * Math.pow(5, Fluffy.getCurrentPrestige()) * ((Math.pow(4, 10) - 1) / (4 - 1)));
+      let exp = Math.min(game.global.fluffyExp, maxExp);
+      for (var evo = 0; evo < Fluffy.getCurrentPrestige(); evo++) {
+        exp += Math.floor(1e3 * Math.pow(5, evo) * ((Math.pow(4, 10) - 1) / (4 - 1)));
+        ;
+      }
+      return exp;
+    },
+    //nursery: () => { return game.buildings.Nursery.purchased },
+    amals: () => {
+      return game.jobs.Amalgamator.owned;
+    },
+    wonders: () => {
+      return game.challenges.Experience.wonders;
+    },
+    scruffy: () => {
+      return game.global.fluffyExp2;
+    },
+    smithies: () => {
+      return game.buildings.Smithy.owned;
+    },
+    radonOwned: () => {
+      return game.resources.radon.owned;
+    },
+    worshippers: () => {
+      return game.jobs.Worshipper.owned;
+    },
+    bonfires: () => {
+      return game.challenges.Hypothermia.bonfires;
+    },
+    embers: () => {
+      return game.challenges.Hypothermia.embers;
+    },
+    cruffys: () => {
+      return game.challenges.Nurture.level;
+    },
+    universe: () => {
+      return game.global.universe;
+    },
+    s3: () => {
+      return game.global.lastRadonPortal;
+    },
+    u1hze: () => {
+      return game.global.highestLevelCleared;
+    },
+    u2hze: () => {
+      return game.global.highestRadonLevelCleared;
+    },
+    c23increase: () => {
+      if (game.global.challengeActive !== "" && game.global.runningChallengeSquared) {
+        return Math.max(0, getIndividualSquaredReward(game.global.challengeActive, game.global.world) - getIndividualSquaredReward(game.global.challengeActive));
+      } else {
+        return 0;
+      }
+    },
+    cinf: () => {
+      return countChallengeSquaredReward(false, false, true);
+    },
+    mutatedSeeds: () => {
+      return game.global.mutatedSeedsSpent + game.global.mutatedSeeds;
+    }
+  };
+  var gameDataReader = {
+    u1hze: () => getGameData.u1hze(),
+    u2hze: () => getGameData.u2hze(),
+    fluffy: () => getGameData.fluffy(),
+    essence: () => getGameData.essence(),
+    challengeActive: () => getGameData.challengeActive(),
+    universe: () => getGameData.universe(),
+    totalHeliumEarned: () => game.global.totalHeliumEarned,
+    heliumLeftover: () => game.global.heliumLeftover,
+    runningChallengeSquared: () => game.global.runningChallengeSquared,
+    empowerDefined: () => typeof game.global.dailyChallenge.empower !== "undefined"
+  };
+  var Portal = class {
+    constructor() {
+      this.universe = getGameData.universe();
+      this.totalPortals = getTotalPortals();
+      this.challenge = getGameData.challengeActive() === "Daily" ? getCurrentChallengePane().split(".")[0].substr(13).slice(0, 16) : getGameData.challengeActive();
+      this.initialNullifium = game.global.nullifium;
+      this.totalNullifium = getGameData.nullifium();
+      this.totalVoidMaps = getGameData.totalVoids();
+      this.cinf = getGameData.cinf();
+      if (this.universe === 1) {
+        this.totalHelium = game.global.totalHeliumEarned;
+        this.initialFluffy = getGameData.fluffy() - game.stats.bestFluffyExp.value;
+        this.initialDE = getGameData.essence();
+      }
+      if (this.universe === 2) {
+        this.totalRadon = game.global.totalRadonEarned;
+        this.initialScruffy = getGameData.scruffy() - game.stats.bestFluffyExp2.value;
+        this.initialMutes = getGameData.mutatedSeeds();
+        this.s3 = getGameData.s3();
+      }
+      this.perZoneData = {};
+      var perZoneItems = GRAPH_LIST.filter((graph) => (graph.universe == this.universe || !graph.universe) && graph.conditional(gameDataReader) && graph.dataVar).map((graph) => graph.dataVar).concat(["currentTime", "mapCount", "timeOnMap"]);
+      perZoneItems.forEach((name) => this.perZoneData[name] = []);
+    }
+    // update per zone data and special totals
+    update(fromMap) {
+      const world = getGameData.world();
+      this.totalNullifium = game.global.nullifium - this.initialNullifium + getGameData.nullifium();
+      this.totalVoidMaps = getGameData.totalVoids();
+      for (const [name, data] of Object.entries(this.perZoneData)) {
+        if (world + 1 < data.length) {
+          data.splice(world + 1);
+        }
+        if (name === "timeOnMap") {
+          let timeOnMap = getGameData.timeOnMap();
+          if (fromMap) {
+            data[world] = data[world] + timeOnMap || timeOnMap;
+          }
+          continue;
+        }
+        if (name === "mapCount") {
+          if (fromMap && game.global.mapsActive) {
+            data[world] = data[world] + 1 || 1;
+          }
+          continue;
+        }
+        data[world] = getGameData[name]();
+      }
+    }
+  };
+  function getportalID() {
+    return `u${getGameData.universe()} p${getTotalPortals()}`;
+  }
+  function pushData(fromMap) {
+    const portalID = getportalID();
+    if (!graphState.portalSaveData[portalID] || getGameData.world() === 1) {
+      savePortalData(true);
+      graphState.portalSaveData[portalID] = new Portal();
+    }
+    graphState.portalSaveData[portalID].update(fromMap);
+    clearData(GRAPHSETTINGS2.maxGraphs);
+    savePortalData(false);
+    if (GRAPHSETTINGS2.live && GRAPHSETTINGS2.open) {
+      graphState.requestRedraw?.();
+    }
+  }
+
+  // src/modules/graphs/render.ts
+  var chart = null;
+  var echartsReady = false;
+  var pendingRender = false;
+  var lastTheme = -1;
+  function renderChart(option) {
+    if (typeof echarts === "undefined" || !echartsReady) {
+      pendingRender = true;
+      return;
+    }
+    if (chart) chart.dispose();
+    chart = echarts.init(document.getElementById("graph"), GRAPHSETTINGS2.darkTheme ? "dark" : void 0);
+    chart.setOption(option, { notMerge: true });
+    chart.on("legendselectchanged", (p) => {
+      const series = option.series || [];
+      GRAPHSETTINGS2.rememberSelected = series.map((s) => p.selected[s.name] !== false);
+      saveSetting(null, null);
+    });
+  }
+  function createUI() {
+    var head = document.getElementsByTagName("head")[0];
+    var chartscript = document.createElement("script");
+    chartscript.type = "text/javascript";
+    chartscript.src = "https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js";
+    chartscript.integrity = "sha384-pPi0zxBAoDu6+JXW/C68UZLvBUUtU+7zonhif43rqj7pxsGyqyqzcian2Rj37Rss";
+    chartscript.crossOrigin = "anonymous";
+    chartscript.onload = function() {
+      echartsReady = true;
+      if (pendingRender) {
+        pendingRender = false;
+        updateGraph();
+      }
+    };
+    head.appendChild(chartscript);
+    var graphsButton = document.createElement("TD");
+    graphsButton.appendChild(document.createTextNode("Graphs"));
+    graphsButton.setAttribute("class", "btn btn-default");
+    graphsButton.setAttribute("onclick", "escapeATWindows(false); drawGraph(); swapGraphUniverse();");
+    var settingbarRow = document.getElementById("settingsTable").firstElementChild.firstElementChild;
+    settingbarRow.insertBefore(graphsButton, settingbarRow.childNodes[10]);
+    document.getElementById("settingsRow").innerHTML += `
+    <div id="graphParent" style="display: none; height: 600px; overflow: auto; position: relative;">
+      <div id="graph" style="margin-bottom: 10px;margin-top: 5px; height: 530px;"></div>
+      <div id="graphFooter" style="height: 50px;font-size: 1em;">
+        <div id="graphFooterLine1" style="display: -webkit-flex;flex: 0.75;flex-direction: row; height:30px;"></div>
+        <div id="graphFooterLine2"></div>
+      </div>
+    </div>
+    `;
+    function createSelector(id, sourceList, textMod = "", onchangeMod = "") {
+      let selector = document.createElement("select");
+      selector.id = id;
+      selector.setAttribute("style", "");
+      selector.setAttribute("onchange", "saveSetting(this.id, this.value); drawGraph();" + onchangeMod);
+      for (var item of sourceList) {
+        let opt = document.createElement("option");
+        opt.value = String(item);
+        opt.text = textMod + item;
+        selector.appendChild(opt);
+      }
+      selector.value = GRAPHSETTINGS2[selector.id];
+      return selector;
+    }
+    var universeFooter = document.getElementById("graphFooterLine1");
+    const selectorSpecs = [
+      ["universeSelection", [1, 2], "Universe ", " swapGraphUniverse();"],
+      ["u1graphSelection", GRAPH_LIST.filter((g) => g.universe == 1 || !g.universe).map((g) => g.selectorText)],
+      ["u2graphSelection", GRAPH_LIST.filter((g) => g.universe == 2 || !g.universe).map((g) => g.selectorText)]
+    ];
+    selectorSpecs.forEach((opts) => universeFooter.appendChild(createSelector(...opts)));
+    universeFooter.innerHTML += `
+    <div><button onclick="drawGraph()" style="margin-left:0.5em;">Refresh</button></div>
+    <div style="flex:0 100 5%;"></div>
+    <div><input type="checkbox" id="clrChkbox" onclick="toggleClearButton();"></div>
+    <div style="margin-left: 0.5vw;">
+      <button id="clrAllDataBtn" onclick="clearData(null,true); drawGraph();" class="btn" disabled="" style="flex:auto; padding: 2px 6px;border: 1px solid white;">
+        Clear All Previous Data</button></div>
+    <div style="flex:0 100 5%;"></div>
+    <div style="flex:0 2 3.5vw;"><input style="width:100%;min-width: 40px;" id="deleteSpecificTextBox"></div>
+    <div style="flex:auto; margin-left: 0.5vw;"><button onclick="deleteSpecific(); drawGraph();">Delete Specific Portal</button></div>
+    <div style="float:right; margin-right: 0.5vw;"><button onclick="toggleSpecificGraphs()">Invert Selection</button></div>
+    <div style="float:right; margin-right: 1vw;"><button onclick="toggleAllGraphs()">All Off/On</button></div>`;
+    document.querySelector("#universeSelection").value = GRAPHSETTINGS2.universeSelection;
+    document.querySelector("#u1graphSelection").value = GRAPHSETTINGS2.u1graphSelection;
+    document.querySelector("#u2graphSelection").value = GRAPHSETTINGS2.u2graphSelection;
+    let tipsText = "You can zoom by dragging a box around an area. You can turn portals off by clicking them on the legend. Quickly view the last portal by clicking it off, then Invert Selection. Or by clicking All Off, then clicking the portal on. To delete a portal, Type its portal number in the box and press Delete Specific. Using negative numbers in the Delete Specific box will KEEP that many portals (starting counting backwards from the current one), ie: if you have Portals 1000-1015, typing -10 will keep 1005-1015.";
+    document.getElementById("graphFooterLine2").innerHTML += `
+    <span style="float: left;" onmouseover='tooltip("Tips", "customText", event, "${tipsText}")' onmouseout='tooltip("hide")'>Tips: Hover for usage tips.</span>
+    <span style="float: left; margin-left: 2vw"><input type="checkbox" id="liveCheckbox" onclick="saveSetting('live', this.checked);"> Live Updates</span>
+    <span style="float: left; margin-left: 2vw">Show <input style="width:40px;" id="portalCountTextBox" onchange="saveSetting('portalsDisplayed', parseInt(this.value) || GRAPHSETTINGS.portalsDisplayed); updateGraph();"> Portals</span>
+    <input onclick="toggleDarkGraphs()" style="height: 20px; float: right; margin-right: 0.5vw;" type="checkbox" id="blackCB">
+    <span style="float: right; margin-right: 0.5vw;">Black Graphs:</span>
+    `;
+    var toggleDiv = document.createElement("div");
+    toggleDiv.id = "toggleDiv";
+    toggleDiv.setAttribute("style", "position: absolute; top: 1rem; left: 3rem; z-index: 1;");
+    toggleDiv.innerText = "";
+    document.querySelector("#graphParent").appendChild(toggleDiv);
+    MODULES.graphs.themeChanged = function() {
+      if (game && game.options.menu.darkTheme.enabled != lastTheme) {
+        let f2 = function(h) {
+          h.style.color = 2 == game.options.menu.darkTheme.enabled ? "" : "black";
+        }, g2 = function(h) {
+          if ("graphSelection" == h.id) return void (2 != game.options.menu.darkTheme.enabled && (h.style.color = "black"));
+        };
+        var f = f2, g = g2;
+        toggleDarkGraphs();
+        var c = document.getElementsByTagName("input");
+        var d = document.getElementsByTagName("select");
+        var e = document.getElementById("graphFooterLine1").children;
+        for (let h of c) f2(h);
+        for (let h of d) f2(h);
+        for (let h of e) f2(h);
+        for (let h of e) g2(h);
+      }
+      game && (lastTheme = game.options.menu.darkTheme.enabled);
+    };
+    document.querySelector("#blackCB").checked = GRAPHSETTINGS2.darkTheme;
+    MODULES.graphs.themeChanged();
+    document.querySelector("#portalCountTextBox").value = String(GRAPHSETTINGS2.portalsDisplayed);
+  }
+  function swapGraphUniverse() {
+    let universe = GRAPHSETTINGS2.universeSelection;
+    let active = `u${universe}`;
+    let inactive = `u${universe == 1 ? 2 : 1}`;
+    document.getElementById(`${active}graphSelection`).style.display = "";
+    document.getElementById(`${inactive}graphSelection`).style.display = "none";
+  }
+  function toggleClearButton() {
+    ;
+    document.getElementById("clrAllDataBtn").disabled = !document.getElementById("clrChkbox").checked;
+  }
+  function toggleDarkGraphs() {
+    function removeDarkGraphs() {
+      var darkcss2 = document.getElementById("dark-graph.css");
+      if (darkcss2) {
+        document.head.removeChild(darkcss2);
+        debug("Removing dark-graph.css file", "graphs");
+      }
+    }
+    function addDarkGraphs() {
+      var darkcss2 = document.getElementById("dark-graph.css");
+      if (!darkcss2) {
+        var b = document.createElement("link");
+        b.rel = "stylesheet";
+        b.type = "text/css";
+        b.id = "dark-graph.css";
+        b.href = basepath + "dark-graph.css";
+        document.head.appendChild(b);
+        debug("Adding dark-graph.css file", "graphs");
+      }
+    }
+    if (game) {
+      var darkcss = document.getElementById("dark-graph.css");
+      var dark = document.getElementById("blackCB").checked;
+      saveSetting("darkTheme", dark);
+      if (!darkcss && (0 == game.options.menu.darkTheme.enabled || 2 == game.options.menu.darkTheme.enabled) || MODULES.graphs.useDarkAlways || dark) {
+        addDarkGraphs();
+      } else {
+        if (darkcss && (1 == game.options.menu.darkTheme.enabled || 3 == game.options.menu.darkTheme.enabled || !dark)) {
+          removeDarkGraphs();
+        }
+      }
+    }
+    updateGraph();
+  }
+  function escapeATWindows(escPressed = true) {
+    var a = document.getElementById("tooltipDiv");
+    if (a.style.display != "none") return void cancelTooltip();
+    for (const elemId of ["autoSettings", "autoTrimpsTabBarMenu", "graphParent"]) {
+      var elem = document.getElementById(elemId);
+      if (!elem) continue;
+      if (elemId === "graphParent") {
+        var open = elem.style.display === "block";
+        if (escPressed) open = true;
+        elem.style.display = open ? "none" : "block";
+        GRAPHSETTINGS2.open = !open;
+        trimpStatsDisplayed = !open;
+      } else {
+        elem.style.display = "none";
+      }
+    }
+  }
+  function lookupGraph(selectorText) {
+    for (const graph of GRAPH_LIST) {
+      if (graph.selectorText === selectorText) return graph;
+    }
+  }
+  function drawGraph() {
+    function makeCheckbox(graph, toggle) {
+      var container = document.createElement("span");
+      var checkbox = document.createElement("input");
+      var label = document.createElement("span");
+      container.style.padding = "0rem .5rem";
+      checkbox.type = "checkbox";
+      checkbox.id = toggle;
+      checkbox.checked = GRAPHSETTINGS2.toggles[graph][toggle] ?? false;
+      let funcString = "";
+      if (TOGGLE_RULES[toggle] && TOGGLE_RULES[toggle].exclude) {
+        TOGGLE_RULES[toggle].exclude.forEach(
+          (exTog) => funcString += `GRAPHSETTINGS.toggles.${graph}.${exTog} = false; `
+        );
+      }
+      funcString += `GRAPHSETTINGS.toggles.${graph}.${toggle} = this.checked; drawGraph();`;
+      checkbox.setAttribute("onclick", funcString);
+      label.innerText = toggle;
+      label.style.color = "#757575";
+      container.appendChild(checkbox);
+      container.appendChild(label);
+      return container;
+    }
+    pushData();
+    updateGraph();
+    let universe = GRAPHSETTINGS2.universeSelection;
+    let selectedGraph = document.getElementById(`u${universe}graphSelection`);
+    if (selectedGraph.value) {
+      let graph = lookupGraph(selectedGraph.value);
+      let toggleDiv = document.querySelector("#toggleDiv");
+      toggleDiv.innerHTML = "";
+      if (graph && graph.toggles) {
+        for (const toggle of graph.toggles) {
+          toggleDiv.appendChild(makeCheckbox(graph.id, toggle));
+        }
+      }
+    }
+    showHideUnusedGraphs2();
+  }
+  function updateGraph() {
+    const universe = GRAPHSETTINGS2.universeSelection;
+    const sel = document.getElementById(`u${universe}graphSelection`);
+    if (!sel || !sel.value) return;
+    const graph = lookupGraph(sel.value);
+    if (!graph) return;
+    const portals = Object.values(graphState.portalSaveData);
+    const option = graph.graphType === "column" ? buildColumnOption(graph, portals, GRAPHSETTINGS2) : buildLineOption(graph, portals, GRAPHSETTINGS2);
+    const seriesLen = Array.isArray(option.series) ? option.series.length : 0;
+    if (GRAPHSETTINGS2.rememberSelected.length !== seriesLen) GRAPHSETTINGS2.rememberSelected = [];
+    renderChart(option);
+  }
+  function showHideUnusedGraphs2() {
+    let activeUniverses = [];
+    for (const graph of GRAPH_LIST) {
+      if (graph.graphType != "line") continue;
+      const universes = graph.universe ? [graph.universe] : [1, 2];
+      for (const universe of universes) {
+        let style = "none";
+        for (const portal of Object.values(graphState.portalSaveData)) {
+          if (portal.perZoneData[graph.dataVar] && portal.universe === universe && // has collected data, in the right universe
+          new Set(portal.perZoneData[graph.dataVar].filter((x) => x)).size > 1) {
+            style = "";
+            if (!activeUniverses.includes(universe)) activeUniverses.push(universe);
+            break;
+          }
+        }
+        ;
+        document.querySelector(`#u${universe}graphSelection [value="${graph.selectorText}"]`).style.display = style;
+      }
+    }
+    let universeSel = document.querySelector(`#universeSelection`);
+    if (activeUniverses.length === 1) {
+      universeSel.style.display = "none";
+      GRAPHSETTINGS2.universeSelection = activeUniverses[0];
+      swapGraphUniverse();
+    } else {
+      universeSel.style.display = "";
+    }
+  }
+  function persistSelection() {
+    if (!chart) return;
+    const opt = chart.getOption();
+    const series = opt.series || [];
+    const legend = (opt.legend || [])[0] || {};
+    const selected = legend.selected || {};
+    GRAPHSETTINGS2.rememberSelected = series.map((s) => selected[s.name] !== false);
+    saveSetting(null, null);
+  }
+  function toggleSpecificGraphs() {
+    if (!chart) return;
+    const series = chart.getOption().series || [];
+    for (const s of series) {
+      chart.dispatchAction({ type: "legendToggleSelect", name: s.name });
+    }
+    persistSelection();
+  }
+  function toggleAllGraphs() {
+    if (!chart) return;
+    const opt = chart.getOption();
+    const series = opt.series || [];
+    const legend = (opt.legend || [])[0] || {};
+    const selected = legend.selected || {};
+    let visCount = 0;
+    for (const s of series) if (selected[s.name] !== false) visCount++;
+    const majorityVisible = visCount > series.length / 2;
+    for (const s of series) {
+      chart.dispatchAction({ type: majorityVisible ? "legendUnSelect" : "legendSelect", name: s.name });
+    }
+    persistSelection();
+  }
+  function bootGraphs() {
+    loadGraphData();
+    createUI();
+    showHideUnusedGraphs2();
+    graphState.requestRedraw = () => {
+      if (GRAPHSETTINGS2.live && GRAPHSETTINGS2.open) updateGraph();
+    };
+    document.addEventListener(
+      "keydown",
+      function(a) {
+        1 != game.options.menu.hotkeys.enabled || game.global.preMapsActive || game.global.lockTooltip || ctrlPressed || heirloomsShown || 27 != a.keyCode || escapeATWindows();
+      },
+      true
+    );
+    const w = globalThis;
+    var originalnextWorld = w.nextWorld;
+    w.nextWorld = function() {
+      try {
+        if (game.options.menu.pauseGame.enabled) return;
+        if (null === graphState.portalSaveData) graphState.portalSaveData = {};
+        if (getGameData.world()) {
+          pushData();
+        }
+      } catch (e) {
+        debug("Gather info failed: " + e);
+      }
+      originalnextWorld(...arguments);
+    };
+    var originalactivatePortal = w.activatePortal;
+    w.activatePortal = function() {
+      try {
+        pushData();
+      } catch (e) {
+        debug("Gather info failed: " + e);
+      }
+      originalactivatePortal(...arguments);
+    };
+    var originalbuildMapGrid = w.buildMapGrid;
+    w.buildMapGrid = function() {
+      try {
+        pushData(true);
+      } catch (e) {
+        debug("Gather info failed: " + e);
+      }
+      originalbuildMapGrid(...arguments);
+    };
+    var originalmapsSwitch = w.mapsSwitch;
+    w.mapsSwitch = function() {
+      originalmapsSwitch(...arguments);
+      try {
+        if (!game.global.mapsActive) pushData(true);
+      } catch (e) {
+        debug("Gather info failed: " + e);
+      }
+    };
+  }
+
   // src/legacy-bridge.ts
-  Object.assign(globalThis, { ...utils_exports, ...guard_exports, ...time_exports, ...buystate_exports, ...dynprestige_exports, ...breedtimer_exports, ...nature_exports, ...magmite_exports, ...calc_exports, ...equipment_exports, ...buildings_exports, ...jobs_exports, ...upgrades_exports, ...gather_exports, ...heirlooms_exports, ...fight_exports, ...scryer_exports, ...ab_exports, ...MAZ_exports, ...stance_exports, ...maps_exports, ...mapfunctions_exports, ...mapfunctions_amp_exports, ...portal_exports, ...save_backup_exports, ...import_export_exports, ...query_exports, ...other_exports, ...other_praiding_exports, ...settings_engine_exports, ...settings_menu_exports, ...settings_visibility_exports, ...settings_defs_exports, ...settings_boot_exports });
+  Object.assign(globalThis, { ...utils_exports, ...guard_exports, ...time_exports, ...buystate_exports, ...dynprestige_exports, ...breedtimer_exports, ...nature_exports, ...magmite_exports, ...calc_exports, ...equipment_exports, ...buildings_exports, ...jobs_exports, ...upgrades_exports, ...gather_exports, ...heirlooms_exports, ...fight_exports, ...scryer_exports, ...ab_exports, ...MAZ_exports, ...stance_exports, ...maps_exports, ...mapfunctions_exports, ...mapfunctions_amp_exports, ...portal_exports, ...save_backup_exports, ...import_export_exports, ...query_exports, ...other_exports, ...other_praiding_exports, ...settings_engine_exports, ...settings_menu_exports, ...settings_visibility_exports, ...settings_defs_exports, ...settings_boot_exports, ...graphs_exports });
 
   // src/modules/perks.ts
   globalThis.AutoPerks = {};
@@ -20039,5 +21358,6 @@
 
   // src/main.ts
   seedModuleDefaults();
+  bootGraphs();
   console.log("[AutoTrimps] modern build booted");
 })();

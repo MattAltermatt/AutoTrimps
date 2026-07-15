@@ -24,12 +24,13 @@ import { buildUserscript } from '../../scripts/build-userscript.mjs'
 // userscript, so it cannot be fooled by anything upstream of the emit.
 
 const ALLOWED: Record<string, string> = {
-  // Injected by legacy/Graphs.js at runtime. Vendoring it is a KNOWN, DOCUMENTED deferral, not an
-  // oversight: bundling our local copy alongside caused a double-define (Highcharts error #16), so it is
-  // parked for the Graphs modernization phase. Recorded here so the debt is visible in a test rather
-  // than buried in a comment — and so that adding a SECOND such origin is a hard failure, not a habit.
-  // (It cannot take an SRI hash today: Graphs.js builds the <script> element dynamically.)
-  'code.highcharts.com': 'legacy/Graphs.js injects Highcharts at runtime — deferred to the Graphs phase (see CLAUDE.md)',
+  // Injected by src/modules/graphs/render.ts at runtime for the Graphs dashboard. Unlike the old
+  // Highcharts inject this one is HARDENED: a version-PINNED jsDelivr URL (echarts@5.6.0) carrying an
+  // `integrity` SRI hash + `crossOrigin` on the dynamically-created <script> — so a compromised CDN
+  // response is rejected by the browser. Recorded here so the one allowed external origin is visible in
+  // a test, and adding a SECOND is a hard failure, not a habit. ECharts is not bundled (a single global
+  // registration, same reason Highcharts wasn't).
+  'cdn.jsdelivr.net': 'render.ts injects pinned+SRI Apache ECharts (echarts@5.6.0) for the Graphs dashboard',
 }
 
 /** Origins we own. Not a trust decision — these are our own deploy targets. */
@@ -48,7 +49,10 @@ beforeAll(async () => {
 
 /** Every origin the emitted bundle references, with the executable ones separated out. */
 function origins(src: string) {
-  const all = [...src.matchAll(/https?:\/\/([a-zA-Z0-9.-]+)([a-zA-Z0-9._/-]*)/g)].map((m) => ({
+  // Path class includes `@` so version-pinned CDN URLs (jsDelivr's echarts@5.6.0/…/echarts.min.js)
+  // are captured whole and classified executable — without it the path truncates at `@` and a real
+  // `<script src>` slips past as non-executable.
+  const all = [...src.matchAll(/https?:\/\/([a-zA-Z0-9.-]+)([a-zA-Z0-9._/@-]*)/g)].map((m) => ({
     host: m[1]!.toLowerCase(),
     path: m[2] ?? '',
   }))

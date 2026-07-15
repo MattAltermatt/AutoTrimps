@@ -11,6 +11,11 @@ declare global {
   // main.js), called by bare name from converted modules. Pragmatic boundary sigs
   // (§5): typed return, loose args — we don't own the 40k-line game object.
   function prettify(...args: any[]): string
+  // External read-only globals the game/page provide (no AT writer): the LZString compression lib
+  // (loaded via <script>, used by graphs/storage.ts) and the Ctrl-key state flag (Trimps main.js,
+  // read by graphs/render.ts's Esc handler). Read-only, so they live here, not in at-legacy.d.ts.
+  const LZString: any
+  const ctrlPressed: any
   function getPlayerCritChance(...args: any[]): number
   function getPlayerCritDamageMult(...args: any[]): number
   function getMegaCritDamageMult(tier?: number): number
@@ -172,6 +177,13 @@ declare global {
   function toggleGeneticistassist(...args: any[]): any
   // Challenge² reward math, read by bare name from import-export.ts (c2 table).
   function getIndividualSquaredReward(...args: any[]): any
+
+  // Native game helpers read by bare name from graphs/gamedata.ts (Graphs.js port). Pragmatic
+  // boundary sigs: typed return, loose args — the game object is `any`.
+  function getGameTime(...args: any[]): number            // main.js — elapsed game-time ms
+  function getCurrentChallengePane(...args: any[]): string // main.js — daily challenge id string
+  function recycleAllExtraHeirlooms(...args: any[]): number // main.js — nullifium from recycling
+  function countChallengeSquaredReward(...args: any[]): any // main.js — [c2, c3] cinf tuple
 }
 
 export {}
