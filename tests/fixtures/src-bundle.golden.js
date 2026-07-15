@@ -19639,6 +19639,21 @@
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       axisLabel: { formatter: (v) => formatDuration(Number(v) / 1e3), fontSize: BASE_FONT }
     };
+    option.tooltip = {
+      trigger: "axis",
+      axisPointer: { type: "line" },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      formatter: (params) => {
+        const arr = Array.isArray(params) ? params : [params];
+        const x = arr.length ? arr[0].axisValue ?? (Array.isArray(arr[0].value) ? arr[0].value[0] : 0) : 0;
+        const head = `Time: ${formatDuration(Number(x) / 1e3)}<br>`;
+        const rows = arr.map((p) => {
+          const y = Array.isArray(p.value) ? p.value[1] : p.value;
+          return `<span style="color:${p.color}">\u25CF</span> ${p.seriesName}: <b>${prettify(y)}/hr</b>`;
+        }).join("<br>");
+        return head + rows;
+      }
+    };
     const hourly = !!(settings.toggles[graph.id] ?? {})["1hr"];
     if (hourly) option.title.text = graph.graphTitle + " (hourly)";
     const series = [];
@@ -19647,7 +19662,15 @@
       if (portal.universe !== settings.universeSelection) continue;
       let samples = portal.hehrSamples ?? [];
       if (hourly) samples = coarsenToHour(samples);
-      const data = samples.filter(([t]) => t > 0).map(([t, earned]) => [t, earned / (t / HOUR_MS)]);
+      const baseline = portal.universe === 1 ? portal.totalHelium : portal.totalRadon;
+      const pts = typeof baseline === "number" ? [[0, baseline]] : [];
+      for (const s of samples) if (s[0] > 0) pts.push(s);
+      const data = [];
+      for (let i = 1; i < pts.length; i++) {
+        const dt = pts[i][0] - pts[i - 1][0];
+        if (dt <= 0) continue;
+        data.push([pts[i][0], (pts[i][1] - pts[i - 1][1]) / (dt / HOUR_MS)]);
+      }
       series.push({ name: `Portal ${portal.totalPortals}: ${portal.challenge}`, type: "line", showSymbol: false, data });
       portalCount++;
       if (portalCount >= settings.portalsDisplayed) break;

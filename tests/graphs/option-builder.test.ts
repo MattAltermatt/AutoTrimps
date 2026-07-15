@@ -160,7 +160,7 @@ describe('reviewer-found divergences (option-builder)', () => {
   })
 })
 
-describe('He/hr time-series graph (#135)', () => {
+describe('He/hr time-series graph (#135, #136)', () => {
   const H = 3_600_000 // one hour in ms
   function hehrPortal(): PortalData {
     return {
@@ -168,7 +168,8 @@ describe('He/hr time-series graph (#135)', () => {
       totalPortals: 1,
       challenge: 'None',
       perZoneData: {},
-      // [runTimeMs, totalHeliumEarned]: 1000 He after 1h, 3000 after 2h, 3600 after 3h
+      // hehrSamples store the game's *lifetime* total (never reset per portal): 1000 lifetime He at 1h,
+      // 3000 at 2h, 3600 at 3h. No totalHelium baseline here, so the first sample has no window.
       hehrSamples: [
         [H, 1000],
         [2 * H, 3000],
@@ -177,26 +178,49 @@ describe('He/hr time-series graph (#135)', () => {
     } as unknown as PortalData
   }
 
-  it('plots resource-per-hour = earned / (time in hours), on a time x-axis', () => {
+  // #136: y is the CURRENT rate — Δ(lifetime total) over each window / window hours — NOT lifetime/t.
+  // The delta cancels the lifetime baseline, so the value is this run's earning rate in that window.
+  it('plots the windowed earning rate (Δearned / Δhours), not lifetime / t', () => {
     const opt = buildLineOption(byId('Helium_per_Hour'), [hehrPortal()], settings())
     const data = (opt.series as { data: [number, number][] }[])[0].data
-    // y = earned / (t/hour): 1000/1=1000, 3000/2=1500, 3600/3=1200
+    // window [1h,2h]: (3000-1000)/1h = 2000/hr ; window [2h,3h]: (3600-3000)/1h = 600/hr
+    // no baseline => first sample (1h) has no predecessor, so no point for it.
     expect(data).toEqual([
-      [H, 1000],
-      [2 * H, 1500],
-      [3 * H, 1200],
+      [2 * H, 2000],
+      [3 * H, 600],
     ])
     expect((opt.xAxis as { name: string }).name).toBe('Time')
   })
 
-  it('the 1hr toggle coarsens 15-min samples to hourly points', () => {
+  // #136: with a run-start baseline (totalHelium), a [0, baseline] origin is seeded so the FIRST sample
+  // also gets a rate — and the lifetime baseline is subtracted out.
+  it('seeds a run-origin point from totalHelium so the first sample gets a rate', () => {
+    const p = {
+      universe: 1, totalPortals: 1, challenge: 'None', perZoneData: {},
+      totalHelium: 500, // lifetime He at run start
+      hehrSamples: [[H, 1000], [2 * H, 3000]] as [number, number][],
+    } as unknown as PortalData
+    const opt = buildLineOption(byId('Helium_per_Hour'), [p], settings())
+    const data = (opt.series as { data: [number, number][] }[])[0].data
+    // window [0,1h]: (1000-500)/1h = 500/hr ; window [1h,2h]: (3000-1000)/1h = 2000/hr
+    expect(data).toEqual([
+      [H, 500],
+      [2 * H, 2000],
+    ])
+  })
+
+  it('the 1hr toggle uses 1-hour windows (coarsen 15-min samples first, then rate)', () => {
     const q = H / 4 // 15 min
-    // nine 15-min samples spanning 2.25h (q .. 9q)
+    // nine 15-min samples spanning 2.25h (q .. 9q), lifetime total n*100 at sample n
     const samples: [number, number][] = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => [n * q, n * 100])
     const p = { universe: 1, totalPortals: 1, challenge: 'None', perZoneData: {}, hehrSamples: samples } as unknown as PortalData
     const opt = buildLineOption(byId('Helium_per_Hour'), [p], settings({ toggles: { Helium_per_Hour: { '1hr': true } } }))
     const data = (opt.series as { data: [number, number][] }[])[0].data
-    // keep first (q), then the next sample >= 1h later (5q), then >= 1h after that (9q)
-    expect(data.map((d) => d[0])).toEqual([q, 5 * q, 9 * q])
+    // coarsen keeps q, 5q, 9q (each >= 1h apart); rate over [q,5q] and [5q,9q] (both 4q = 1h windows):
+    // (500-100)/1h = 400/hr ; (900-500)/1h = 400/hr
+    expect(data).toEqual([
+      [5 * q, 400],
+      [9 * q, 400],
+    ])
   })
 })

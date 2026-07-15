@@ -206,9 +206,16 @@ function coarsenToHour(samples: [number, number][]): [number, number][] {
 }
 
 /**
- * Build the He/hr efficiency curve (#135). TIME-sampled, not per-zone: x is run-time (ms, duration-
- * formatted), y is resource-per-hour (earned / (t/hour)), from portal.hehrSamples. One series per portal
- * in the active universe (helium in U1, radon in U2). The '1hr' toggle coarsens 15-min → 1-hr points.
+ * Build the He/hr efficiency curve (#135, #136). TIME-sampled, not per-zone: x is run-time (ms, duration-
+ * formatted), y is the CURRENT earning rate — the resource earned within each ~15-min window, expressed
+ * per hour. It answers "how much He/hr am I making right now?", so when the line sags it's time to portal.
+ *
+ * #136: the samples store the game's *lifetime* total (game.global.totalHeliumEarned, never reset per
+ * portal), so plotting `earned / t` divided a lifetime total by this-run time — a decaying hyperbola that
+ * read absurdly high at zone 1. Taking the DELTA between consecutive samples cancels the lifetime baseline
+ * (Δ of a lifetime total over a window = what was earned this run in that window), giving the true current
+ * rate. A run-origin point [0, run-start total] is seeded when known so the first sample also gets a rate.
+ * One series per portal in the active universe (helium in U1, radon in U2); the '1hr' toggle uses 1-hr windows.
  */
 function buildTimeSeriesOption(
   graph: GraphDef,
@@ -223,6 +230,27 @@ function buildTimeSeriesOption(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     axisLabel: { formatter: (v: any) => formatDuration(Number(v) / 1000), fontSize: BASE_FONT },
   }
+  // #136: dedicated tooltip — the inherited axis tooltip (baseOption) hard-coded a "Zone N" header and
+  // showed the raw millisecond x-value. Here x is run-time, so label it "Time: <duration>" and suffix the
+  // rate rows with "/hr".
+  option.tooltip = {
+    trigger: 'axis',
+    axisPointer: { type: 'line' },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    formatter: (params: any): string => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const arr: any[] = Array.isArray(params) ? params : [params]
+      const x = arr.length ? (arr[0].axisValue ?? (Array.isArray(arr[0].value) ? arr[0].value[0] : 0)) : 0
+      const head = `Time: ${formatDuration(Number(x) / 1000)}<br>`
+      const rows = arr
+        .map((p) => {
+          const y = Array.isArray(p.value) ? p.value[1] : p.value
+          return `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${prettify(y)}/hr</b>`
+        })
+        .join('<br>')
+      return head + rows
+    },
+  }
   const hourly = !!(settings.toggles[graph.id] ?? {})['1hr']
   if (hourly) (option.title as { text?: string }).text = graph.graphTitle + ' (hourly)'
 
@@ -232,9 +260,18 @@ function buildTimeSeriesOption(
     if (portal.universe !== settings.universeSelection) continue
     let samples = portal.hehrSamples ?? []
     if (hourly) samples = coarsenToHour(samples)
-    const data: [number, number][] = samples
-      .filter(([t]) => t > 0) // guard div-by-zero at t=0
-      .map(([t, earned]) => [t, earned / (t / HOUR_MS)]) // resource per hour
+    // Seed a run-origin [0, run-start lifetime total] point when the baseline is known (Portal captures it
+    // as totalHelium/totalRadon at run start), so the first real sample also produces a windowed rate.
+    const baseline = portal.universe === 1 ? portal.totalHelium : portal.totalRadon
+    const pts: [number, number][] = typeof baseline === 'number' ? [[0, baseline]] : []
+    for (const s of samples) if (s[0] > 0) pts.push(s) // guard div-by-zero at t=0
+    // Windowed rate: (earned in window) / (window length in hours).
+    const data: [number, number][] = []
+    for (let i = 1; i < pts.length; i++) {
+      const dt = pts[i][0] - pts[i - 1][0]
+      if (dt <= 0) continue
+      data.push([pts[i][0], (pts[i][1] - pts[i - 1][1]) / (dt / HOUR_MS)])
+    }
     series.push({ name: `Portal ${portal.totalPortals}: ${portal.challenge}`, type: 'line', showSymbol: false, data })
     portalCount++
     if (portalCount >= settings.portalsDisplayed) break
