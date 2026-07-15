@@ -1,4 +1,3 @@
-/* eslint-disable */
 // #133 — legacy/AutoTrimps2.js ported to src. The last first-party legacy file: this completes the
 // strangler (legacy/ now holds only third-party FastPriorityQueue.js).
 //
@@ -35,8 +34,8 @@ null !== atscript && (globalThis.basepath = atscript.src.replace(/AutoTrimps2\.j
 // Bundled: the remote module loader is neutralized (all modules are already in the bundle). Kept as
 // published no-ops because import-export.ts still calls ATscriptLoad/ATscriptUnload by bare name from
 // its module-management UI.
-export function ATscriptLoad(pathname?: any, modulename?: any) { /* bundled: no-op */ }
-export function ATscriptUnload(a?: any) { /* bundled: no-op */ }
+export function ATscriptLoad(_pathname?: any, _modulename?: any) { /* bundled: no-op */ }
+export function ATscriptUnload(_a?: any) { /* bundled: no-op */ }
 
 // Bundled boot (was deLoaderize T3): runs after loadPageVariables() so the 570 createSetting calls in
 // bootSettingsUI() rehydrate the loaded save, not empty defaults (#22). mountBackupPortalButton() is #124.

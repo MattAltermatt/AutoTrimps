@@ -25,9 +25,9 @@
   globalThis.basepath = "https://Zorn192.github.io/AutoTrimps/";
   globalThis.modulepath = "modules/";
   null !== atscript && (globalThis.basepath = atscript.src.replace(/AutoTrimps2\.js$/, ""));
-  function ATscriptLoad2(pathname, modulename) {
+  function ATscriptLoad2(_pathname, _modulename) {
   }
-  function ATscriptUnload2(a) {
+  function ATscriptUnload2(_a) {
   }
   function initializeAutoTrimps() {
     loadPageVariables();
