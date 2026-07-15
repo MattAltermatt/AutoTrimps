@@ -30,7 +30,7 @@ const ROOT = resolve(__dirname, '..')
 
 describe('#81 — the BuyBuildingsNew dispatch, executed verbatim from legacy/AutoTrimps2.js', () => {
   // Extract the real block. If the markers ever move, this throws rather than silently testing nothing.
-  const src = readFileSync(resolve(ROOT, 'legacy/AutoTrimps2.js'), 'utf8').split('\n')
+  const src = readFileSync(resolve(ROOT, 'src/modules/main-loop.ts'), 'utf8').split('\n')
   const start = src.findIndex((l) => l.trim() === '//Buildings')
   // #87 wrapped every dispatch in an atGuard(name, function(){…}) closure, so the block no longer ends
   // at a bare `if (getPageSetting('UseAutoGen'))` line — that line is now INSIDE the next guard's

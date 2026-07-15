@@ -3,10 +3,17 @@
 // resolving them by bare name at runtime. Wildcard-spread from the module
 // namespace: anything `export`ed is auto-published — you cannot forget a name.
 // This manifest shrinks to nothing as the strangle completes.
+// #133 — main-loop.ts (was legacy/AutoTrimps2.js). Imported FIRST: its top-level side effects seed the
+// base-state globals (globalThis.MODULES = {}, autoTrimpSettings, ATrunning, …) that converted modules
+// register into at load time (breedtimer.ts:12 `MODULES["breedtimer"] = {}`, buildings.ts:41, …). If any
+// of those evaluate before this seed, `MODULES[...]=` throws. AutoTrimps2.js used to guarantee this by
+// being the very first thing in the bundle; being the first bridge import preserves that ordering. It also
+// registers setInterval(mainLoop/guiLoop) via a 4s/8s startup chain — those fire long after the bridge.
+import * as mainLoop from './modules/main-loop'
 import * as utils from './modules/utils'
-// guard: #87's mainLoop/guiLoop error boundary. AutoTrimps2.js calls atGuard() by bare name at every
-// dispatch site. It is emitted BEFORE this bundle, but only *calls* atGuard from inside mainLoop —
-// i.e. at tick time (8s after load), long after the bridge has published it. No load-time race.
+// guard: #87's mainLoop/guiLoop error boundary. main-loop.ts calls atGuard() by bare name at every
+// dispatch site, but only *inside* mainLoop — i.e. at tick time (8s after load), long after the bridge
+// has published it. No load-time race.
 import * as guard from './modules/guard'
 import * as time from './modules/time'
 import * as buystate from './modules/buystate'
@@ -64,4 +71,4 @@ import * as settingsBoot from './modules/settings-boot'
 // these names as bare globals. bootGraphs() is NOT auto-run — main.ts calls it after seedModuleDefaults.
 import * as graphs from './modules/graphs'
 
-Object.assign(globalThis, { ...utils, ...guard, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...mapfunctionsAmp, ...portal, ...saveBackup, ...importExport, ...query, ...other, ...otherPraiding, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs, ...settingsBoot, ...graphs })
+Object.assign(globalThis, { ...mainLoop, ...utils, ...guard, ...time, ...buystate, ...dynprestige, ...breedtimer, ...nature, ...magmite, ...calc, ...equipment, ...buildings, ...jobs, ...upgrades, ...gather, ...heirlooms, ...fight, ...scryer, ...ab, ...MAZ, ...stance, ...maps, ...mapfunctions, ...mapfunctionsAmp, ...portal, ...saveBackup, ...importExport, ...query, ...other, ...otherPraiding, ...settingsEngine, ...settingsMenu, ...settingsVisibility, ...settingsDefs, ...settingsBoot, ...graphs })

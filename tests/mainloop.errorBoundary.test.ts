@@ -74,19 +74,25 @@ describe('#87 — a throw in one automation no longer decapitates the rest of th
     expect(window.atGuardErrors).toEqual({})
   })
 
-  it('mainCleanup() throwing does not stop the LAST U1 dispatch — the two ends of the tick', () => {
-    // mainCleanup is dispatched in the PREAMBLE (before the universe blocks) and autoGoldenUpgradesAT is
-    // the FINAL dispatch of the U1 block, so this pair spans the whole loop. Pre-#87 this was a total
-    // kill: mainCleanup threw, and every building, job, portal, combat, stance, spire, raid and golden
-    // dispatch below it never ran again, on any tick, for the rest of the session.
+  it('an early PREAMBLE automation throwing does not stop the LAST U1 dispatch — the two ends of the tick', () => {
+    // autoBoneChargeWhenMax is dispatched in the PREAMBLE (the "Universal Logic" section, before the
+    // universe blocks) and autoGoldenUpgradesAT is the FINAL dispatch of the U1 block, so this pair spans
+    // the whole loop. Pre-#87 an early throw was a total kill: every building, job, portal, combat,
+    // stance, spire, raid and golden dispatch below it never ran again, on any tick, for the session.
+    // (#133 note: the preamble automation used to be mainCleanup, but after AutoTrimps2.js was ported to
+    // src/modules/main-loop.ts, mainCleanup is a bundle-local binding mainLoop calls directly, so a
+    // `window.mainCleanup = …` patch can't reach it — see the resetModuleVars test's comment below.
+    // autoBoneChargeWhenMax lives in other.ts and mainLoop reaches it through the global seam, so it IS
+    // patchable, and it is dispatched even earlier than mainCleanup was.)
     const later = armLateCanary()
-    window.mainCleanup = () => {
-      throw new Error('injected: mainCleanup')
+    window.autoTrimpSettings.AutoBoneChargeMax.value = 1 // != 0, so the preamble dispatch actually fires
+    window.autoBoneChargeWhenMax = () => {
+      throw new Error('injected: autoBoneChargeWhenMax')
     }
 
     expect(() => window.mainLoop()).not.toThrow() // the tick itself survives
-    expect(window.atGuardErrors.mainCleanup?.count).toBe(1) // …and the throw REALLY happened
-    expect(window.atGuardErrors.mainCleanup.message).toBe('injected: mainCleanup')
+    expect(window.atGuardErrors.autoBoneChargeWhenMax?.count).toBe(1) // …and the throw REALLY happened
+    expect(window.atGuardErrors.autoBoneChargeWhenMax.message).toBe('injected: autoBoneChargeWhenMax')
     expect(later).toHaveBeenCalledTimes(1) // …and the automation below it still ran
   })
 
@@ -153,7 +159,8 @@ describe('#87 — a throw in one automation no longer decapitates the rest of th
       throw new Error('the reporter is broken too')
     }
     const later = armLateCanary()
-    window.mainCleanup = () => {
+    window.autoTrimpSettings.AutoBoneChargeMax.value = 1
+    window.autoBoneChargeWhenMax = () => {
       throw new Error('injected')
     }
 

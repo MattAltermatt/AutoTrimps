@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import ts from 'typescript'
-import { MANIFEST, deLoaderize } from '../../scripts/build-userscript.mjs'
+import { MANIFEST } from '../../scripts/build-userscript.mjs'
 
 // #85 — the call-graph REACHABILITY net.
 //
@@ -96,11 +96,14 @@ const CORPUS = tsSources('src')
   .filter((f) => f !== join('src', 'legacy-bridge.ts'))
   .concat(LEGACY_MANIFEST)
 
-const AT2 = join('legacy', 'AutoTrimps2.js')
+// #133 — AutoTrimps2.js is now src/modules/main-loop.ts, walked like any other src module. It is already
+// in the "de-loaderized" shape (its initializeAutoTrimps() calls bootSettingsUI() directly, with no remote
+// <script> injection), so there is no build-time rewrite left to reproduce here — the corpus text is just
+// the file on disk.
+const MAINLOOP = join('src', 'modules', 'main-loop.ts')
 
 function shippedText(rel: string): string {
-  const raw = readFileSync(join(ROOT, rel), 'utf8')
-  return rel === AT2 ? deLoaderize(raw) : raw
+  return readFileSync(join(ROOT, rel), 'utf8')
 }
 
 const parse = (rel: string, text: string) =>
@@ -311,8 +314,8 @@ describe('#85 — call-graph reachability over the shipped bundle', () => {
   // vacuously while measuring nothing. Every assertion below exists to make that failure LOUD.
 
   it('the corpus is the shipped bundle: the build MANIFEST, not a hardcoded list', () => {
-    expect(MANIFEST).toContain('AutoTrimps2.js')
-    expect(CORPUS).toContain(AT2)
+    expect(MANIFEST).toContain('FastPriorityQueue.js') // the legacy half of the corpus derives from the real MANIFEST
+    expect(CORPUS).toContain(MAINLOOP) // the mainLoop dispatch table (former AutoTrimps2.js, now a src module)
     expect(CORPUS).not.toContain(join('src', 'legacy-bridge.ts')) // the publisher is not a caller
     expect(CORPUS.filter((f) => f.startsWith(join('src', 'modules'))).length).toBeGreaterThan(30)
   })
@@ -370,13 +373,14 @@ describe('#85 — call-graph reachability over the shipped bundle', () => {
     expect(live.has('newSelectHeirloom')).toBe(true)
   })
 
-  it('CHANNEL: the corpus is the DE-LOADERIZED AutoTrimps2.js, not the raw legacy file', () => {
-    // The ONLY call to bootSettingsUI() in the whole codebase is the one deLoaderize's T3 introduces.
-    // Against raw legacy/AutoTrimps2.js this is dead, and so is the entire settings-menu boot subtree.
-    expect(readFileSync(join(ROOT, AT2), 'utf8')).not.toContain('bootSettingsUI')
-    expect(shippedText(AT2)).toContain('bootSettingsUI()')
+  it('CHANNEL: the settings-menu boot subtree is reachable via main-loop.ts initializeAutoTrimps()', () => {
+    // The ONLY call to bootSettingsUI() in the whole codebase is the one in main-loop.ts's
+    // initializeAutoTrimps() (formerly the one the build's deLoaderize T3 introduced into AutoTrimps2.js;
+    // #133 made it the source directly). Against a corpus that missed that call, bootSettingsUI and the
+    // entire settings-menu boot subtree would report DEAD.
+    expect(shippedText(MAINLOOP)).toContain('bootSettingsUI()')
     for (const n of ['bootSettingsUI', 'automationMenuInit'])
-      expect(live.has(n), `${n} is reachable ONLY through the build's T3 rewrite`).toBe(true)
+      expect(live.has(n), `${n} is reachable ONLY through main-loop.ts's initializeAutoTrimps()`).toBe(true)
   })
 
   // ── mutation-check, run by hand and recorded here ────────────────────────────────────────────────

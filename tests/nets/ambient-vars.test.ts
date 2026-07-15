@@ -250,7 +250,9 @@ describe('at-legacy.d.ts — every ambient var must have a writer in the shipped
     // net starts certifying names that do not exist at runtime. This is the #71 false-pass, pinned.
     expect(CORPUS).not.toContain(join('legacy', 'mods.js'))
     expect(CORPUS).not.toContain(join('legacy', 'GraphsOnly.js'))
-    expect(CORPUS).toContain(join('legacy', 'AutoTrimps2.js'))
+    // #133 — AutoTrimps2.js is now src/modules/main-loop.ts (a normal src module in the corpus). It still
+    // donates the base-state writers (globalThis.MODULES = {}, MODULESdefault, autoTrimpSettings, …).
+    expect(CORPUS).toContain(join('src', 'modules', 'main-loop.ts'))
     // FastPriorityQueue.js IS bundled as of #75 (it was a third-party <script> fetch before), so it now
     // legitimately donates a writer. The corpus is derived from the build MANIFEST rather than hardcoded
     // precisely so this kind of change lands in ONE place — the previous hardcoded list asserted the
@@ -259,10 +261,10 @@ describe('at-legacy.d.ts — every ambient var must have a writer in the shipped
 
     // Pin one writer of each mechanism, so a regression in any single writer-detection arm shows up
     // HERE (as a precise failure) instead of downstream (as a flood of phantom "bugs").
-    expect(WRITTEN.has('MODULES')).toBe(true) // `var MODULES = {}`      — AutoTrimps2.js top-level var
+    expect(WRITTEN.has('MODULES')).toBe(true) // `globalThis.MODULES = {}`  — main-loop.ts (former AutoTrimps2.js)
     expect(WRITTEN.has('Rshouldtributefarm')).toBe(true) // `globalThis.X = …`      — mapfunctions.ts:51
     expect(WRITTEN.has('safeBuyBuilding')).toBe(true) // `export function …`    — buildings.ts:49, kind-1 var
-    expect(WRITTEN.has('MODULESdefault')).toBe(true) // written by AutoTrimps2.js — the exemplar's stated case
+    expect(WRITTEN.has('MODULESdefault')).toBe(true) // written by main-loop.ts   — the exemplar's stated case
 
     // Pin the read arm too, including the typeof/bare split that the severity test depends on.
     // (This used to pin `storedMODULES` — the #71a bug. It is fixed and its decl is deleted, so the

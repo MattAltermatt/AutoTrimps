@@ -263,7 +263,7 @@ describe('no numeric setting is compared against a label string (#65)', () => {
 describe('gather dispatchers route every selectable option (#64)', () => {
   // The #64 shape: an option index the dispatcher never mentions runs NO handler, so setGather() is
   // never called and playerGathering freezes wherever it was. Pin the routing explicitly.
-  const at2 = readFileSync(join(ROOT, 'legacy/AutoTrimps2.js'), 'utf8')
+  const at2 = readFileSync(join(ROOT, 'src/modules/main-loop.ts'), 'utf8')
   const defsSrc = readFileSync(join(ROOT, DEFS), 'utf8')
 
   const optionCount = (id: string) => {

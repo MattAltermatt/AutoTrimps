@@ -44,7 +44,9 @@ describe('buildUserscript version wiring', () => {
       const out = await buildUserscript()
       // the on-screen version equals the @version header value (single source of truth)
       expect(out).toMatch(/var __AT_BUILD_VERSION__ = "\d+\.\d+\.\d+.*\.777";/)
-      expect(out).toContain("'AutoTrimps ' + ATversion + ' Loaded!'") // top message-log line
+      // #133: this line now lives in main-loop.ts and goes through esbuild, which normalizes string
+      // literals to double quotes (the raw AutoTrimps2.js concat used single quotes).
+      expect(out).toContain('"AutoTrimps " + ATversion + " Loaded!"') // top message-log line
     } finally {
       if (prev === undefined) delete process.env.GITHUB_RUN_NUMBER
       else process.env.GITHUB_RUN_NUMBER = prev
@@ -62,32 +64,31 @@ describe('buildUserscript', () => {
     expect(out).toContain('@downloadURL  https://mattaltermatt.github.io/AutoTrimps/autotrimps.user.js')
     expect(out).toContain('@updateURL    https://mattaltermatt.github.io/AutoTrimps/autotrimps.user.js')
 
-    // Legacy behavior is bundled (sentinels from utils, AutoTrimps2, a late module)
+    // Legacy behavior is bundled (sentinels from utils, main-loop, a late module)
     // utils is now a converted src module, published via legacy-bridge (Phase 1)
     expect(out).toContain('function loadPageVariables') // from src IIFE, not legacy concat
     expect(out).toContain('Object.assign(globalThis') // the seam bridge is bundled
-    expect(out).toContain('function mainLoop') // AutoTrimps2.js
+    expect(out).toContain('function mainLoop') // main-loop.ts (former AutoTrimps2.js, #133)
     expect(out).toContain('MODULES["portal"]') // portal now a converted src module (Phase 2)
 
     // src IIFE bundled and appended
     expect(out).toContain('[AutoTrimps] modern build booted')
 
-    // Loader neutered: no remote injection survives
-    expect(out).not.toContain('Quiaaaa.github.io') // remote Graphs inject removed (T3)
-    expect(out).not.toContain('basepath + pathname + modulename') // ATscriptLoad body gone (T1)
+    // Loader neutered: no remote injection survives (#133 — the loader is gone from source, not a transform)
+    expect(out).not.toContain('Quiaaaa.github.io') // remote Graphs inject removed
+    expect(out).not.toContain("modulename + '.js'") // ATscriptLoad remote-URL body gone
+    expect(out).not.toContain('modulename + ".js"') // (esbuild-normalized double-quote form too)
 
-    // Seam ordering: the converted-modules bridge must publish BEFORE any still-legacy file
-    // that calls a converted function at load time. ALL legacy/modules/*.js are converted
-    // (Phase 2), SettingsGUI.js is decomposed to src (#20), and Graphs.js is now src/modules/graphs
-    // (ECharts port). The only remaining first-party legacy file is AutoTrimps2.js (first, #133); the
-    // trailing legacy concat chunk is the vendored FastPriorityQueue.js. The src bundle must sit after
-    // AutoTrimps2.js but before that trailing chunk.
-    const at2Idx = out.indexOf('/* ===== legacy/AutoTrimps2.js') // first legacy file
+    // Seam ordering (#133): AutoTrimps2.js — the last first-party legacy file — is now
+    // src/modules/main-loop.ts, imported FIRST in legacy-bridge.ts, so the base globals it seeds
+    // (MODULES = {}, autoTrimpSettings, …) exist before any converted module's load-time MODULES[…] write.
+    // The whole src IIFE is now emitted FIRST (after the version global), then the only remaining legacy
+    // concat chunk, the vendored FastPriorityQueue.js. So: src bundle BEFORE the trailing legacy chunk.
+    expect(out).not.toContain('/* ===== legacy/AutoTrimps2.js') // that file no longer exists
     const bridgeIdx = out.indexOf('Object.assign(globalThis') // the seam publish (src bundle)
     const trailingIdx = out.indexOf('/* ===== legacy/FastPriorityQueue.js') // last legacy chunk, after src
-    expect(at2Idx).toBeGreaterThanOrEqual(0)
-    expect(bridgeIdx).toBeGreaterThan(at2Idx) // src bundle emitted after AutoTrimps2.js
-    expect(trailingIdx).toBeGreaterThan(bridgeIdx) // ...but before the remaining legacy files
+    expect(bridgeIdx).toBeGreaterThanOrEqual(0)
+    expect(trailingIdx).toBeGreaterThan(bridgeIdx) // the src bundle is emitted before the remaining legacy files
   })
 
   it('SettingsGUI.js is decomposed out of the legacy concat and boot is bundled (#20)', async () => {
@@ -97,16 +98,15 @@ describe('buildUserscript', () => {
     // ...its boot code now lives in the src bundle (esbuild strips comments, so use a code
     // sentinel: the tabs.css <link> injection, which is unique to settings-boot.ts).
     expect(out).toContain('basepath + "tabs.css"')
-    // The boot code must be bundled in the src IIFE region — after the AutoTrimps2.js legacy chunk,
-    // before the Graphs.js one — and NOT as a trailing legacy concat file. (It's now a lazy
-    // bootSettingsUI() function definition invoked from initializeAutoTrimps() rather than a
-    // bundle-eval self-invocation, so its position relative to the Object.assign publish is no
-    // longer fixed; esbuild may hoist the definition ahead of it. The load-order guarantee is
-    // covered by the '#22 save-reload' test below.)
-    const at2Idx = out.indexOf('/* ===== legacy/AutoTrimps2.js')
+    // The boot code must be bundled in the src IIFE region — before the trailing FastPriorityQueue.js
+    // legacy chunk — and NOT as a trailing legacy concat file. (It's now a lazy bootSettingsUI() function
+    // definition invoked from initializeAutoTrimps() rather than a bundle-eval self-invocation, so its
+    // position relative to the Object.assign publish is no longer fixed; esbuild may hoist the definition
+    // ahead of it. The load-order guarantee is covered by the '#22 save-reload' test below.)
+    const srcIdx = out.indexOf('/* ===== src/main.ts')
     const bootIdx = out.indexOf('basepath + "tabs.css"')
     const trailingIdx = out.indexOf('/* ===== legacy/FastPriorityQueue.js')
-    expect(bootIdx).toBeGreaterThan(at2Idx)
+    expect(bootIdx).toBeGreaterThan(srcIdx)
     expect(bootIdx).toBeLessThan(trailingIdx)
   })
 

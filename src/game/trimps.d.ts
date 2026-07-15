@@ -184,6 +184,14 @@ declare global {
   function getCurrentChallengePane(...args: any[]): string // main.js — daily challenge id string
   function recycleAllExtraHeirlooms(...args: any[]): number // main.js — nullifium from recycling
   function countChallengeSquaredReward(...args: any[]): any // main.js — [c2, c3] cinf tuple
+
+  // Native game functions/flags dispatched by bare name from mainLoop/guiLoop (main-loop.ts, #133 —
+  // formerly AutoTrimps2.js, which was never typechecked). These are provided by the GAME, not the
+  // bundle, so they live here (trimps.d.ts), not in the at-legacy seam. Pragmatic boundary sigs.
+  var usingRealTimeOffline: any                            // main.js — offline-replay flag AT gates on
+  function easterEggClicked(...args: any[]): any           // main.js
+  function toggleAutoTrap(...args: any[]): any             // main.js
+  function purchaseSingleRunBonus(...args: any[]): any     // main.js
 }
 
 export {}

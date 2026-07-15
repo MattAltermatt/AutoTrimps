@@ -71,10 +71,16 @@ describe('portal — AT actually portals, and the net can see it (#127)', () => 
     const oracle = JSON.parse(readFileSync(resolve('tests/fixtures/traces', `${SAVE}.1.trace.json`), 'utf8'))
     const clean = readFileSync(TEST_BUNDLE, 'utf8')
 
-    const ANCHOR = 'function autoPortal() {'
-    const at = clean.indexOf(ANCHOR)
-    expect(at, 'anchor not found — the bundle shape changed').toBeGreaterThan(-1)
-    const mutant = clean.slice(0, at + ANCHOR.length) + ' return;' + clean.slice(at + ANCHOR.length)
+    // #133 — main-loop.ts (mainLoop) now calls autoPortal() as a free global inside the same IIFE that
+    // bundles portal.ts's `export function autoPortal`, so esbuild renames the definition to avoid
+    // shadowing the free reference (autoPortal → autoPortal2). The bridge still publishes it under the
+    // real name, so runtime is unchanged; only this text anchor moves. Match the optional suffix.
+    const ANCHOR = /function autoPortal\d*\(\) \{/
+    const m = clean.match(ANCHOR)
+    expect(m, 'anchor not found — the bundle shape changed').not.toBeNull()
+    const at = m!.index!
+    const anchorLen = m![0].length
+    const mutant = clean.slice(0, at + anchorLen) + ' return;' + clean.slice(at + anchorLen)
     expect(mutant).not.toBe(clean) // the splice must LAND, or a zero diff would read as "blind"
 
     const dir = mkdtempSync(join(tmpdir(), 'at-portal-mutant-'))

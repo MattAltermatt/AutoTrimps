@@ -79,13 +79,16 @@ describe('supply chain: the shipped userscript executes no third-party code (#75
     expect(bundle.match(/new FastPriorityQueue\(/g)?.length).toBeGreaterThanOrEqual(4)
   })
 
-  it('the de-loaderize transform still strips the remote Graphs.js injection (it can FAIL OPEN)', () => {
-    // This is the assertion that catches a silently-broken build transform. If `deLoaderize`'s T3 regex
-    // ever stops matching AutoTrimps2.js — a reformat is enough — the original initializeAutoTrimps body
-    // survives and re-introduces this injection. Nothing else in the suite would notice.
-    expect(bundle).not.toContain('Quiaaaa.github.io')
-    // And prove the transform actually ran, rather than the string being absent for some unrelated reason.
-    expect(bundle).toContain('function ATscriptLoad(pathname, modulename) { /* bundled: no-op */ }')
+  it('the remote module loader is gone from source, not stripped by a build transform (#133)', () => {
+    // Pre-#133 the loader lived in legacy/AutoTrimps2.js and the build rewrote it away (`deLoaderize`).
+    // #133 ported that file to src/modules/main-loop.ts in its ALREADY-neutralized form: ATscriptLoad is
+    // a no-op and initializeAutoTrimps() calls bootSettingsUI() directly, with no remote <script>. So the
+    // guarantee is now structural (the injection strings are nowhere in the source), not transform-dependent.
+    expect(bundle).not.toContain('Quiaaaa.github.io') // the remote Graphs.js inject is gone
+    // The old ATscriptLoad body built a remote URL as `basepath + pathname + modulename + '.js'`. Its
+    // absence proves the loader body — not just its call sites — is gone.
+    expect(bundle).not.toContain("modulename + '.js'")
+    expect(bundle).not.toContain('modulename + ".js"')
   })
 
   it('no executable remote origin outside the explicit allowlist', () => {

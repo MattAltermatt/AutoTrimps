@@ -1,38 +1,53 @@
-var ATversion = (typeof __AT_BUILD_VERSION__ !== 'undefined' ? 'v' + __AT_BUILD_VERSION__ : 'Zek v5.1.0'),
-    atscript = document.getElementById('AutoTrimps-script'),
-    basepath = 'https://Zorn192.github.io/AutoTrimps/', //Link to your own Github here if you forked!
-    modulepath = 'modules/';
-null !== atscript && (basepath = atscript.src.replace(/AutoTrimps2\.js$/, ''));
+/* eslint-disable */
+// #133 — legacy/AutoTrimps2.js ported to src. The last first-party legacy file: this completes the
+// strangler (legacy/ now holds only third-party FastPriorityQueue.js).
+//
+// This is a FAITHFUL port of the SHIPPED (de-loaderized) form of AutoTrimps2.js. The build used to
+// rewrite AutoTrimps2.js at bundle time (scripts/build-userscript.mjs `deLoaderize`): the remote module
+// loader (ATscriptLoad/ATscriptUnload) was neutralized to no-ops, and initializeAutoTrimps() ran the
+// bundled boot sequence (loadPageVariables → bootSettingsUI → mountBackupPortalButton) with no remote
+// <script> injection. That rewrite is now the source: the no-ops and the bundled boot live here directly,
+// so `deLoaderize` is deleted from the build.
+//
+// SEAM: base-state `var`s that still-bridged code reads become `globalThis.X` — a module-scoped `var`
+// would be invisible to consumers reading them by bare name. This module is imported FIRST in
+// legacy-bridge.ts so these inits eval BEFORE any converted module's load-time `MODULES["x"] = {}`
+// (breedtimer.ts:12, buildings.ts:41, …), exactly as AutoTrimps2.js used to eval before the src bundle.
+//
+// Dropped as provably dead in the shipped/converted build (zero readers): ATMODULES, ATmoduleList (its
+// only writer was raw initializeAutoTrimps, which deLoaderize replaced), and the preBuyAmt/preBuyFiring/
+// preBuyTooltip/preBuymaxSplit globals (buystate.ts owns these as module-local state since #Phase-2).
 
-function ATscriptLoad(pathname, modulename) {
-    if (modulename == null) debug("Wrong Syntax. Script could not be loaded. Try ATscriptLoad(modulepath, 'example.js'); ");
-    var script = document.createElement('script');
-    if (pathname == null) pathname = '';
-    script.src = basepath + pathname + modulename + '.js';
-    script.id = modulename + '_MODULE';
-    document.head.appendChild(script);
-}
+// ATversion is read cross-module (import-export changelog, the update-notice title). __AT_BUILD_VERSION__
+// is injected by build-userscript.mjs as a global `var` emitted BEFORE this bundle (module-local ambient).
+declare const __AT_BUILD_VERSION__: string
+globalThis.ATversion = (typeof __AT_BUILD_VERSION__ !== 'undefined' ? 'v' + __AT_BUILD_VERSION__ : 'Zek v5.1.0')
+const atscript = document.getElementById('AutoTrimps-script') as HTMLScriptElement | null
+// basepath / modulepath are seam globals: import-export.ts (module manage UI + mi.png tooltip),
+// settings-boot.ts (tabs.css) and graphs/render.ts (dark-graph.css) read basepath by bare name. In the
+// modernized bundle the loader sets the script id to 'AutoTrimps-Zek', so getElementById('AutoTrimps-script')
+// is null and basepath keeps its default — matching current shipped behavior (the id-mismatch fallback,
+// #133 issue note, is deliberately preserved; changing it is a separate slice).
+globalThis.basepath = 'https://Zorn192.github.io/AutoTrimps/' //Link to your own Github here if you forked!
+globalThis.modulepath = 'modules/'
+null !== atscript && (globalThis.basepath = atscript.src.replace(/AutoTrimps2\.js$/, ''))
 
-function ATscriptUnload(a) {
-    var b = document.getElementById(a + "_MODULE");
-    b && (document.head.removeChild(b), debug("Removing " + a + "_MODULE", "other"))
-}
-ATscriptLoad(modulepath, 'utils');
+// Bundled: the remote module loader is neutralized (all modules are already in the bundle). Kept as
+// published no-ops because import-export.ts still calls ATscriptLoad/ATscriptUnload by bare name from
+// its module-management UI.
+export function ATscriptLoad(pathname?: any, modulename?: any) { /* bundled: no-op */ }
+export function ATscriptUnload(a?: any) { /* bundled: no-op */ }
 
-function initializeAutoTrimps() {
+// Bundled boot (was deLoaderize T3): runs after loadPageVariables() so the 570 createSetting calls in
+// bootSettingsUI() rehydrate the loaded save, not empty defaults (#22). mountBackupPortalButton() is #124.
+export function initializeAutoTrimps() {
     loadPageVariables();
-    ATscriptLoad('', 'SettingsGUI');
-    var script = document.createElement('script');
-    script.src = 'https://Quiaaaa.github.io/AutoTrimps/Graphs.js';
-    document.head.appendChild(script);
-    ATmoduleList = ['import-export', 'query', 'calc', 'portal', 'upgrades', 'heirlooms', 'buildings', 'jobs', 'equipment', 'gather', 'stance', 'mapfunctions', 'maps', 'breedtimer', 'dynprestige', 'fight', 'scryer', 'magmite', 'nature', 'other', 'perks', 'fight-info', 'performance', 'ab', 'MAZ'];
-    for (var m in ATmoduleList) {
-        ATscriptLoad(modulepath, ATmoduleList[m]);
-    }
-    debug('AutoTrimps - Zek Fork Loaded!', '*spinner3');
+    bootSettingsUI();
+    mountBackupPortalButton();
+    debug('AutoTrimps ' + ATversion + ' Loaded!', '*spinner3');
 }
 
-var changelogList = [];
+const changelogList: any[] = [];
 changelogList.push({
     date: "11/02/2023",
     version: "v5.2.0",
@@ -52,11 +67,11 @@ changelogList.push({
     isNew: false
 });
 
-function assembleChangelog(a, b, c, d) {
+export function assembleChangelog(a: any, b: any, c: any, d: any) {
     return d ? `<b class="AutoEggs">${a} ${b} </b><b style="background-color:#32CD32"> New:</b> ${c}<br>` : `<b>${a} ${b} </b> ${c}<br>`
 }
 
-function printChangelog() {
+export function printChangelog() {
     var body = "";
     for (var i in changelogList) {
         var $item = changelogList[i];
@@ -75,18 +90,18 @@ function printChangelog() {
     tooltip('confirm', null, 'update', body + footer, action, title, acceptBtnText, null, hideCancel);
 }
 
-var runInterval = 100;
-var startupDelay = 4000;
+const runInterval = 100;
+const startupDelay = 4000;
 
 setTimeout(delayStart, startupDelay);
 
-function delayStart() {
+export function delayStart() {
     initializeAutoTrimps();
     printChangelog();
     setTimeout(delayStartAgain, startupDelay);
 }
 
-function delayStartAgain() {
+export function delayStartAgain() {
     game.global.addonUser = true;
     game.global.autotrimps = true;
     MODULESdefault = JSON.parse(JSON.stringify(MODULES));
@@ -94,49 +109,43 @@ function delayStartAgain() {
     setInterval(guiLoop, runInterval * 10);
 }
 
-var ATrunning = true;
-var ATmessageLogTabVisible = true;
-var enableDebug = true;
+globalThis.ATrunning = true;
+globalThis.ATmessageLogTabVisible = true;
+globalThis.enableDebug = true;
 
-var autoTrimpSettings = {};
-var MODULES = {};
-var MODULESdefault = {};
-var ATMODULES = {};
-var ATmoduleList = [];
+globalThis.autoTrimpSettings = {};
+globalThis.MODULES = {};
+globalThis.MODULESdefault = {};
 
-var bestBuilding;
-var scienceNeeded;
-var RscienceNeeded;
-var breedFire = false;
+globalThis.bestBuilding = undefined;
+globalThis.scienceNeeded = undefined as any;
+globalThis.RscienceNeeded = undefined as any;
+globalThis.breedFire = false;
 
-var shouldFarm = false;
-var RshouldFarm = false;
-var enoughDamage = true;
-var RenoughDamage = true;
-var enoughHealth = true;
-var RenoughHealth = true;
+globalThis.shouldFarm = false;
+globalThis.RshouldFarm = false;
+globalThis.enoughDamage = true;
+globalThis.RenoughDamage = true;
+globalThis.enoughHealth = true;
+globalThis.RenoughHealth = true;
 
-var baseDamage = 0;
-var baseBlock = 0;
-var baseHealth = 0;
+globalThis.baseDamage = 0;
+globalThis.baseBlock = 0;
+globalThis.baseHealth = 0;
 
-var preBuyAmt;
-var preBuyFiring;
-var preBuyTooltip;
-var preBuymaxSplit;
-
-var currentworld = 0;
-var lastrunworld = 0;
-var aWholeNewWorld = false;
-var heirloomFlag = false;
-var heirloomCache = game.global.heirloomsExtra.length;
-var magmiteSpenderChanged = false;
-var lastHeliumZone = 0;
-var lastRadonZone = 0;
+// Module-local per-tick state (no cross-module readers). aWholeNewWorld IS cross-module, so it stays global.
+let currentworld = 0;
+let lastrunworld = 0;
+globalThis.aWholeNewWorld = false;
+let heirloomFlag = false;
+let heirloomCache = game.global.heirloomsExtra.length;
+globalThis.magmiteSpenderChanged = false;
+globalThis.lastHeliumZone = 0;
+globalThis.lastRadonZone = 0;
 
 //Get Gamma burst % value
-gammaBurstPct = (getHeirloomBonus("Shield", "gammaBurst") / 100) > 0 ? (getHeirloomBonus("Shield", "gammaBurst") / 100) : 1;
-shieldEquipped = game.global.ShieldEquipped.id;
+globalThis.gammaBurstPct = (getHeirloomBonus("Shield", "gammaBurst") / 100) > 0 ? (getHeirloomBonus("Shield", "gammaBurst") / 100) : 1;
+globalThis.shieldEquipped = game.global.ShieldEquipped.id;
 
 // #87 — EVERY DISPATCH BELOW IS WRAPPED IN atGuard(name, fn). See src/modules/guard.ts for the
 // contract. In short: this loop used to contain not one try/catch, so a throw in any one automation
@@ -154,7 +163,7 @@ shieldEquipped = game.global.ShieldEquipped.id;
 // function: buyWeps() fires from three different U1 sites and knowing which one is failing is the point.
 // tests/nets/mainloop-guarded.test.ts asserts mechanically that no unguarded call survives here — add
 // automation #61 without a guard and it fails on arrival.
-function mainLoop() {
+export function mainLoop() {
     if (ATrunning == false) return;
     if (getPageSetting('PauseScript') || game.options.menu.pauseGame.enabled || game.global.viewingUpgrades) return;
     ATrunning = true;
@@ -173,7 +182,7 @@ function mainLoop() {
     });
     atGuard('newZone', function () {
         if (aWholeNewWorld) {
-            switch (document.getElementById('tipTitle').innerHTML) {
+            switch (document.getElementById('tipTitle')!.innerHTML) {
                 case 'The Improbability':
                 case 'Corruption':
                 case 'Spire':
@@ -333,7 +342,7 @@ function mainLoop() {
         atGuard('prestigeChanging2', function () {
             var forcePrecZ = (getPageSetting('ForcePresZ') < 0) || (game.global.world < getPageSetting('ForcePresZ'));
             if (getPageSetting('DynamicPrestige2') > 0 && forcePrecZ) prestigeChanging2();
-            else autoTrimpSettings.Prestige.selected = document.getElementById('Prestige').value;
+            else autoTrimpSettings.Prestige.selected = (document.getElementById('Prestige') as HTMLInputElement).value;
         });
         atGuard('avoidempower', function () {
             if (game.global.world > 5 && game.global.challengeActive == "Daily" && getPageSetting('avoidempower') == true && typeof game.global.dailyChallenge.empower !== 'undefined' && !game.global.preMapsActive && !game.global.mapsActive && game.global.soldierHealth > 0) avoidempower();
@@ -574,7 +583,7 @@ function mainLoop() {
 // #87: de-comma'd first, then guarded. As a single comma-expression this was all-or-nothing — a throw
 // in updateCustomButtons() also cost you the storedMODULES persist, the enhanced grids and the AFK
 // overlay, every 1000ms, forever. Four statements, four boundaries.
-function guiLoop() {
+export function guiLoop() {
     atGuard('updateCustomButtons', updateCustomButtons);
     atGuard('storedMODULES', function () {
         safeSetItems('storedMODULES', JSON.stringify(compareModuleVars()));
@@ -587,7 +596,7 @@ function guiLoop() {
     });
 }
 
-function mainCleanup() {
+export function mainCleanup() {
     lastrunworld = currentworld;
     currentworld = game.global.world;
     aWholeNewWorld = lastrunworld != currentworld;
@@ -608,5 +617,5 @@ function mainCleanup() {
     autoTrimpSettings.zonetracker = 1;
 }
 
-if (document.getElementById('tooltipDiv').classList.contains('tooltipExtraLg') === false)
-    document.getElementById('tooltipDiv').style.overflowY = '';
+if (document.getElementById('tooltipDiv')!.classList.contains('tooltipExtraLg') === false)
+    document.getElementById('tooltipDiv')!.style.overflowY = '';

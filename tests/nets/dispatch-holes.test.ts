@@ -391,7 +391,7 @@ describe('every multitoggle option index is reachable by some branch (#81)', () 
     expect(LIVE.length).toBeGreaterThan(100)
     // The legacy half of the corpus is load-bearing: the mainLoop dispatch table lives in AutoTrimps2.js,
     // and a net that only read src/ would report most of these settings as 100% unrouted.
-    expect(LIVE.some((r) => r.file === join('legacy', 'AutoTrimps2.js'))).toBe(true)
+    expect(LIVE.some((r) => r.file === join('src', 'modules', 'main-loop.ts'))).toBe(true)
 
     // Known-good settings whose every index MUST route. If a refactor silently empties the read set,
     // these fail HERE with a clear message instead of quietly widening the hole report.

@@ -487,9 +487,86 @@ declare global {
   // Automation run flag + module config snapshots — `var` in AutoTrimps2.js.
   var ATrunning: any
   var MODULESdefault: any
-  // `settingsProfiles` <select> exposed as a DOM-id global; `script` is a
-  // for-in loop var that was an implicit global in the sloppy-mode legacy.
+  // `settingsProfiles` <select> exposed as a DOM-id global. (`script` was an implicit-global for-in
+  // loop var in import-export.ts, masked by the raw AutoTrimps2.js corpus entry; #133 localized it to
+  // `for (var script in …)` when that file was ported, so it no longer needs an ambient decl.)
   var settingsProfiles: any
-  var script: any
+
+  // ── #133 — mainLoop / guiLoop automation dispatch (main-loop.ts, formerly AutoTrimps2.js) ──────
+  // AutoTrimps2.js was never typechecked, so the ~120 automation entry points it dispatched by bare
+  // name never needed ambient decls. Ported to main-loop.ts (true TS), they now do. Each resolves to
+  // its single owning converted module (typeof-import, drift-safe per #36).
+  var atGuard: typeof import('../modules/guard').atGuard
+  var loadPageVariables: typeof import('../modules/utils').loadPageVariables
+  var bootSettingsUI: typeof import('../modules/settings-boot').bootSettingsUI
+  var setTitle: typeof import('../modules/utils').setTitle
+  var compareModuleVars: typeof import('../modules/import-export').compareModuleVars
+  var addToolTipToArmyCount: typeof import('../modules/breedtimer').addToolTipToArmyCount
+  var ATGA2: typeof import('../modules/breedtimer').ATGA2
+  var autoBoneChargeWhenMax: typeof import('../modules/other').autoBoneChargeWhenMax
+  var setScienceNeeded: typeof import('../modules/query').setScienceNeeded
+  var RsetScienceNeeded: typeof import('../modules/query').RsetScienceNeeded
+  var autoLevelEquipment: typeof import('../modules/equipment').autoLevelEquipment
+  var RautoEquip: typeof import('../modules/equipment').RautoEquip
+  var HeirloomShieldSwapped: typeof import('../modules/heirlooms').HeirloomShieldSwapped
+  var Rheirloomswap: typeof import('../modules/heirlooms').Rheirloomswap
+  var Rdheirloomswap: typeof import('../modules/heirlooms').Rdheirloomswap
+  var autoMap: typeof import('../modules/maps').autoMap
+  var RautoMap: typeof import('../modules/maps').RautoMap
+  var manualLabor2: typeof import('../modules/gather').manualLabor2
+  var RmanualLabor2: typeof import('../modules/gather').RmanualLabor2
+  var autogather3: typeof import('../modules/gather').autogather3
+  var autoRoboTrimp: typeof import('../modules/other').autoRoboTrimp
+  var autoshrine: typeof import('../modules/other').autoshrine
+  var trimpcide: typeof import('../modules/other').trimpcide
+  var helptrimpsnotdie: typeof import('../modules/other').helptrimpsnotdie
+  var fightalways: typeof import('../modules/other').fightalways
+  var avoidempower: typeof import('../modules/other').avoidempower
+  var Ravoidempower: typeof import('../modules/other').Ravoidempower
+  var Rfightalways: typeof import('../modules/other').Rfightalways
+  var buyWeps: typeof import('../modules/other').buyWeps
+  var armormagic: typeof import('../modules/other').armormagic
+  var Rarmormagic: typeof import('../modules/other').Rarmormagic
+  var Rmanageequality: typeof import('../modules/other').Rmanageequality
+  var exitSpireCell: typeof import('../modules/other').exitSpireCell
+  var dailyexitSpireCell: typeof import('../modules/other').dailyexitSpireCell
+  var ATspirebreed: typeof import('../modules/other').ATspirebreed
+  var buyshitspire: typeof import('../modules/other').buyshitspire
+  var autoGoldenUpgradesAT: typeof import('../modules/other').autoGoldenUpgradesAT
+  var archstring: typeof import('../modules/other').archstring
+  var finishChallengeSquared: typeof import('../modules/portal').finishChallengeSquared
+  var autoPortal: typeof import('../modules/portal').autoPortal
+  var dailyAutoPortal: typeof import('../modules/portal').dailyAutoPortal
+  var c2runnerportal: typeof import('../modules/portal').c2runnerportal
+  var RautoPortal: typeof import('../modules/portal').RautoPortal
+  var RdailyAutoPortal: typeof import('../modules/portal').RdailyAutoPortal
+  var autoNatureTokens: typeof import('../modules/nature').autoNatureTokens
+  var autoEnlight: typeof import('../modules/nature').autoEnlight
+  var buyUpgrades: typeof import('../modules/upgrades').buyUpgrades
+  var RbuyUpgrades: typeof import('../modules/upgrades').RbuyUpgrades
+  var RautoGoldenUpgradesAT: typeof import('../modules/upgrades').RautoGoldenUpgradesAT
+  var buyBuildings: typeof import('../modules/buildings').buyBuildings
+  var buyStorage: typeof import('../modules/buildings').buyStorage
+  var RbuyBuildings: typeof import('../modules/buildings').RbuyBuildings
+  var autoGenerator: typeof import('../modules/magmite').autoGenerator
+  var workerRatios: typeof import('../modules/jobs').workerRatios
+  var buyJobs: typeof import('../modules/jobs').buyJobs
+  var RworkerRatios: typeof import('../modules/jobs').RworkerRatios
+  var RbuyJobs: typeof import('../modules/jobs').RbuyJobs
+  var RquestbuyJobs: typeof import('../modules/jobs').RquestbuyJobs
+  var betterAutoFight: typeof import('../modules/fight').betterAutoFight
+  var betterAutoFight3: typeof import('../modules/fight').betterAutoFight3
+  var prestigeChanging2: typeof import('../modules/dynprestige').prestigeChanging2
+  var useScryerStance: typeof import('../modules/scryer').useScryerStance
+  var PraidHarder: typeof import('../modules/other-praiding').PraidHarder
+  var Praiding: typeof import('../modules/other-praiding').Praiding
+  var dailyPraiding: typeof import('../modules/other-praiding').dailyPraiding
+  var BWraiding: typeof import('../modules/other-praiding').BWraiding
+  var ABswitch: typeof import('../modules/ab').ABswitch
+  var ABdustsimple: typeof import('../modules/ab').ABdustsimple
+  var ABdustsimplenonhid: typeof import('../modules/ab').ABdustsimplenonhid
+  var ABfarmsave: typeof import('../modules/ab').ABfarmsave
+  var ABfarmswitch: typeof import('../modules/ab').ABfarmswitch
+  var ABsolver: typeof import('../modules/ab').ABsolver
 }
 export {}

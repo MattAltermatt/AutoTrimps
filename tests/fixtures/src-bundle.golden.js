@@ -6,6 +6,476 @@
       __defProp(target, name, { get: all[name], enumerable: true });
   };
 
+  // src/modules/main-loop.ts
+  var main_loop_exports = {};
+  __export(main_loop_exports, {
+    ATscriptLoad: () => ATscriptLoad2,
+    ATscriptUnload: () => ATscriptUnload2,
+    assembleChangelog: () => assembleChangelog,
+    delayStart: () => delayStart,
+    delayStartAgain: () => delayStartAgain,
+    guiLoop: () => guiLoop,
+    initializeAutoTrimps: () => initializeAutoTrimps,
+    mainCleanup: () => mainCleanup,
+    mainLoop: () => mainLoop,
+    printChangelog: () => printChangelog
+  });
+  globalThis.ATversion = typeof __AT_BUILD_VERSION__ !== "undefined" ? "v" + __AT_BUILD_VERSION__ : "Zek v5.1.0";
+  var atscript = document.getElementById("AutoTrimps-script");
+  globalThis.basepath = "https://Zorn192.github.io/AutoTrimps/";
+  globalThis.modulepath = "modules/";
+  null !== atscript && (globalThis.basepath = atscript.src.replace(/AutoTrimps2\.js$/, ""));
+  function ATscriptLoad2(pathname, modulename) {
+  }
+  function ATscriptUnload2(a) {
+  }
+  function initializeAutoTrimps() {
+    loadPageVariables();
+    bootSettingsUI();
+    mountBackupPortalButton();
+    debug("AutoTrimps " + ATversion + " Loaded!", "*spinner3");
+  }
+  var changelogList = [];
+  changelogList.push({
+    date: "11/02/2023",
+    version: "v5.2.0",
+    description: "<b>Trimps v5.9.0</b> Added Frigid to calc. Added Desolation AutoDeso. Added mutations to calc. ",
+    isNew: true
+  });
+  changelogList.push({
+    date: "13/11/2022",
+    version: "v5.2.1",
+    description: "<b>Trimps v5.8.0</b> Added Smithy farming. Changed Scryer stuff. U1 Calc slightly more accurate. Changed some colours and setting descriptions like AutoHeirlooms. Let me know if something is broken. ",
+    isNew: false
+  });
+  changelogList.push({
+    date: "28/10/2022",
+    version: "v5.2.0",
+    description: "<b>Trimps v5.8.0</b> Changed U2 Automaps so there might be problems, let me know if there is. Autogiga, Better stance swap, U1 Calc fixed. ",
+    isNew: false
+  });
+  function assembleChangelog(a, b, c, d) {
+    return d ? `<b class="AutoEggs">${a} ${b} </b><b style="background-color:#32CD32"> New:</b> ${c}<br>` : `<b>${a} ${b} </b> ${c}<br>`;
+  }
+  function printChangelog() {
+    var body = "";
+    for (var i in changelogList) {
+      var $item = changelogList[i];
+      var result = assembleChangelog($item.date, $item.version, $item.description, $item.isNew);
+      body += result;
+    }
+    var footer = '<b>Z\u04D8K Fork</b> - <u>Report any bugs/problems please</u>!        <br>Talk with the dev: <b>Zek#0647</b> @ <a target="#" href="https://discord.gg/Ztcnfjr">Zeks Discord Channel</a>        <br>Talk with the other Trimpers: <a target="Trimps" href="https://discord.gg/trimps">Trimps Discord Channel</a>        <br>See <a target="#" href="https://github.com/Zorn192/AutoTrimps/blob/gh-pages/README.md">ReadMe</a> Or check <a target="#" href="https://github.com/Zorn192/AutoTrimps/commits/gh-pages" target="#">the commit history</a> (if you want).', action = "cancelTooltip()", title = "Script Update Notice<br>" + ATversion, acceptBtnText = "Thank you for playing AutoTrimps. Accept and Continue.", hideCancel = true;
+    tooltip("confirm", null, "update", body + footer, action, title, acceptBtnText, null, hideCancel);
+  }
+  var runInterval = 100;
+  var startupDelay = 4e3;
+  setTimeout(delayStart, startupDelay);
+  function delayStart() {
+    initializeAutoTrimps();
+    printChangelog();
+    setTimeout(delayStartAgain, startupDelay);
+  }
+  function delayStartAgain() {
+    game.global.addonUser = true;
+    game.global.autotrimps = true;
+    MODULESdefault = JSON.parse(JSON.stringify(MODULES));
+    setInterval(mainLoop, runInterval);
+    setInterval(guiLoop, runInterval * 10);
+  }
+  globalThis.ATrunning = true;
+  globalThis.ATmessageLogTabVisible = true;
+  globalThis.enableDebug = true;
+  globalThis.autoTrimpSettings = {};
+  globalThis.MODULES = {};
+  globalThis.MODULESdefault = {};
+  globalThis.bestBuilding = void 0;
+  globalThis.scienceNeeded = void 0;
+  globalThis.RscienceNeeded = void 0;
+  globalThis.breedFire = false;
+  globalThis.shouldFarm = false;
+  globalThis.RshouldFarm = false;
+  globalThis.enoughDamage = true;
+  globalThis.RenoughDamage = true;
+  globalThis.enoughHealth = true;
+  globalThis.RenoughHealth = true;
+  globalThis.baseDamage = 0;
+  globalThis.baseBlock = 0;
+  globalThis.baseHealth = 0;
+  var currentworld = 0;
+  var lastrunworld = 0;
+  globalThis.aWholeNewWorld = false;
+  var heirloomFlag = false;
+  var heirloomCache = game.global.heirloomsExtra.length;
+  globalThis.magmiteSpenderChanged = false;
+  globalThis.lastHeliumZone = 0;
+  globalThis.lastRadonZone = 0;
+  globalThis.gammaBurstPct = getHeirloomBonus("Shield", "gammaBurst") / 100 > 0 ? getHeirloomBonus("Shield", "gammaBurst") / 100 : 1;
+  globalThis.shieldEquipped = game.global.ShieldEquipped.id;
+  function mainLoop() {
+    if (ATrunning == false) return;
+    if (getPageSetting("PauseScript") || game.options.menu.pauseGame.enabled || game.global.viewingUpgrades) return;
+    ATrunning = true;
+    atGuard("breedTimer", function() {
+      if (getPageSetting("showbreedtimer") == true) {
+        if (game.options.menu.showFullBreed.enabled != 1) toggleSetting("showFullBreed");
+        addbreedTimerInsideText.innerHTML = (game.jobs.Amalgamator.owned > 0 ? Math.floor(((/* @__PURE__ */ new Date()).getTime() - game.global.lastSoldierSentAt) / 1e3) : Math.floor(game.global.lastBreedTime / 1e3)) + "s";
+        addToolTipToArmyCount();
+      }
+    });
+    atGuard("mainCleanup", function() {
+      if (mainCleanup() || portalWindowOpen || !heirloomsShown && heirloomFlag || heirloomCache != game.global.heirloomsExtra.length) {
+        heirloomCache = game.global.heirloomsExtra.length;
+      }
+      heirloomFlag = heirloomsShown;
+    });
+    atGuard("newZone", function() {
+      if (aWholeNewWorld) {
+        switch (document.getElementById("tipTitle").innerHTML) {
+          case "The Improbability":
+          case "Corruption":
+          case "Spire":
+          case "The Magma":
+            cancelTooltip();
+        }
+        if (getPageSetting("AutoEggs"))
+          easterEggClicked();
+        setTitle();
+      }
+    });
+    if (game.global.world != autoTrimpSettings.zonetracker) {
+      autoTrimpSettings.zonetracker = game.global.world;
+    }
+    atGuard("autoBoneChargeWhenMax", function() {
+      if (getPageSetting("AutoBoneChargeMax") != 0) autoBoneChargeWhenMax();
+    });
+    if (game.global.universe == 1) {
+      if (!usingRealTimeOffline) {
+        atGuard("setScienceNeeded", setScienceNeeded);
+        atGuard("autoLevelEquipment", autoLevelEquipment);
+      }
+      atGuard("HeirloomShieldSwapped", function() {
+        if (shieldEquipped !== game.global.ShieldEquipped.id) HeirloomShieldSwapped();
+      });
+      atGuard("autoMap", function() {
+        if (getPageSetting("AutoMaps") > 0 && game.global.mapsUnlocked) autoMap();
+      });
+      atGuard("automapsalways", function() {
+        if (getPageSetting("automapsalways") == true && autoTrimpSettings.AutoMaps.value != 1) autoTrimpSettings.AutoMaps.value = 1;
+      });
+      atGuard("updateAutoMapsStatus", function() {
+        if (getPageSetting("showautomapstatus") == true) updateAutoMapsStatus();
+      });
+      atGuard("manualLabor2", function() {
+        if (getPageSetting("ManualGather2") == 1 || getPageSetting("ManualGather2") == 3) manualLabor2();
+      });
+      atGuard("toggleAutoTrap", function() {
+        if (getPageSetting("TrapTrimps") && game.global.trapBuildAllowed && game.global.trapBuildToggled == false) toggleAutoTrap();
+      });
+      atGuard("autogather3", function() {
+        if (getPageSetting("ManualGather2") == 2) autogather3();
+      });
+      atGuard("ATGA2", function() {
+        if (getPageSetting("ATGA2") == true) ATGA2();
+      });
+      atGuard("autoRoboTrimp", function() {
+        if (aWholeNewWorld && getPageSetting("AutoRoboTrimp")) autoRoboTrimp();
+      });
+      atGuard("buyheliumy", function() {
+        if (game.global.challengeActive == "Daily" && getPageSetting("buyheliumy") >= 1 && getDailyHeliumValue(countDailyWeight()) >= getPageSetting("buyheliumy") && game.global.b >= 100 && !game.singleRunBonuses.heliumy.owned) purchaseSingleRunBonus("heliumy");
+      });
+      atGuard("finishChallengeSquared", function() {
+        if (aWholeNewWorld && getPageSetting("FinishC2") > 0 && game.global.runningChallengeSquared) finishChallengeSquared();
+      });
+      atGuard("autoMagmiteSpender", function() {
+        if (getPageSetting("spendmagmite") == 2 && !magmiteSpenderChanged) autoMagmiteSpender();
+      });
+      atGuard("autoNatureTokens", function() {
+        if (getPageSetting("AutoNatureTokens") && game.global.world > 229) autoNatureTokens();
+      });
+      atGuard("autoEnlight", function() {
+        if (getPageSetting("autoenlight") && game.global.world > 229 && game.global.uberNature == false) autoEnlight();
+      });
+      atGuard("buyUpgrades", function() {
+        if (getPageSetting("BuyUpgradesNew") != 0) buyUpgrades();
+      });
+      atGuard("autoshrine", function() {
+        if (getPageSetting("Hshrine") == true || getPageSetting("Hdshrine") == 1 || getPageSetting("Hdshrine") == 2) autoshrine();
+      });
+      if (!usingRealTimeOffline) {
+        atGuard("buildings", function() {
+          if (getPageSetting("BuyBuildingsNew") === 0 && getPageSetting("hidebuildings") == true) atGuard("buyBuildings", buyBuildings);
+          else if (getPageSetting("BuyBuildingsNew") == 1) {
+            atGuard("buyBuildings", buyBuildings);
+            atGuard("buyStorage", buyStorage);
+          } else if (getPageSetting("BuyBuildingsNew") == 2) atGuard("buyBuildings", buyBuildings);
+          else if (getPageSetting("BuyBuildingsNew") == 3) atGuard("buyStorage", buyStorage);
+        });
+      }
+      atGuard("autoGenerator", function() {
+        if (getPageSetting("UseAutoGen") == true && game.global.world > 229) autoGenerator();
+      });
+      atGuard("jobs", function() {
+        if (getPageSetting("BuyJobsNew") == 1) {
+          atGuard("workerRatios", workerRatios);
+          atGuard("buyJobs", buyJobs);
+        } else if (getPageSetting("BuyJobsNew") == 2) atGuard("buyJobs", buyJobs);
+      });
+      atGuard("autoPortal", function() {
+        if (autoTrimpSettings.AutoPortal.selected != "Off" && game.global.challengeActive != "Daily" && !game.global.runningChallengeSquared) autoPortal();
+      });
+      atGuard("dailyAutoPortal", function() {
+        if (getPageSetting("AutoPortalDaily") > 0 && game.global.challengeActive == "Daily") dailyAutoPortal();
+      });
+      atGuard("c2runnerportal", function() {
+        if (getPageSetting("c2runnerstart") == true && getPageSetting("c2runnerportal") > 0 && game.global.runningChallengeSquared && game.global.world > getPageSetting("c2runnerportal")) c2runnerportal();
+      });
+      atGuard("trimpcide", function() {
+        if (getPageSetting("ForceAbandon") == true) trimpcide();
+      });
+      atGuard("helptrimpsnotdie", function() {
+        if (getPageSetting("trimpsnotdie") == true && game.global.world > 1) helptrimpsnotdie();
+      });
+      atGuard("fightalways", function() {
+        if (!game.global.fighting) {
+          if (getPageSetting("fightforever") == 0) fightalways();
+          else if (getPageSetting("fightforever") > 0 && calcHDratio() <= getPageSetting("fightforever")) fightalways();
+          else if (getPageSetting("cfightforever") == true && (challengeActive("Electricty") || challengeActive("Toxicity") || challengeActive("Nom"))) fightalways();
+          else if (getPageSetting("dfightforever") == 1 && game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.empower == "undefined" && typeof game.global.dailyChallenge.bloodthirst == "undefined" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined")) fightalways();
+          else if (getPageSetting("dfightforever") == 2 && game.global.challengeActive == "Daily" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined")) fightalways();
+        }
+      });
+      atGuard("betterAutoFight", function() {
+        if (getPageSetting("BetterAutoFight") == 1) betterAutoFight();
+      });
+      atGuard("betterAutoFight3", function() {
+        if (getPageSetting("BetterAutoFight") == 2) betterAutoFight3();
+      });
+      atGuard("prestigeChanging2", function() {
+        var forcePrecZ = getPageSetting("ForcePresZ") < 0 || game.global.world < getPageSetting("ForcePresZ");
+        if (getPageSetting("DynamicPrestige2") > 0 && forcePrecZ) prestigeChanging2();
+        else autoTrimpSettings.Prestige.selected = document.getElementById("Prestige").value;
+      });
+      atGuard("avoidempower", function() {
+        if (game.global.world > 5 && game.global.challengeActive == "Daily" && getPageSetting("avoidempower") == true && typeof game.global.dailyChallenge.empower !== "undefined" && !game.global.preMapsActive && !game.global.mapsActive && game.global.soldierHealth > 0) avoidempower();
+      });
+      atGuard("buyWeps:void", function() {
+        if (getPageSetting("buywepsvoid") == true && (getPageSetting("VoidMaps") == game.global.world && game.global.challengeActive != "Daily" || getPageSetting("DailyVoidMod") == game.global.world && game.global.challengeActive == "Daily") && game.global.mapsActive && getCurrentMapObject().location == "Void") buyWeps();
+      });
+      atGuard("armormagic", function() {
+        if (getPageSetting("darmormagic") > 0 && typeof game.global.dailyChallenge.empower == "undefined" && typeof game.global.dailyChallenge.bloodthirst == "undefined" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined") || getPageSetting("carmormagic") > 0 && (challengeActive("Toxicity") || challengeActive("Nom"))) armormagic();
+      });
+      atGuard("stance", function() {
+        if (getPageSetting("UseScryerStance") == true || getPageSetting("scryvoidmaps") == true && game.global.challengeActive != "Daily" || getPageSetting("dscryvoidmaps") == true && game.global.challengeActive == "Daily") useScryerStance();
+        else if (getPageSetting("AutoStance") == 3 || getPageSetting("use3daily") == true && game.global.challengeActive == "Daily") windStance();
+        else if (getPageSetting("AutoStance") == 1) autoStance();
+        else if (getPageSetting("AutoStance") == 2) autoStance2();
+      });
+      atGuard("exitSpireCell", function() {
+        if (getPageSetting("ExitSpireCell") > 0 && game.global.challengeActive != "Daily" && getPageSetting("IgnoreSpiresUntil") <= game.global.world && game.global.spireActive) exitSpireCell();
+      });
+      atGuard("dailyexitSpireCell", function() {
+        if (getPageSetting("dExitSpireCell") >= 1 && game.global.challengeActive == "Daily" && getPageSetting("dIgnoreSpiresUntil") <= game.global.world && game.global.spireActive) dailyexitSpireCell();
+      });
+      atGuard("ATspirebreed", function() {
+        if (getPageSetting("SpireBreedTimer") > 0 && getPageSetting("IgnoreSpiresUntil") <= game.global.world) ATspirebreed();
+      });
+      atGuard("buyshitspire", function() {
+        if (getPageSetting("spireshitbuy") == true && (isActiveSpireAT() || disActiveSpireAT())) buyshitspire();
+      });
+      atGuard("praiding", function() {
+        if (getPageSetting("PraidHarder") == true && getPageSetting("Praidingzone").length > 0 && game.global.challengeActive != "Daily" || getPageSetting("dPraidHarder") == true && getPageSetting("dPraidingzone").length > 0 && game.global.challengeActive == "Daily") PraidHarder();
+        else {
+          atGuard("Praiding", function() {
+            if (getPageSetting("Praidingzone").length && game.global.challengeActive != "Daily") Praiding();
+          });
+          atGuard("dailyPraiding", function() {
+            if (getPageSetting("dPraidingzone").length && game.global.challengeActive == "Daily") dailyPraiding();
+          });
+        }
+      });
+      atGuard("BWraiding", function() {
+        if (getPageSetting("BWraid") && game.global.challengeActive != "Daily" || getPageSetting("Dailybwraid") && game.global.challengeActive == "Daily") {
+          BWraiding();
+        }
+      });
+      atGuard("buyWeps:bwraid", function() {
+        if ((getPageSetting("BWraid") == true || getPageSetting("Dailybwraid") == true) && bwraidon) buyWeps();
+      });
+      atGuard("buyWeps:bwraidMap", function() {
+        if (game.global.mapsActive && game.global.universe == 1 && getPageSetting("BWraid") == true && game.global.world == getPageSetting("BWraidingz") && getCurrentMapObject().level <= getPageSetting("BWraidingmax")) buyWeps();
+      });
+      atGuard("autoGoldenUpgradesAT", function() {
+        var agu = getPageSetting("AutoGoldenUpgrades");
+        var dagu = getPageSetting("dAutoGoldenUpgrades");
+        var cagu = getPageSetting("cAutoGoldenUpgrades");
+        if (agu && agu != "Off" && (!game.global.runningChallengeSquared && game.global.challengeActive != "Daily")) autoGoldenUpgradesAT(agu);
+        if (dagu && dagu != "Off" && game.global.challengeActive == "Daily") autoGoldenUpgradesAT(dagu);
+        if (cagu && cagu != "Off" && game.global.runningChallengeSquared) autoGoldenUpgradesAT(cagu);
+      });
+    }
+    if (game.global.universe == 2) {
+      if (!usingRealTimeOffline) {
+        atGuard("RsetScienceNeeded", RsetScienceNeeded);
+      }
+      atGuard("RHeirloomShieldSwapped", function() {
+        if (shieldEquipped !== game.global.ShieldEquipped.id) HeirloomShieldSwapped();
+      });
+      atGuard("RbuyUpgrades", function() {
+        if (!(game.global.challengeActive == "Quest" && game.global.world > 5 && game.global.lastClearedCell < 90 && [14, 24].indexOf(questcheck()) >= 0)) {
+          if (getPageSetting("RBuyUpgradesNew") != 0) RbuyUpgrades();
+        }
+      });
+      atGuard("RautoMap", function() {
+        if (getPageSetting("RAutoMaps") > 0 && game.global.mapsUnlocked) RautoMap();
+      });
+      atGuard("RupdateAutoMapsStatus", function() {
+        if (getPageSetting("Rshowautomapstatus") == true) RupdateAutoMapsStatus();
+      });
+      atGuard("Rautomapsalways", function() {
+        if (getPageSetting("Rautomapsalways") == true && autoTrimpSettings.RAutoMaps.value != 1) autoTrimpSettings.RAutoMaps.value = 1;
+      });
+      atGuard("RmanualLabor2", function() {
+        if (getPageSetting("RManualGather2") == 1 || getPageSetting("RManualGather2") == 2) RmanualLabor2();
+      });
+      atGuard("RtoggleAutoTrap", function() {
+        if (getPageSetting("RTrapTrimps") && game.global.trapBuildAllowed && game.global.trapBuildToggled == false) toggleAutoTrap();
+      });
+      atGuard("buyradony", function() {
+        if (game.global.challengeActive == "Daily" && getPageSetting("buyradony") >= 1 && getDailyHeliumValue(countDailyWeight()) >= getPageSetting("buyradony") && game.global.b >= 100 && !game.singleRunBonuses.heliumy.owned) purchaseSingleRunBonus("heliumy");
+      });
+      atGuard("Rautoshrine", function() {
+        if (getPageSetting("Rshrine") == true || getPageSetting("Rdshrine") == 1 || getPageSetting("Rdshrine") == 2) autoshrine();
+      });
+      atGuard("RAB", function() {
+        if (game.stats.highestRadLevel.valueTotal() >= 75 && !autoBattle.sealed && getPageSetting("RAB") == true) {
+          atGuard("ABswitch", function() {
+            if (getPageSetting("RABpreset") == true) ABswitch();
+          });
+          atGuard("ABdustsimple", function() {
+            if (getPageSetting("RABdustsimple") == 1) ABdustsimple();
+            else if (getPageSetting("RABdustsimple") == 2) ABdustsimplenonhid();
+          });
+          atGuard("ABfarmsave", function() {
+            if (getPageSetting("RABfarm") == true) ABfarmsave();
+          });
+          atGuard("ABfarmswitch", function() {
+            if (getPageSetting("RABfarmswitch") == true) ABfarmswitch();
+          });
+          atGuard("ABsolver", function() {
+            if (getPageSetting("RABsolve") == true) ABsolver();
+          });
+        }
+      });
+      atGuard("RbuyBuildings", function() {
+        if (getPageSetting("RBuyBuildingsNew") == true) {
+          RbuyBuildings();
+        }
+      });
+      atGuard("Rjobs", function() {
+        if (!(game.global.challengeActive == "Quest" && game.global.world > 5) && getPageSetting("RBuyJobsNew") == 1) {
+          atGuard("RworkerRatios", RworkerRatios);
+          atGuard("RbuyJobs", RbuyJobs);
+        } else if (!(game.global.challengeActive == "Quest" && game.global.world > 5) && getPageSetting("RBuyJobsNew") == 2) {
+          atGuard("RbuyJobs", RbuyJobs);
+        }
+      });
+      atGuard("RquestbuyJobs", function() {
+        if (game.global.challengeActive == "Quest" && game.global.world > 5 && getPageSetting("RBuyJobsNew") > 0) {
+          RquestbuyJobs();
+        }
+      });
+      atGuard("RautoPortal", function() {
+        if (autoTrimpSettings.RAutoPortal.selected != "Off" && game.global.challengeActive != "Daily" && !game.global.runningChallengeSquared) RautoPortal();
+      });
+      atGuard("RdailyAutoPortal", function() {
+        if (getPageSetting("RAutoPortalDaily") > 0 && game.global.challengeActive == "Daily") RdailyAutoPortal();
+      });
+      atGuard("archstring", function() {
+        if (getPageSetting("Rarchon") == true && game.global.challengeActive == "Archaeology") {
+          archstring();
+        }
+      });
+      atGuard("RautoEquip", function() {
+        if (getPageSetting("Requipon") == true && !(game.global.challengeActive == "Quest" && game.global.world > 5 && game.global.lastClearedCell < 90 && [11, 12, 21, 22].indexOf(questcheck()) >= 0)) RautoEquip();
+      });
+      atGuard("RbetterAutoFight", function() {
+        if (getPageSetting("BetterAutoFight") == 1) betterAutoFight();
+      });
+      atGuard("RbetterAutoFight3", function() {
+        if (getPageSetting("BetterAutoFight") == 2) betterAutoFight3();
+      });
+      atGuard("Ravoidempower", function() {
+        if (game.global.world > 5 && game.global.challengeActive == "Daily" && getPageSetting("Ravoidempower") == true && typeof game.global.dailyChallenge.empower !== "undefined" && !game.global.preMapsActive && !game.global.mapsActive && game.global.soldierHealth > 0) Ravoidempower();
+      });
+      atGuard("Rfightalways", function() {
+        if (!game.global.fighting) {
+          if (getPageSetting("Rfightforever") == 0) Rfightalways();
+          else if (getPageSetting("Rfightforever") > 0 && RcalcHDratio() <= getPageSetting("Rfightforever")) Rfightalways();
+          else if (getPageSetting("Rdfightforever") == 1 && game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.empower == "undefined" && typeof game.global.dailyChallenge.bloodthirst == "undefined" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined")) Rfightalways();
+          else if (getPageSetting("Rdfightforever") == 2 && game.global.challengeActive == "Daily" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined")) Rfightalways();
+        }
+      });
+      atGuard("Rarmormagic", function() {
+        if (getPageSetting("Rdarmormagic") > 0 && typeof game.global.dailyChallenge.empower == "undefined" && typeof game.global.dailyChallenge.bloodthirst == "undefined" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined") || getPageSetting("Rcarmormagic") > 0 && (game.global.challengeActive == "Toxicity" || game.global.challengeActive == "Nom")) Rarmormagic();
+      });
+      atGuard("Rmanageequality", function() {
+        if (getPageSetting("Rmanageequality") == true && game.global.fighting) Rmanageequality();
+      });
+      atGuard("Rheirloomswap", function() {
+        if (getPageSetting("Rhs") == true && game.global.challengeActive != "Daily" || getPageSetting("Rdhs") == 2 && game.global.challengeActive == "Daily") {
+          Rheirloomswap();
+        }
+      });
+      atGuard("Rdheirloomswap", function() {
+        if (getPageSetting("Rdhs") == 1 && game.global.challengeActive == "Daily") {
+          Rdheirloomswap();
+        }
+      });
+      atGuard("RautoGoldenUpgradesAT", function() {
+        var Ragu = getPageSetting("RAutoGoldenUpgrades");
+        var Rdagu = getPageSetting("RdAutoGoldenUpgrades");
+        var Rcagu = getPageSetting("RcAutoGoldenUpgrades");
+        if (Ragu && Ragu != "Off" && (!game.global.runningChallengeSquared && game.global.challengeActive != "Daily")) RautoGoldenUpgradesAT(Ragu);
+        if (Rdagu && Rdagu != "Off" && game.global.challengeActive == "Daily") RautoGoldenUpgradesAT(Rdagu);
+        if (Rcagu && Rcagu != "Off" && game.global.runningChallengeSquared) RautoGoldenUpgradesAT(Rcagu);
+      });
+    }
+  }
+  function guiLoop() {
+    atGuard("updateCustomButtons", updateCustomButtons);
+    atGuard("storedMODULES", function() {
+      safeSetItems("storedMODULES", JSON.stringify(compareModuleVars()));
+    });
+    atGuard("fightinfo.Update", function() {
+      if (getPageSetting("EnhanceGrids")) MODULES.fightinfo.Update();
+    });
+    atGuard("performance.UpdateAFKOverlay", function() {
+      if ("undefined" != typeof MODULES && "undefined" != typeof MODULES.performance && MODULES.performance.isAFK) MODULES.performance.UpdateAFKOverlay();
+    });
+  }
+  function mainCleanup() {
+    lastrunworld = currentworld;
+    currentworld = game.global.world;
+    aWholeNewWorld = lastrunworld != currentworld;
+    if (game.global.universe == 1 && currentworld == 1 && aWholeNewWorld) {
+      lastHeliumZone = 0;
+      zonePostpone = 0;
+      if (getPageSetting("automapsportal") == true && getPageSetting("AutoMaps") == 0 && !game.upgrades.Battle.done)
+        autoTrimpSettings["AutoMaps"].value = 1;
+      return true;
+    }
+    if (game.global.universe == 2 && currentworld == 1 && aWholeNewWorld) {
+      lastRadonZone = 0;
+      zonePostpone = 0;
+      if (getPageSetting("Rautomapsportal") == true && getPageSetting("RAutoMaps") == 0 && !game.upgrades.Battle.done)
+        autoTrimpSettings["RAutoMaps"].value = 1;
+      return true;
+    }
+    autoTrimpSettings.zonetracker = 1;
+  }
+  if (document.getElementById("tooltipDiv").classList.contains("tooltipExtraLg") === false)
+    document.getElementById("tooltipDiv").style.overflowY = "";
+
   // src/modules/utils.ts
   var utils_exports = {};
   __export(utils_exports, {
@@ -14,7 +484,7 @@
     filterMessage2: () => filterMessage2,
     getPageSetting: () => getPageSetting2,
     getPageSettingAt: () => getPageSettingAt,
-    loadPageVariables: () => loadPageVariables,
+    loadPageVariables: () => loadPageVariables2,
     message2: () => message2,
     safeSetItems: () => safeSetItems2,
     saveSettings: () => saveSettings2,
@@ -22,7 +492,7 @@
     serializeSettings550: () => serializeSettings5502,
     serializeSettings60: () => serializeSettings602,
     setPageSetting: () => setPageSetting2,
-    setTitle: () => setTitle,
+    setTitle: () => setTitle2,
     textSettingIsSet: () => textSettingIsSet
   });
 
@@ -70,7 +540,7 @@
       }
     };
   }
-  function loadPageVariables() {
+  function loadPageVariables2() {
     var tmp = JSON.parse(localStorage.getItem("autoTrimpSettings"));
     if (tmp !== null && tmp["ATversion"] != void 0) {
       autoTrimpSettings = tmp;
@@ -214,7 +684,7 @@
       message2(message3, "AutoTrimps", lootIcon, type);
     }
   }
-  function setTitle() {
+  function setTitle2() {
     aWholeNewWorld && (document.title = "(" + game.global.world + ") Trimps " + document.getElementById("versionNumber").innerHTML);
   }
   var lastmessagecount = 1;
@@ -283,11 +753,11 @@
   // src/modules/guard.ts
   var guard_exports = {};
   __export(guard_exports, {
-    atGuard: () => atGuard,
+    atGuard: () => atGuard2,
     atGuardErrors: () => atGuardErrors
   });
   var atGuardErrors = {};
-  function atGuard(name, fn) {
+  function atGuard2(name, fn) {
     try {
       fn();
     } catch (e) {
@@ -347,9 +817,9 @@
   // src/modules/dynprestige.ts
   var dynprestige_exports = {};
   __export(dynprestige_exports, {
-    prestigeChanging2: () => prestigeChanging2
+    prestigeChanging2: () => prestigeChanging22
   });
-  function prestigeChanging2() {
+  function prestigeChanging22() {
     var a = byId("Prestige").selectedIndex;
     if (!(2 >= a)) {
       var b = getPageSetting2("DynamicPrestige2");
@@ -385,10 +855,10 @@
   // src/modules/breedtimer.ts
   var breedtimer_exports = {};
   __export(breedtimer_exports, {
-    ATGA2: () => ATGA2,
+    ATGA2: () => ATGA22,
     abandonVoidMap: () => abandonVoidMap2,
     addBreedingBoxTimers: () => addBreedingBoxTimers,
-    addToolTipToArmyCount: () => addToolTipToArmyCount,
+    addToolTipToArmyCount: () => addToolTipToArmyCount2,
     breedTimeRemaining: () => breedTimeRemaining2,
     breedingPS: () => breedingPS2,
     forceAbandonTrimps: () => forceAbandonTrimps2,
@@ -445,7 +915,7 @@
   }
   globalThis.DecimalBreed = Decimal.clone({ precision: 30, rounding: 4 });
   var missingTrimps = new DecimalBreed(0);
-  function ATGA2() {
+  function ATGA22() {
     if (game.jobs.Geneticist.locked == false && getPageSetting2("ATGA2") == true && getPageSetting2("ATGA2timer") > 0 && game.global.challengeActive != "Trapper") {
       var trimps = game.resources.trimps;
       var trimpsMax = trimps.realMax();
@@ -553,7 +1023,7 @@
     breedbarContainer.appendChild(addbreedTimerContainer);
   }
   addBreedingBoxTimers();
-  function addToolTipToArmyCount() {
+  function addToolTipToArmyCount2() {
     var a = document.getElementById("trimpsFighting");
     if ("tooltipadded" != a.className) {
       a.setAttribute("onmouseover", 'tooltip("Army Count", "customText", event, "To Fight now would add: " + prettify(getArmyTime()) + " seconds to the breed timer.")');
@@ -603,11 +1073,11 @@
   // src/modules/nature.ts
   var nature_exports = {};
   __export(nature_exports, {
-    autoEnlight: () => autoEnlight,
-    autoNatureTokens: () => autoNatureTokens,
+    autoEnlight: () => autoEnlight2,
+    autoNatureTokens: () => autoNatureTokens2,
     purchaseEnlight: () => purchaseEnlight
   });
-  function autoNatureTokens() {
+  function autoNatureTokens2() {
     var changed = false;
     var thresh = 0;
     if (getPageSetting2("tokenthresh") > 0) {
@@ -665,7 +1135,7 @@
       naturePurchase("uberEmpower", nature);
     }
   }
-  function autoEnlight() {
+  function autoEnlight2() {
     var nature = "None", dnature = "None", cnature = "None";
     var fillernature = [], poison, poisondiff, wind, winddiff, ice, icediff, dailynature = [], dpoison, dpoisondiff, dwind, dwinddiff, dice, dicediff, c2nature = [], cpoison, cpoisondiff, cwind, cwinddiff, cice, cicediff;
     if (game.global.challengeActive != "Daily" && !game.global.runningChallengeSquared) {
@@ -766,7 +1236,7 @@
   // src/modules/magmite.ts
   var magmite_exports = {};
   __export(magmite_exports, {
-    autoGenerator: () => autoGenerator,
+    autoGenerator: () => autoGenerator2,
     autoMagmiteSpender: () => autoMagmiteSpender2,
     calcMiSpent: () => calcMiSpent,
     miRatio: () => miRatio
@@ -903,7 +1373,7 @@
       if (didSpend) debug2("Leftover magmite: " + game.global.magmite, "magmite");
     }
   }
-  function autoGenerator() {
+  function autoGenerator2() {
     let defaultgenstate = getPageSetting2("defaultgen");
     let beforefuelstate = getPageSetting2("beforegen");
     const hybrid = game.permanentGeneratorUpgrades.Hybridization.owned;
@@ -2284,10 +2754,10 @@
   var equipment_exports = {};
   __export(equipment_exports, {
     PrestigeValue: () => PrestigeValue,
-    RautoEquip: () => RautoEquip,
+    RautoEquip: () => RautoEquip2,
     Rgetequips: () => Rgetequips2,
     areWeAttackLevelCapped: () => areWeAttackLevelCapped2,
-    autoLevelEquipment: () => autoLevelEquipment,
+    autoLevelEquipment: () => autoLevelEquipment2,
     buyPrestigeMaybe: () => buyPrestigeMaybe,
     dorangewindstack: () => dorangewindstack,
     equipCost: () => equipCost,
@@ -2560,7 +3030,7 @@
     game.global.firstCustomAmt = preBuyCustomFirst2;
     game.global.lastCustomAmt = preBuyCustomLast2;
   }
-  function autoLevelEquipment() {
+  function autoLevelEquipment2() {
     const gearamounttobuy = getPageSetting2("gearamounttobuy") > 0 ? getPageSetting2("gearamounttobuy") : 1;
     let enoughDamageCutoff = getPageSetting2("dmgcuntoff");
     if (getEmpowerment() == "Wind" && game.global.challengeActive !== "Daily" && !game.global.runningChallengeSquared && getPageSetting2("AutoStance") == 3 && getPageSetting2("WindStackingMin") > 0 && game.global.world >= getPageSetting2("WindStackingMin") && getPageSetting2("windcutoff") > 0)
@@ -2935,7 +3405,7 @@
     const currentStatValue = equipment.level * equipment[equipStat + "Calculated"];
     return newStatValue > currentStatValue;
   }
-  function RautoEquip() {
+  function RautoEquip2() {
     if (!getPageSetting2("Requipon")) return;
     let prestigeLeft = false;
     do {
@@ -3076,14 +3546,14 @@
   // src/modules/buildings.ts
   var buildings_exports = {};
   __export(buildings_exports, {
-    RbuyBuildings: () => RbuyBuildings,
+    RbuyBuildings: () => RbuyBuildings2,
     RbuyStorage: () => RbuyStorage,
     __syncAutoStorageOnce: () => __syncAutoStorageOnce,
     bulkBuyAmount: () => bulkBuyAmount,
-    buyBuildings: () => buyBuildings,
+    buyBuildings: () => buyBuildings2,
     buyFoodEfficientHousing: () => buyFoodEfficientHousing,
     buyGemEfficientHousing: () => buyGemEfficientHousing,
-    buyStorage: () => buyStorage,
+    buyStorage: () => buyStorage2,
     mostEfficientHousing: () => mostEfficientHousing,
     safeBuyBuilding: () => safeBuyBuilding2
   });
@@ -3244,7 +3714,7 @@
       safeBuyBuilding2(bestGemBuilding);
     }
   }
-  function buyBuildings() {
+  function buyBuildings2() {
     const oldBuy = preBuy2();
     const hidebuild = getPageSetting2("BuyBuildingsNew") === 0 && getPageSetting2("hidebuildings") == true;
     game.global.buyAmt = 1;
@@ -3309,7 +3779,7 @@
     }
     postBuy2(oldBuy);
   }
-  function buyStorage() {
+  function buyStorage2() {
     const customVars = MODULES["buildings"];
     const packMod = 1 + game.portal.Packrat.level * game.portal.Packrat.modifier;
     const Bs = {
@@ -3422,7 +3892,7 @@
       toggleAutoStorage(false);
     }
   }
-  function RbuyBuildings() {
+  function RbuyBuildings2() {
     const oldBuy = preBuy2();
     game.global.buyAmt = 1;
     if (game.global.challengeActive === "Hypothermia" && getPageSetting2("Rhypostorage")) {
@@ -3502,16 +3972,16 @@
   // src/modules/jobs.ts
   var jobs_exports = {};
   __export(jobs_exports, {
-    RbuyJobs: () => RbuyJobs,
-    RquestbuyJobs: () => RquestbuyJobs,
+    RbuyJobs: () => RbuyJobs2,
+    RquestbuyJobs: () => RquestbuyJobs2,
     RsafeBuyJob: () => RsafeBuyJob,
     RsafeFireJob: () => RsafeFireJob,
-    RworkerRatios: () => RworkerRatios,
-    buyJobs: () => buyJobs,
+    RworkerRatios: () => RworkerRatios2,
+    buyJobs: () => buyJobs2,
     safeBuyJob: () => safeBuyJob,
     safeFireJob: () => safeFireJob,
     scientistDivisor: () => scientistDivisor,
-    workerRatios: () => workerRatios
+    workerRatios: () => workerRatios2
   });
 
   // src/modules/jobs-ratios.ts
@@ -3607,7 +4077,7 @@
     postBuy2(old);
     return x / 2;
   }
-  function buyJobs() {
+  function buyJobs2() {
     const noJobsC2 = game.global.runningChallengeSquared && getPageSetting2("buynojobsc") == true;
     let freeWorkers = freeWorkerSlots();
     let totalDistributableWorkers = freeWorkers + game.jobs.Farmer.owned + game.jobs.Miner.owned + game.jobs.Lumberjack.owned;
@@ -3780,7 +4250,7 @@
     }
   }
   var tierMagmamancers = 0;
-  function workerRatios() {
+  function workerRatios2() {
     let ratioSet;
     if (MODULES["jobs"].customRatio) {
       ratioSet = MODULES["jobs"].customRatio;
@@ -3874,7 +4344,7 @@
     postBuy2(old);
     return x / 2;
   }
-  function RworkerRatios() {
+  function RworkerRatios2() {
     let ratioSet;
     if (MODULES["jobs"].RcustomRatio) {
       ratioSet = MODULES["jobs"].RcustomRatio;
@@ -3899,7 +4369,7 @@
     setPageSetting2("RLumberjackRatio", ratioSet[1]);
     setPageSetting2("RMinerRatio", ratioSet[2]);
   }
-  function RquestbuyJobs() {
+  function RquestbuyJobs2() {
     let freeWorkers = freeWorkerSlots();
     let totalDistributableWorkers = freeWorkers + game.jobs.Farmer.owned + game.jobs.Miner.owned + game.jobs.Lumberjack.owned;
     totalDistributableWorkers = totalDistributableWorkers / 5;
@@ -3977,7 +4447,7 @@
     }
   }
   var reservedJobs = 100;
-  function RbuyJobs() {
+  function RbuyJobs2() {
     if (game.jobs.Farmer.locked || game.resources.trimps.owned === 0) return;
     let freeWorkers = Math.ceil(Math.min(game.resources.trimps.realMax() / 2, game.resources.trimps.owned)) - game.resources.trimps.employed;
     if (freeWorkers <= 0) return;
@@ -4160,10 +4630,10 @@
   // src/modules/upgrades.ts
   var upgrades_exports = {};
   __export(upgrades_exports, {
-    RautoGoldenUpgradesAT: () => RautoGoldenUpgradesAT,
-    RbuyUpgrades: () => RbuyUpgrades,
+    RautoGoldenUpgradesAT: () => RautoGoldenUpgradesAT2,
+    RbuyUpgrades: () => RbuyUpgrades2,
     autoGiga: () => autoGiga,
-    buyUpgrades: () => buyUpgrades,
+    buyUpgrades: () => buyUpgrades2,
     firstGiga: () => firstGiga,
     gigaTargetZone: () => gigaTargetZone
   });
@@ -4238,7 +4708,7 @@
     debug2("Auto Gigastation: Setting pattern to " + base + "+" + delta, "general", "*rocket");
     return true;
   }
-  function buyUpgrades() {
+  function buyUpgrades2() {
     if (getPageSetting2("MetalEfficiencyPriority") && game.global.challengeActive === "Metal" && game.global.world < getPageSetting2("MetalEfficiencyZone")) {
       const efficiency = game.upgrades["Efficiency"];
       if (efficiency && efficiency.allowed > efficiency.done && canAffordTwoLevel(efficiency)) {
@@ -4267,7 +4737,7 @@
     }
   }
   globalThis.RupgradeList = ["Miners", "Scientists", "Coordination", "Speedminer", "Speedlumber", "Speedfarming", "Speedscience", "Speedexplorer", "Megaminer", "Megalumber", "Megafarming", "Megascience", "Efficiency", "Explorers", "Battle", "Bloodlust", "Bounty", "Egg", "Rage", "Prismatic", "Prismalicious", "Formations", "Dominance", "UberHut", "UberHouse", "UberMansion", "UberHotel", "UberResort", "Trapstorm", "Potency"];
-  function RbuyUpgrades() {
+  function RbuyUpgrades2() {
     for (const upgrade of RupgradeList) {
       const gameUpgrade = game.upgrades[upgrade];
       const available = gameUpgrade.allowed > gameUpgrade.done && canAffordTwoLevel(gameUpgrade);
@@ -4278,7 +4748,7 @@
       debug2("Upgraded " + upgrade, "upgrades", "*upload2");
     }
   }
-  function RautoGoldenUpgradesAT(setting) {
+  function RautoGoldenUpgradesAT2(setting) {
     let num = getAvailableGoldenUpgrades();
     let setting2;
     if (num === 0) return;
@@ -4310,11 +4780,11 @@
   // src/modules/gather.ts
   var gather_exports = {};
   __export(gather_exports, {
-    RmanualLabor2: () => RmanualLabor2,
-    autogather3: () => autogather3,
+    RmanualLabor2: () => RmanualLabor22,
+    autogather3: () => autogather32,
     calcMaxTraps: () => calcMaxTraps,
     calcTPS: () => calcTPS,
-    manualLabor2: () => manualLabor2
+    manualLabor2: () => manualLabor22
   });
   MODULES["gather"] = {};
   MODULES["gather"].minTraps = 5;
@@ -4332,7 +4802,7 @@
     if (time > maxZoneDuration) maxZoneDuration = time;
     return Math.ceil(calcTPS() * maxZoneDuration / 4);
   }
-  function manualLabor2() {
+  function manualLabor22() {
     if (getPageSetting2("ManualGather2") == 0) return;
     const notFullPop = game.resources.trimps.owned < game.resources.trimps.realMax();
     const trapperTrapUntilFull = game.global.challengeActive === "Trapper" && notFullPop;
@@ -4467,12 +4937,12 @@
     }
     setGather(lowestResource);
   }
-  function autogather3() {
+  function autogather32() {
     if (game.global.buildingsQueue.length <= 1 && getPageSetting2("gathermetal") == false || getPageSetting2("gathermetal") == true) setGather("metal");
     else setGather("buildings");
   }
   MODULES["gather"].RminScienceAmount = 200;
-  function RmanualLabor2() {
+  function RmanualLabor22() {
     const trapTrimpsOK = getPageSetting2("RTrapTrimps");
     const hasTurkimp = game.talents.turkimp2.purchased || game.global.turkimpTimer > 0;
     const needToTrap = game.resources.trimps.max - game.resources.trimps.owned >= game.resources.trimps.max * 0.05 || game.resources.trimps.getCurrentSend() > game.resources.trimps.owned - trimpsEffectivelyEmployed();
@@ -4599,8 +5069,8 @@
   // src/modules/heirlooms.ts
   var heirlooms_exports = {};
   __export(heirlooms_exports, {
-    HeirloomShieldSwapped: () => HeirloomShieldSwapped,
-    Rdheirloomswap: () => Rdheirloomswap,
+    HeirloomShieldSwapped: () => HeirloomShieldSwapped2,
+    Rdheirloomswap: () => Rdheirloomswap2,
     Rdhsequip1: () => Rdhsequip1,
     Rdhsequip2: () => Rdhsequip2,
     Rdhsmapstaff: () => Rdhsmapstaff,
@@ -4611,7 +5081,7 @@
     Rdhstributestaffequip: () => Rdhstributestaffequip,
     Rdhsworldstaff: () => Rdhsworldstaff,
     Rdhsworldstaffequip: () => Rdhsworldstaffequip,
-    Rheirloomswap: () => Rheirloomswap,
+    Rheirloomswap: () => Rheirloomswap2,
     Rhsequip1: () => Rhsequip1,
     Rhsequip2: () => Rhsequip2,
     Rhsmapstaff: () => Rhsmapstaff,
@@ -4992,7 +5462,7 @@
       equipHeirloom();
     }
   }
-  function Rheirloomswap() {
+  function Rheirloomswap2() {
     if (getPageSetting2("Rhsshield") != false) {
       if (getPageSetting2("Rhsz") > 0 && game.global.world < getPageSetting2("Rhsz")) {
         Rhsequip1();
@@ -5013,7 +5483,7 @@
       }
     }
   }
-  function Rdheirloomswap() {
+  function Rdheirloomswap2() {
     if (getPageSetting2("Rdhsshield") != false) {
       if (getPageSetting2("Rdhsz") > 0 && game.global.world < getPageSetting2("Rdhsz")) {
         Rdhsequip1();
@@ -5034,7 +5504,7 @@
       }
     }
   }
-  function HeirloomShieldSwapped() {
+  function HeirloomShieldSwapped2() {
     if (game.global.ShieldEquipped.rarity < 10) return;
     gammaBurstPct = getHeirloomBonus("Shield", "gammaBurst") / 100 > 0 ? getHeirloomBonus("Shield", "gammaBurst") / 100 : 1;
     shieldEquipped = game.global.ShieldEquipped.id;
@@ -5043,14 +5513,14 @@
   // src/modules/fight.ts
   var fight_exports = {};
   __export(fight_exports, {
-    betterAutoFight: () => betterAutoFight,
-    betterAutoFight3: () => betterAutoFight3
+    betterAutoFight: () => betterAutoFight2,
+    betterAutoFight3: () => betterAutoFight32
   });
   MODULES["fight"] = {};
   MODULES["fight"].breedTimerCutoff1 = 2;
   MODULES["fight"].breedTimerCutoff2 = 0.5;
   MODULES["fight"].enableDebug = true;
-  function betterAutoFight() {
+  function betterAutoFight2() {
     if (game.global.autoBattle && !game.global.pauseFight)
       pauseFight();
     if (game.global.gridArray.length === 0 || game.global.preMapsActive || !game.upgrades.Battle.done) return;
@@ -5063,7 +5533,7 @@
       }
     }
   }
-  function betterAutoFight3() {
+  function betterAutoFight32() {
     if (game.global.autoBattle && game.global.pauseFight && !game.global.spireActive)
       pauseFight();
     if (game.global.gridArray.length === 0 || game.global.preMapsActive || !game.upgrades.Battle.done || game.global.fighting || game.global.spireActive)
@@ -5077,7 +5547,7 @@
   var scryer_exports = {};
   __export(scryer_exports, {
     readyToSwitch: () => readyToSwitch,
-    useScryerStance: () => useScryerStance
+    useScryerStance: () => useScryerStance2
   });
   var transitionRequired = false;
   function readyToSwitch(stance = "S") {
@@ -5091,7 +5561,7 @@
     }
     return die || survive(stance, 2);
   }
-  function useScryerStance() {
+  function useScryerStance2() {
     var scry = 4;
     var scryF = "S";
     var x = "0";
@@ -5197,13 +5667,13 @@
   var ab_exports = {};
   __export(ab_exports, {
     ABcheck: () => ABcheck,
-    ABdustsimple: () => ABdustsimple,
-    ABdustsimplenonhid: () => ABdustsimplenonhid,
-    ABfarmsave: () => ABfarmsave,
-    ABfarmswitch: () => ABfarmswitch,
+    ABdustsimple: () => ABdustsimple2,
+    ABdustsimplenonhid: () => ABdustsimplenonhid2,
+    ABfarmsave: () => ABfarmsave2,
+    ABfarmswitch: () => ABfarmswitch2,
     ABlevelswitch: () => ABlevelswitch,
-    ABsolver: () => ABsolver,
-    ABswitch: () => ABswitch,
+    ABsolver: () => ABsolver2,
+    ABswitch: () => ABswitch2,
     checkPreset: () => checkPreset,
     getCurrentAB: () => getCurrentAB
   });
@@ -5263,14 +5733,14 @@
       return 3;
     }
   }
-  function ABswitch() {
+  function ABswitch2() {
     if (ABcheck() > 0) {
       if (ABcheck() == 1) autoBattle.loadPreset("p1");
       else if (ABcheck() == 2) autoBattle.loadPreset("p2");
       else if (ABcheck() == 3) autoBattle.loadPreset("p3");
     }
   }
-  function ABdustsimple() {
+  function ABdustsimple2() {
     var equips = [];
     for (var item in autoBattle.items) {
       if (autoBattle.items[item].equipped) {
@@ -5283,7 +5753,7 @@
     if (equips.length === 0) return;
     if (autoBattle.dust >= equips[0][1]) autoBattle.upgrade(equips[0][0]);
   }
-  function ABdustsimplenonhid() {
+  function ABdustsimplenonhid2() {
     var equips = [];
     for (var item in autoBattle.items) {
       if (!autoBattle.items[item].equipped && !autoBattle.items[item].hidden) {
@@ -5296,7 +5766,7 @@
     if (equips.length === 0) return;
     if (autoBattle.dust >= equips[0][1]) autoBattle.upgrade(equips[0][0]);
   }
-  function ABfarmsave() {
+  function ABfarmsave2() {
     var equips = [];
     for (var item in autoBattle.items) {
       if (autoBattle.items[item].equipped) {
@@ -5313,7 +5783,7 @@
       setPageSetting2("RABfarmstring", string);
     }
   }
-  function ABfarmswitch() {
+  function ABfarmswitch2() {
     if (getPageSetting2("RABfarmstring") == "-1") return;
     if (autoBattle.enemyLevel != getPageSetting2("RABfarmstring")[0]) {
       autoBattle.enemyLevel = getPageSetting2("RABfarmstring")[0];
@@ -5347,7 +5817,7 @@
       autoBattle.resetCombat(true);
     }
   }
-  function ABsolver() {
+  function ABsolver2() {
     if (autoBattle.autoLevel) autoBattle.toggleAutoLevel();
     var max = autoBattle.maxEnemyLevel;
     var items = [];
@@ -6451,9 +6921,9 @@
   // src/modules/maps.ts
   var maps_exports = {};
   __export(maps_exports, {
-    RautoMap: () => RautoMap,
+    RautoMap: () => RautoMap2,
     RupdateAutoMapsStatus: () => RupdateAutoMapsStatus2,
-    autoMap: () => autoMap,
+    autoMap: () => autoMap2,
     selectUniqueMap: () => selectUniqueMap,
     testMapSpecialModController: () => testMapSpecialModController,
     updateAutoMapsStatus: () => updateAutoMapsStatus2
@@ -6677,7 +7147,7 @@
     }
     return void 0;
   }
-  function autoMap() {
+  function autoMap2() {
     if (!game.global.mapsUnlocked || calcOurDmg("avg", false, true) <= 0) {
       enoughDamage = true;
       enoughHealth = true;
@@ -7265,7 +7735,7 @@
       document.getElementById("hiderStatus").innerHTML = hiderStatus;
     }
   }
-  function RautoMap() {
+  function RautoMap2() {
     if (!game.global.mapsUnlocked || RcalcOurDmg("avg", false, true) <= 0) {
       RenoughDamage = true;
       RenoughHealth = true;
@@ -10222,23 +10692,23 @@
   // src/modules/portal.ts
   var portal_exports = {};
   __export(portal_exports, {
-    RautoPortal: () => RautoPortal,
-    RdailyAutoPortal: () => RdailyAutoPortal,
+    RautoPortal: () => RautoPortal2,
+    RdailyAutoPortal: () => RdailyAutoPortal2,
     RdoPortal: () => RdoPortal,
-    autoPortal: () => autoPortal,
+    autoPortal: () => autoPortal2,
     c2runner: () => c2runner,
-    c2runnerportal: () => c2runnerportal,
-    dailyAutoPortal: () => dailyAutoPortal,
+    c2runnerportal: () => c2runnerportal2,
+    dailyAutoPortal: () => dailyAutoPortal2,
     doPortal: () => doPortal,
     findOutCurrentPortalLevel: () => findOutCurrentPortalLevel2,
-    finishChallengeSquared: () => finishChallengeSquared
+    finishChallengeSquared: () => finishChallengeSquared2
   });
   MODULES["portal"] = {};
   var challengeSquaredMode;
   MODULES["portal"].timeout = 5e3;
   MODULES["portal"].bufferExceedFactor = 5;
   globalThis.zonePostpone = 0;
-  function autoPortal() {
+  function autoPortal2() {
     if (!game.global.portalActive) return;
     switch (autoTrimpSettings.AutoPortal.selected) {
       case "Helium Per Hour":
@@ -10315,7 +10785,7 @@
         break;
     }
   }
-  function dailyAutoPortal() {
+  function dailyAutoPortal2() {
     if (!game.global.portalActive) return;
     if (getPageSetting2("AutoPortalDaily") == 1) {
       var OKtoPortal = false;
@@ -10373,7 +10843,7 @@
       }
     }
   }
-  function c2runnerportal() {
+  function c2runnerportal2() {
     if (game.global.world > getPageSetting2("c2runnerportal")) {
       if (game.global.runningChallengeSquared)
         abandonChallenge();
@@ -10503,7 +10973,7 @@
     lastHeliumZone = 0;
     zonePostpone = 0;
   }
-  function finishChallengeSquared() {
+  function finishChallengeSquared2() {
     var a = getPageSetting2("FinishC2");
     if (game.global.world >= a) {
       abandonChallenge();
@@ -10530,7 +11000,7 @@
   }
   MODULES["portal"].Rtimeout = 5e3;
   MODULES["portal"].RbufferExceedFactor = 5;
-  function RautoPortal() {
+  function RautoPortal2() {
     if (!game.global.portalActive) return;
     switch (autoTrimpSettings.RAutoPortal.selected) {
       case "Radon Per Hour":
@@ -10595,7 +11065,7 @@
         break;
     }
   }
-  function RdailyAutoPortal() {
+  function RdailyAutoPortal2() {
     if (!game.global.portalActive) return;
     if (getPageSetting2("RAutoPortalDaily") == 1) {
       var OKtoPortal = false;
@@ -10735,7 +11205,7 @@
     downloadPrePortalBackup: () => downloadPrePortalBackup,
     downloadSaveFile: () => downloadSaveFile,
     listPrePortalBackups: () => listPrePortalBackups,
-    mountBackupPortalButton: () => mountBackupPortalButton,
+    mountBackupPortalButton: () => mountBackupPortalButton2,
     writePrePortalBackup: () => writePrePortalBackup2
   });
   var RING_SIZE = 3;
@@ -10831,7 +11301,7 @@
     if (latest) downloadSaveFile(latest.save, backupFilename(latest));
     activateClicked();
   }
-  function mountBackupPortalButton() {
+  function mountBackupPortalButton2() {
     const container = document.getElementById("portalBtnContainer");
     const vanilla = document.getElementById("activatePortalBtn");
     if (!container || !vanilla || document.getElementById("atBackupPortalBtn")) return;
@@ -10863,7 +11333,7 @@
     ImportExportTooltip: () => ImportExportTooltip,
     cleanupAutoTrimps: () => cleanupAutoTrimps,
     cleanupCandidates: () => cleanupCandidates,
-    compareModuleVars: () => compareModuleVars,
+    compareModuleVars: () => compareModuleVars2,
     confirmedSwitchNow: () => confirmedSwitchNow,
     exportModuleVars: () => exportModuleVars,
     importModuleVars: () => importModuleVars,
@@ -11121,7 +11591,7 @@
     } else if (what == "ATModuleLoad") {
       var mods = byId("ATModuleListDropdown");
       var modnames = "";
-      for (script in mods.selectedOptions) {
+      for (var script in mods.selectedOptions) {
         var $item = mods.selectedOptions[script];
         if ($item.value != null) {
           ATscriptLoad(modulepath, $item.value);
@@ -11133,7 +11603,7 @@
     } else if (what == "ATModuleUnload") {
       var mods = byId("ATModuleListDropdown");
       var modnames = "";
-      for (script in mods.selectedOptions) {
+      for (var script in mods.selectedOptions) {
         var $item = mods.selectedOptions[script];
         if ($item.value != null) {
           ATscriptUnload($item.value);
@@ -11788,9 +12258,9 @@
     return stale;
   }
   function exportModuleVars() {
-    return JSON.stringify(compareModuleVars());
+    return JSON.stringify(compareModuleVars2());
   }
-  function compareModuleVars() {
+  function compareModuleVars2() {
     var diffs = {};
     var mods = Object.keys(MODULES);
     for (var i in mods) {
@@ -11869,7 +12339,7 @@
     }
     for (var i = 0; i < writes.length; i++) MODULES[writes[i][0]][writes[i][1]] = writes[i][2];
     localStorage.removeItem("storedMODULES");
-    safeSetItems2("storedMODULES", JSON.stringify(compareModuleVars()));
+    safeSetItems2("storedMODULES", JSON.stringify(compareModuleVars2()));
   }
   function resetModuleVars() {
     ATrunning = false;
@@ -11877,7 +12347,7 @@
       try {
         localStorage.removeItem("storedMODULES");
         MODULES = JSON.parse(JSON.stringify(MODULESdefault));
-        safeSetItems2("storedMODULES", JSON.stringify(compareModuleVars()));
+        safeSetItems2("storedMODULES", JSON.stringify(compareModuleVars2()));
       } finally {
         ATrunning = true;
       }
@@ -11891,7 +12361,7 @@
   __export(query_exports, {
     RgetEnemyMaxAttack: () => RgetEnemyMaxAttack2,
     RgetEnemyMaxHealth: () => RgetEnemyMaxHealth2,
-    RsetScienceNeeded: () => RsetScienceNeeded,
+    RsetScienceNeeded: () => RsetScienceNeeded2,
     getArmyTime: () => getArmyTime,
     getCorruptScale: () => getCorruptScale2,
     getCorruptedCellsNum: () => getCorruptedCellsNum2,
@@ -11902,7 +12372,7 @@
     getPotencyMod: () => getPotencyMod,
     getScienceCostToUpgrade: () => getScienceCostToUpgrade,
     isBuildingInQueue: () => isBuildingInQueue2,
-    setScienceNeeded: () => setScienceNeeded
+    setScienceNeeded: () => setScienceNeeded2
   });
   function getPerSecBeforeManual2(a) {
     let b = 0;
@@ -12017,7 +12487,7 @@
       if (game.global.buildingsQueue[c].includes(a)) return true;
     return void 0;
   }
-  function setScienceNeeded() {
+  function setScienceNeeded2() {
     scienceNeeded = 0;
     for (let a in upgradeList) {
       a = upgradeList[a];
@@ -12030,7 +12500,7 @@
     if (game.upgrades.Gymystic.allowed > game.upgrades.Gymystic.done)
       scienceNeeded += getScienceCostToUpgrade("Gymystic");
   }
-  function RsetScienceNeeded() {
+  function RsetScienceNeeded2() {
     RscienceNeeded = 0;
     for (let a in RupgradeList) {
       a = RupgradeList[a];
@@ -12149,35 +12619,35 @@
   // src/modules/other.ts
   var other_exports = {};
   __export(other_exports, {
-    ATspirebreed: () => ATspirebreed,
-    Rarmormagic: () => Rarmormagic,
+    ATspirebreed: () => ATspirebreed2,
+    Rarmormagic: () => Rarmormagic2,
     Rarmydeath: () => Rarmydeath,
-    Ravoidempower: () => Ravoidempower,
+    Ravoidempower: () => Ravoidempower2,
     RbuyArms: () => RbuyArms,
-    Rfightalways: () => Rfightalways,
+    Rfightalways: () => Rfightalways2,
     Rgetequipcost: () => Rgetequipcost2,
-    Rmanageequality: () => Rmanageequality,
-    archstring: () => archstring,
-    armormagic: () => armormagic,
+    Rmanageequality: () => Rmanageequality2,
+    archstring: () => archstring2,
+    armormagic: () => armormagic2,
     armydeath: () => armydeath,
-    autoBoneChargeWhenMax: () => autoBoneChargeWhenMax,
-    autoGoldenUpgradesAT: () => autoGoldenUpgradesAT,
-    autoRoboTrimp: () => autoRoboTrimp,
-    autoshrine: () => autoshrine,
-    avoidempower: () => avoidempower,
+    autoBoneChargeWhenMax: () => autoBoneChargeWhenMax2,
+    autoGoldenUpgradesAT: () => autoGoldenUpgradesAT2,
+    autoRoboTrimp: () => autoRoboTrimp2,
+    autoshrine: () => autoshrine2,
+    avoidempower: () => avoidempower2,
     buyArms: () => buyArms,
-    buyWeps: () => buyWeps,
-    buyshitspire: () => buyshitspire,
-    dailyexitSpireCell: () => dailyexitSpireCell,
+    buyWeps: () => buyWeps2,
+    buyshitspire: () => buyshitspire2,
+    dailyexitSpireCell: () => dailyexitSpireCell2,
     disActiveSpireAT: () => disActiveSpireAT2,
-    exitSpireCell: () => exitSpireCell,
-    fightalways: () => fightalways,
-    helptrimpsnotdie: () => helptrimpsnotdie,
+    exitSpireCell: () => exitSpireCell2,
+    fightalways: () => fightalways2,
+    helptrimpsnotdie: () => helptrimpsnotdie2,
     isActiveSpireAT: () => isActiveSpireAT2,
     questcheck: () => questcheck2,
     smithylogic: () => smithylogic2,
     tdStringCode2: () => tdStringCode2,
-    trimpcide: () => trimpcide
+    trimpcide: () => trimpcide2
   });
   MODULES["other"] = {};
   MODULES["other"].enableRoboTrimpSpam = true;
@@ -12209,7 +12679,7 @@
     var g = game.global.soldierCurrentBlock;
     return 3 == game.global.formation ? g /= 4 : "0" != game.global.formation && (g *= 2), g > game.global.gridArray[e].attack ? l *= getPierceAmt() : l -= g * (1 - getPierceAmt()), "Daily" == game.global.challengeActive && void 0 !== game.global.dailyChallenge.crits && (l *= dailyModifiers.crits.getMult(game.global.dailyChallenge.crits.strength)), void 0 !== game.global.dailyChallenge.bogged && (a -= game.global.soldierHealthMax * dailyModifiers.bogged.getMult(game.global.dailyChallenge.bogged.strength)), void 0 !== game.global.dailyChallenge.plague && (a -= game.global.soldierHealthMax * dailyModifiers.plague.getMult(game.global.dailyChallenge.plague.strength, game.global.dailyChallenge.plague.stacks)), challengeActive("Electricity") && (a -= game.global.soldierHealth -= game.global.soldierHealthMax * (0.1 * game.challenges.Electricity.stacks)), "corruptCrit" == game.global.gridArray[e].corrupted ? l *= 5 : "healthyCrit" == game.global.gridArray[e].corrupted ? l *= 7 : "corruptBleed" == game.global.gridArray[e].corrupted ? a *= 0.8 : "healthyBleed" == game.global.gridArray[e].corrupted && (a *= 0.7), (a -= l) <= 1e3;
   }
-  function autoRoboTrimp() {
+  function autoRoboTrimp2() {
     if (!(0 < game.global.roboTrimpCooldown) && game.global.roboTrimpLevel) {
       var a = parseInt(getPageSetting2("AutoRoboTrimp"));
       if (0 != a && game.global.world >= a && (game.global.world - a) % 5 == 0 && !checkIfLiquidZone() && !game.global.useShriek) {
@@ -12218,7 +12688,7 @@
       }
     }
   }
-  function buyWeps() {
+  function buyWeps2() {
     if (!(getPageSetting2("BuyWeaponsNew") == 1 || getPageSetting2("BuyWeaponsNew") == 3)) return;
     preBuy();
     game.global.buyAmt = getPageSetting2("gearamounttobuy");
@@ -12249,22 +12719,22 @@
   function disActiveSpireAT2() {
     return game.global.challengeActive == "Daily" && game.global.spireActive && game.global.world >= getPageSetting2("dIgnoreSpiresUntil");
   }
-  function exitSpireCell() {
+  function exitSpireCell2() {
     game.global.universe == 1 && isActiveSpireAT2() && game.global.lastClearedCell >= getPageSetting2("ExitSpireCell") - 1 && endSpire();
   }
-  function dailyexitSpireCell() {
+  function dailyexitSpireCell2() {
     game.global.universe == 1 && disActiveSpireAT2() && game.global.lastClearedCell >= getPageSetting2("dExitSpireCell") - 1 && endSpire();
   }
-  function helptrimpsnotdie() {
+  function helptrimpsnotdie2() {
     if (!game.global.preMapsActive && !game.global.fighting) buyArms();
   }
-  function buyshitspire() {
+  function buyshitspire2() {
     if (true == getPageSetting2("spireshitbuy") && game.global.spireActive && game.global.world >= getPageSetting2("IgnoreSpiresUntil")) {
-      buyWeps();
+      buyWeps2();
       buyArms();
     }
   }
-  function autoGoldenUpgradesAT(setting) {
+  function autoGoldenUpgradesAT2(setting) {
     var num = getAvailableGoldenUpgrades();
     var setting2;
     if (num == 0) return;
@@ -12289,7 +12759,7 @@
       buyGoldenUpgrade(setting2);
     }
   }
-  function trimpcide() {
+  function trimpcide2() {
     if (game.portal.Anticipation.level > 0) {
       var antistacklimit = game.talents.patience.purchased ? 45 : 30;
       if (game.global.fighting && (game.jobs.Amalgamator.owned > 0 ? Math.floor(((/* @__PURE__ */ new Date()).getTime() - game.global.lastSoldierSentAt) / 1e3) : Math.floor(game.global.lastBreedTime / 1e3)) >= antistacklimit && (game.global.antiStacks < antistacklimit || antistacklimit == 0 && game.global.antiStacks >= 1) && !game.global.spireActive)
@@ -12301,7 +12771,7 @@
       }
     }
   }
-  function avoidempower() {
+  function avoidempower2() {
     if (armydeath()) {
       if (typeof game.global.dailyChallenge.bogged === "undefined" && typeof game.global.dailyChallenge.plague === "undefined") {
         mapsClicked(true);
@@ -12311,7 +12781,7 @@
   }
   globalThis.spirebreeding = false;
   var prespiretimer = null;
-  function ATspirebreed() {
+  function ATspirebreed2() {
     if (!spirebreeding && getPageSetting2("SpireBreedTimer") > 0 && getPageSetting2("IgnoreSpiresUntil") <= game.global.world && game.global.spireActive)
       prespiretimer = game.global.GeneticistassistSetting;
     if (getPageSetting2("SpireBreedTimer") > 0 && getPageSetting2("IgnoreSpiresUntil") <= game.global.world && game.global.spireActive && game.global.GeneticistassistSetting != getPageSetting2("SpireBreedTimer")) {
@@ -12331,13 +12801,13 @@
       }
     }
   }
-  function fightalways() {
+  function fightalways2() {
     if (game.global.gridArray.length === 0 || game.global.preMapsActive || !game.upgrades.Battle.done || game.global.fighting || game.global.spireActive && game.global.world >= getPageSetting2("IgnoreSpiresUntil"))
       return;
     if (!game.global.fighting)
       fightManual();
   }
-  function armormagic() {
+  function armormagic2() {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
     if ((getPageSetting2("carmormagic") == 1 || getPageSetting2("darmormagic") == 1) && game.global.world >= armormagicworld && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("carmormagic") == 2 || getPageSetting2("darmormagic") == 2) && calcHDratio() >= getPageSetting2("mapcuntoff") && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("carmormagic") == 3 || getPageSetting2("darmormagic") == 3) && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)
       buyArms();
@@ -12382,13 +12852,13 @@
       buyEquipment("Gambeson", true, true);
     postBuy();
   }
-  function Rfightalways() {
+  function Rfightalways2() {
     if (game.global.gridArray.length === 0 || game.global.preMapsActive || !game.upgrades.Battle.done || game.global.fighting)
       return;
     if (!game.global.fighting)
       fightManual();
   }
-  function Rarmormagic() {
+  function Rarmormagic2() {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
     if ((getPageSetting2("Rcarmormagic") == 1 || getPageSetting2("Rdarmormagic") == 1) && game.global.world >= armormagicworld && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("Rcarmormagic") == 2 || getPageSetting2("Rdarmormagic") == 2) && RcalcHDratio() >= getPageSetting2("Rmapcuntoff") && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("Rcarmormagic") == 3 || getPageSetting2("Rdarmormagic") == 3) && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)
       RbuyArms();
@@ -12517,7 +12987,7 @@
       return go;
     }
   }
-  function archstring() {
+  function archstring2() {
     if (getPageSetting2("Rarchon") == false) return;
     if (textSettingIsSet("Rarchstring1") && textSettingIsSet("Rarchstring2") && textSettingIsSet("Rarchstring3")) {
       var string1 = getPageSetting2("Rarchstring1"), string2 = getPageSetting2("Rarchstring2"), string3 = getPageSetting2("Rarchstring3");
@@ -12571,7 +13041,7 @@
     "Turkimp",
     "Ubersmith"
   ];
-  function Rmanageequality() {
+  function Rmanageequality2() {
     if (!(game.global.challengeActive == "Exterminate" && getPageSetting2("Rexterminateon") == true && getPageSetting2("Rexterminateeq") == true && !game.global.mapsActive)) {
       if (game.global.challengeActive == "Glass" || fastimps.includes(getCurrentEnemy().name) || game.global.mapsActive && getCurrentMapObject().location == "Void" && game.global.voidBuff == "doubleAttack" || !game.global.mapsActive && game.global.gridArray[game.global.lastClearedCell + 1].u2Mutation.length > 0 || game.global.mapsActive && game.global.challengeActive == "Desolation") {
         if (!game.portal.Equality.scalingActive) {
@@ -12604,7 +13074,7 @@
       }
     }
   }
-  function autoshrine() {
+  function autoshrine2() {
     var universe;
     switch (game.global.universe) {
       case 1:
@@ -12673,7 +13143,7 @@
     if (autoTrimpSettings.Rshrinecharge) autoTrimpSettings.Rshrinecharge.value = 0;
     return retVal;
   };
-  function autoBoneChargeWhenMax() {
+  function autoBoneChargeWhenMax2() {
     if (getPageSetting2("AutoBoneChargeMax") === 2 && !(game.global.challengeActive == "Daily")) {
       return;
     }
@@ -12699,7 +13169,7 @@
     else if (attack >= health) return true;
     else return false;
   }
-  function Ravoidempower() {
+  function Ravoidempower2() {
     if (Rarmydeath()) {
       if (typeof game.global.dailyChallenge.bogged === "undefined" && typeof game.global.dailyChallenge.plague === "undefined") {
         mapsClicked(true);
@@ -12711,10 +13181,10 @@
   // src/modules/other-praiding.ts
   var other_praiding_exports = {};
   __export(other_praiding_exports, {
-    BWraiding: () => BWraiding,
-    PraidHarder: () => PraidHarder,
-    Praiding: () => Praiding,
-    dailyPraiding: () => dailyPraiding,
+    BWraiding: () => BWraiding2,
+    PraidHarder: () => PraidHarder2,
+    Praiding: () => Praiding2,
+    dailyPraiding: () => dailyPraiding2,
     findLastBionic: () => findLastBionic,
     isBelowThreshold: () => isBelowThreshold,
     pcheck1: () => pcheck1,
@@ -13673,7 +14143,7 @@
   globalThis.mapbought3 = false;
   globalThis.mapbought4 = false;
   globalThis.mapbought5 = false;
-  function Praiding() {
+  function Praiding2() {
     var cell;
     cell = getPageSetting2("Praidingcell") > 0 ? getPageSetting2("Praidingcell") : 0;
     if (getPageSetting2("Praidingzone").length) {
@@ -13875,7 +14345,7 @@
       praidDone = false;
     }
   }
-  function PraidHarder() {
+  function PraidHarder2() {
     var maxPlusZones;
     var mapModifiers = ["p", "fa", "0"];
     var farmFragments;
@@ -14041,7 +14511,7 @@
     }
     return false;
   }
-  function BWraiding() {
+  function BWraiding2() {
     var bwraidZ;
     var bwraidSetting;
     var bwraidMax;
@@ -14124,7 +14594,7 @@
   globalThis.dmapbought4 = false;
   globalThis.dmapbought5 = false;
   globalThis.dpraidDone = false;
-  function dailyPraiding() {
+  function dailyPraiding2() {
     var cell;
     cell = getPageSetting2("dPraidingcell") > 0 ? getPageSetting2("dPraidingcell") : 0;
     if (getPageSetting2("dPraidingzone").length) {
@@ -18458,9 +18928,9 @@
   // src/modules/settings-boot.ts
   var settings_boot_exports = {};
   __export(settings_boot_exports, {
-    bootSettingsUI: () => bootSettingsUI
+    bootSettingsUI: () => bootSettingsUI2
   });
-  function bootSettingsUI() {
+  function bootSettingsUI2() {
     automationMenuInit();
     automationMenuSettingsInit();
     var link1 = document.createElement("link");
@@ -19956,7 +20426,7 @@
   }
 
   // src/legacy-bridge.ts
-  Object.assign(globalThis, { ...utils_exports, ...guard_exports, ...time_exports, ...buystate_exports, ...dynprestige_exports, ...breedtimer_exports, ...nature_exports, ...magmite_exports, ...calc_exports, ...equipment_exports, ...buildings_exports, ...jobs_exports, ...upgrades_exports, ...gather_exports, ...heirlooms_exports, ...fight_exports, ...scryer_exports, ...ab_exports, ...MAZ_exports, ...stance_exports, ...maps_exports, ...mapfunctions_exports, ...mapfunctions_amp_exports, ...portal_exports, ...save_backup_exports, ...import_export_exports, ...query_exports, ...other_exports, ...other_praiding_exports, ...settings_engine_exports, ...settings_menu_exports, ...settings_visibility_exports, ...settings_defs_exports, ...settings_boot_exports, ...graphs_exports });
+  Object.assign(globalThis, { ...main_loop_exports, ...utils_exports, ...guard_exports, ...time_exports, ...buystate_exports, ...dynprestige_exports, ...breedtimer_exports, ...nature_exports, ...magmite_exports, ...calc_exports, ...equipment_exports, ...buildings_exports, ...jobs_exports, ...upgrades_exports, ...gather_exports, ...heirlooms_exports, ...fight_exports, ...scryer_exports, ...ab_exports, ...MAZ_exports, ...stance_exports, ...maps_exports, ...mapfunctions_exports, ...mapfunctions_amp_exports, ...portal_exports, ...save_backup_exports, ...import_export_exports, ...query_exports, ...other_exports, ...other_praiding_exports, ...settings_engine_exports, ...settings_menu_exports, ...settings_visibility_exports, ...settings_defs_exports, ...settings_boot_exports, ...graphs_exports });
 
   // src/modules/perks.ts
   globalThis.AutoPerks = {};
