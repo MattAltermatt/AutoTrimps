@@ -75,7 +75,15 @@ export const getGameData = {
     else { return 0; }
   },
   cinf: () => { return countChallengeSquaredReward(false, false, true) },
-  mutatedSeeds: () => { return game.global.mutatedSeedsSpent + game.global.mutatedSeeds }
+  mutatedSeeds: () => { return game.global.mutatedSeedsSpent + game.global.mutatedSeeds },
+  // #135 additions — universe-agnostic progression metrics.
+  population: () => { return game.resources.trimps.realMax() }, // max Trimps (housing + breeding)
+  gearLevels: () => { // total equipment levels across all unlocked pieces (gear progression)
+    let total = 0;
+    for (const item in game.equipment) total += game.equipment[item].level || 0;
+    return total;
+  },
+  playerDamage: () => { return calcOurDmg('avg') || 0 }, // effective damage vs the zone's scaling enemy health
 }
 
 // The reader injected into the pure GRAPH_LIST conditionals (graph-defs stays pure). Delegates the
@@ -113,6 +121,7 @@ export class Portal implements PortalData {
   initialScruffy?: number
   initialMutes?: number
   s3?: number
+  hehrSamples: [number, number][] = [] // #135 — [runTimeMs, totalResourceEarned] samples for the He/hr curve
 
   constructor() {
     this.universe = getGameData.universe() as 1 | 2;
@@ -165,8 +174,19 @@ export class Portal implements PortalData {
       }
       data[world] = (getGameData as Record<string, () => number>)[name]();
     }
+    // #135 He/hr efficiency curve: unlike the per-zone data above (one overwritten value per zone), this
+    // is TIME-sampled — append [runTime, totalResourceEarned] once ≥15 min of run-time has passed since the
+    // last sample, so a zone that takes over an hour still gets intermediate points. update() runs on every
+    // pushData (zone + map events), which fires often enough to land near each 15-min mark.
+    const t = getGameData.currentTime();
+    const earned = this.universe === 1 ? game.global.totalHeliumEarned : game.global.totalRadonEarned;
+    const lastSample = this.hehrSamples[this.hehrSamples.length - 1];
+    if (!lastSample || t - lastSample[0] >= HEHR_SAMPLE_MS) this.hehrSamples.push([t, earned]);
   }
 }
+
+/** He/hr curve base sampling interval: 15 minutes of run-time (currentTime is in ms). */
+export const HEHR_SAMPLE_MS = 15 * 60 * 1000
 
 // legacy/Graphs.js:782
 export function getportalID() { return `u${getGameData.universe()} p${getTotalPortals()}` }

@@ -18874,6 +18874,92 @@
       ],
       conditional: () => true,
       formatterKind: "defaultPoint"
+    },
+    // #135 — new progression graphs (universe-agnostic, per-zone).
+    {
+      dataVar: "population",
+      universe: false,
+      selectorText: "Population",
+      id: "Population",
+      graphTitle: "Max Population",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      conditional: () => true,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "gearLevels",
+      universe: false,
+      selectorText: "Gear Levels",
+      id: "Gear_Levels",
+      graphTitle: "Total Equipment Levels",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      conditional: () => true,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: "playerDamage",
+      universe: false,
+      selectorText: "Damage",
+      id: "Damage",
+      graphTitle: "Player Damage",
+      graphType: "line",
+      yType: "log",
+      xminFloor: 1,
+      conditional: () => true,
+      formatterKind: "defaultPoint"
+    },
+    {
+      // % of each zone's time spent in maps. dataVar 'currentTime' so every zone is iterated (incl. 0%
+      // no-map zones); the customFunction reads the accumulated timeOnMap for that zone.
+      dataVar: "currentTime",
+      universe: false,
+      selectorText: "Time in Maps %",
+      id: "Time_in_Maps",
+      graphTitle: "% of Zone Spent in Maps",
+      yTitle: "% in Maps",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 1,
+      customFunction: (portal, i) => {
+        const zoneTime = portal.perZoneData.currentTime[i] - portal.perZoneData.currentTime[i - 1];
+        return zoneTime > 0 ? (portal.perZoneData.timeOnMap[i] || 0) / zoneTime * 100 : 0;
+      },
+      conditional: () => true,
+      formatterKind: "defaultPoint"
+    },
+    // #135 — He/hr efficiency curves (TIME-sampled, not per-zone). dataVar:false so nothing is captured
+    // per-zone; option-builder reads portal.hehrSamples. The '1hr' toggle coarsens 15-min → 1-hr points.
+    {
+      dataVar: false,
+      universe: 1,
+      selectorText: "Helium / Hour",
+      id: "Helium_per_Hour",
+      graphTitle: "Helium / Hour",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 0,
+      timeSeries: true,
+      toggles: ["1hr"],
+      conditional: () => true,
+      formatterKind: "defaultPoint"
+    },
+    {
+      dataVar: false,
+      universe: 2,
+      selectorText: "Radon / Hour",
+      id: "Radon_per_Hour",
+      graphTitle: "Radon / Hour",
+      graphType: "line",
+      yType: "value",
+      xminFloor: 0,
+      timeSeries: true,
+      toggles: ["1hr"],
+      conditional: () => true,
+      formatterKind: "defaultPoint"
     }
   ];
   var TOGGLE_RULES = {
@@ -18918,6 +19004,13 @@
     s3normalized: {
       titleSuffix: (ctx) => `, Normalized to z${ctx.maxS3} S3`,
       transform: (p, _item, _index, x, _time, maxS3) => s3normalized(x, p.s3 ?? 0, maxS3)
+    },
+    // #135 — only used by the He/hr time-series graph; its effect (coarsen 15-min → 1-hr points) is applied
+    // directly in option-builder's time-series path, not through the perZone transform pipeline. This entry
+    // just satisfies Record<ToggleId, ToggleRule> and lets the checkbox render. Identity transform.
+    "1hr": {
+      titleSuffix: " (hourly)",
+      transform: (_p, _item, _index, x) => x
     }
   };
 
@@ -19000,6 +19093,7 @@
   }
   function buildLineOption(graph, portals, settings) {
     const option = baseOption(graph);
+    if (graph.timeSeries) return buildTimeSeriesOption(graph, option, portals, settings);
     const item = graph.dataVar;
     const maxS3 = maxS3Of(portals);
     const toggles = activeTogglesFor(graph, settings);
@@ -19059,6 +19153,39 @@
     }
     ;
     option.legend.selected = selected;
+  }
+  var HOUR_MS = 60 * 60 * 1e3;
+  function coarsenToHour(samples) {
+    const out = [];
+    for (const s of samples) {
+      if (!out.length || s[0] - out[out.length - 1][0] >= HOUR_MS) out.push(s);
+    }
+    return out;
+  }
+  function buildTimeSeriesOption(graph, option, portals, settings) {
+    option.xAxis = {
+      type: "value",
+      name: "Time",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      axisLabel: { formatter: (v) => formatDuration(Number(v) / 1e3), fontSize: BASE_FONT }
+    };
+    const hourly = !!(settings.toggles[graph.id] ?? {})["1hr"];
+    if (hourly) option.title.text = graph.graphTitle + " (hourly)";
+    const series = [];
+    let portalCount = 0;
+    for (const portal of [...portals].reverse()) {
+      if (portal.universe !== settings.universeSelection) continue;
+      let samples = portal.hehrSamples ?? [];
+      if (hourly) samples = coarsenToHour(samples);
+      const data = samples.filter(([t]) => t > 0).map(([t, earned]) => [t, earned / (t / HOUR_MS)]);
+      series.push({ name: `Portal ${portal.totalPortals}: ${portal.challenge}`, type: "line", showSymbol: false, data });
+      portalCount++;
+      if (portalCount >= settings.portalsDisplayed) break;
+    }
+    series.reverse();
+    option.series = series;
+    applyLegendSelection(option, series, settings);
+    return option;
   }
   function buildColumnOption(graph, portals, settings) {
     const option = baseOption(graph);
@@ -19370,7 +19497,21 @@
     },
     mutatedSeeds: () => {
       return game.global.mutatedSeedsSpent + game.global.mutatedSeeds;
+    },
+    // #135 additions — universe-agnostic progression metrics.
+    population: () => {
+      return game.resources.trimps.realMax();
+    },
+    // max Trimps (housing + breeding)
+    gearLevels: () => {
+      let total = 0;
+      for (const item in game.equipment) total += game.equipment[item].level || 0;
+      return total;
+    },
+    playerDamage: () => {
+      return calcOurDmg("avg") || 0;
     }
+    // effective damage vs the zone's scaling enemy health
   };
   var gameDataReader = {
     u1hze: () => getGameData.u1hze(),
@@ -19385,7 +19526,9 @@
     empowerDefined: () => typeof game.global.dailyChallenge.empower !== "undefined"
   };
   var Portal = class {
+    // #135 — [runTimeMs, totalResourceEarned] samples for the He/hr curve
     constructor() {
+      this.hehrSamples = [];
       this.universe = getGameData.universe();
       this.totalPortals = getTotalPortals();
       this.challenge = getGameData.challengeActive() === "Daily" ? getCurrentChallengePane().split(".")[0].substr(13).slice(0, 16) : getGameData.challengeActive();
@@ -19432,8 +19575,13 @@
         }
         data[world] = getGameData[name]();
       }
+      const t = getGameData.currentTime();
+      const earned = this.universe === 1 ? game.global.totalHeliumEarned : game.global.totalRadonEarned;
+      const lastSample = this.hehrSamples[this.hehrSamples.length - 1];
+      if (!lastSample || t - lastSample[0] >= HEHR_SAMPLE_MS) this.hehrSamples.push([t, earned]);
     }
   };
+  var HEHR_SAMPLE_MS = 15 * 60 * 1e3;
   function getportalID() {
     return `u${getGameData.universe()} p${getTotalPortals()}`;
   }
@@ -19698,8 +19846,9 @@
       for (const universe of universes) {
         let style = "none";
         for (const portal of Object.values(graphState.portalSaveData)) {
-          if (portal.perZoneData[graph.dataVar] && portal.universe === universe && // has collected data, in the right universe
-          new Set(portal.perZoneData[graph.dataVar].filter((x) => x)).size > 1) {
+          if (portal.universe !== universe) continue;
+          const hasData = graph.timeSeries ? (portal.hehrSamples?.length ?? 0) > 1 : !!portal.perZoneData[graph.dataVar] && new Set(portal.perZoneData[graph.dataVar].filter((x) => x)).size > 1;
+          if (hasData) {
             style = "";
             if (!activeUniverses.includes(universe)) activeUniverses.push(universe);
             break;

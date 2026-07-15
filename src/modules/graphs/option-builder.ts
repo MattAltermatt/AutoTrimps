@@ -115,6 +115,7 @@ function applyToggleEffects(option: EChartsOption, toggles: ToggleId[], maxS3: n
  */
 export function buildLineOption(graph: GraphDef, portals: PortalData[], settings: GraphSettings): EChartsOption {
   const option = baseOption(graph)
+  if (graph.timeSeries) return buildTimeSeriesOption(graph, option, portals, settings)
   const item = graph.dataVar as string
   const maxS3 = maxS3Of(portals)
   const toggles = activeTogglesFor(graph, settings)
@@ -191,6 +192,57 @@ function applyLegendSelection(
     })
   }
   ;(option.legend as { selected?: Record<string, boolean> }).selected = selected
+}
+
+const HOUR_MS = 60 * 60 * 1000
+
+/** Keep the first sample of each ~1-hour window (coarsen the 15-min series to hourly points). */
+function coarsenToHour(samples: [number, number][]): [number, number][] {
+  const out: [number, number][] = []
+  for (const s of samples) {
+    if (!out.length || s[0] - out[out.length - 1][0] >= HOUR_MS) out.push(s)
+  }
+  return out
+}
+
+/**
+ * Build the He/hr efficiency curve (#135). TIME-sampled, not per-zone: x is run-time (ms, duration-
+ * formatted), y is resource-per-hour (earned / (t/hour)), from portal.hehrSamples. One series per portal
+ * in the active universe (helium in U1, radon in U2). The '1hr' toggle coarsens 15-min → 1-hr points.
+ */
+function buildTimeSeriesOption(
+  graph: GraphDef,
+  option: EChartsOption,
+  portals: PortalData[],
+  settings: GraphSettings,
+): EChartsOption {
+  // x-axis becomes elapsed run-time, formatted as a duration (no zone floor).
+  option.xAxis = {
+    type: 'value',
+    name: 'Time',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    axisLabel: { formatter: (v: any) => formatDuration(Number(v) / 1000), fontSize: BASE_FONT },
+  }
+  const hourly = !!(settings.toggles[graph.id] ?? {})['1hr']
+  if (hourly) (option.title as { text?: string }).text = graph.graphTitle + ' (hourly)'
+
+  const series: { name: string; type: 'line'; showSymbol: false; data: [number, number][] }[] = []
+  let portalCount = 0
+  for (const portal of [...portals].reverse()) {
+    if (portal.universe !== settings.universeSelection) continue
+    let samples = portal.hehrSamples ?? []
+    if (hourly) samples = coarsenToHour(samples)
+    const data: [number, number][] = samples
+      .filter(([t]) => t > 0) // guard div-by-zero at t=0
+      .map(([t, earned]) => [t, earned / (t / HOUR_MS)]) // resource per hour
+    series.push({ name: `Portal ${portal.totalPortals}: ${portal.challenge}`, type: 'line', showSymbol: false, data })
+    portalCount++
+    if (portalCount >= settings.portalsDisplayed) break
+  }
+  series.reverse()
+  option.series = series as unknown as EChartsOption['series']
+  applyLegendSelection(option, series, settings)
+  return option
 }
 
 /**

@@ -24,6 +24,9 @@ export interface PortalData {
   initialScruffy?: number
   initialMutes?: number
   s3?: number
+  // #135 — time-sampled [runTimeMs, totalResourceEarned] for the He/hr efficiency curve (helium in U1,
+  // radon in U2). Distinct from perZoneData: sampled by elapsed time, not once per zone.
+  hehrSamples?: [number, number][]
 }
 
 export type ToggleId =
@@ -34,6 +37,7 @@ export type ToggleId =
   | 'mapCount'
   | 'mapTime'
   | 'mapPct'
+  | '1hr' // #135 — coarsen the He/hr time-series from 15-min to 1-hr points
 
 /** Persisted graph UI settings (localStorage key GRAPHSETTINGS). */
 export interface GraphSettings {
@@ -126,4 +130,7 @@ export interface GraphDef {
   customFunction?: (portal: PortalData, i: number) => number | null
   conditional: (g: GameDataReader) => boolean // capture/visibility ONLY; builders never call it
   formatterKind: 'defaultPoint' | 'datetime'
+  // #135 — a time-sampled graph (He/hr curve): x is run-time, data comes from portal.hehrSamples, not
+  // perZoneData. dataVar is false so it isn't captured per-zone; option-builder reads hehrSamples instead.
+  timeSeries?: boolean
 }

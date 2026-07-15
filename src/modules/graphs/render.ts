@@ -350,12 +350,13 @@ export function showHideUnusedGraphs(): void {
     for (const universe of universes) {
       let style = 'none'
       for (const portal of Object.values(graphState.portalSaveData)) {
-        if (
-          portal.perZoneData[graph.dataVar as string] &&
-          portal.universe === universe && // has collected data, in the right universe
-          new Set(portal.perZoneData[graph.dataVar as string].filter((x) => x)).size > 1
-        ) {
-          // and there is nonzero, variable data
+        if (portal.universe !== universe) continue // right universe only
+        // time-series graphs (He/hr) store samples separately; per-zone graphs need >1 distinct nonzero value.
+        const hasData = graph.timeSeries
+          ? (portal.hehrSamples?.length ?? 0) > 1
+          : !!portal.perZoneData[graph.dataVar as string] &&
+            new Set(portal.perZoneData[graph.dataVar as string].filter((x) => x)).size > 1
+        if (hasData) {
           style = ''
           if (!activeUniverses.includes(universe)) activeUniverses.push(universe)
           break

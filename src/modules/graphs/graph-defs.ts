@@ -313,6 +313,47 @@ export const GRAPH_LIST: GraphDef[] = [
     conditional: () => true,
     formatterKind: 'defaultPoint',
   },
+
+  // #135 — new progression graphs (universe-agnostic, per-zone).
+  {
+    dataVar: 'population', universe: false, selectorText: 'Population', id: 'Population',
+    graphTitle: 'Max Population', graphType: 'line', yType: 'value', xminFloor: 1,
+    conditional: () => true, formatterKind: 'defaultPoint',
+  },
+  {
+    dataVar: 'gearLevels', universe: false, selectorText: 'Gear Levels', id: 'Gear_Levels',
+    graphTitle: 'Total Equipment Levels', graphType: 'line', yType: 'value', xminFloor: 1,
+    conditional: () => true, formatterKind: 'defaultPoint',
+  },
+  {
+    dataVar: 'playerDamage', universe: false, selectorText: 'Damage', id: 'Damage',
+    graphTitle: 'Player Damage', graphType: 'line', yType: 'log', xminFloor: 1,
+    conditional: () => true, formatterKind: 'defaultPoint',
+  },
+  {
+    // % of each zone's time spent in maps. dataVar 'currentTime' so every zone is iterated (incl. 0%
+    // no-map zones); the customFunction reads the accumulated timeOnMap for that zone.
+    dataVar: 'currentTime', universe: false, selectorText: 'Time in Maps %', id: 'Time_in_Maps',
+    graphTitle: '% of Zone Spent in Maps', yTitle: '% in Maps', graphType: 'line', yType: 'value', xminFloor: 1,
+    customFunction: (portal, i) => {
+      const zoneTime = (portal.perZoneData.currentTime[i] as number) - (portal.perZoneData.currentTime[i - 1] as number)
+      return zoneTime > 0 ? ((portal.perZoneData.timeOnMap[i] || 0) / zoneTime) * 100 : 0
+    },
+    conditional: () => true, formatterKind: 'defaultPoint',
+  },
+
+  // #135 — He/hr efficiency curves (TIME-sampled, not per-zone). dataVar:false so nothing is captured
+  // per-zone; option-builder reads portal.hehrSamples. The '1hr' toggle coarsens 15-min → 1-hr points.
+  {
+    dataVar: false, universe: 1, selectorText: 'Helium / Hour', id: 'Helium_per_Hour',
+    graphTitle: 'Helium / Hour', graphType: 'line', yType: 'value', xminFloor: 0,
+    timeSeries: true, toggles: ['1hr'], conditional: () => true, formatterKind: 'defaultPoint',
+  },
+  {
+    dataVar: false, universe: 2, selectorText: 'Radon / Hour', id: 'Radon_per_Hour',
+    graphTitle: 'Radon / Hour', graphType: 'line', yType: 'value', xminFloor: 0,
+    timeSeries: true, toggles: ['1hr'], conditional: () => true, formatterKind: 'defaultPoint',
+  },
 ]
 
 // Toggle rules — the declarative form of legacy toggledGraphs (Graphs.js:982). The legacy
@@ -360,5 +401,12 @@ export const TOGGLE_RULES: Record<ToggleId, ToggleRule> = {
   s3normalized: {
     titleSuffix: (ctx) => `, Normalized to z${ctx.maxS3} S3`,
     transform: (p, _item, _index, x, _time, maxS3) => s3normalized(x, p.s3 ?? 0, maxS3),
+  },
+  // #135 — only used by the He/hr time-series graph; its effect (coarsen 15-min → 1-hr points) is applied
+  // directly in option-builder's time-series path, not through the perZone transform pipeline. This entry
+  // just satisfies Record<ToggleId, ToggleRule> and lets the checkbox render. Identity transform.
+  '1hr': {
+    titleSuffix: ' (hourly)',
+    transform: (_p, _item, _index, x) => x,
   },
 }

@@ -29,26 +29,41 @@ describe('GRAPH_LIST', () => {
         "Map_Bonus",
         "Empower",
         "Portal_Stats",
+        "Population",
+        "Gear_Levels",
+        "Damage",
+        "Time_in_Maps",
+        "Helium_per_Hour",
+        "Radon_per_Hour",
       ]
     `)
   })
 
-  it('has 22 graphs', () => {
-    expect(GRAPH_LIST.length).toBe(22)
+  it('has 28 graphs (22 legacy + 6 new #135)', () => {
+    expect(GRAPH_LIST.length).toBe(28)
   })
 
-  it('ends with the Portal Stats column graph', () => {
-    const last = GRAPH_LIST[GRAPH_LIST.length - 1]
-    expect(last.id).toBe('Portal_Stats')
-    expect(last.graphType).toBe('column')
-    expect(last.columns).toHaveLength(7)
+  it('Portal Stats is the sole column graph, with 7 columns', () => {
+    const portalStats = GRAPH_LIST.find((g) => g.id === 'Portal_Stats')!
+    expect(portalStats.graphType).toBe('column')
+    expect(portalStats.columns).toHaveLength(7)
+    expect(GRAPH_LIST.filter((g) => g.graphType === 'column')).toHaveLength(1)
+  })
+
+  it('the He/hr graphs are time-series with a 1hr toggle, and capture nothing per-zone (dataVar false)', () => {
+    for (const id of ['Helium_per_Hour', 'Radon_per_Hour']) {
+      const g = GRAPH_LIST.find((x) => x.id === id)!
+      expect(g.timeSeries).toBe(true)
+      expect(g.dataVar).toBe(false)
+      expect(g.toggles).toContain('1hr')
+    }
   })
 })
 
 describe('TOGGLE_RULES', () => {
-  it('has the seven legacy toggles', () => {
+  it('has the seven legacy toggles plus 1hr (#135)', () => {
     expect(Object.keys(TOGGLE_RULES).sort()).toEqual(
-      ['lifetime', 'mapCount', 'mapPct', 'mapTime', 'perHr', 'perZone', 's3normalized'].sort(),
+      ['1hr', 'lifetime', 'mapCount', 'mapPct', 'mapTime', 'perHr', 'perZone', 's3normalized'].sort(),
     )
   })
 })
