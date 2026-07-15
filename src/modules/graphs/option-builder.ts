@@ -22,11 +22,23 @@ function last<T>(arr: T[]): T | undefined {
 // tooltip point formatter: durations for datetime graphs, prettify otherwise (legacy formatters L148).
 // `p` is ECharts' CallbackDataParams (typed `any` at the library boundary, per the conversion contract).
 function pointFormatter(useDatetime: boolean) {
+  const fmt = (v: number) => (useDatetime ? formatDuration(v / 1000) : prettify(v))
+  // Handles both ECharts trigger modes: `item` passes a single param, `axis` passes an ARRAY of every
+  // series at the hovered x. In axis mode we prepend a "Zone N" header and list one row per series, so
+  // all portals are compared at the same zone (the requested hover behavior).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (p: any): string => {
-    const y = Array.isArray(p.value) ? p.value[1] : p.value
-    const body = useDatetime ? formatDuration(y / 1000) : prettify(y)
-    return `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${body}</b>`
+  return (params: any): string => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const arr: any[] = Array.isArray(params) ? params : [params]
+    const head =
+      Array.isArray(params) && arr.length && arr[0].axisValueLabel != null ? `Zone ${arr[0].axisValueLabel}<br>` : ''
+    const rows = arr
+      .map((p) => {
+        const y = Array.isArray(p.value) ? p.value[1] : p.value
+        return `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${fmt(y)}</b>`
+      })
+      .join('<br>')
+    return head + rows
   }
 }
 
@@ -50,15 +62,21 @@ function baseOption(graph: GraphDef): EChartsOption {
       scale: true,
       axisLabel: { formatter: axisFormatter(datetime), fontSize: BASE_FONT },
     },
-    tooltip: { trigger: 'item', formatter: pointFormatter(graph.formatterKind === 'datetime') },
-    legend: { type: 'scroll', orient: 'vertical', right: 0, textStyle: { fontSize: BASE_FONT } },
+    // `axis` trigger + a shared crosshair shows every series' value at the hovered zone for comparison.
+    tooltip: { trigger: 'axis', axisPointer: { type: 'line' }, formatter: pointFormatter(graph.formatterKind === 'datetime') },
+    // top:30 drops the legend below the toolbox row so the two no longer overlap in the top-right corner.
+    legend: { type: 'scroll', orient: 'vertical', right: 0, top: 30, textStyle: { fontSize: BASE_FONT } },
     dataZoom: [
       { type: 'inside', xAxisIndex: 0, filterMode: 'none' },
       { type: 'inside', yAxisIndex: 0, filterMode: 'none' },
       { type: 'slider' },
     ],
-    // #131 — data export (dataView table + PNG) and zoom, built in.
-    toolbox: { feature: { dataView: { readOnly: true }, saveAsImage: {}, dataZoom: { yAxisIndex: 'all' }, restore: {} } },
+    // #131 — data export (dataView table + PNG) and zoom, built in. Pinned top-right, its own row above the legend.
+    toolbox: {
+      right: 8,
+      top: 4,
+      feature: { dataView: { readOnly: true }, saveAsImage: {}, dataZoom: { yAxisIndex: 'all' }, restore: {} },
+    },
     series: [],
   }
 }
@@ -218,6 +236,9 @@ export function buildColumnOption(graph: GraphDef, portals: PortalData[], settin
   option.xAxis = { type: 'category', name: 'Portal', data: categories }
   option.yAxis = activeColumns.map(() => ({ show: false, scale: true }))
   option.series = series as unknown as EChartsOption['series']
+  // Per-bar (item) tooltip, not axis: the columns mix duration (Run Time) and plain numbers, so a single
+  // axis formatter can't render each correctly — the currentTime series carries its own datetime formatter.
+  option.tooltip = { trigger: 'item', formatter: pointFormatter(false) }
   applyLegendSelection(option, series, settings)
   return option
 }

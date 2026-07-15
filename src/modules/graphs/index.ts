@@ -17,3 +17,7 @@ export {
   showHideUnusedGraphs,
 } from './render'
 export { saveSetting, clearData, deleteSpecific } from './storage'
+// GRAPHSETTINGS is published because a couple of inline DOM handlers createUI writes reference it as a
+// bare global (e.g. the "Show N Portals" input's `parseInt(this.value) || GRAPHSETTINGS.portalsDisplayed`),
+// exactly as legacy Graphs.js did when it was a global var.
+export { GRAPHSETTINGS } from './state'

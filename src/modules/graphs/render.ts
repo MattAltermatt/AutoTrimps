@@ -267,26 +267,27 @@ function lookupGraph(selectorText: string): GraphDef | undefined {
 export function drawGraph(): void {
   // TOGGLES
   function makeCheckbox(graph: string, toggle: ToggleId) {
-    // create checkbox element labeled with the toggle
-    var container = document.createElement('span')
-    var checkbox = document.createElement('input')
-    var label = document.createElement('span')
+    // A <label> makes the whole thing (box + text) clickable. The legacy inline onclick string
+    // referenced GRAPHSETTINGS as a bare global — but GRAPHSETTINGS is a module object, not published
+    // to globalThis, so the handler threw ReferenceError and the toggles did nothing. A closure over the
+    // module-scoped GRAPHSETTINGS/TOGGLE_RULES/drawGraph fixes that (and drops the XSS-prone string).
+    const container = document.createElement('label')
+    const checkbox = document.createElement('input')
+    const label = document.createElement('span')
 
     container.style.padding = '0rem .5rem'
+    container.style.cursor = 'pointer'
 
     checkbox.type = 'checkbox'
     checkbox.id = toggle
-    // initialize the checkbox to saved value
     checkbox.checked = GRAPHSETTINGS.toggles[graph][toggle] ?? false
-    // create a godawful inline function to set saved value on change, apply exclusions, and update the graph
-    let funcString = ''
-    if (TOGGLE_RULES[toggle] && TOGGLE_RULES[toggle].exclude) {
-      TOGGLE_RULES[toggle].exclude!.forEach(
-        (exTog) => (funcString += `GRAPHSETTINGS.toggles.${graph}.${exTog} = false; `),
-      )
+    checkbox.onclick = () => {
+      // apply exclusions (mutually-exclusive toggles), set this one, redraw
+      const rule = TOGGLE_RULES[toggle]
+      if (rule && rule.exclude) rule.exclude.forEach((exTog) => (GRAPHSETTINGS.toggles[graph][exTog] = false))
+      GRAPHSETTINGS.toggles[graph][toggle] = checkbox.checked
+      drawGraph()
     }
-    funcString += `GRAPHSETTINGS.toggles.${graph}.${toggle} = this.checked; drawGraph();`
-    checkbox.setAttribute('onclick', funcString)
 
     label.innerText = toggle
     label.style.color = '#757575'

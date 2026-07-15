@@ -18475,6 +18475,7 @@
   // src/modules/graphs/index.ts
   var graphs_exports = {};
   __export(graphs_exports, {
+    GRAPHSETTINGS: () => GRAPHSETTINGS2,
     bootGraphs: () => bootGraphs,
     clearData: () => clearData,
     deleteSpecific: () => deleteSpecific,
@@ -18928,10 +18929,15 @@
     return arr[arr.length - 1];
   }
   function pointFormatter(useDatetime) {
-    return (p) => {
-      const y = Array.isArray(p.value) ? p.value[1] : p.value;
-      const body = useDatetime ? formatDuration(y / 1e3) : prettify(y);
-      return `<span style="color:${p.color}">\u25CF</span> ${p.seriesName}: <b>${body}</b>`;
+    const fmt = (v) => useDatetime ? formatDuration(v / 1e3) : prettify(v);
+    return (params) => {
+      const arr = Array.isArray(params) ? params : [params];
+      const head = Array.isArray(params) && arr.length && arr[0].axisValueLabel != null ? `Zone ${arr[0].axisValueLabel}<br>` : "";
+      const rows = arr.map((p) => {
+        const y = Array.isArray(p.value) ? p.value[1] : p.value;
+        return `<span style="color:${p.color}">\u25CF</span> ${p.seriesName}: <b>${fmt(y)}</b>`;
+      }).join("<br>");
+      return head + rows;
     };
   }
   function axisFormatter(useDatetime) {
@@ -18950,15 +18956,21 @@
         scale: true,
         axisLabel: { formatter: axisFormatter(datetime), fontSize: BASE_FONT }
       },
-      tooltip: { trigger: "item", formatter: pointFormatter(graph.formatterKind === "datetime") },
-      legend: { type: "scroll", orient: "vertical", right: 0, textStyle: { fontSize: BASE_FONT } },
+      // `axis` trigger + a shared crosshair shows every series' value at the hovered zone for comparison.
+      tooltip: { trigger: "axis", axisPointer: { type: "line" }, formatter: pointFormatter(graph.formatterKind === "datetime") },
+      // top:30 drops the legend below the toolbox row so the two no longer overlap in the top-right corner.
+      legend: { type: "scroll", orient: "vertical", right: 0, top: 30, textStyle: { fontSize: BASE_FONT } },
       dataZoom: [
         { type: "inside", xAxisIndex: 0, filterMode: "none" },
         { type: "inside", yAxisIndex: 0, filterMode: "none" },
         { type: "slider" }
       ],
-      // #131 — data export (dataView table + PNG) and zoom, built in.
-      toolbox: { feature: { dataView: { readOnly: true }, saveAsImage: {}, dataZoom: { yAxisIndex: "all" }, restore: {} } },
+      // #131 — data export (dataView table + PNG) and zoom, built in. Pinned top-right, its own row above the legend.
+      toolbox: {
+        right: 8,
+        top: 4,
+        feature: { dataView: { readOnly: true }, saveAsImage: {}, dataZoom: { yAxisIndex: "all" }, restore: {} }
+      },
       series: []
     };
   }
@@ -19083,6 +19095,7 @@
     option.xAxis = { type: "category", name: "Portal", data: categories };
     option.yAxis = activeColumns.map(() => ({ show: false, scale: true }));
     option.series = series;
+    option.tooltip = { trigger: "item", formatter: pointFormatter(false) };
     applyLegendSelection(option, series, settings);
     return option;
   }
@@ -19626,21 +19639,20 @@
   }
   function drawGraph() {
     function makeCheckbox(graph, toggle) {
-      var container = document.createElement("span");
-      var checkbox = document.createElement("input");
-      var label = document.createElement("span");
+      const container = document.createElement("label");
+      const checkbox = document.createElement("input");
+      const label = document.createElement("span");
       container.style.padding = "0rem .5rem";
+      container.style.cursor = "pointer";
       checkbox.type = "checkbox";
       checkbox.id = toggle;
       checkbox.checked = GRAPHSETTINGS2.toggles[graph][toggle] ?? false;
-      let funcString = "";
-      if (TOGGLE_RULES[toggle] && TOGGLE_RULES[toggle].exclude) {
-        TOGGLE_RULES[toggle].exclude.forEach(
-          (exTog) => funcString += `GRAPHSETTINGS.toggles.${graph}.${exTog} = false; `
-        );
-      }
-      funcString += `GRAPHSETTINGS.toggles.${graph}.${toggle} = this.checked; drawGraph();`;
-      checkbox.setAttribute("onclick", funcString);
+      checkbox.onclick = () => {
+        const rule = TOGGLE_RULES[toggle];
+        if (rule && rule.exclude) rule.exclude.forEach((exTog) => GRAPHSETTINGS2.toggles[graph][exTog] = false);
+        GRAPHSETTINGS2.toggles[graph][toggle] = checkbox.checked;
+        drawGraph();
+      };
       label.innerText = toggle;
       label.style.color = "#757575";
       container.appendChild(checkbox);
