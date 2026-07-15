@@ -1,7 +1,10 @@
 // --------- Backend and helpers --------- 
-function safeLocalStorage(name, data) {
+function safeLocalStorage(name, data, retry = false) {
   try {
-    if (name === "portalDataCurrent") {
+    // Skip the 450ms throttle on an eviction retry (retry === true): the original code stamped
+    // lastSave on entry, so the post-eviction retry was blocked by its own throttle and the
+    // recovery write was silently dropped after freeing space.
+    if (name === "portalDataCurrent" && !retry) {
       // save at most every 450ms. Stringify is too expensive to run at max speed in timewarp, but still save every zone in liq otherwise
       if ((new Date() - lastSave) / 450 < 1) return
       else lastSave = new Date();
@@ -9,12 +12,19 @@ function safeLocalStorage(name, data) {
     if (typeof data != "string") data = JSON.stringify(data);
     localStorage.setItem(name, data);
   } catch (e) {
-    if (e.code == 22 || e.code == 1014) { // 
-      // Storage full, delete oldest portal from history, and try again
+    if (e.code == 22 || e.code == 1014) { // storage full
+      if (Object.keys(portalSaveData).length === 0) {
+        // Nothing left to evict — the payload won't fit even in empty storage. Deleting
+        // portalSaveData[undefined] is a no-op, so retrying here would recurse until the stack
+        // overflows. Give up gracefully instead.
+        console.warn("AT Graphs Error: LocalStorage is full and the current data won't fit even after clearing all saved graphs.", e.code, e);
+        return;
+      }
+      // Storage full: delete oldest portal from history and try again (bypassing the throttle).
       delete portalSaveData[Object.keys(portalSaveData)[0]];
       savePortalData(true);
-      safeLocalStorage(name, data)
       console.debug("AT Graphs Error: LocalStorage is full. Automatically deleting a graph to clear up space.", e.code, e);
+      safeLocalStorage(name, data, true)
     }
   }
 }
@@ -61,21 +71,38 @@ function formatDuration(timeSince) {
 }
 
 function loadGraphData() {
-  var loadedData = LZString.decompressFromBase64(localStorage.getItem("portalDataHistory"));
-  var currentPortal = JSON.parse(localStorage.getItem("portalDataCurrent"));
-  if (loadedData != "") {
-    var loadedData = JSON.parse(loadedData);
-    if (currentPortal) { loadedData[Object.keys(currentPortal)[0]] = Object.values(currentPortal)[0] }
-    console.log("Graphs: Found portalSaveData")
-    // remake object structure
-    for (const [portalID, portalData] of Object.entries(loadedData)) {
-      portalSaveData[portalID] = new Portal();
-      for (const [k, v] of Object.entries(portalData)) {
-        portalSaveData[portalID][k] = v;
+  // Guard every localStorage parse: decompressFromBase64 returns "" for an absent key (first
+  // run, safe) but null/garbage for a CORRUPT key, and JSON.parse throws on malformed data.
+  // loadGraphData() runs unguarded at module top level, so an unhandled throw here would abort
+  // createUI() and the four data-capture wrappers installed below it — and, in the concatenated
+  // userscript, break everything emitted after this file. On corruption, start fresh instead.
+  try {
+    var loadedData = LZString.decompressFromBase64(localStorage.getItem("portalDataHistory"));
+    var currentPortal = JSON.parse(localStorage.getItem("portalDataCurrent"));
+    if (loadedData) {
+      loadedData = JSON.parse(loadedData);
+      if (loadedData && typeof loadedData === "object") {
+        if (currentPortal) { loadedData[Object.keys(currentPortal)[0]] = Object.values(currentPortal)[0] }
+        console.log("Graphs: Found portalSaveData")
+        // remake object structure
+        for (const [portalID, portalData] of Object.entries(loadedData)) {
+          portalSaveData[portalID] = new Portal();
+          for (const [k, v] of Object.entries(portalData)) {
+            portalSaveData[portalID][k] = v;
+          }
+        }
       }
     }
+  } catch (e) {
+    console.warn("AT Graphs: could not load saved portal history (corrupt data?); starting fresh.", e);
+    portalSaveData = {};
   }
-  var loadedSettings = JSON.parse(localStorage.getItem("GRAPHSETTINGS"));
+  var loadedSettings = null;
+  try {
+    loadedSettings = JSON.parse(localStorage.getItem("GRAPHSETTINGS"));
+  } catch (e) {
+    console.warn("AT Graphs: could not load saved settings (corrupt data?); using defaults.", e);
+  }
   if (loadedSettings !== null) {
     for (const [k, v] of Object.entries(loadedSettings)) {
       GRAPHSETTINGS[k] = v;
@@ -140,7 +167,10 @@ function diff(dataVar, initial) {
   return function (portal, i) {
     let e1 = portal.perZoneData[dataVar][i];
     let e2 = initial ? initial : portal.perZoneData[dataVar][i - 1];
-    if (e1 === null || e2 === null) return null;
+    // == null catches undefined too: perZoneData is 1-indexed with a hole at index 0, so the
+    // first iterated index gives e2 = data[0] = undefined. The old strict === null check let it
+    // through and pushed e1 - undefined = NaN (a stray point) into the series.
+    if (e1 == null || e2 == null) return null;
     return e1 - e2
   }
 }
@@ -240,7 +270,7 @@ function createUI() {
   document.getElementById("graphFooterLine2").innerHTML += `
     <span style="float: left;" onmouseover='tooltip("Tips", "customText", event, "${tipsText}")' onmouseout='tooltip("hide")'>Tips: Hover for usage tips.</span>
     <span style="float: left; margin-left: 2vw"><input type="checkbox" id="liveCheckbox" onclick="saveSetting('live', this.checked);"> Live Updates</span>
-    <span style="float: left; margin-left: 2vw">Show <input style="width:40px;" id="portalCountTextBox" onchange="saveSetting('portalsDisplayed', this.value); updateGraph();"> Portals</span>
+    <span style="float: left; margin-left: 2vw">Show <input style="width:40px;" id="portalCountTextBox" onchange="saveSetting('portalsDisplayed', parseInt(this.value) || GRAPHSETTINGS.portalsDisplayed); updateGraph();"> Portals</span>
     <input onclick="toggleDarkGraphs()" style="height: 20px; float: right; margin-right: 0.5vw;" type="checkbox" id="blackCB">
     <span style="float: right; margin-right: 0.5vw;">Black Graphs:</span>
     `;
@@ -783,11 +813,15 @@ const getGameData = {
   nullifium: () => { return recycleAllExtraHeirlooms(true) },
   coord: () => { return game.upgrades.Coordination.allowed - game.upgrades.Coordination.done },
   overkill: () => {
-    // overly complex check for Liq, overly fragile check for overkill cells. please rewrite this at some point.
-    if (game.options.menu.overkillColor.enabled == 0) toggleSetting("overkillColor");
+    // Count overkilled cells from the game's own per-cell state (cell.overkilled, set during
+    // combat in main.js) rather than DOM cellColorOverkill classes: those classes only exist
+    // when the player's overkillColor option is enabled, so the old code force-enabled AND
+    // persisted that setting just to count. A data reader must never mutate the player's save.
     if (game.options.menu.liquification.enabled && game.talents.liquification.purchased && !game.global.mapsActive && game.global.gridArray && game.global.gridArray[0] && game.global.gridArray[0].name == "Liquimp")
       return 100;
-    else return document.getElementById("grid").getElementsByClassName("cellColorOverkill").length;
+    var grid = game.global.mapsActive ? game.global.mapGridArray : game.global.gridArray;
+    if (!grid) return 0;
+    return grid.filter((cell) => cell && cell.overkilled).length;
   },
   zoneTime: () => { return Math.round((getGameTime() - game.global.zoneStarted) * 100) / 100 }, // rounded to x.xs, not used
   mapbonus: () => { return game.global.mapBonus },
