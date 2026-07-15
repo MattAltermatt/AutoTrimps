@@ -18946,6 +18946,8 @@
   function baseOption(graph) {
     const datetime = graph.yType === "datetime";
     return {
+      // legacy createHighChartsObj set animation:false — charts appear instantly, no fade/grow-in.
+      animation: false,
       color: PALETTE,
       textStyle: { fontSize: BASE_FONT },
       title: { text: graph.graphTitle, left: "center", textStyle: { fontSize: TITLE_FONT } },
@@ -19462,6 +19464,7 @@
     if (chart) chart.dispose();
     chart = echarts.init(document.getElementById("graph"), GRAPHSETTINGS2.darkTheme ? "dark" : void 0);
     chart.setOption(option, { notMerge: true });
+    chart.dispatchAction({ type: "takeGlobalCursor", key: "dataZoomSelect", dataZoomSelectActive: true });
     chart.on("legendselectchanged", (p) => {
       const series = option.series || [];
       GRAPHSETTINGS2.rememberSelected = series.map((s) => p.selected[s.name] !== false);

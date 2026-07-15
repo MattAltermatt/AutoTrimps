@@ -52,6 +52,8 @@ function axisFormatter(useDatetime: boolean) {
 function baseOption(graph: GraphDef): EChartsOption {
   const datetime = graph.yType === 'datetime'
   return {
+    // legacy createHighChartsObj set animation:false — charts appear instantly, no fade/grow-in.
+    animation: false,
     color: PALETTE,
     textStyle: { fontSize: BASE_FONT },
     title: { text: graph.graphTitle, left: 'center', textStyle: { fontSize: TITLE_FONT } },

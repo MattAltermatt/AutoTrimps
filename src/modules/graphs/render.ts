@@ -33,6 +33,10 @@ function renderChart(option: EChartsOption): void {
   if (chart) chart.dispose()
   chart = echarts.init(document.getElementById('graph'), GRAPHSETTINGS.darkTheme ? 'dark' : undefined)
   chart.setOption(option, { notMerge: true })
+  // Highcharts-style drag-a-box-to-zoom (legacy zoomType:'xy'): activate the toolbox dataZoom "select"
+  // cursor by default so the user can drag a rectangle on the plot to zoom, without first clicking the
+  // toolbar icon. The toolbox "restore" icon resets the zoom.
+  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'dataZoomSelect', dataZoomSelectActive: true })
   // Map ECharts' name-keyed legend selection back to the legacy positional rememberSelected array,
   // aligned to the built series order, and persist it.
   chart.on('legendselectchanged', (p: any) => {
