@@ -35,10 +35,11 @@ bot's decisions against recorded traces, and a missing clone fails loudly rather
 `test:ci` additionally asserts that **no test may be skipped**: a gate optimized for greenness is
 not a gate.
 
-The port is essentially complete — the automation lives in `src/modules/` as strict TypeScript.
-What remains in `legacy/` is the loader/mainLoop (`AutoTrimps2.js`) and the Graphs stack
-(`Graphs.js` + highcharts), which is still the behavioral oracle the build concatenates ahead of
-the TypeScript bundle.
+The port is **complete** as of **v6.0.0** (2026-07-15): every AutoTrimps-authored file is strict
+TypeScript in `src/modules/`, including the mainLoop/loader (`src/modules/main-loop.ts`) and the
+Graphs dashboard (`src/modules/graphs/`, now Apache ECharts). The only file left in `legacy/` is
+the third-party vendored `FastPriorityQueue.js`, which the build concatenates after the TypeScript
+bundle. Every change is still diffed against the recorded behavioral oracle.
 
 
 
@@ -51,7 +52,9 @@ Discord is a chat program. Come to talk about AutoTrimps, for help, or suggestio
 ## Current version — ongoing development
 
 - Zek Fork (changes by Zek, GenBTC as base). This modernization fork (MattAltermatt) ported the
-  runtime to TypeScript and re-synced the automation to current Trimps.
+  runtime to TypeScript and re-synced the automation to current Trimps. The TypeScript migration
+  finished at [**v6.0.0**](https://github.com/MattAltermatt/AutoTrimps/releases/tag/v6.0.0)
+  (2026-07-15); the userscript still auto-updates from the same URL regardless of version.
 - Automation parity is current as of **Trimps v5.10.1**. The game clone is SHA-pinned in
   `package.json` (`trimpsGame`), and a test fails if that pin and the recorded oracle disagree.
 - Live status is always the [open issues](https://github.com/MattAltermatt/AutoTrimps/issues) and
@@ -81,52 +84,8 @@ method (all load the same auto-built script). Visit that page for one-click inst
 After loading, **configure your settings** — AutoTrimps will *not* behave as intended with
 defaults.
 
-## Graphs only Script Installation
-### Browser
-Step 1:  
-Install TamperMonkey:  
-https://www.tampermonkey.net/
-
-Step 2: 
-Click this link: https://github.com/Zorn192/AutoTrimps/blob/gh-pages/GraphsOnly.user.js  
-If clicking the link does not work, copy the contents of GraphsOnly.user.js into a new script inside tampermonkey.  
-If you are unsure how to do that, copy this:  
-```
-var script = document.createElement('script');
-script.id = 'AutoTrimps-Graphs';
-script.src = 'https://Zorn192.github.io/AutoTrimps/GraphsOnly.js';
-script.setAttribute('crossorigin',"anonymous");
-document.head.appendChild(script);
-```  
-Press F12 inside the game, this opens the console, and paste the text into it and hit enter, this will load the script. You will have to do this everytime you refresh the game though so I recommend getting tampermonkey to do it for you!  
-
-Step 3:  
-Enjoy your Graphs!
-
-### Steam
-Step 1:  
-Go to this link to open the modsGRAPH.js file on Github: <a href="https://github.com/Zorn192/AutoTrimps/blob/gh-pages/modsGRAPH.js">modsGRAPH.js</a>  
-Then, right click the Raw button, hit Save link as, and save the modsGRAPH.js file somewhere to your computer where you can find it, like desktop.  
-![Download mods.js](https://i.imgur.com/opuO6yd.png)  
-
-Step 2:  
-Rename the modsGRAPH.js file to mods.js (Right click the file, rename, then remove GRAPH). Sorry but I can't have 2 mods.js named the same so Graphs Only users have to deal with it :(
-
-Step 3:  
-In your Steam Library (where you see all your games in the Steam app), right click on Trimps, go to Manage, then Browse local files.  
-A folder where Trimps is installed inside Steam should open.  
-![Go to Trimps directory](https://imgur.com/cr35LK2.png)
-
-Inside this folder, navigate to the mods folder (you should be in Steam\steamapps\common\Trimps\mods), and place the mods.js file that we renamed earlier there, like so:  
-![Insert mods.js](https://imgur.com/muW6cUh.png)
-
-Advanced users: If you have other mods installed then just copy the text in AT's mods.js and place it somewhere in your existing mods.js file.
-
-Step 4:  
-Restart the game, or if the game is already running, hit F5 to refresh.
-
-Step 5:  
-Enjoy your Graphs!
+Graphs are built into the script (open the **Graphs** button in-game) — there is no separate
+"graphs-only" download in this fork.
 
 ## Equipment && Upgrade's colour explaination:
 

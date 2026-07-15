@@ -28,10 +28,9 @@ rewrite was abandoned — "don't reinvent the wheel"). Legacy `.js` stays untouc
 a behavioral oracle; the build assembles one userscript from `legacy concat` +
 `esbuild(src/main.ts)`; modules are ported one at a time behind a stable seam and verified in a
 live local clone of the game before the legacy copy is retired. Faithful port first, refactor
-second — and the port is now essentially done: the automation is strict TypeScript in
-`src/modules/`, and what is left in `legacy/` is the loader/mainLoop (`AutoTrimps2.js`), the
-Graphs stack (`Graphs.js` + highcharts), and the graphs-only distribution artifacts. The full
-architecture and rationale are in the
+second — and the strangler is now **complete** (v6.0.0, 2026-07-15): every AutoTrimps-authored
+file is strict TypeScript in `src/modules/` behind the seam, and `legacy/` holds nothing but the
+third-party vendored `FastPriorityQueue.js`. The full architecture and rationale are in the
 [design spec](docs/superpowers/specs/2026-07-08-autotrimps-modernization-design.md).
 
 ## What it deliberately is NOT
@@ -45,9 +44,10 @@ architecture and rationale are in the
 
 ## Status
 
-A long-horizon, multi-session side project (started 2026-07-08). The conversion is shipped: the
-runtime is TypeScript-first, the automation is synced to the current Trimps release, and only the
-loader and the Graphs stack remain as legacy. Work has moved from *porting* to *correctness* —
+A long-horizon, multi-session side project (started 2026-07-08). The conversion is **complete**
+(the strangler finished at v6.0.0, 2026-07-15): the runtime is TypeScript-first, the automation is
+synced to the current Trimps release, and no first-party code remains in `legacy/`. Work has moved
+from *porting* to *correctness* —
 behavioral proof nets that can prove the bot's decisions haven't drifted, and the defects they
 keep surfacing. Live status is always the
 [open issues](https://github.com/MattAltermatt/AutoTrimps/issues) and
