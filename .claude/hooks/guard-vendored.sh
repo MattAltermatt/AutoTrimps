@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # PreToolUse hook: block hand-edits to vendored legacy files.
 #
-# legacy/highcharts.js (~293 KB) and legacy/FastPriorityQueue.js are pure
-# third-party vendor drops. They must never be hand-edited — an accidental
-# edit corrupts the concatenated userscript output (and highcharts must not
-# even be bundled; Graphs.js CDN-injects it). The OTHER legacy/*.js files
-# are active strangler-conversion targets and stay editable.
+# legacy/FastPriorityQueue.js is a pure third-party vendor drop. It must never
+# be hand-edited — an accidental edit corrupts the concatenated userscript
+# output. (legacy/highcharts.js was the other vendored file; it was deleted in
+# #134 once Graphs moved to ECharts, so it no longer needs guarding.) The
+# strangler is complete: no first-party legacy/*.js remain.
 #
 # Exit 2 with a reason on stderr denies the tool call and tells Claude why.
 
@@ -17,7 +17,7 @@ file=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty')
 
 base=$(basename "$file")
 case "$base" in
-  highcharts.js|FastPriorityQueue.js)
+  FastPriorityQueue.js)
     case "$file" in
       */legacy/*)
         printf 'Blocked: %s is a vendored third-party file and must not be hand-edited.\n' "$base" >&2

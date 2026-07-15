@@ -245,9 +245,11 @@ describe('at-legacy.d.ts — every ambient var must have a writer in the shipped
     expect(writes.length).toBeGreaterThan(400)
     expect(reads.length).toBeGreaterThan(1000)
 
-    // The CORPUS IS THE BUNDLE. These three files are in the tree and NOT in the MANIFEST; if any ever
-    // slips into the corpus it silently donates writers for `isSteam` and `FastPriorityQueue`, and this
-    // net starts certifying names that do not exist at runtime. This is the #71 false-pass, pinned.
+    // The CORPUS IS THE BUNDLE. These files are NOT in the MANIFEST; if either ever slips into the corpus
+    // it silently donates a writer for `isSteam`, and this net starts certifying a name that does not exist
+    // at runtime. This is the #71 false-pass, pinned. (#134 deleted both files from the tree — they were
+    // upstream-fork distribution shims injecting the wrong origin — so this now also guards against a
+    // resurrected path, not just a MANIFEST slip.)
     expect(CORPUS).not.toContain(join('legacy', 'mods.js'))
     expect(CORPUS).not.toContain(join('legacy', 'GraphsOnly.js'))
     // #133 — AutoTrimps2.js is now src/modules/main-loop.ts (a normal src module in the corpus). It still
@@ -310,8 +312,8 @@ describe('at-legacy.d.ts — every ambient var must have a writer in the shipped
   })
 
   it('isSteam is safe ONLY because of its typeof guard — pin the guard (#71)', () => {
-    // isSteam has no writer in the bundle and never will (its only writer, legacy/mods.js, is the Steam
-    // loader and is not in the MANIFEST). It is not a bug purely because jobs.ts:566 reads it as
+    // isSteam has no writer in the bundle and never will (its only writer was legacy/mods.js, the Steam
+    // distribution shim, never in the MANIFEST and deleted outright in #134). It is not a bug purely because jobs.ts:566 reads it as
     // `typeof(isSteam) !== 'undefined'`. Strip that guard and it becomes bug number three, so assert the
     // guard rather than trusting a comment to preserve it.
     expect(WRITTEN.has('isSteam')).toBe(false)
