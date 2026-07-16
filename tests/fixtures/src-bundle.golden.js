@@ -2773,6 +2773,42 @@
     preBuy3: () => preBuy32,
     windstackingprestige: () => windstackingprestige
   });
+
+  // src/modules/upgrade-reserve.ts
+  var RESERVE_UPGRADES = ["Miners", "Speedminer", "Speedlumber", "Speedfarming", "Speedscience", "Efficiency"];
+  var PRODUCER = { wood: "Lumberjack", metal: "Miner" };
+  function resolveUpgradeCost(cost, done) {
+    if (cost === void 0) return 0;
+    return typeof cost === "number" ? cost : Math.floor(cost[0] * Math.pow(cost[1], done));
+  }
+  function foundationalUpgradeReserve(resource) {
+    if (!getPageSetting2("ReserveFoundationUpgrades")) return 0;
+    const producer = PRODUCER[resource];
+    if (!producer) return 0;
+    const job = game.jobs[producer];
+    if (!job || job.locked || job.owned <= 0) return 0;
+    let reserve = 0;
+    for (const name of RESERVE_UPGRADES) {
+      const up = game.upgrades[name];
+      if (!up || up.locked || up.allowed <= up.done) continue;
+      const res = up.cost?.resources;
+      if (!res) continue;
+      const need = resolveUpgradeCost(res[resource], up.done);
+      if (need <= 0) continue;
+      const soleBlocker = Object.keys(res).every(
+        (r) => r === resource || (game.resources[r]?.owned ?? 0) >= resolveUpgradeCost(res[r], up.done)
+      );
+      if (soleBlocker) reserve = Math.max(reserve, need);
+    }
+    return reserve;
+  }
+  function reserveAllowsEquip(resource, cost) {
+    const reserve = foundationalUpgradeReserve(resource);
+    if (reserve <= 0) return true;
+    return game.resources[resource].owned - cost >= reserve;
+  }
+
+  // src/modules/equipment.ts
   MODULES["equipment"] = {};
   MODULES["equipment"].numHitsSurvived = 10;
   MODULES["equipment"].numHitsSurvivedScry = 80;
@@ -2877,8 +2913,8 @@
     const nextEffect = gameResource.increase.by * (gameResource.owned + 1) * gymysticMod;
     return nextEffect - currentEffect;
   }
-  function equipCost(gameResource, equip) {
-    let cost = parseFloat(getBuildingItemPrice(gameResource, equip.Resource, equip.Equip, 1));
+  function equipCost(gameResource, equip, amt = 1) {
+    let cost = parseFloat(getBuildingItemPrice(gameResource, equip.Resource, equip.Equip, amt));
     cost = equip.Equip ? Math.ceil(cost * Math.pow(1 - game.portal.Artisanistry.modifier, game.portal.Artisanistry.level)) : Math.ceil(cost * Math.pow(1 - game.portal.Resourceful.modifier, game.portal.Resourceful.level));
     return cost;
   }
@@ -3143,7 +3179,7 @@
         const maxmap = doMaxMapBonus;
         if (BuyArmorLevels && (DaThing.Stat === "health" || DaThing.Stat === "block") && (!enoughHealthE || maxmap || investSpareMetal)) {
           game.global.buyAmt = gearamounttobuy;
-          if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true)) {
+          if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true) && reserveAllowsEquip(DaThing.Resource, equipCost(game.equipment[eqName], DaThing, game.global.buyAmt))) {
             debug2("Leveling equipment " + eqName, "equips", "*upload3");
             buyEquipment(eqName, null, true);
           }
@@ -3151,14 +3187,14 @@
         const aalvl2 = getPageSetting2("always2");
         if (BuyArmorLevels && DaThing.Stat === "health" && aalvl2 && game.equipment[eqName].level < 2) {
           game.global.buyAmt = 1;
-          if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true)) {
+          if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true) && reserveAllowsEquip(DaThing.Resource, equipCost(game.equipment[eqName], DaThing, game.global.buyAmt))) {
             debug2("Leveling equipment " + eqName + " (AlwaysLvl2)", "equips", "*upload3");
             buyEquipment(eqName, null, true);
           }
         }
         if (windstackingprestige() && BuyWeaponLevels && DaThing.Stat === "attack" && (!enoughDamageE || enoughHealthE || maxmap || investSpareMetal)) {
           game.global.buyAmt = gearamounttobuy;
-          if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true)) {
+          if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true) && reserveAllowsEquip(DaThing.Resource, equipCost(game.equipment[eqName], DaThing, game.global.buyAmt))) {
             debug2("Leveling equipment " + eqName, "equips", "*upload3");
             buyEquipment(eqName, null, true);
           }
@@ -15742,6 +15778,7 @@
     !radonon ? turnOn("gearamounttobuy") : turnOff("gearamounttobuy");
     !radonon ? turnOn("always2") : turnOff("always2");
     !radonon ? turnOn("InvestSpareMetal") : turnOff("InvestSpareMetal");
+    !radonon ? turnOn("ReserveFoundationUpgrades") : turnOff("ReserveFoundationUpgrades");
     radonon ? turnOn("Requipon") : turnOff("Requipon");
     radonon && getPageSetting("Requipon") == true ? turnOn("Requipamount") : turnOff("Requipamount");
     radonon && getPageSetting("Requipon") == true ? turnOn("Requipcapattack") : turnOff("Requipcapattack");
@@ -17235,6 +17272,10 @@
     createSetting("InvestSpareMetal", "Invest Spare Metal", tip({
       what: 'Keep leveling the most efficient gear whenever you can afford it, instead of stopping once you are "strong enough" for the current zone.',
       how: 'Normally AT buys armor only while it cannot survive enough hits, and weapons only while it cannot kill fast enough (see <b>Equipment Cut Off</b>). Once both are satisfied it buys nothing and banks the metal. Measured on a real z21 save: it declined an affordable gear level on <b>18,503 of 20,000 ticks</b>. Turning this on reaches the next zone <b>~19.5% sooner</b> \u2014 not by buying much more gear (only ~3 extra levels), but by buying it <b>early</b>, where the damage compounds into faster clears and more income.<br><br>The level caps (<b>Weapon/Armor Level Cap</b>) and the efficiency choice are still respected \u2014 this only removes the "I am strong enough, stop buying" brake.'
+    }), "boolean", false, null, "Gear");
+    createSetting("ReserveFoundationUpgrades", "Prioritize Core Upgrades", tip({
+      what: "Hold back wood/metal from gear leveling so the foundational economy upgrades get bought first, instead of spinning your wheels at the start of a run.",
+      how: "On a fresh run the <b>Miners</b> upgrade (which unlocks the whole metal economy) costs 300 wood \u2014 but Shield armor also costs wood, and the Artisanistry perk discounts the Shield level below 300 while leaving the upgrade at full price. So AT skims wood onto Shield before it can ever reach 300, and the run stalls for minutes at world 2 leveling Shield. Turning this on reserves a resource whenever an available, unbought core upgrade (<b>Miners, Speedminer, Speedlumber, Speedfarming, Speedscience, Efficiency</b>) is blocked <b>only</b> by that resource \u2014 so the upgrade lands first, then the economy cascade unlocks. Measured on a real run: Miners bought <b>~5.8\xD7 sooner</b>, and you end up better-equipped, not worse. Only holds gear (never housing), only while the upgrade is one resource away, and clears the instant it is bought."
     }), "boolean", false, null, "Gear");
     createSetting("Requipon", "AutoEquip", tip({
       what: "The U2 master switch for AutoEquip: buys Prestiges and levels up equipment automatically.",

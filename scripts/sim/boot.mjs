@@ -17,7 +17,7 @@ const GAME_FILES = ['lz-string.js', 'decimal.min.js', 'config.js', 'updates.js',
 
 /**
  * Boot the Trimps clone (and optionally the AutoTrimps bundle) into jsdom.
- * @param {{ gameDir?: string, withAutoTrimps?: boolean, atBundlePath?: string, saveString?: string, atSettings?: Record<string, unknown> }} [opts]
+ * @param {{ gameDir?: string, withAutoTrimps?: boolean, atBundlePath?: string, saveString?: string, atSettings?: Record<string, unknown>, atSettingsBlob?: string | Record<string, unknown> }} [opts]
  * @returns {{ window: any, game: any, dom: any }}
  */
 export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, atBundlePath, saveString, atSettings, atSettingsBlob } = {}) {

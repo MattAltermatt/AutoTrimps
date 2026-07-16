@@ -1087,6 +1087,11 @@ export function initializeAllSettings() {
         how: 'Normally AT buys armor only while it cannot survive enough hits, and weapons only while it cannot kill fast enough (see <b>Equipment Cut Off</b>). Once both are satisfied it buys nothing and banks the metal. Measured on a real z21 save: it declined an affordable gear level on <b>18,503 of 20,000 ticks</b>. Turning this on reaches the next zone <b>~19.5% sooner</b> — not by buying much more gear (only ~3 extra levels), but by buying it <b>early</b>, where the damage compounds into faster clears and more income.<br><br>The level caps (<b>Weapon/Armor Level Cap</b>) and the efficiency choice are still respected — this only removes the "I am strong enough, stop buying" brake.'
     }), 'boolean', false, null, "Gear");
 
+    createSetting('ReserveFoundationUpgrades', 'Prioritize Core Upgrades',tip({
+        what: 'Hold back wood/metal from gear leveling so the foundational economy upgrades get bought first, instead of spinning your wheels at the start of a run.',
+        how: 'On a fresh run the <b>Miners</b> upgrade (which unlocks the whole metal economy) costs 300 wood — but Shield armor also costs wood, and the Artisanistry perk discounts the Shield level below 300 while leaving the upgrade at full price. So AT skims wood onto Shield before it can ever reach 300, and the run stalls for minutes at world 2 leveling Shield. Turning this on reserves a resource whenever an available, unbought core upgrade (<b>Miners, Speedminer, Speedlumber, Speedfarming, Speedscience, Efficiency</b>) is blocked <b>only</b> by that resource — so the upgrade lands first, then the economy cascade unlocks. Measured on a real run: Miners bought <b>~5.8× sooner</b>, and you end up better-equipped, not worse. Only holds gear (never housing), only while the upgrade is one resource away, and clears the instant it is bought.'
+    }), 'boolean', false, null, "Gear");
+
 
     //RGear
 

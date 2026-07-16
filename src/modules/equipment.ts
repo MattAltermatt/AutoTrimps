@@ -17,6 +17,7 @@
 //   Pandemonium mults run unconditionally), Rgetequips unreachable post-`continue` block, and the
 //   dead attainablePrestiges/prestigeZones pair.
 import { getPageSetting, debug } from './utils'
+import { reserveAllowsEquip } from './upgrade-reserve'
 
 //Helium
 
@@ -128,8 +129,8 @@ export function equipEffect(gameResource: any, equip: any) {
     const nextEffect = gameResource.increase.by * (gameResource.owned + 1) * gymysticMod;
     return nextEffect - currentEffect;
 }
-export function equipCost(gameResource: any, equip: any) {
-    let cost = parseFloat(getBuildingItemPrice(gameResource, equip.Resource, equip.Equip, 1) as any);
+export function equipCost(gameResource: any, equip: any, amt = 1) {
+    let cost = parseFloat(getBuildingItemPrice(gameResource, equip.Resource, equip.Equip, amt) as any);
     cost = equip.Equip
         ? Math.ceil(cost * Math.pow(1 - game.portal.Artisanistry.modifier, game.portal.Artisanistry.level))
         : Math.ceil(cost * Math.pow(1 - game.portal.Resourceful.modifier, game.portal.Resourceful.level));
@@ -477,7 +478,8 @@ export function autoLevelEquipment() {
             const maxmap = doMaxMapBonus;
             if (BuyArmorLevels && (DaThing.Stat === 'health' || DaThing.Stat === 'block') && (!enoughHealthE || maxmap || investSpareMetal)) {
                 game.global.buyAmt = gearamounttobuy;
-                if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true)) {
+                // #142: hold this level if its resource is being reserved for a foundational upgrade (default off ⇒ inert).
+                if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true) && reserveAllowsEquip(DaThing.Resource, equipCost(game.equipment[eqName], DaThing, game.global.buyAmt))) {
                     debug('Leveling equipment ' + eqName, "equips", '*upload3');
                     buyEquipment(eqName, null, true);
                 }
@@ -485,14 +487,17 @@ export function autoLevelEquipment() {
             const aalvl2 = getPageSetting('always2');
             if (BuyArmorLevels && (DaThing.Stat === 'health') && aalvl2 && game.equipment[eqName].level < 2) {
                 game.global.buyAmt = 1;
-                if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true)) {
+                // #142: gate the level-2 survival floor on the same reserve (the reserve clears the moment
+                // the foundational upgrade is bought, so the floor is met immediately after — default off ⇒ inert).
+                if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true) && reserveAllowsEquip(DaThing.Resource, equipCost(game.equipment[eqName], DaThing, game.global.buyAmt))) {
                     debug('Leveling equipment ' + eqName + " (AlwaysLvl2)", "equips", '*upload3');
                     buyEquipment(eqName, null, true);
                 }
             }
             if (windstackingprestige() && BuyWeaponLevels && DaThing.Stat === 'attack' && (!enoughDamageE || enoughHealthE || maxmap || investSpareMetal)) {
                 game.global.buyAmt = gearamounttobuy;
-                if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true)) {
+                // #142: hold this level if its resource is being reserved for a foundational upgrade (default off ⇒ inert).
+                if (DaThing.Equip && !Best[stat].Wall && canAffordBuilding(eqName, null, null, true) && reserveAllowsEquip(DaThing.Resource, equipCost(game.equipment[eqName], DaThing, game.global.buyAmt))) {
                     debug('Leveling equipment ' + eqName, "equips", '*upload3');
                     buyEquipment(eqName, null, true);
                 }

@@ -427,6 +427,7 @@ export function updateCustomButtons() {
     !radonon ? turnOn("gearamounttobuy") : turnOff("gearamounttobuy");
     !radonon ? turnOn("always2") : turnOff("always2");
     !radonon ? turnOn("InvestSpareMetal") : turnOff("InvestSpareMetal");
+    !radonon ? turnOn("ReserveFoundationUpgrades") : turnOff("ReserveFoundationUpgrades");
 
 
     //RGear
