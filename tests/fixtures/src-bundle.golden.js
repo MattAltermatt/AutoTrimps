@@ -4767,7 +4767,7 @@
       if (upgrade === "Gigastation" && !fuckbuildinggiga && (game.global.lastWarp ? game.buildings.Warpstation.owned < Math.floor(game.upgrades.Gigastation.done * getPageSetting2("DeltaGigastation")) + getPageSetting2("FirstGigastation") : game.buildings.Warpstation.owned < getPageSetting2("FirstGigastation"))) continue;
       if (upgrade === "Bloodlust" && game.global.challengeActive === "Scientist" && getPageSetting2("BetterAutoFight")) continue;
       if (!available) continue;
-      if (game.upgrades.Scientists.done < game.upgrades.Scientists.allowed && upgrade !== "Scientists") continue;
+      if (game.upgrades.Scientists.done < game.upgrades.Scientists.allowed && upgrade !== "Scientists" && canAffordTwoLevel(game.upgrades.Scientists)) continue;
       buyUpgrade(upgrade, true, true);
       debug2("Upgraded " + upgrade, "upgrades", "*upload2");
     }
@@ -4779,7 +4779,7 @@
       const available = gameUpgrade.allowed > gameUpgrade.done && canAffordTwoLevel(gameUpgrade);
       if (upgrade === "Coordination" && (getPageSetting2("RBuyUpgradesNew") == 2 || !canAffordCoordinationTrimps())) continue;
       if (!available) continue;
-      if (game.upgrades.Scientists.done < game.upgrades.Scientists.allowed && upgrade !== "Scientists") continue;
+      if (game.upgrades.Scientists.done < game.upgrades.Scientists.allowed && upgrade !== "Scientists" && canAffordTwoLevel(game.upgrades.Scientists)) continue;
       buyUpgrade(upgrade, true, true);
       debug2("Upgraded " + upgrade, "upgrades", "*upload2");
     }

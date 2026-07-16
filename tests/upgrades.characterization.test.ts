@@ -245,6 +245,23 @@ describe('upgrades.buyUpgrades — L1b actuator spy-log (helium upgrade loop)', 
     expect(buyUpgradeCalls).toEqual([['Scientists', true, true]])
   })
 
+  // #144 regression: the Scientists-first gate must NOT block a cheaper, affordable upgrade when
+  // Scientists itself is UNaffordable. Root cause of the early-run deadlock — Scientists costs 350 food,
+  // held below that by AT's own Hut buys, so the unconditional gate froze an affordable Miners (300 wood)
+  // forever. Mutation-check: delete the `&& canAffordTwoLevel(...)` clause and this collapses to [].
+  it('#144: an UNaffordable Scientists no longer blocks an affordable Miners', () => {
+    ;(globalThis as any).autoTrimpSettings = {}
+    const game = baseGame({
+      Scientists: { allowed: 1, done: 0 },
+      Miners: { allowed: 1, done: 0 },
+    }) as any
+    ;(globalThis as any).game = game
+    // Scientists unaffordable (food-starved), everything else affordable.
+    ;(globalThis as any).canAffordTwoLevel = (obj: unknown) => obj !== game.upgrades.Scientists
+    upgrades.buyUpgrades()
+    expect(buyUpgradeCalls).toEqual([['Miners', true, true]])
+  })
+
   it('Coordination skipped when BuyUpgradesNew == 2', () => {
     ;(globalThis as any).autoTrimpSettings = { BuyUpgradesNew: { type: 'multitoggle', value: 2 } }
     ;(globalThis as any).game = baseGame({ Coordination: { allowed: 1, done: 0 } })
@@ -425,6 +442,20 @@ describe('upgrades.RbuyUpgrades — L1b actuator spy-log (radon upgrade loop)', 
     })
     upgrades.RbuyUpgrades()
     expect(buyUpgradeCalls).toEqual([['Scientists', true, true]])
+  })
+
+  // #144 regression (radon path): same fix as buyUpgrades — an unaffordable Scientists must not block a
+  // cheaper affordable upgrade. Mutation-check: drop `&& canAffordTwoLevel(...)` → collapses to [].
+  it('#144: an UNaffordable Scientists no longer blocks an affordable Miners (radon loop)', () => {
+    ;(globalThis as any).autoTrimpSettings = {}
+    const game = baseGame({
+      Scientists: { allowed: 1, done: 0 },
+      Miners: { allowed: 1, done: 0 },
+    }) as any
+    ;(globalThis as any).game = game
+    ;(globalThis as any).canAffordTwoLevel = (obj: unknown) => obj !== game.upgrades.Scientists
+    upgrades.RbuyUpgrades()
+    expect(buyUpgradeCalls).toEqual([['Miners', true, true]])
   })
 
   // #53 regression: 'Supershield' (a Shield equipment prestige) is not a member of RupgradeList, so

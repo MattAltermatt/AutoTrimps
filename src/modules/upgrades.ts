@@ -188,7 +188,15 @@ export function buyUpgrades() {
         if (upgrade === 'Bloodlust' && game.global.challengeActive === 'Scientist' && getPageSetting('BetterAutoFight')) continue;
 
         if (!available) continue;
-        if (game.upgrades.Scientists.done < game.upgrades.Scientists.allowed && upgrade !== 'Scientists') continue;
+        // #144 — Scientists-first, but ONLY while Scientists is actually affordable. The gate used to be
+        // unconditional (`done < allowed`), which deadlocked the early run: Scientists costs 350 food, and
+        // when AT's own Hut buys hold food below that, Scientists is never affordable — so this gate blocked
+        // every OTHER upgrade forever, including an affordable Miners (300 wood). Worse, it blocked
+        // Speedfarming, the food-boosting upgrade that makes Scientists affordable sooner, so the gate was
+        // self-defeating. Adding canAffordTwoLevel measured strictly better: Miners bought immediately,
+        // Scientists bought ~15% SOONER, world 4 reached ~13% faster and more reliably (5-seed A/B on the
+        // reporter's save). Intent preserved: when Scientists IS affordable it is still bought first.
+        if (game.upgrades.Scientists.done < game.upgrades.Scientists.allowed && upgrade !== 'Scientists' && canAffordTwoLevel(game.upgrades.Scientists)) continue;
         buyUpgrade(upgrade, true, true);
         debug('Upgraded ' + upgrade, "upgrades", "*upload2");
     }
@@ -209,7 +217,8 @@ export function RbuyUpgrades() {
 
         //Other
         if (!available) continue;
-        if (game.upgrades.Scientists.done < game.upgrades.Scientists.allowed && upgrade !== 'Scientists') continue;
+        // #144 — see buyUpgrades: same self-defeating deadlock, same fix for the U2/radon path.
+        if (game.upgrades.Scientists.done < game.upgrades.Scientists.allowed && upgrade !== 'Scientists' && canAffordTwoLevel(game.upgrades.Scientists)) continue;
         buyUpgrade(upgrade, true, true);
         debug('Upgraded ' + upgrade, "upgrades", "*upload2");
     }
