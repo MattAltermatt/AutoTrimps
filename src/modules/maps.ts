@@ -654,7 +654,15 @@ export function autoMap() {
 
     if (!game.global.preMapsActive && game.global.mapsActive) {
         const doDefaultMapBonus = game.global.mapBonus < getPageSetting('MaxMapBonuslimit') - 1;
-        if (selectedMap == game.global.currentMapId && (!getCurrentMapObject().noRecycle && (doDefaultMapBonus || vanillaMapatZone || doMaxMapBonus || shouldFarm || needPrestige || shouldDoSpireMaps))) {
+        // #141: `shouldDoMaps` added to the keep-repeat list. Without it, a health/damage-farming-only
+        // tick (all the other reasons false — e.g. once mapBonus reaches its cap, or the tick a prestige
+        // run finishes and only the still-unmet health need remains) fell to the else-branch, finished
+        // the map out to the world, and the game's mapsSwitch() zeroed titimpLeft — wiping the Titimp 2x
+        // buff right when AT is farming because it is too weak. `selectedMap == game.global.currentMapId`
+        // still gates it, so this only keeps AT in place when the map it wants next IS the current map
+        // (i.e. the level-appropriate one); when health-farming wants a different siphon-level map, the
+        // condition is false and AT correctly leaves — the buff loss there is inherent to changing maps.
+        if (selectedMap == game.global.currentMapId && (!getCurrentMapObject().noRecycle && (doDefaultMapBonus || vanillaMapatZone || doMaxMapBonus || shouldFarm || needPrestige || shouldDoSpireMaps || shouldDoMaps))) {
             const targetPrestige = autoTrimpSettings.Prestige.selected;
             if (!game.global.repeatMap) {
                 repeatClicked();

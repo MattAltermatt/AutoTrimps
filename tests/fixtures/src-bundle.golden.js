@@ -7485,7 +7485,7 @@
     }
     if (!game.global.preMapsActive && game.global.mapsActive) {
       const doDefaultMapBonus = game.global.mapBonus < getPageSetting2("MaxMapBonuslimit") - 1;
-      if (selectedMap2 == game.global.currentMapId && (!getCurrentMapObject().noRecycle && (doDefaultMapBonus || vanillaMapatZone || doMaxMapBonus || shouldFarm || needPrestige || shouldDoSpireMaps))) {
+      if (selectedMap2 == game.global.currentMapId && (!getCurrentMapObject().noRecycle && (doDefaultMapBonus || vanillaMapatZone || doMaxMapBonus || shouldFarm || needPrestige || shouldDoSpireMaps || shouldDoMaps))) {
         const targetPrestige = autoTrimpSettings.Prestige.selected;
         if (!game.global.repeatMap) {
           repeatClicked();

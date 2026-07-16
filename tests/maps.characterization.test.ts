@@ -601,6 +601,83 @@ describe('maps.autoMap — L1b actuator core (create-map buy + recycle cascade)'
 })
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
+// L1b — #141 REGRESSION: map-reason continuity (Titimp preservation).
+//
+// When AT is IN a map that is ALSO the map it wants next (selectedMap == currentMapId) and a
+// follow-on map-running reason is active (health/damage farming — `shouldDoMaps`), it must KEEP the
+// map repeating in place (repeatClicked -> Repeat ON) rather than falling to the else-branch and
+// letting the map finish out to the world. The world round-trip calls the game's mapsSwitch(), which
+// hard-resets game.global.titimpLeft = 0 (main.js:16827) — wiping the Titimp 2x-damage buff right
+// when AT is farming BECAUSE it is too weak. Repeat-in-place (main.js:15707 buildMapGrid+battle(true))
+// is the only path that preserves titimp.
+//
+// Before the fix, `shouldDoMaps` was ABSENT from the keep-repeat OR-list at maps.ts:657, so a
+// health-farming-only tick (all of doDefaultMapBonus/vanillaMapatZone/doMaxMapBonus/shouldFarm/
+// needPrestige/shouldDoSpireMaps false — e.g. once mapBonus has reached the bonus cap) dropped to the
+// else-branch and exited. The fixture arms exactly that: mapBonus at the doDefaultMapBonus cutoff,
+// prestige Off, health insufficient (enoughHealth false via low health / high enemy damage), and the
+// current map is at siphon level so it IS the selected map. Positive control: revert the `||
+// shouldDoMaps` term and repeatClicked is no longer called (0 calls) — the map exits, titimp dies.
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+describe('maps.autoMap — L1b #141: keep repeating in place when shouldDoMaps (health-farm) & same map', () => {
+  it('health-farming with mapBonus at cap on the current (== selected) map keeps Repeat ON', () => {
+    ;(globalThis as any).extraMapLevels = 0
+    ;(globalThis as any).selectUniqueMap = () => undefined
+    ;(globalThis as any).calcOurHealth = () => 1 // vs high enemy damage -> enoughHealth FALSE
+    ;(globalThis as any).calcBadGuyDmg = () => 1e9
+    ;(globalThis as any).calcEnemyHealth = () => 1 // ourDmg*cutoff (100) > 1 -> enoughDamage TRUE
+    ;(globalThis as any).autoTrimpSettings = automapSettings({
+      MaxMapBonushealth: { type: 'value', value: 11 }, // health maps armed (9<11); early-quench (665) OFF (9<10)
+    })
+    ;(globalThis as any).game = automapGame({
+      global: {
+        mapsActive: true,
+        preMapsActive: false,
+        currentMapId: 'map1',
+        mapBonus: 9, // MaxMapBonuslimit 10 -> doDefaultMapBonus (mapBonus<9) FALSE
+        repeatMap: false, // fix must TURN IT ON
+        // one owned map at siphon level (world - Siphonology 0 = 100) so siphonMap resolves to it
+        mapsOwnedArray: [{ level: 100, noRecycle: false, id: 'map1', location: 'Plentiful', name: 'A' }],
+      },
+    })
+    maps.autoMap()
+    // shouldDoMaps is the ONLY active keep-reason; before the fix this exited via the else-branch.
+    expect((globalThis as any).shouldDoMaps).toBe(true)
+    expect((globalThis as any).enoughHealth).toBe(false)
+    expect((globalThis as any).needPrestige).toBe(false)
+    expect(names()).toEqual(['repeatClicked'])
+  })
+
+  it('does NOT keep a noRecycle map (void/unique) in place even when shouldDoMaps is true', () => {
+    ;(globalThis as any).extraMapLevels = 0
+    ;(globalThis as any).selectUniqueMap = () => undefined
+    // Current map is a noRecycle map (Trimple/void-like); the mapsSwitch-preserving keep path must be
+    // excluded by the pre-existing `!getCurrentMapObject().noRecycle` guard regardless of #141's new term.
+    ;(globalThis as any).getCurrentMapObject = () => ({ level: 100, location: 'Plentiful', noRecycle: true, name: 'x' })
+    ;(globalThis as any).calcOurHealth = () => 1
+    ;(globalThis as any).calcBadGuyDmg = () => 1e9
+    ;(globalThis as any).calcEnemyHealth = () => 1
+    ;(globalThis as any).autoTrimpSettings = automapSettings({
+      MaxMapBonushealth: { type: 'value', value: 11 },
+    })
+    ;(globalThis as any).game = automapGame({
+      global: {
+        mapsActive: true,
+        preMapsActive: false,
+        currentMapId: 'map1',
+        mapBonus: 9,
+        repeatMap: true, // Repeat currently ON -> else-branch must turn it OFF (map is not kept)
+        mapsOwnedArray: [{ level: 100, noRecycle: false, id: 'map1', location: 'Plentiful', name: 'A' }],
+      },
+    })
+    maps.autoMap()
+    expect((globalThis as any).shouldDoMaps).toBe(true)
+    // noRecycle excludes the keep-branch -> else-branch turns Repeat OFF (one repeatClicked, to disable).
+    expect(names()).toEqual(['repeatClicked'])
+  })
+})
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
 // L1b — autoMap VAR-HOIST SITE #1: the preSpireFarming `for (let i=0; i<keysSorted.length; i++)`
 // map-scan loop (~635) — a scope regression on the reused `i` would break this. Fixture executes the
 // loop (finds a Mountain map at spiremaplvl) → selectMap + runMap on the chosen id.
