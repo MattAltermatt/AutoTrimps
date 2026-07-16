@@ -160,6 +160,17 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **🐌 #142 SHIPPED — early-run stall fixed (opt-in)** (2026-07-16, `d9f03946`) — a fresh run spun
+  its wheels ~4 min at world 2: Shield armor (wood) starves the **Miners** upgrade (wood 300)
+  because Artisanistry discounts the equip *level* below 300 but not the upgrade, and
+  `autoLevelEquipment` runs before `buyUpgrades` each tick. New `src/modules/upgrade-reserve.ts` +
+  opt-in `ReserveFoundationUpgrades` (default **off** ⇒ byte-identical) holds a resource back from the
+  equipment buyers while a foundational upgrade is *solely* blocked in it → Miners 5.8× sooner,
+  better-armored. Guard MUST pure-pass-through when off (`Best[stat].Cost` is a ceil'd overestimate);
+  uses the true `buyAmt`-level cost. Also **#141** (`a75ad51e`): keep repeating the current map when
+  health/damage-farming so `mapsSwitch()` doesn't wipe Titimp (`maps.ts:657`). See
+  [[reference-early-run-upgrade-reserve-142]], [[reference-map-keep-repeat-titimp]].
+
 - **🏁 #133 + #134 SHIPPED — THE STRANGLER IS COMPLETE, v6.0.0 CUT** (2026-07-15, `19f5ecbe`) — the
   last first-party legacy file is gone. `legacy/AutoTrimps2.js` → `src/modules/main-loop.ts` (the
   mainLoop/guiLoop tick dispatchers + startup bootstrap + base-state globals), a **faithful true-TS
