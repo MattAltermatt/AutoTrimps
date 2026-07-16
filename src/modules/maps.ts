@@ -770,6 +770,17 @@ export function autoMap() {
                     runMap();
                     lastMapWeWereIn = getCurrentMapObject();
                 } else {
+                    // We can't afford even a minimum map and have no Explorer/Flutimp to justify
+                    // re-running our highest owned map. #24 turned the original `== "world"` typo into
+                    // an assignment, but `selectedMap = "world"` alone is dead here: the function
+                    // returns immediately and next tick recomputes selectedMap back to "create"
+                    // (needPrestige/siphon branch) BEFORE the world-handling at the top of autoMap can
+                    // act on it — so AT never leaves the map chamber and soft-locks with too few
+                    // fragments to ever afford a map (it can't earn fragments while parked in preMaps).
+                    // Leave the chamber directly so AT returns to the world and farms fragments there,
+                    // re-entering once it can afford the map.
+                    debug("Can't afford a map and have no owned map worth running; returning to the world to farm fragments.", "maps", '*crying2');
+                    if (game.global.preMapsActive) mapsClicked();
                     selectedMap = "world";
                 }
             } else {

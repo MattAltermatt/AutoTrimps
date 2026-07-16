@@ -7590,6 +7590,8 @@
             runMap();
             lastMapWeWereIn = getCurrentMapObject();
           } else {
+            debug2("Can't afford a map and have no owned map worth running; returning to the world to farm fragments.", "maps", "*crying2");
+            if (game.global.preMapsActive) mapsClicked();
             selectedMap2 = "world";
           }
         } else {
