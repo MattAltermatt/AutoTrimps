@@ -49,11 +49,11 @@ export function buildPopulationTile(): HTMLElement {
     `<div class="at-rt-figs"><span class="at-rt-amt"><span class="at-pop-owned"></span><span class="at-pop-max at-rt-max"></span></span><span class="at-rt-rate"></span></div>` +
     `<svg class="at-rt-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">` +
     `<path class="at-rt-area"/><path class="at-rt-line"/><circle class="at-rt-now" r="3"/></svg>` +
-    `<div class="at-pop-breedslot"></div>` +
     `<div class="at-substats">` +
     `<div class="at-substat"><div class="k">Breeding</div><div class="v at-pop-breeding"></div></div>` +
     `<div class="at-substat"><div class="k">Employed</div><div class="v"><span class="at-pop-employed"></span>/<span class="at-pop-maxemp"></span></div></div>` +
     `</div>` +
+    `<div class="at-pop-breedslot"></div>` +
     `<div class="at-pop-trapslot"></div>`
 
   anchors = []

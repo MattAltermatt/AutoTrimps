@@ -40,7 +40,28 @@ function injectMarkerStyles(): void {
     '.at-pop{--c:#e0b24a}',
     '.at-pop .at-rt-name{font-size:16px}',
     '.at-pop .at-rt-spark{min-height:52px}',
-    '.at-pop-breedslot,.at-pop-trapslot{padding:6px 12px 0}',
+    // The Trimps tile stretches to fill its column (as the resource tiles do), so its bottom lands on
+    // the same line as the other three columns — removes the 8px short-fall the base tile margin left.
+    '#atWrapper #trimpsColumn .at-pop{height:100%;margin-bottom:0}',
+    // Adopted breed timer (#trimpsBar inside its .progress) restyled to a slim, rounded, soft bar to
+    // match the AT tiles — was a harsh flat-red game bar with a thick pale border. The fill WIDTH stays
+    // game-driven; the countdown is centred over the whole track (readable at any fill %).
+    '.at-pop-breedslot{padding:8px 12px 0}',
+    '#atWrapper .at-pop-breedslot .progress{position:relative;height:18px;margin:0;background:#2a2f38;border:1px solid #363d48;border-radius:9px;overflow:hidden;box-shadow:none}',
+    '#atWrapper .at-pop-breedslot #trimpsBar{border:none;box-shadow:none;border-radius:9px;background:linear-gradient(90deg,#e0b24a,#e8697f) !important;transition:width .2s linear}',
+    '#atWrapper .at-pop-breedslot #trimpsTimeToFill{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:700;color:#eef2f7;text-shadow:0 1px 2px rgba(0,0,0,.55);white-space:nowrap}',
+    // Adopted trap area: the Check Traps button restyled as an AT button (gold outline + gold text,
+    // gold fill while actively trapping); the trapping progress as a slim rounded gold bar. Still the
+    // live #trimpsCollectBtn (onclick setGather) / #trappingBar the game drives.
+    '.at-pop-trapslot{padding:8px 12px 12px}',
+    // The game wraps #trapArea in a 1px white border — strip it; the button/bar carry their own edges.
+    '#atWrapper .at-pop-trapslot #trapArea{border:none}',
+    '#atWrapper .at-pop-trapslot #trimpsCollectBtn{background:#2a2f38 !important;border:1px solid var(--c) !important;border-radius:7px;color:var(--c) !important;text-align:center;padding:9px;font-size:13px;font-weight:700;transition:background .12s}',
+    '#atWrapper .at-pop-trapslot #trimpsCollectBtn:hover{background:#333b46 !important}',
+    '#atWrapper .at-pop-trapslot #trimpsCollectBtn.workColorGather{background:var(--c) !important;border-color:var(--c) !important;color:#1a1206 !important}',
+    '#atWrapper .at-pop-trapslot #trimpsCollecting{color:var(--c);text-align:center;padding:4px 0;font-size:12px;font-weight:700}',
+    '#atWrapper .at-pop-trapslot #trappingProgress{height:8px;margin:6px 0 0;background:#2a2f38;border:1px solid #363d48;border-radius:4px;overflow:hidden;box-shadow:none}',
+    '#atWrapper .at-pop-trapslot #trappingBar{background:var(--c) !important;border:none;border-radius:4px}',
     '.at-substats{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 12px 2px}',
     '.at-substat{background:#2a2f38;border:1px solid #363d48;border-radius:6px;padding:6px 8px}',
     '.at-substat .k{font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:#7b8697}',
