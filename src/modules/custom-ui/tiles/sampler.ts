@@ -1,9 +1,12 @@
 export const RESOURCES = ['food', 'wood', 'metal', 'science', 'fragments', 'gems', 'helium'] as const
+// The population sparkline samples the same way but lives outside the flat-resource region.
+export const POP = 'trimps'
 const CAP = 60
 const buffers: Record<string, number[]> = {}
 
 export function resetSampler(): void {
   for (const r of RESOURCES) buffers[r] = []
+  buffers[POP] = []
 }
 resetSampler()
 
@@ -18,6 +21,10 @@ export function sampleTick(): void {
     b.push(owned)
     if (b.length > CAP) b.shift()
   }
+  const pop = Number(res[POP]?.owned ?? 0)
+  const pb = (buffers[POP] ??= [])
+  pb.push(pop)
+  if (pb.length > CAP) pb.shift()
 }
 
 export function history(r: string): number[] {

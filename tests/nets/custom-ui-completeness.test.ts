@@ -28,4 +28,12 @@ describe('custom-ui completeness', () => {
     const html = readFileSync(resolve(process.cwd(), '.trimps-game/index.html'), 'utf8')
     for (const id of region.natives!) expect(html).toMatch(new RegExp(`id=["']${id}["']`))
   })
+
+  it('the population region (at-native) claims #trimps, a real container', () => {
+    const region = REGIONS.find((r) => r.id === 'population')!
+    expect(region.status).toBe('at-native')
+    expect(region.natives).toEqual(['trimps'])
+    const html = readFileSync(resolve(process.cwd(), '.trimps-game/index.html'), 'utf8')
+    expect(html).toMatch(/id=["']trimps["']/)
+  })
 })

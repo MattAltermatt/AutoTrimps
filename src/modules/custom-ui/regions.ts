@@ -16,4 +16,5 @@ export interface Region {
 export const REGIONS: Region[] = [
   { id: 'hud', containerId: HUD_ROOT_ID, status: 'adopted' },
   { id: 'resources', containerId: 'resourceColumn', status: 'at-native', natives: ['food', 'wood', 'metal', 'science', 'fragments', 'gems', 'helium'] },
+  { id: 'population', containerId: 'trimpsColumn', status: 'at-native', natives: ['trimps'] },
 ]

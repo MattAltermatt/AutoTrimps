@@ -45,7 +45,7 @@ function txt(id: string): string {
   return document.getElementById(id)?.textContent ?? ''
 }
 
-function sparkPath(arr: number[]): { line: string; area: string; y: number } {
+export function sparkPath(arr: number[]): { line: string; area: string; y: number } {
   if (arr.length < 2) return { line: '', area: '', y: H - 4 }
   const min = Math.min(...arr)
   const max = Math.max(...arr)
