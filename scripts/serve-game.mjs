@@ -29,10 +29,18 @@ createServer(async (req, res) => {
       res.end('forbidden')
       return
     }
-    const body = await readFile(filePath)
+    let body = await readFile(filePath)
+    // Cache-bust the bundle at the HTML level: rewrite the script src to a unique per-load URL so a
+    // browser that already cached /autotrimps.dev.js (from before no-store existed, or in a shared
+    // incognito session) is FORCED to fetch the fresh build — the URL it references never repeats.
+    const isHtml = extname(filePath) === '.html'
+    if (isHtml) {
+      body = Buffer.from(
+        body.toString('utf8').replace('/autotrimps.dev.js', `/autotrimps.dev.js?t=${Date.now()}`),
+      )
+    }
     // Never cache: this is a dev server rebuilt constantly. Without this the browser caches
-    // /autotrimps.dev.js and serves a STALE bundle across reloads / new incognito windows (the
-    // script tag has no cache-buster) — silently masking every fresh build.
+    // /autotrimps.dev.js and serves a STALE bundle across reloads / new incognito windows.
     res.writeHead(200, {
       'content-type': MIME[extname(filePath)] || 'application/octet-stream',
       'cache-control': 'no-store, no-cache, must-revalidate',
