@@ -3,21 +3,14 @@ import { SHELL_ID } from './regions'
 export const MARKER_CLASS = 'at-ui-shell'
 const STYLE_ID = 'at-ui-style'
 
-// The obvious marker: an accent frame on the shell + a fixed corner badge. Injected once.
-// Rule 2: the frame is `outline` (no layout shift, no containing block); the badge is
-// position:fixed (viewport-relative — independent of #atWrapper, which stays static).
+// Inject the custom-UI stylesheet once (the graduated resource + population tiles). The old
+// active-UI marker (green outline + "AutoTrimps UI" badge) was dropped in #41 Phase 3 — the
+// restyled tiles make the custom UI self-evident.
 function injectMarkerStyles(): void {
   if (document.getElementById(STYLE_ID)) return
   const style = document.createElement('style')
   style.id = STYLE_ID
   style.textContent = [
-    `#${SHELL_ID}.${MARKER_CLASS} { outline: 3px solid #35c26b; outline-offset: -3px; }`,
-    `#${SHELL_ID} .at-ui-badge {`,
-    '  position: fixed; top: 0; right: 0; z-index: 2147483000;',
-    '  background: #35c26b; color: #06240f; font: bold 12px/1 sans-serif;',
-    '  padding: 4px 8px; border-bottom-left-radius: 6px; pointer-events: none;',
-    '  letter-spacing: 0.04em; box-shadow: 0 1px 4px rgba(0,0,0,.4);',
-    '}',
     // #41 Phase 2 — layout-B resource tiles (graduated). Per-resource identity colour via --c.
     // The graduated native block is hidden with !important so the game's own reveal animation
     // (which sets an inline display:block on unlock) cannot un-hide it into a duplicate tile.
@@ -73,19 +66,16 @@ function injectMarkerStyles(): void {
 
 // Create the AT-owned root shell as a plain, STATIC body sibling. Rule 2: never
 // set position/transform/filter here — game overlays (#tooltipDiv, portal, spire)
-// are body siblings and must keep <body> as their containing block. The marker
-// outline (outline: no layout shift) + a position:fixed badge signal the AT UI.
+// are body siblings and must keep <body> as their containing block.
 export function ensureShell(): HTMLElement {
   const existing = document.getElementById(SHELL_ID)
   if (existing) return existing
   injectMarkerStyles()
   const shell = document.createElement('div')
   shell.id = SHELL_ID
+  // MARKER_CLASS stays as the shell's identity hook (no visual weight now — #41 Phase 3 dropped the
+  // green outline + "AutoTrimps UI" badge; the graduated tiles make the custom UI self-evident).
   shell.className = MARKER_CLASS
-  const badge = document.createElement('div')
-  badge.className = 'at-ui-badge'
-  badge.textContent = 'AutoTrimps UI'
-  shell.appendChild(badge)
   document.body.appendChild(shell)
   return shell
 }
