@@ -3,3 +3,4 @@ dist/
 .trimps-game/
 .vitest-report.json
 .claude/worktrees/
+.superpowers/
