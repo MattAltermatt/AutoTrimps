@@ -48,8 +48,10 @@ function injectMarkerStyles(): void {
     // Matched-height row: stretch the three HUD columns equal, and let the narrow misc column's
     // three tiles share that height evenly. Scoped to #topRow inside our shell only.
     // The game pins #topRow to a fixed height; let it grow so the tallest block (the Trimps panel)
-    // drives the row and the shorter blocks stretch up to match it.
-    '#atWrapper #topRow{display:flex;align-items:stretch;height:auto}',
+    // drives the row and the shorter blocks stretch up to match it. A uniform flex gap + zeroed
+    // bootstrap column gutters make every inter-column gap match the 8px intra-column tile gaps.
+    '#atWrapper #topRow{display:flex;align-items:stretch;height:auto;gap:8px;margin-left:0;margin-right:0}',
+    '#atWrapper #topRow>div{padding-left:0;padding-right:0;margin-left:0;margin-right:0}',
     // The message log must NOT drive the row height — on a deep save it holds hundreds of messages
     // and would grow the row off the bottom of the viewport. Make the #log scroller a flex child with
     // a collapsed intrinsic height (min-height:0) so its content scrolls internally and the tile
