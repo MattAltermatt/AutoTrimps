@@ -1,6 +1,9 @@
 import { history } from './sampler'
 
 const LABEL: Record<string, string> = { food: 'Food', wood: 'Wood', metal: 'Metal', science: 'Science' }
+// The game's own gather verbs (main.js:4498-4504): Gather→Gathering, Chop→Chopping, Mine→Mining,
+// Research→Researching. The lit badge uses the active (gerund) form for the resource being worked.
+const VERB: Record<string, string> = { food: 'Gathering', wood: 'Chopping', metal: 'Mining', science: 'Researching' }
 const W = 240
 const H = 40
 
@@ -22,7 +25,7 @@ export function buildTile(r: string): HTMLElement {
   tile.className = `at-rt at-rt-${r}`
   tile.id = `atRT-${r}`
   tile.innerHTML =
-    `<div class="at-rt-head"><span class="at-rt-name">${LABEL[r]}</span><span class="at-rt-auto" data-on="0">Auto</span></div>` +
+    `<div class="at-rt-head"><span class="at-rt-name">${LABEL[r]}</span><span class="at-rt-auto" data-on="0">${VERB[r]}</span></div>` +
     `<div class="at-rt-figs"><span class="at-rt-amt"><span class="at-rt-owned"></span><span class="at-rt-max"></span></span><span class="at-rt-rate"></span></div>` +
     `<svg class="at-rt-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">` +
     `<path class="at-rt-area"/><path class="at-rt-line"/><circle class="at-rt-now" r="3"/></svg>`
@@ -62,11 +65,11 @@ export function updateTile(r: string): void {
   const maxTxt = txt(`${r}Max`)
   x.max.textContent = maxTxt ? ` / ${maxTxt}` : ''
   x.rate.textContent = txt(`${r}Ps`)
-  const g = (globalThis as any).getPageSetting
-  const mode = typeof g === 'function' ? Number(g('ManualGather2')) : 0
-  const on = mode >= 1 && !(r === 'science' && mode === 3)
-  x.auto.setAttribute('data-on', on ? '1' : '0')
-  x.auto.textContent = on ? 'Auto' : 'Manual'
+  // Live gather focus: light the badge only on the resource AT is CURRENTLY hand-gathering
+  // (game.global.playerGathering), so exactly one tile is lit and it moves as AT switches. The
+  // rate (+X/sec) already conveys job-driven production, so the two don't overlap.
+  const gathering = (globalThis as any).game?.global?.playerGathering === r
+  x.auto.setAttribute('data-on', gathering ? '1' : '0')
   const p = sparkPath(history(r))
   x.line.setAttribute('d', p.line)
   x.area.setAttribute('d', p.area)

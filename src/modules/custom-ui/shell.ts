@@ -27,8 +27,11 @@ function injectMarkerStyles(): void {
     '.at-rt-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 0}',
     '.at-rt-name{font-weight:800;font-size:14px;color:#eef2f7}',
     '.at-rt-auto{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;padding:2px 5px}',
-    '.at-rt-auto[data-on="1"]{color:#08260f;background:#35c26b}',
-    '.at-rt-auto[data-on="0"]{color:#7b8697;border:1px solid #4a5462;background:transparent}',
+    // Lit + pulsing only on the resource AT is actively gathering right now; hidden otherwise.
+    '.at-rt-auto[data-on="1"]{color:#08260f;background:#35c26b;animation:atRtPulse 1.6s ease-in-out infinite}',
+    '.at-rt-auto[data-on="0"]{display:none}',
+    '@keyframes atRtPulse{0%,100%{box-shadow:0 0 0 0 rgba(53,194,107,.55)}50%{box-shadow:0 0 0 5px rgba(53,194,107,0)}}',
+    '@media (prefers-reduced-motion:reduce){.at-rt-auto[data-on="1"]{animation:none}}',
     '.at-rt-figs{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 10px 6px}',
     '.at-rt-amt{font-family:ui-monospace,Menlo,monospace;font-weight:600;font-size:15px;color:#eef2f7}',
     '.at-rt-max{color:#7b8697;font-weight:500}',

@@ -49,8 +49,11 @@
       ".at-rt-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 0}",
       ".at-rt-name{font-weight:800;font-size:14px;color:#eef2f7}",
       ".at-rt-auto{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;padding:2px 5px}",
-      '.at-rt-auto[data-on="1"]{color:#08260f;background:#35c26b}',
-      '.at-rt-auto[data-on="0"]{color:#7b8697;border:1px solid #4a5462;background:transparent}',
+      // Lit + pulsing only on the resource AT is actively gathering right now; hidden otherwise.
+      '.at-rt-auto[data-on="1"]{color:#08260f;background:#35c26b;animation:atRtPulse 1.6s ease-in-out infinite}',
+      '.at-rt-auto[data-on="0"]{display:none}',
+      "@keyframes atRtPulse{0%,100%{box-shadow:0 0 0 0 rgba(53,194,107,.55)}50%{box-shadow:0 0 0 5px rgba(53,194,107,0)}}",
+      '@media (prefers-reduced-motion:reduce){.at-rt-auto[data-on="1"]{animation:none}}',
       ".at-rt-figs{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 10px 6px}",
       ".at-rt-amt{font-family:ui-monospace,Menlo,monospace;font-weight:600;font-size:15px;color:#eef2f7}",
       ".at-rt-max{color:#7b8697;font-weight:500}",
@@ -137,6 +140,7 @@
 
   // src/modules/custom-ui/tiles/resource-tile.ts
   var LABEL = { food: "Food", wood: "Wood", metal: "Metal", science: "Science" };
+  var VERB = { food: "Gathering", wood: "Chopping", metal: "Mining", science: "Researching" };
   var W = 240;
   var H = 40;
   var refs = {};
@@ -144,7 +148,7 @@
     const tile = document.createElement("div");
     tile.className = `at-rt at-rt-${r}`;
     tile.id = `atRT-${r}`;
-    tile.innerHTML = `<div class="at-rt-head"><span class="at-rt-name">${LABEL[r]}</span><span class="at-rt-auto" data-on="0">Auto</span></div><div class="at-rt-figs"><span class="at-rt-amt"><span class="at-rt-owned"></span><span class="at-rt-max"></span></span><span class="at-rt-rate"></span></div><svg class="at-rt-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path class="at-rt-area"/><path class="at-rt-line"/><circle class="at-rt-now" r="3"/></svg>`;
+    tile.innerHTML = `<div class="at-rt-head"><span class="at-rt-name">${LABEL[r]}</span><span class="at-rt-auto" data-on="0">${VERB[r]}</span></div><div class="at-rt-figs"><span class="at-rt-amt"><span class="at-rt-owned"></span><span class="at-rt-max"></span></span><span class="at-rt-rate"></span></div><svg class="at-rt-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path class="at-rt-area"/><path class="at-rt-line"/><circle class="at-rt-now" r="3"/></svg>`;
     refs[r] = {
       owned: tile.querySelector(".at-rt-owned"),
       max: tile.querySelector(".at-rt-max"),
@@ -177,11 +181,8 @@
     const maxTxt = txt(`${r}Max`);
     x.max.textContent = maxTxt ? ` / ${maxTxt}` : "";
     x.rate.textContent = txt(`${r}Ps`);
-    const g = globalThis.getPageSetting;
-    const mode = typeof g === "function" ? Number(g("ManualGather2")) : 0;
-    const on = mode >= 1 && !(r === "science" && mode === 3);
-    x.auto.setAttribute("data-on", on ? "1" : "0");
-    x.auto.textContent = on ? "Auto" : "Manual";
+    const gathering = globalThis.game?.global?.playerGathering === r;
+    x.auto.setAttribute("data-on", gathering ? "1" : "0");
     const p = sparkPath(history(r));
     x.line.setAttribute("d", p.line);
     x.area.setAttribute("d", p.area);

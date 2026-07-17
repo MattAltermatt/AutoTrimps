@@ -11,7 +11,10 @@ describe('resource tile', () => {
   beforeEach(() => {
     resetSampler()
     nativeSpans()
-    ;(globalThis as any).game = { resources: { food: { owned: 1 }, wood: { owned: 5 }, metal: { owned: 1 }, science: { owned: 1 } } }
+    ;(globalThis as any).game = {
+      resources: { food: { owned: 1 }, wood: { owned: 5 }, metal: { owned: 1 }, science: { owned: 1 } },
+      global: { playerGathering: 'wood' },
+    }
     ;(globalThis as any).getPageSetting = () => 1
   })
 
@@ -19,6 +22,13 @@ describe('resource tile', () => {
     const t = buildTile('wood')
     expect(t.querySelector('.at-rt-name')!.textContent).toBe('Wood')
     expect(t.querySelector('button')).toBeNull()
+  })
+
+  it("badge uses the game's gather verb per resource (Chopping for wood, etc.)", () => {
+    expect(buildTile('wood').querySelector('.at-rt-auto')!.textContent).toBe('Chopping')
+    expect(buildTile('food').querySelector('.at-rt-auto')!.textContent).toBe('Gathering')
+    expect(buildTile('metal').querySelector('.at-rt-auto')!.textContent).toBe('Mining')
+    expect(buildTile('science').querySelector('.at-rt-auto')!.textContent).toBe('Researching')
   })
 
   it('mirrors owned/max/rate from the game spans', () => {
@@ -30,11 +40,15 @@ describe('resource tile', () => {
     expect(t.querySelector('.at-rt-rate')!.textContent).toBe('+1.90e7/sec')
   })
 
-  it('shows AUTO when ManualGather2 >= 1', () => {
+  it('lights the badge only for the resource AT is currently gathering (playerGathering)', () => {
     const t = buildTile('wood')
     document.body.appendChild(t)
+    ;(globalThis as any).game.global.playerGathering = 'wood'
     updateTile('wood')
     expect(t.querySelector('.at-rt-auto')!.getAttribute('data-on')).toBe('1')
+    ;(globalThis as any).game.global.playerGathering = 'food' // AT switched to food
+    updateTile('wood')
+    expect(t.querySelector('.at-rt-auto')!.getAttribute('data-on')).toBe('0')
   })
 
   it('draws a sparkline path once sampled', () => {
