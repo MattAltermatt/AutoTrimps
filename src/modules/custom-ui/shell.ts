@@ -50,11 +50,20 @@ function injectMarkerStyles(): void {
     // The game pins #topRow to a fixed height; let it grow so the tallest block (the Trimps panel)
     // drives the row and the shorter blocks stretch up to match it.
     '#atWrapper #topRow{display:flex;align-items:stretch;height:auto}',
-    '#atWrapper #miscColumn{display:flex;flex-direction:column;gap:8px}',
+    // The message log must NOT drive the row height — on a deep save it holds hundreds of messages
+    // and would grow the row off the bottom of the viewport. Make the #log scroller a flex child with
+    // a collapsed intrinsic height (min-height:0) so its content scrolls internally and the tile
+    // columns (the Trimps panel) set the row height instead.
+    // height:auto overrides a game height rule that otherwise blocks align-items:stretch on the
+    // bootstrap columns, so all four columns stretch to the Trimps-panel-driven row height.
+    '#atWrapper #logColumn{min-height:0;height:auto}',
+    '#atWrapper #logContainer{display:flex;flex-direction:column;height:100%;min-height:0}',
+    '#atWrapper #logContainer #log{flex:1 1 0;min-height:0;overflow-y:auto}',
+    '#atWrapper #miscColumn{display:flex;flex-direction:column;gap:8px;height:auto}',
     '#atWrapper #miscColumn .at-rt{flex:1 1 0;margin-bottom:0}',
     // The resource 2x2 grid: neutralise bootstrap floats to flex so its two rows + four tiles stretch
     // to the matched row height too (sparklines flex-grow to fill).
-    '#atWrapper #resourceColumn{display:flex;flex-direction:column;gap:8px}',
+    '#atWrapper #resourceColumn{display:flex;flex-direction:column;gap:8px;height:auto}',
     '#atWrapper #resourceColumn .resourceRow{flex:1 1 0;display:flex;gap:8px;margin:0}',
     '#atWrapper #resourceColumn .resourceRow>.col-xs-6{flex:1 1 0;width:auto;padding:0;float:none}',
     '#atWrapper #resourceColumn .resourceRow>.col-xs-6 .at-rt{height:100%;margin-bottom:0}',
