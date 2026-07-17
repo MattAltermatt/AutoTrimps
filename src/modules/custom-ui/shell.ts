@@ -61,12 +61,16 @@ function injectMarkerStyles(): void {
     '#atWrapper #logColumn{min-height:0;height:auto}',
     '#atWrapper #logContainer{display:flex;flex-direction:column;height:100%;min-height:0}',
     '#atWrapper #logContainer #log{flex:1 1 0;min-height:0;overflow-y:auto}',
-    '#atWrapper #miscColumn{display:flex;flex-direction:column;gap:8px;height:auto}',
-    // min-height:0 on the tiles AND their sparklines lets three stacked tiles distribute the matched
-    // column height evenly — without it their min-content (header+figs+40px spark floor) sums past the
+    // Widen the misc column from its cramped col-xs-1 (~94px) to 150px (matching the approved mockup)
+    // so side-by-side figs fit without clipping and the sparkline keeps real height; the log column
+    // flexes to absorb the difference.
+    '#atWrapper #miscColumn{display:flex;flex-direction:column;gap:8px;height:auto;flex:0 0 150px}',
+    // min-height:0 on the tiles AND their sparklines lets three tiles distribute the matched column
+    // height evenly — without it their min-content (header+figs+40px spark floor) sums past the
     // column height and the last tile (Helium) overflows/clips.
     '#atWrapper #miscColumn .at-rt{flex:1 1 0;margin-bottom:0;min-height:0}',
     '#atWrapper #miscColumn .at-rt-spark{min-height:0}',
+    '#atWrapper #logColumn{flex:1 1 0}',
     // The resource 2x2 grid: neutralise bootstrap floats to flex so its two rows + four tiles stretch
     // to the matched row height too (sparklines flex-grow to fill).
     '#atWrapper #resourceColumn{display:flex;flex-direction:column;gap:8px;height:auto}',
