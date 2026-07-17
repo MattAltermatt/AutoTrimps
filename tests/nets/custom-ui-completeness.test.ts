@@ -20,4 +20,12 @@ describe('custom-ui completeness', () => {
     const html = readFileSync(resolve(process.cwd(), '.trimps-game/index.html'), 'utf8')
     expect(html).toMatch(/id=["']wrapper["']/)
   })
+
+  it('the resource region (at-native) claims food/wood/metal/science, all real containers', () => {
+    const region = REGIONS.find((r) => r.id === 'resources')!
+    expect(region.status).toBe('at-native')
+    expect(region.natives).toEqual(['food', 'wood', 'metal', 'science'])
+    const html = readFileSync(resolve(process.cwd(), '.trimps-game/index.html'), 'utf8')
+    for (const id of region.natives!) expect(html).toMatch(new RegExp(`id=["']${id}["']`))
+  })
 })

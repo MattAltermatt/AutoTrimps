@@ -160,6 +160,32 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **🧱 #41 UI OVERHAUL — PHASE 2 SHIPPED: FIRST REGION GRADUATION (resource tiles)** (2026-07-16) —
+  Food/Wood/Metal/Science graduated from adopted native DOM to **AT-native layout-B tiles** (rolling
+  60s chart replacing the time bar, AUTO badge, **no buttons**), behind the same `ATCustomUI` toggle
+  (still default OFF ⇒ byte-identical, baseline-zero neutral). New `src/modules/custom-ui/tiles/`:
+  `sampler.ts` (60-slot ring buffer of raw `game.resources[r].owned`, 1/s), `resource-tile.ts`
+  (build-once/mutate DOM, **mirrors the game's `#{res}Owned/Max/Ps` spans** — drift-free, never
+  recompute — + draws the sparkline), `resource-region.ts` (the graduation). Timers live only while
+  active (started/cleared in `applyCustomUI`). Design/plan specs dated 2026-07-16. 🎯 **THE SPARKLINE
+  NEEDS HISTORY THE GAME DOESN'T KEEP** — AT samples it; the display VALUES are mirrored from the
+  game's own live spans (they update even while the parent is `display:none`), so a tile can't disagree
+  with the game. 🪤 **TWO BUGS, BOTH THE SAME BLIND SPOT — I VERIFIED ON A DEEP SAVE (everything already
+  unlocked) AND MISSED THE FRESH-SAVE UNLOCK PATH TWICE.** (1) The code review caught that the original
+  `activateRegion` was **single-shot** (`if (mounted.length) return`) — resources locked at activate
+  time were skipped forever, so when the game unlocked one mid-run its **native panel + button
+  reappeared**. Fix: idempotent `syncRegion()` run every 200ms (mounts on unlock, unmounts on portal
+  re-lock). (2) The USER then caught a **duplicate tile** on a fresh save: the game's resource-**reveal
+  animation sets an inline `display:block`** on unlock, which **beat a plain `native.style.display =
+  'none'`** → native shown alongside the AT tile. Fix: hide via a **`display:none !important` CLASS**
+  (`at-rt-hidden`) the inline style can't override. **Both were invisible on a deep save.** ⇒
+  **[[feedback-verify-fresh-save-unlock-path]]: for any UI that hides/replaces game elements gated on
+  unlock, test the FRESH-SAVE unlock SEQUENCE (reset localStorage to zone 1), not just a deep
+  everything-unlocked save.** Reproduced the dup by backing up `trimpSave1`, clearing to zone 1,
+  watching AT unlock resources live — the native's inline style read `visibility:visible; display:block;
+  opacity:1.005` (the fade-in). 1148 tests, all gates green by exit code; Chrome-verified on both fresh
+  and deep saves; two code reviews. See [[reference-custom-ui-adopt-shell]], [[reference-reach-is-not-sensitivity]].
+
 - **🎨 #41 UI OVERHAUL — PHASE 1 FOUNDATION SHIPPED (opt-in, adopt-and-skin)** (2026-07-16) — the
   first slice of the full opt-in UI replacement. New `src/modules/custom-ui/` + `ATCustomUI` toggle
   (default **OFF ⇒ byte-identical**, `baseline-zero` neutral). 🏛️ **THE ARCHITECTURE IS A UI

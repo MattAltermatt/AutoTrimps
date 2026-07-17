@@ -39,7 +39,26 @@
       "  background: #35c26b; color: #06240f; font: bold 12px/1 sans-serif;",
       "  padding: 4px 8px; border-bottom-left-radius: 6px; pointer-events: none;",
       "  letter-spacing: 0.04em; box-shadow: 0 1px 4px rgba(0,0,0,.4);",
-      "}"
+      "}",
+      // #41 Phase 2 — layout-B resource tiles (graduated). Per-resource identity colour via --c.
+      // The graduated native block is hidden with !important so the game's own reveal animation
+      // (which sets an inline display:block on unlock) cannot un-hide it into a duplicate tile.
+      ".at-rt-hidden{display:none !important}",
+      ".at-rt{background:linear-gradient(180deg,#353c47,#2f353e);border:1px solid #3f4753;border-radius:8px;overflow:hidden;margin-bottom:8px;--c:#d79246}",
+      ".at-rt-food{--c:#63c583}.at-rt-wood{--c:#d79246}.at-rt-metal{--c:#93a6c2}.at-rt-science{--c:#4fb6e6}",
+      ".at-rt-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 0}",
+      ".at-rt-name{font-weight:800;font-size:14px;color:#eef2f7}",
+      ".at-rt-auto{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;padding:2px 5px}",
+      '.at-rt-auto[data-on="1"]{color:#08260f;background:#35c26b}',
+      '.at-rt-auto[data-on="0"]{color:#7b8697;border:1px solid #4a5462;background:transparent}',
+      ".at-rt-figs{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 10px 6px}",
+      ".at-rt-amt{font-family:ui-monospace,Menlo,monospace;font-weight:600;font-size:15px;color:#eef2f7}",
+      ".at-rt-max{color:#7b8697;font-weight:500}",
+      ".at-rt-rate{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:600;color:var(--c);white-space:nowrap}",
+      ".at-rt-spark{display:block;width:100%;height:40px}",
+      ".at-rt-area{fill:var(--c);opacity:.16}",
+      ".at-rt-line{fill:none;stroke:var(--c);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}",
+      ".at-rt-now{fill:var(--c);stroke:#2f353e;stroke-width:1.5}"
     ].join("\n");
     document.head.appendChild(style);
   }
@@ -94,14 +113,147 @@
     customUIState.adopted = false;
   }
 
+  // src/modules/custom-ui/tiles/sampler.ts
+  var RESOURCES = ["food", "wood", "metal", "science"];
+  var CAP = 60;
+  var buffers = {};
+  function resetSampler() {
+    for (const r of RESOURCES) buffers[r] = [];
+  }
+  resetSampler();
+  function sampleTick() {
+    const res = globalThis.game?.resources;
+    if (!res) return;
+    for (const r of RESOURCES) {
+      const owned = Number(res[r]?.owned ?? 0);
+      const b = buffers[r];
+      b.push(owned);
+      if (b.length > CAP) b.shift();
+    }
+  }
+  function history(r) {
+    return buffers[r] ?? [];
+  }
+
+  // src/modules/custom-ui/tiles/resource-tile.ts
+  var LABEL = { food: "Food", wood: "Wood", metal: "Metal", science: "Science" };
+  var W = 240;
+  var H = 40;
+  var refs = {};
+  function buildTile(r) {
+    const tile = document.createElement("div");
+    tile.className = `at-rt at-rt-${r}`;
+    tile.id = `atRT-${r}`;
+    tile.innerHTML = `<div class="at-rt-head"><span class="at-rt-name">${LABEL[r]}</span><span class="at-rt-auto" data-on="0">Auto</span></div><div class="at-rt-figs"><span class="at-rt-amt"><span class="at-rt-owned"></span><span class="at-rt-max"></span></span><span class="at-rt-rate"></span></div><svg class="at-rt-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path class="at-rt-area"/><path class="at-rt-line"/><circle class="at-rt-now" r="3"/></svg>`;
+    refs[r] = {
+      owned: tile.querySelector(".at-rt-owned"),
+      max: tile.querySelector(".at-rt-max"),
+      rate: tile.querySelector(".at-rt-rate"),
+      auto: tile.querySelector(".at-rt-auto"),
+      line: tile.querySelector(".at-rt-line"),
+      area: tile.querySelector(".at-rt-area"),
+      dot: tile.querySelector(".at-rt-now")
+    };
+    return tile;
+  }
+  function txt(id) {
+    return document.getElementById(id)?.textContent ?? "";
+  }
+  function sparkPath(arr) {
+    if (arr.length < 2) return { line: "", area: "", y: H - 4 };
+    const min = Math.min(...arr);
+    const max = Math.max(...arr);
+    const span = max - min || 1;
+    const step = W / (arr.length - 1);
+    const ys = arr.map((v) => H - 4 - (v - min) / span * (H - 8));
+    const line = arr.map((_, i) => `${i ? "L" : "M"}${(i * step).toFixed(1)} ${ys[i].toFixed(1)}`).join(" ");
+    const area = `M0 ${H} ` + arr.map((_, i) => `L${(i * step).toFixed(1)} ${ys[i].toFixed(1)}`).join(" ") + ` L${W} ${H} Z`;
+    return { line, area, y: ys[ys.length - 1] };
+  }
+  function updateTile(r) {
+    const x = refs[r];
+    if (!x) return;
+    x.owned.textContent = txt(`${r}Owned`);
+    const maxTxt = txt(`${r}Max`);
+    x.max.textContent = maxTxt ? ` / ${maxTxt}` : "";
+    x.rate.textContent = txt(`${r}Ps`);
+    const g = globalThis.getPageSetting;
+    const mode = typeof g === "function" ? Number(g("ManualGather2")) : 0;
+    const on = mode >= 1 && !(r === "science" && mode === 3);
+    x.auto.setAttribute("data-on", on ? "1" : "0");
+    x.auto.textContent = on ? "Auto" : "Manual";
+    const p = sparkPath(history(r));
+    x.line.setAttribute("d", p.line);
+    x.area.setAttribute("d", p.area);
+    x.dot.setAttribute("cx", String(W));
+    x.dot.setAttribute("cy", p.y.toFixed(1));
+  }
+
+  // src/modules/custom-ui/tiles/resource-region.ts
+  var HIDDEN_CLASS = "at-rt-hidden";
+  var mounted = [];
+  function isUnlocked(native) {
+    return native.style.visibility !== "hidden";
+  }
+  function syncRegion() {
+    const col = document.getElementById("resourceColumn");
+    if (!col) return;
+    for (const r of RESOURCES) {
+      const native = document.getElementById(r);
+      if (!native || !native.parentElement) continue;
+      native.classList.add(HIDDEN_CLASS);
+      const unlocked = isUnlocked(native);
+      const isMounted = mounted.includes(r);
+      if (unlocked && !isMounted) {
+        const tile = buildTile(r);
+        tile.classList.add("at-rt-mounted");
+        native.parentElement.insertBefore(tile, native);
+        mounted.push(r);
+      } else if (!unlocked && isMounted) {
+        document.getElementById(`atRT-${r}`)?.remove();
+        mounted.splice(mounted.indexOf(r), 1);
+      }
+    }
+    refreshTiles();
+  }
+  function deactivateRegion() {
+    for (const r of mounted) document.getElementById(`atRT-${r}`)?.remove();
+    for (const r of RESOURCES) document.getElementById(r)?.classList.remove(HIDDEN_CLASS);
+    mounted.length = 0;
+  }
+  function refreshTiles() {
+    for (const r of mounted) updateTile(r);
+  }
+
   // src/modules/custom-ui/boot.ts
+  var sampleTimer = null;
+  var refreshTimer = null;
+  function startTiles() {
+    syncRegion();
+    sampleTick();
+    if (sampleTimer === null) sampleTimer = setInterval(sampleTick, 1e3);
+    if (refreshTimer === null) refreshTimer = setInterval(syncRegion, 200);
+  }
+  function stopTiles() {
+    if (sampleTimer !== null) {
+      clearInterval(sampleTimer);
+      sampleTimer = null;
+    }
+    if (refreshTimer !== null) {
+      clearInterval(refreshTimer);
+      refreshTimer = null;
+    }
+    deactivateRegion();
+  }
   function applyCustomUI(active) {
     if (active) {
       ensureShell();
       adoptHud();
       showShell();
+      startTiles();
       customUIState.active = true;
     } else {
+      stopTiles();
       releaseHud();
       hideShell();
       customUIState.active = false;
@@ -4715,8 +4867,8 @@
       }
       if (rPctSet && !game.jobs.Scientist.locked) {
         const s = Math.min(rPct, 90);
-        const W = desiredRatios[0] + desiredRatios[1] + desiredRatios[2];
-        desiredRatios[3] = s === 0 ? 0 : W * s / (100 - s);
+        const W2 = desiredRatios[0] + desiredRatios[1] + desiredRatios[2];
+        desiredRatios[3] = s === 0 ? 0 : W2 * s / (100 - s);
       }
     }
     let totalFraction = desiredRatios.reduce((a, b) => {
@@ -22031,10 +22183,10 @@
   })(MODULES);
 
   // src/modules/performance.ts
-  (function(M, W) {
+  (function(M, W2) {
     M["performance"] = {};
     M["performance"].isAFK = false;
-    M["performance"].updateLabels = W.updateLabels;
+    M["performance"].updateLabels = W2.updateLabels;
     M["performance"].$wrapper = document.getElementById("wrapper");
     document.head.appendChild(document.createElement("style")).innerHTML = `
 	.at-afk-overlay
@@ -22131,7 +22283,7 @@
       M["performance"].isAFK = true;
       M["performance"].AFKOverlay.classList.remove("at-afk-overlay-disabled");
       M["performance"].$wrapper.style.display = "none";
-      W.updateLabels = function() {
+      W2.updateLabels = function() {
       };
       enableDebug = false;
     };
@@ -22139,7 +22291,7 @@
       M["performance"].isAFK = false;
       M["performance"].$wrapper.style.display = "block";
       M["performance"].AFKOverlay.classList.add("at-afk-overlay-disabled");
-      W.updateLabels = M["performance"].updateLabels;
+      W2.updateLabels = M["performance"].updateLabels;
       enableDebug = true;
     };
     M["performance"].UpdateAFKOverlay = function UpdateAFKOverlay() {
