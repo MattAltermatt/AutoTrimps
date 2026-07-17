@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { REGIONS } from '../../src/modules/custom-ui/regions'
 
 // Phase 1: the whole HUD is adopted as #wrapper, so every game HUD region is covered
@@ -14,7 +15,9 @@ describe('custom-ui completeness', () => {
   })
 
   it('#wrapper exists in the game index.html (the seam is real)', () => {
-    const html = readFileSync(new URL('../../../trimps-game/index.html', import.meta.url), 'utf8')
+    // The SHA-PINNED clone (repo-root .trimps-game/), which npm ci materializes and which exists on
+    // CI — NOT ../trimps-game (the dev workspace), which is absent on the runner (#67 hole).
+    const html = readFileSync(resolve(process.cwd(), '.trimps-game/index.html'), 'utf8')
     expect(html).toMatch(/id=["']wrapper["']/)
   })
 })
