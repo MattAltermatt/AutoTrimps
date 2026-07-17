@@ -11,6 +11,7 @@ interface PopRefs {
   breeding: HTMLElement
   employed: HTMLElement
   maxEmployed: HTMLElement
+  breedtime: HTMLElement
   line: SVGPathElement
   area: SVGPathElement
   dot: SVGCircleElement
@@ -53,7 +54,10 @@ export function buildPopulationTile(): HTMLElement {
     `<div class="at-substat"><div class="k">Breeding</div><div class="v at-pop-breeding"></div></div>` +
     `<div class="at-substat"><div class="k">Employed</div><div class="v"><span class="at-pop-employed"></span>/<span class="at-pop-maxemp"></span></div></div>` +
     `</div>` +
-    `<div class="at-pop-breedslot"></div>` +
+    // The countdown is an AT-native OVERLAY (mirrored from #trimpsTimeToFill), not the game's in-fill
+    // text: the adopted fill (#trimpsBar) is a float sized to the progress %, so text inside it can't be
+    // reliably centred over the whole track. The overlay sits in the slot (which we control) instead.
+    `<div class="at-pop-breedslot"><span class="at-pop-breedtime"></span></div>` +
     `<div class="at-pop-trapslot"></div>`
 
   anchors = []
@@ -69,6 +73,7 @@ export function buildPopulationTile(): HTMLElement {
     breeding: tile.querySelector('.at-pop-breeding')!,
     employed: tile.querySelector('.at-pop-employed')!,
     maxEmployed: tile.querySelector('.at-pop-maxemp')!,
+    breedtime: tile.querySelector('.at-pop-breedtime')!,
     line: tile.querySelector('.at-rt-line')!,
     area: tile.querySelector('.at-rt-area')!,
     dot: tile.querySelector('.at-rt-now')!,
@@ -88,6 +93,7 @@ export function updatePopulationTile(): void {
   x.breeding.textContent = span('trimpsUnemployed')
   x.employed.textContent = span('trimpsEmployed')
   x.maxEmployed.textContent = span('maxEmployed')
+  x.breedtime.textContent = span('trimpsTimeToFill')
   const p = sparkPath(history(POP))
   x.line.setAttribute('d', p.line)
   x.area.setAttribute('d', p.area)

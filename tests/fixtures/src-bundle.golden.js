@@ -68,16 +68,21 @@
       // Adopted breed timer (#trimpsBar inside its .progress) restyled to a slim, rounded, soft bar to
       // match the AT tiles — was a harsh flat-red game bar with a thick pale border. The fill WIDTH stays
       // game-driven; the countdown is centred over the whole track (readable at any fill %).
-      ".at-pop-breedslot{padding:8px 12px 0}",
+      ".at-pop-breedslot{position:relative;padding:8px 12px 0}",
       "#atWrapper .at-pop-breedslot .progress{position:relative;height:18px;margin:0;background:#2a2f38;border:1px solid #363d48;border-radius:9px;overflow:hidden;box-shadow:none}",
       "#atWrapper .at-pop-breedslot #trimpsBar{border:none;box-shadow:none;border-radius:9px;background:linear-gradient(90deg,#e0b24a,#e8697f) !important;transition:width .2s linear}",
-      "#atWrapper .at-pop-breedslot #trimpsTimeToFill{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:700;color:#eef2f7;text-shadow:0 1px 2px rgba(0,0,0,.55);white-space:nowrap}",
+      // Hide the game text inside the fill; the AT overlay (positioned over the bar in the slot we own)
+      // carries the countdown, so it stays centred over the whole track at any fill %. Bar geom: the
+      // slot pads 8px/12px and the bar is 18px tall, so the overlay matches (top:8px, sides:12px, h:18px).
+      "#atWrapper .at-pop-breedslot #trimpsTimeToFill{display:none}",
+      "#atWrapper .at-pop-breedtime{position:absolute;z-index:2;left:12px;right:12px;top:8px;height:18px;display:flex;align-items:center;justify-content:center;line-height:1;font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:700;color:#eef2f7;text-shadow:0 1px 2px rgba(0,0,0,.55);white-space:nowrap;pointer-events:none}",
       // Adopted trap area: the Check Traps button restyled as an AT button (gold outline + gold text,
       // gold fill while actively trapping); the trapping progress as a slim rounded gold bar. Still the
       // live #trimpsCollectBtn (onclick setGather) / #trappingBar the game drives.
       ".at-pop-trapslot{padding:8px 12px 12px}",
-      // The game wraps #trapArea in a 1px white border — strip it; the button/bar carry their own edges.
-      "#atWrapper .at-pop-trapslot #trapArea{border:none}",
+      // The game ships #trapArea as inline-block width:85% with a 1px white border + 2% padding, so the
+      // button/bar render narrow and left-shifted. Force a full-width block so they match the column.
+      "#atWrapper .at-pop-trapslot #trapArea{display:block;width:100%;padding:0;margin:0;border:none}",
       "#atWrapper .at-pop-trapslot #trimpsCollectBtn{background:#2a2f38 !important;border:1px solid var(--c) !important;border-radius:7px;color:var(--c) !important;text-align:center;padding:9px;font-size:13px;font-weight:700;transition:background .12s}",
       "#atWrapper .at-pop-trapslot #trimpsCollectBtn:hover{background:#333b46 !important}",
       "#atWrapper .at-pop-trapslot #trimpsCollectBtn.workColorGather{background:var(--c) !important;border-color:var(--c) !important;color:#1a1206 !important}",
@@ -132,9 +137,7 @@
       "#atWrapper #resourceColumn{display:flex;flex-direction:column;gap:8px;height:auto}",
       "#atWrapper #resourceColumn .resourceRow{flex:1 1 0;display:flex;gap:8px;margin:0}",
       "#atWrapper #resourceColumn .resourceRow>.col-xs-6{flex:1 1 0;width:auto;padding:0;float:none}",
-      "#atWrapper #resourceColumn .resourceRow>.col-xs-6 .at-rt{height:100%;margin-bottom:0}",
-      // keep the adopted breed-timer label above its fill.
-      "#atWrapper #trimpsTimeToFill{position:relative;z-index:1;text-shadow:0 1px 2px rgba(0,0,0,.6)}"
+      "#atWrapper #resourceColumn .resourceRow>.col-xs-6 .at-rt{height:100%;margin-bottom:0}"
     ].join("\n");
     document.head.appendChild(style);
   }
@@ -318,7 +321,7 @@
     const tile = document.createElement("div");
     tile.className = "at-rt at-pop";
     tile.id = "atRT-population";
-    tile.innerHTML = `<div class="at-rt-head"><span class="at-rt-name">Trimps</span></div><div class="at-rt-figs"><span class="at-rt-amt"><span class="at-pop-owned"></span><span class="at-pop-max at-rt-max"></span></span><span class="at-rt-rate"></span></div><svg class="at-rt-spark" viewBox="0 0 ${W2} ${H2}" preserveAspectRatio="none"><path class="at-rt-area"/><path class="at-rt-line"/><circle class="at-rt-now" r="3"/></svg><div class="at-substats"><div class="at-substat"><div class="k">Breeding</div><div class="v at-pop-breeding"></div></div><div class="at-substat"><div class="k">Employed</div><div class="v"><span class="at-pop-employed"></span>/<span class="at-pop-maxemp"></span></div></div></div><div class="at-pop-breedslot"></div><div class="at-pop-trapslot"></div>`;
+    tile.innerHTML = `<div class="at-rt-head"><span class="at-rt-name">Trimps</span></div><div class="at-rt-figs"><span class="at-rt-amt"><span class="at-pop-owned"></span><span class="at-pop-max at-rt-max"></span></span><span class="at-rt-rate"></span></div><svg class="at-rt-spark" viewBox="0 0 ${W2} ${H2}" preserveAspectRatio="none"><path class="at-rt-area"/><path class="at-rt-line"/><circle class="at-rt-now" r="3"/></svg><div class="at-substats"><div class="at-substat"><div class="k">Breeding</div><div class="v at-pop-breeding"></div></div><div class="at-substat"><div class="k">Employed</div><div class="v"><span class="at-pop-employed"></span>/<span class="at-pop-maxemp"></span></div></div></div><div class="at-pop-breedslot"><span class="at-pop-breedtime"></span></div><div class="at-pop-trapslot"></div>`;
     anchors = [];
     const breed = document.getElementById("trimpsBar")?.closest(".progress");
     const trap = document.getElementById("trapArea");
@@ -331,6 +334,7 @@
       breeding: tile.querySelector(".at-pop-breeding"),
       employed: tile.querySelector(".at-pop-employed"),
       maxEmployed: tile.querySelector(".at-pop-maxemp"),
+      breedtime: tile.querySelector(".at-pop-breedtime"),
       line: tile.querySelector(".at-rt-line"),
       area: tile.querySelector(".at-rt-area"),
       dot: tile.querySelector(".at-rt-now")
@@ -347,6 +351,7 @@
     x.breeding.textContent = span("trimpsUnemployed");
     x.employed.textContent = span("trimpsEmployed");
     x.maxEmployed.textContent = span("maxEmployed");
+    x.breedtime.textContent = span("trimpsTimeToFill");
     const p = sparkPath(history(POP));
     x.line.setAttribute("d", p.line);
     x.area.setAttribute("d", p.area);
