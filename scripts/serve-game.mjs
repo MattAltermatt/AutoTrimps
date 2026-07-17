@@ -30,7 +30,15 @@ createServer(async (req, res) => {
       return
     }
     const body = await readFile(filePath)
-    res.writeHead(200, { 'content-type': MIME[extname(filePath)] || 'application/octet-stream' })
+    // Never cache: this is a dev server rebuilt constantly. Without this the browser caches
+    // /autotrimps.dev.js and serves a STALE bundle across reloads / new incognito windows (the
+    // script tag has no cache-buster) — silently masking every fresh build.
+    res.writeHead(200, {
+      'content-type': MIME[extname(filePath)] || 'application/octet-stream',
+      'cache-control': 'no-store, no-cache, must-revalidate',
+      pragma: 'no-cache',
+      expires: '0',
+    })
     res.end(body)
   } catch {
     res.writeHead(404)
