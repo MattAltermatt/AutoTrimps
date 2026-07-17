@@ -33,19 +33,13 @@
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = [
-      `#${SHELL_ID}.${MARKER_CLASS} { outline: 3px solid #35c26b; outline-offset: -3px; }`,
-      `#${SHELL_ID} .at-ui-badge {`,
-      "  position: fixed; top: 0; right: 0; z-index: 2147483000;",
-      "  background: #35c26b; color: #06240f; font: bold 12px/1 sans-serif;",
-      "  padding: 4px 8px; border-bottom-left-radius: 6px; pointer-events: none;",
-      "  letter-spacing: 0.04em; box-shadow: 0 1px 4px rgba(0,0,0,.4);",
-      "}",
       // #41 Phase 2 — layout-B resource tiles (graduated). Per-resource identity colour via --c.
       // The graduated native block is hidden with !important so the game's own reveal animation
       // (which sets an inline display:block on unlock) cannot un-hide it into a duplicate tile.
       ".at-rt-hidden{display:none !important}",
-      ".at-rt{background:linear-gradient(180deg,#353c47,#2f353e);border:1px solid #3f4753;border-radius:8px;overflow:hidden;margin-bottom:8px;--c:#d79246}",
+      ".at-rt{display:flex;flex-direction:column;background:linear-gradient(180deg,#353c47,#2f353e);border:1px solid #3f4753;border-radius:8px;overflow:hidden;margin-bottom:8px;--c:#d79246}",
       ".at-rt-food{--c:#63c583}.at-rt-wood{--c:#d79246}.at-rt-metal{--c:#93a6c2}.at-rt-science{--c:#4fb6e6}",
+      ".at-rt-fragments{--c:#57c9c1}.at-rt-gems{--c:#b57ae0}.at-rt-helium{--c:#e8697f}",
       ".at-rt-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 0}",
       ".at-rt-name{font-weight:800;font-size:14px;color:#eef2f7}",
       ".at-rt-auto{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;padding:2px 5px}",
@@ -58,10 +52,36 @@
       ".at-rt-amt{font-family:ui-monospace,Menlo,monospace;font-weight:600;font-size:15px;color:#eef2f7}",
       ".at-rt-max{color:#7b8697;font-weight:500}",
       ".at-rt-rate{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:600;color:var(--c);white-space:nowrap}",
-      ".at-rt-spark{display:block;width:100%;height:40px}",
+      // flex-grow so shorter tiles expand to fill a matched-height column instead of leaving a gap.
+      ".at-rt-spark{display:block;width:100%;flex:1 1 auto;min-height:40px}",
       ".at-rt-area{fill:var(--c);opacity:.16}",
       ".at-rt-line{fill:none;stroke:var(--c);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}",
-      ".at-rt-now{fill:var(--c);stroke:#2f353e;stroke-width:1.5}"
+      ".at-rt-now{fill:var(--c);stroke:#2f353e;stroke-width:1.5}",
+      // #41 Phase 3 — the Trimps population panel (Variant A: stat pills). Adopts the game's live
+      // breed bar + trap area into slots; mirrors owned/rate/breeding/employed as text.
+      ".at-pop{--c:#e0b24a}",
+      ".at-pop .at-rt-name{font-size:16px}",
+      ".at-pop .at-rt-spark{min-height:52px}",
+      ".at-pop-breedslot,.at-pop-trapslot{padding:6px 12px 0}",
+      ".at-substats{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 12px 2px}",
+      ".at-substat{background:#2a2f38;border:1px solid #363d48;border-radius:6px;padding:6px 8px}",
+      ".at-substat .k{font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:#7b8697}",
+      ".at-substat .v{font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;color:#eef2f7;margin-top:1px}",
+      // Matched-height row: stretch the three HUD columns equal, and let the narrow misc column's
+      // three tiles share that height evenly. Scoped to #topRow inside our shell only.
+      // The game pins #topRow to a fixed height; let it grow so the tallest block (the Trimps panel)
+      // drives the row and the shorter blocks stretch up to match it.
+      "#atWrapper #topRow{display:flex;align-items:stretch;height:auto}",
+      "#atWrapper #miscColumn{display:flex;flex-direction:column;gap:8px}",
+      "#atWrapper #miscColumn .at-rt{flex:1 1 0;margin-bottom:0}",
+      // The resource 2x2 grid: neutralise bootstrap floats to flex so its two rows + four tiles stretch
+      // to the matched row height too (sparklines flex-grow to fill).
+      "#atWrapper #resourceColumn{display:flex;flex-direction:column;gap:8px}",
+      "#atWrapper #resourceColumn .resourceRow{flex:1 1 0;display:flex;gap:8px;margin:0}",
+      "#atWrapper #resourceColumn .resourceRow>.col-xs-6{flex:1 1 0;width:auto;padding:0;float:none}",
+      "#atWrapper #resourceColumn .resourceRow>.col-xs-6 .at-rt{height:100%;margin-bottom:0}",
+      // keep the adopted breed-timer label above its fill.
+      "#atWrapper #trimpsTimeToFill{position:relative;z-index:1;text-shadow:0 1px 2px rgba(0,0,0,.6)}"
     ].join("\n");
     document.head.appendChild(style);
   }
@@ -72,10 +92,6 @@
     const shell = document.createElement("div");
     shell.id = SHELL_ID;
     shell.className = MARKER_CLASS;
-    const badge = document.createElement("div");
-    badge.className = "at-ui-badge";
-    badge.textContent = "AutoTrimps UI";
-    shell.appendChild(badge);
     document.body.appendChild(shell);
     return shell;
   }
@@ -117,11 +133,13 @@
   }
 
   // src/modules/custom-ui/tiles/sampler.ts
-  var RESOURCES = ["food", "wood", "metal", "science"];
+  var RESOURCES = ["food", "wood", "metal", "science", "fragments", "gems", "helium"];
+  var POP = "trimps";
   var CAP = 60;
   var buffers = {};
   function resetSampler() {
     for (const r of RESOURCES) buffers[r] = [];
+    buffers[POP] = [];
   }
   resetSampler();
   function sampleTick() {
@@ -133,13 +151,17 @@
       b.push(owned);
       if (b.length > CAP) b.shift();
     }
+    const pop = Number(res[POP]?.owned ?? 0);
+    const pb = buffers[POP] ??= [];
+    pb.push(pop);
+    if (pb.length > CAP) pb.shift();
   }
   function history(r) {
     return buffers[r] ?? [];
   }
 
   // src/modules/custom-ui/tiles/resource-tile.ts
-  var LABEL = { food: "Food", wood: "Wood", metal: "Metal", science: "Science" };
+  var LABEL = { food: "Food", wood: "Wood", metal: "Metal", science: "Science", fragments: "Fragments", gems: "Gems", helium: "Helium" };
   var VERB = { food: "Gathering", wood: "Chopping", metal: "Mining", science: "Researching" };
   var W = 240;
   var H = 40;
@@ -148,7 +170,7 @@
     const tile = document.createElement("div");
     tile.className = `at-rt at-rt-${r}`;
     tile.id = `atRT-${r}`;
-    tile.innerHTML = `<div class="at-rt-head"><span class="at-rt-name">${LABEL[r]}</span><span class="at-rt-auto" data-on="0">${VERB[r]}</span></div><div class="at-rt-figs"><span class="at-rt-amt"><span class="at-rt-owned"></span><span class="at-rt-max"></span></span><span class="at-rt-rate"></span></div><svg class="at-rt-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path class="at-rt-area"/><path class="at-rt-line"/><circle class="at-rt-now" r="3"/></svg>`;
+    tile.innerHTML = `<div class="at-rt-head"><span class="at-rt-name">${LABEL[r]}</span><span class="at-rt-auto" data-on="0">${VERB[r] ?? ""}</span></div><div class="at-rt-figs"><span class="at-rt-amt"><span class="at-rt-owned"></span><span class="at-rt-max"></span></span><span class="at-rt-rate"></span></div><svg class="at-rt-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path class="at-rt-area"/><path class="at-rt-line"/><circle class="at-rt-now" r="3"/></svg>`;
     refs[r] = {
       owned: tile.querySelector(".at-rt-owned"),
       max: tile.querySelector(".at-rt-max"),
@@ -167,9 +189,9 @@
     if (arr.length < 2) return { line: "", area: "", y: H - 4 };
     const min = Math.min(...arr);
     const max = Math.max(...arr);
-    const span = max - min || 1;
+    const span2 = max - min || 1;
     const step = W / (arr.length - 1);
-    const ys = arr.map((v) => H - 4 - (v - min) / span * (H - 8));
+    const ys = arr.map((v) => H - 4 - (v - min) / span2 * (H - 8));
     const line = arr.map((_, i) => `${i ? "L" : "M"}${(i * step).toFixed(1)} ${ys[i].toFixed(1)}`).join(" ");
     const area = `M0 ${H} ` + arr.map((_, i) => `L${(i * step).toFixed(1)} ${ys[i].toFixed(1)}`).join(" ") + ` L${W} ${H} Z`;
     return { line, area, y: ys[ys.length - 1] };
@@ -180,7 +202,7 @@
     x.owned.textContent = txt(`${r}Owned`);
     const maxTxt = txt(`${r}Max`);
     x.max.textContent = maxTxt ? ` / ${maxTxt}` : "";
-    x.rate.textContent = txt(`${r}Ps`);
+    x.rate.textContent = txt(r === "helium" ? "heliumPh" : `${r}Ps`);
     const gathering = globalThis.game?.global?.playerGathering === r;
     x.auto.setAttribute("data-on", gathering ? "1" : "0");
     const p = sparkPath(history(r));
@@ -194,7 +216,7 @@
   var HIDDEN_CLASS = "at-rt-hidden";
   var mounted = [];
   function isUnlocked(native) {
-    return native.style.visibility !== "hidden";
+    return native.style.visibility !== "hidden" && native.style.display !== "none";
   }
   function syncRegion() {
     const col = document.getElementById("resourceColumn");
@@ -226,14 +248,107 @@
     for (const r of mounted) updateTile(r);
   }
 
+  // src/modules/custom-ui/tiles/population-tile.ts
+  var W2 = 240;
+  var H2 = 40;
+  var refs2 = null;
+  var anchors = [];
+  function span(id) {
+    return document.getElementById(id)?.textContent ?? "";
+  }
+  function adopt(node, slot) {
+    if (!node || !node.parentElement) return;
+    anchors.push({ node, parent: node.parentElement, next: node.nextSibling });
+    slot.appendChild(node);
+  }
+  function buildPopulationTile() {
+    const tile = document.createElement("div");
+    tile.className = "at-rt at-pop";
+    tile.id = "atRT-population";
+    tile.innerHTML = `<div class="at-rt-head"><span class="at-rt-name">Trimps</span></div><div class="at-rt-figs"><span class="at-rt-amt"><span class="at-pop-owned"></span><span class="at-pop-max at-rt-max"></span></span><span class="at-rt-rate"></span></div><svg class="at-rt-spark" viewBox="0 0 ${W2} ${H2}" preserveAspectRatio="none"><path class="at-rt-area"/><path class="at-rt-line"/><circle class="at-rt-now" r="3"/></svg><div class="at-pop-breedslot"></div><div class="at-substats"><div class="at-substat"><div class="k">Breeding</div><div class="v at-pop-breeding"></div></div><div class="at-substat"><div class="k">Employed</div><div class="v"><span class="at-pop-employed"></span>/<span class="at-pop-maxemp"></span></div></div></div><div class="at-pop-trapslot"></div>`;
+    anchors = [];
+    const breed = document.getElementById("trimpsBar")?.closest(".progress");
+    const trap = document.getElementById("trapArea");
+    adopt(breed, tile.querySelector(".at-pop-breedslot"));
+    adopt(trap, tile.querySelector(".at-pop-trapslot"));
+    refs2 = {
+      owned: tile.querySelector(".at-pop-owned"),
+      max: tile.querySelector(".at-pop-max"),
+      rate: tile.querySelector(".at-rt-rate"),
+      breeding: tile.querySelector(".at-pop-breeding"),
+      employed: tile.querySelector(".at-pop-employed"),
+      maxEmployed: tile.querySelector(".at-pop-maxemp"),
+      line: tile.querySelector(".at-rt-line"),
+      area: tile.querySelector(".at-rt-area"),
+      dot: tile.querySelector(".at-rt-now")
+    };
+    return tile;
+  }
+  function updatePopulationTile() {
+    const x = refs2;
+    if (!x) return;
+    x.owned.textContent = span("trimpsOwned");
+    const m = span("trimpsMax");
+    x.max.textContent = m ? ` / ${m}` : "";
+    x.rate.textContent = span("trimpsPs");
+    x.breeding.textContent = span("trimpsUnemployed");
+    x.employed.textContent = span("trimpsEmployed");
+    x.maxEmployed.textContent = span("maxEmployed");
+    const p = sparkPath(history(POP));
+    x.line.setAttribute("d", p.line);
+    x.area.setAttribute("d", p.area);
+    x.dot.setAttribute("cx", String(W2));
+    x.dot.setAttribute("cy", p.y.toFixed(1));
+  }
+  function releaseAdopted() {
+    for (const a of anchors) a.parent.insertBefore(a.node, a.next);
+    anchors = [];
+    refs2 = null;
+  }
+
+  // src/modules/custom-ui/tiles/population-region.ts
+  var HIDDEN_CLASS2 = "at-rt-hidden";
+  var mounted2 = false;
+  function isUnlocked2(el) {
+    return el.style.visibility !== "hidden" && el.style.display !== "none";
+  }
+  function syncPopulationRegion() {
+    const native = document.getElementById("trimps");
+    if (!native || !native.parentElement) return;
+    native.classList.add(HIDDEN_CLASS2);
+    const unlocked = isUnlocked2(native);
+    if (unlocked && !mounted2) {
+      const tile = buildPopulationTile();
+      native.parentElement.insertBefore(tile, native);
+      mounted2 = true;
+    } else if (!unlocked && mounted2) {
+      releaseAdopted();
+      document.getElementById("atRT-population")?.remove();
+      mounted2 = false;
+    }
+    if (mounted2) updatePopulationTile();
+  }
+  function deactivatePopulationRegion() {
+    if (mounted2) {
+      releaseAdopted();
+      document.getElementById("atRT-population")?.remove();
+      mounted2 = false;
+    }
+    document.getElementById("trimps")?.classList.remove(HIDDEN_CLASS2);
+  }
+
   // src/modules/custom-ui/boot.ts
   var sampleTimer = null;
   var refreshTimer = null;
   function startTiles() {
     syncRegion();
+    syncPopulationRegion();
     sampleTick();
     if (sampleTimer === null) sampleTimer = setInterval(sampleTick, 1e3);
-    if (refreshTimer === null) refreshTimer = setInterval(syncRegion, 200);
+    if (refreshTimer === null) refreshTimer = setInterval(() => {
+      syncRegion();
+      syncPopulationRegion();
+    }, 200);
   }
   function stopTiles() {
     if (sampleTimer !== null) {
@@ -245,6 +360,7 @@
       refreshTimer = null;
     }
     deactivateRegion();
+    deactivatePopulationRegion();
   }
   function applyCustomUI(active) {
     if (active) {
@@ -4868,8 +4984,8 @@
       }
       if (rPctSet && !game.jobs.Scientist.locked) {
         const s = Math.min(rPct, 90);
-        const W2 = desiredRatios[0] + desiredRatios[1] + desiredRatios[2];
-        desiredRatios[3] = s === 0 ? 0 : W2 * s / (100 - s);
+        const W3 = desiredRatios[0] + desiredRatios[1] + desiredRatios[2];
+        desiredRatios[3] = s === 0 ? 0 : W3 * s / (100 - s);
       }
     }
     let totalFraction = desiredRatios.reduce((a, b) => {
@@ -22184,10 +22300,10 @@
   })(MODULES);
 
   // src/modules/performance.ts
-  (function(M, W2) {
+  (function(M, W3) {
     M["performance"] = {};
     M["performance"].isAFK = false;
-    M["performance"].updateLabels = W2.updateLabels;
+    M["performance"].updateLabels = W3.updateLabels;
     M["performance"].$wrapper = document.getElementById("wrapper");
     document.head.appendChild(document.createElement("style")).innerHTML = `
 	.at-afk-overlay
@@ -22284,7 +22400,7 @@
       M["performance"].isAFK = true;
       M["performance"].AFKOverlay.classList.remove("at-afk-overlay-disabled");
       M["performance"].$wrapper.style.display = "none";
-      W2.updateLabels = function() {
+      W3.updateLabels = function() {
       };
       enableDebug = false;
     };
@@ -22292,7 +22408,7 @@
       M["performance"].isAFK = false;
       M["performance"].$wrapper.style.display = "block";
       M["performance"].AFKOverlay.classList.add("at-afk-overlay-disabled");
-      W2.updateLabels = M["performance"].updateLabels;
+      W3.updateLabels = M["performance"].updateLabels;
       enableDebug = true;
     };
     M["performance"].UpdateAFKOverlay = function UpdateAFKOverlay() {

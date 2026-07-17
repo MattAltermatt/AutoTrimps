@@ -7,13 +7,14 @@ describe('custom-ui shell', () => {
     document.body.innerHTML = ''
   })
 
-  it('creates #atWrapper once, idempotently, with the marker', () => {
+  it('creates #atWrapper once, idempotently, with the identity class and no marker badge', () => {
     const a = ensureShell()
     const b = ensureShell()
     expect(a).toBe(b)
     expect(document.querySelectorAll('#atWrapper').length).toBe(1)
     expect(a.classList.contains(MARKER_CLASS)).toBe(true)
-    expect(a.querySelector('.at-ui-badge')).not.toBeNull()
+    // #41 Phase 3 dropped the green outline + "AutoTrimps UI" badge — the restyle is self-evident.
+    expect(a.querySelector('.at-ui-badge')).toBeNull()
   })
 
   it('is position:static (Rule 2 — no containing block over game overlays)', () => {
