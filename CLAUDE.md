@@ -160,6 +160,32 @@ by CI on every push — never committed).
 
 ## Recent decisions
 
+- **🎨 #41 UI OVERHAUL — PHASE 1 FOUNDATION SHIPPED (opt-in, adopt-and-skin)** (2026-07-16) — the
+  first slice of the full opt-in UI replacement. New `src/modules/custom-ui/` + `ATCustomUI` toggle
+  (default **OFF ⇒ byte-identical**, `baseline-zero` neutral). 🏛️ **THE ARCHITECTURE IS A UI
+  STRANGLER, NOT A REIMPLEMENT — and a 4-agent dueling panel proved the reimplement is a trap.**
+  Reading the real clone, the falsifier killed "hide the game DOM, render from state": `updateLabels()`
+  runs every 100ms tick and **self-heals** (`checkAndDisplay*`: `if(!getElementById(item)) rebuild`,
+  `updates.js:5560-5623`) — you literally cannot delete the game DOM (removing `#foodOwned` **throws**,
+  `updates.js:5539`), and two subsystems (the message **log**, the **Spire**) have **no state source
+  at all**. Adopting the game's own nodes is instead *structurally safe*: 767 per-tick `getElementById`
+  re-resolutions, **zero cached node handles**, near-zero `appendChild` — so a reparented node keeps
+  its id and the next update lands. So: a permanent `#atWrapper` shell **adopts** the game's `#wrapper`
+  (the whole HUD, one node) intact; any un-graduated region **is** the game's live self-healing element
+  ⇒ "missing something" is impossible by construction. Regions graduate adopted→AT-native on a **dial**,
+  never all-or-nothing (not a stop-gap). 🔩 **THREE FALSIFIER-DERIVED RULES (load-bearing, in the
+  spec):** (1) adopt only at **container granularity** — `draw{Buildings,Jobs,…}`/`drawGrid` rewrite a
+  container's whole innerHTML on unlock, orphaning finer adoptions; (2) `#atWrapper` stays
+  `position:static`/no-transform — the game's absolute overlays (`#tooltipDiv`/portal/spire, px from
+  mouse `pageX/pageY`) resolve only against `<body>`, so they stay **unadopted body siblings** (the id
+  survives a move; the **containing block does not**); (3) **never drop/re-id** an adopted node or the
+  game resurrects a **duplicate**. Marker = green accent `outline` (no layout shift) + a `position:fixed`
+  "AutoTrimps UI" badge. `tests/nets/custom-ui-completeness.test.ts` mechanizes the fear (red if a HUD
+  region leaves the registry). Chrome-verified both states + round-trip + live ticking + tooltip
+  positioning + zero dup ids + clean console. Spec `docs/superpowers/specs/2026-07-16-custom-ui-adopt-shell-design.md`,
+  plan `docs/superpowers/plans/2026-07-16-custom-ui-phase-1-foundation.md`. Later phases (relocate/densify
+  regions per #41) are their own spec/plan cycles behind the same toggle + marker.
+
 - **🐌 #142 SHIPPED — early-run stall fixed (opt-in)** (2026-07-16, `d9f03946`) — a fresh run spun
   its wheels ~4 min at world 2: Shield armor (wood) starves the **Miners** upgrade (wood 300)
   because Artisanistry discounts the equip *level* below 300 but not the upgrade, and

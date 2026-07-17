@@ -64,7 +64,7 @@ beforeAll(async () => {
 
 describe('settings-defs · control-inventory golden', () => {
   it('declares the expected number of controls (byte-golden-independent count)', () => {
-    expect(inventory.length).toMatchInlineSnapshot(`574`)
+    expect(inventory.length).toMatchInlineSnapshot(`575`)
   })
 
   it('every control has exactly one type — no id declared twice (a dup silently overwrites state)', () => {

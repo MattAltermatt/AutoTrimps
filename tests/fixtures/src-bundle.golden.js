@@ -20,6 +20,99 @@
     mainLoop: () => mainLoop,
     printChangelog: () => printChangelog
   });
+
+  // src/modules/custom-ui/regions.ts
+  var HUD_ROOT_ID = "wrapper";
+  var SHELL_ID = "atWrapper";
+
+  // src/modules/custom-ui/shell.ts
+  var MARKER_CLASS = "at-ui-shell";
+  var STYLE_ID = "at-ui-style";
+  function injectMarkerStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.textContent = [
+      `#${SHELL_ID}.${MARKER_CLASS} { outline: 3px solid #35c26b; outline-offset: -3px; }`,
+      `#${SHELL_ID} .at-ui-badge {`,
+      "  position: fixed; top: 0; right: 0; z-index: 2147483000;",
+      "  background: #35c26b; color: #06240f; font: bold 12px/1 sans-serif;",
+      "  padding: 4px 8px; border-bottom-left-radius: 6px; pointer-events: none;",
+      "  letter-spacing: 0.04em; box-shadow: 0 1px 4px rgba(0,0,0,.4);",
+      "}"
+    ].join("\n");
+    document.head.appendChild(style);
+  }
+  function ensureShell() {
+    const existing = document.getElementById(SHELL_ID);
+    if (existing) return existing;
+    injectMarkerStyles();
+    const shell = document.createElement("div");
+    shell.id = SHELL_ID;
+    shell.className = MARKER_CLASS;
+    const badge = document.createElement("div");
+    badge.className = "at-ui-badge";
+    badge.textContent = "AutoTrimps UI";
+    shell.appendChild(badge);
+    document.body.appendChild(shell);
+    return shell;
+  }
+  function showShell() {
+    const shell = document.getElementById(SHELL_ID);
+    if (shell) shell.style.display = "";
+  }
+  function hideShell() {
+    const shell = document.getElementById(SHELL_ID);
+    if (shell) shell.style.display = "none";
+  }
+
+  // src/modules/custom-ui/state.ts
+  var customUIState = {
+    active: false,
+    // is the AT shell currently shown?
+    adopted: false
+    // has #wrapper been reparented into #atWrapper?
+  };
+
+  // src/modules/custom-ui/adopt.ts
+  var originalAnchor = null;
+  function adoptHud() {
+    if (customUIState.adopted) return;
+    const wrapper = document.getElementById(HUD_ROOT_ID);
+    if (!wrapper || !wrapper.parentNode) return;
+    originalAnchor = { parent: wrapper.parentNode, nextSibling: wrapper.nextSibling };
+    const shell = ensureShell();
+    shell.appendChild(wrapper);
+    customUIState.adopted = true;
+  }
+  function releaseHud() {
+    if (!customUIState.adopted) return;
+    const wrapper = document.getElementById(HUD_ROOT_ID);
+    if (wrapper && originalAnchor) {
+      originalAnchor.parent.insertBefore(wrapper, originalAnchor.nextSibling);
+    }
+    customUIState.adopted = false;
+  }
+
+  // src/modules/custom-ui/boot.ts
+  function applyCustomUI(active) {
+    if (active) {
+      ensureShell();
+      adoptHud();
+      showShell();
+      customUIState.active = true;
+    } else {
+      releaseHud();
+      hideShell();
+      customUIState.active = false;
+    }
+  }
+  function bootCustomUI() {
+    if (!getPageSetting("ATCustomUI")) return;
+    applyCustomUI(true);
+  }
+
+  // src/modules/main-loop.ts
   globalThis.ATversion = typeof __AT_BUILD_VERSION__ !== "undefined" ? "v" + __AT_BUILD_VERSION__ : "Zek v5.1.0";
   var atscript = document.getElementById("AutoTrimps-script");
   globalThis.basepath = "https://Zorn192.github.io/AutoTrimps/";
@@ -32,6 +125,7 @@
   function initializeAutoTrimps() {
     loadPageVariables();
     bootSettingsUI();
+    bootCustomUI();
     mountBackupPortalButton();
     debug("AutoTrimps " + ATversion + " Loaded!", "*spinner3");
   }
@@ -15072,6 +15166,7 @@
       var elB = document.getElementById(id);
       elB.setAttribute("class", "noselect settingsBtn settingKind-toggle settingBtn" + btn.enabled);
       renderControlFace2(elB, btn);
+      if (id == "ATCustomUI") applyCustomUI(btn.enabled);
     }
     if (btn.type == "multitoggle") {
       if (id == "spendmagmite" && btn.value == 1) {
@@ -16347,6 +16442,10 @@
   // src/modules/settings-defs.ts
   var ratioTiers = () => tierTable(RATIO_TIERS.map((t) => ({ when: t.condition, ratio: t.ratio })));
   function initializeAllSettings2() {
+    createSetting("ATCustomUI", "Custom UI (beta)", tip({
+      what: "Replaces the game's UI with the AutoTrimps custom UI.",
+      how: "Off, the stock game UI is unchanged. On, a marked shell adopts the game's own panels intact \u2014 nothing is missing \u2014 as the base for the streamlined AutoTrimps layout."
+    }), "boolean", false, null, "Core");
     createSetting("ManualGather2", ["Manual Gather/Build", "Auto Gather/Build", "Mining/Building Only", "Science Research OFF"], tip({
       what: "Controls how AT gathers resources and builds in U1 (Helium).",
       how: '<b>Manual Gather/Build</b> does nothing \u2014 you gather and build entirely by hand.<br><br><b>Auto Gather/Build</b> runs the full gather/build/trap/research loop.<br><br><b>Mining/Building Only</b> switches to a much simpler loop that just gathers metal or works your build queue, skipping trapping and research entirely \u2014 meant for once you have the Foremany mastery and no longer need food or wood.<br><br><b>Science Research OFF</b> behaves like Auto Gather/Build but never gathers science by hand (useful for the "reach Z120 without manual research" achievement).'

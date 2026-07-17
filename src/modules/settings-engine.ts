@@ -12,6 +12,10 @@
 // assignment). Under ES-module strict mode that bare write would throw ReferenceError, so it is
 // scoped to this module — it is only ever read/written by these four functions, so this is
 // behavior-identical (verified: no other legacy/src code references it).
+// #41 — custom-UI toggle applier. Direct typed import (TS-called from settingChanged, not an
+// inline HTML handler). No cycle: custom-ui/* never imports settings-engine.
+import { applyCustomUI } from './custom-ui/boot';
+
 let ranstring = '';
 
 // #39 taxonomy: single source of truth for a control's visible face (leading glyph + label
@@ -312,6 +316,8 @@ export function settingChanged(id: any) {
         var elB = document.getElementById(id)!;
         elB.setAttribute('class', 'noselect settingsBtn settingKind-toggle settingBtn' + btn.enabled);
         renderControlFace(elB, btn);
+        // #41 — apply the custom-UI shell live when the toggle flips (no reload needed).
+        if (id == 'ATCustomUI') applyCustomUI(btn.enabled);
     }
     if (btn.type == 'multitoggle') {
         // #83 §7: the guard named 'AutoMagmiteSpender2' — an id that has no createSetting anywhere in

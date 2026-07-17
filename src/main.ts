@@ -37,4 +37,9 @@ seedModuleDefaults()
 // DOM (#settingsTable, index.html:1003), present from page load, so this bundle-eval timing is safe.
 bootGraphs()
 
+// NOTE: the custom-UI shell (#41) is booted from initializeAutoTrimps() in main-loop.ts, NOT here.
+// It must run AFTER bootSettingsUI() rehydrates the saved settings, or getPageSetting('ATCustomUI')
+// reads the empty pre-load autoTrimpSettings ({}) and the shell never activates for a user who saved
+// it ON (it would silently no-op every reload while the toggle renders ON).
+
 console.log('[AutoTrimps] modern build booted')

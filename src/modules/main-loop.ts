@@ -35,6 +35,11 @@ null !== atscript && (globalThis.basepath = atscript.src.replace(/AutoTrimps2\.j
 // published no-ops because import-export.ts still calls ATscriptLoad/ATscriptUnload by bare name from
 // its module-management UI.
 export function ATscriptLoad(_pathname?: any, _modulename?: any) { /* bundled: no-op */ }
+// #41 — the ONLY import in this otherwise bridge-resolved module. custom-ui/* is side-effect-free at
+// eval (no MODULES writes, no base-state reads), so importing it here does not perturb the "main-loop
+// seeds base state first" ordering. Booted from initializeAutoTrimps() below (post-bootSettingsUI).
+import { bootCustomUI } from './custom-ui'
+
 export function ATscriptUnload(_a?: any) { /* bundled: no-op */ }
 
 // Bundled boot (was deLoaderize T3): runs after loadPageVariables() so the 570 createSetting calls in
@@ -42,6 +47,9 @@ export function ATscriptUnload(_a?: any) { /* bundled: no-op */ }
 export function initializeAutoTrimps() {
     loadPageVariables();
     bootSettingsUI();
+    // #41 — boot the custom-UI shell HERE, after bootSettingsUI() has rehydrated the saved settings,
+    // so getPageSetting('ATCustomUI') reads the user's persisted value (not the empty pre-load {}).
+    bootCustomUI();
     mountBackupPortalButton();
     debug('AutoTrimps ' + ATversion + ' Loaded!', '*spinner3');
 }

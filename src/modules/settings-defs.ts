@@ -23,6 +23,12 @@ export function initializeAllSettings() {
 
     //Core
 
+    // #41 — the custom-UI toggle. Default OFF ⇒ byte-identical stock game (bootCustomUI is a no-op).
+    createSetting('ATCustomUI', 'Custom UI (beta)', tip({
+        what: "Replaces the game's UI with the AutoTrimps custom UI.",
+        how: 'Off, the stock game UI is unchanged. On, a marked shell adopts the game\'s own panels intact — nothing is missing — as the base for the streamlined AutoTrimps layout.'
+    }), 'boolean', false, null, "Core");
+
     //Line 1
     createSetting('ManualGather2', ['Manual Gather/Build', 'Auto Gather/Build', 'Mining/Building Only', 'Science Research OFF'],tip({
         what: 'Controls how AT gathers resources and builds in U1 (Helium).',
