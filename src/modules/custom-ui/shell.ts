@@ -62,7 +62,11 @@ function injectMarkerStyles(): void {
     '#atWrapper #logContainer{display:flex;flex-direction:column;height:100%;min-height:0}',
     '#atWrapper #logContainer #log{flex:1 1 0;min-height:0;overflow-y:auto}',
     '#atWrapper #miscColumn{display:flex;flex-direction:column;gap:8px;height:auto}',
-    '#atWrapper #miscColumn .at-rt{flex:1 1 0;margin-bottom:0}',
+    // min-height:0 on the tiles AND their sparklines lets three stacked tiles distribute the matched
+    // column height evenly — without it their min-content (header+figs+40px spark floor) sums past the
+    // column height and the last tile (Helium) overflows/clips.
+    '#atWrapper #miscColumn .at-rt{flex:1 1 0;margin-bottom:0;min-height:0}',
+    '#atWrapper #miscColumn .at-rt-spark{min-height:0}',
     // The resource 2x2 grid: neutralise bootstrap floats to flex so its two rows + four tiles stretch
     // to the matched row height too (sparklines flex-grow to fill).
     '#atWrapper #resourceColumn{display:flex;flex-direction:column;gap:8px;height:auto}',
