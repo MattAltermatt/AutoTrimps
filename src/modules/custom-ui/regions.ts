@@ -15,5 +15,5 @@ export interface Region {
 // Later phases split further and graduate more regions.
 export const REGIONS: Region[] = [
   { id: 'hud', containerId: HUD_ROOT_ID, status: 'adopted' },
-  { id: 'resources', containerId: 'resourceColumn', status: 'at-native', natives: ['food', 'wood', 'metal', 'science'] },
+  { id: 'resources', containerId: 'resourceColumn', status: 'at-native', natives: ['food', 'wood', 'metal', 'science', 'fragments', 'gems', 'helium'] },
 ]

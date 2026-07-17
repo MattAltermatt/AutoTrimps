@@ -24,6 +24,7 @@ function injectMarkerStyles(): void {
     '.at-rt-hidden{display:none !important}',
     '.at-rt{background:linear-gradient(180deg,#353c47,#2f353e);border:1px solid #3f4753;border-radius:8px;overflow:hidden;margin-bottom:8px;--c:#d79246}',
     '.at-rt-food{--c:#63c583}.at-rt-wood{--c:#d79246}.at-rt-metal{--c:#93a6c2}.at-rt-science{--c:#4fb6e6}',
+    '.at-rt-fragments{--c:#57c9c1}.at-rt-gems{--c:#b57ae0}.at-rt-helium{--c:#e8697f}',
     '.at-rt-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 0}',
     '.at-rt-name{font-weight:800;font-size:14px;color:#eef2f7}',
     '.at-rt-auto{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;padding:2px 5px}',

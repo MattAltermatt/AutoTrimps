@@ -4,9 +4,10 @@ import { buildTile, updateTile } from './resource-tile'
 const HIDDEN_CLASS = 'at-rt-hidden'
 const mounted: string[] = []
 
-// A native resource block ships visibility:hidden until unlocked (wood/metal/science) — mirror that.
+// Native resource blocks hide until unlocked — food/wood/metal/science/fragments/gems via
+// visibility:hidden, helium via display:none. Unlocked = neither hidden mechanism is active.
 function isUnlocked(native: HTMLElement): boolean {
-  return native.style.visibility !== 'hidden'
+  return native.style.visibility !== 'hidden' && native.style.display !== 'none'
 }
 
 // Idempotent graduation sync — safe to call repeatedly (initial mount + periodic from the refresh

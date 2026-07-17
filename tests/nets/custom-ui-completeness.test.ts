@@ -21,10 +21,10 @@ describe('custom-ui completeness', () => {
     expect(html).toMatch(/id=["']wrapper["']/)
   })
 
-  it('the resource region (at-native) claims food/wood/metal/science, all real containers', () => {
+  it('the resource region (at-native) claims all 7 flat resources, all real containers', () => {
     const region = REGIONS.find((r) => r.id === 'resources')!
     expect(region.status).toBe('at-native')
-    expect(region.natives).toEqual(['food', 'wood', 'metal', 'science'])
+    expect(region.natives).toEqual(['food', 'wood', 'metal', 'science', 'fragments', 'gems', 'helium'])
     const html = readFileSync(resolve(process.cwd(), '.trimps-game/index.html'), 'utf8')
     for (const id of region.natives!) expect(html).toMatch(new RegExp(`id=["']${id}["']`))
   })

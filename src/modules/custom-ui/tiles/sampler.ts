@@ -1,4 +1,4 @@
-export const RESOURCES = ['food', 'wood', 'metal', 'science'] as const
+export const RESOURCES = ['food', 'wood', 'metal', 'science', 'fragments', 'gems', 'helium'] as const
 const CAP = 60
 const buffers: Record<string, number[]> = {}
 
