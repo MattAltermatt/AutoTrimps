@@ -1,0 +1,98 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Trimps panel — current vs polished</title>
+<style>
+  body{ margin:0; background:#0f1114; color:#eef2f7; font-family:-apple-system,Segoe UI,Roboto,sans-serif; padding:28px; }
+  h1{ font-size:17px; font-weight:700; margin:0 0 4px; }
+  .sub{ font-size:12px; color:#8b93a0; margin:0 0 22px; }
+  .stage{ display:flex; gap:40px; align-items:flex-start; }
+  .col{ width:300px; }
+  .ctitle{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:#7b8697; margin:0 0 10px; }
+
+  /* ---- shared AT tile chrome (from shell.ts) ---- */
+  .at-rt{ display:flex; flex-direction:column; background:linear-gradient(180deg,#353c47,#2f353e);
+          border:1px solid #3f4753; border-radius:8px; overflow:hidden; --c:#e0b24a; }
+  .at-rt-head{ display:flex; align-items:center; justify-content:space-between; padding:8px 12px 0; }
+  .at-rt-name{ font-weight:800; font-size:16px; color:#eef2f7; }
+  .at-rt-figs{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:2px 12px 6px; }
+  .at-rt-amt{ font-family:ui-monospace,Menlo,monospace; font-weight:600; font-size:15px; color:#eef2f7; }
+  .at-rt-max{ color:#7b8697; font-weight:500; }
+  .at-rt-rate{ font-family:ui-monospace,Menlo,monospace; font-size:12px; font-weight:600; color:var(--c); }
+  .spark{ display:block; width:100%; height:52px; }
+  .spark .area{ fill:var(--c); opacity:.16; } .spark .line{ fill:none; stroke:var(--c); stroke-width:2; }
+  .substats{ display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:6px 12px 2px; }
+  .substat{ background:#2a2f38; border:1px solid #363d48; border-radius:6px; padding:6px 8px; }
+  .substat .k{ font-size:9px; letter-spacing:.05em; text-transform:uppercase; color:#7b8697; }
+  .substat .v{ font-family:ui-monospace,Menlo,monospace; font-size:13px; font-weight:600; color:#eef2f7; margin-top:1px; }
+
+  /* ================= CURRENT (raw adopted) ================= */
+  .cur .breed{ margin:8px 12px 0; }
+  .cur .breedbar{ position:relative; height:26px; background:#c0392b; border:2px solid #d7dbe0;
+                  border-radius:3px; display:flex; align-items:center; justify-content:center; }
+  .cur .breedbar span{ color:#000; font-weight:700; font-size:14px; }
+  .cur .trap{ margin:8px 12px 12px; }
+  .cur .trapbtn{ background:#000; border:2px solid #fff; border-radius:3px; color:#9aa0a6;
+                 text-align:center; padding:9px; font-size:14px; }
+  .cur .trapbar{ height:16px; background:#3d7ebf; border:2px solid #fff; border-radius:3px; margin-top:4px; }
+
+  /* ================= POLISHED ================= */
+  .pol .section{ padding:8px 12px 0; }
+  .pol .rowlabel{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
+  .pol .rowlabel .k{ font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:#7b8697; }
+  .pol .rowlabel .t{ font-family:ui-monospace,Menlo,monospace; font-size:12px; font-weight:600; color:var(--c); }
+  .pol .breedbar{ position:relative; height:14px; border-radius:7px; background:#2a2f38;
+                  border:1px solid #363d48; overflow:hidden; }
+  .pol .breedbar .fill{ position:absolute; inset:0 auto 0 0; width:62%;
+                        background:linear-gradient(90deg,#e0b24a,#e8697f); border-radius:7px; }
+  .pol .trap{ padding:8px 12px 12px; }
+  .pol .trapbtn{ background:#2a2f38; border:1px solid var(--c); border-radius:7px;
+                 color:var(--c); text-align:center; padding:9px; font-size:13px; font-weight:700;
+                 cursor:pointer; transition:background .12s; }
+  .pol .trapbtn:hover{ background:#333b46; }
+  .pol .trapbar{ height:8px; border-radius:4px; background:#2a2f38; border:1px solid #363d48;
+                 overflow:hidden; margin-top:6px; }
+  .pol .trapbar .fill{ height:100%; width:46%; background:var(--c); border-radius:4px; }
+</style></head>
+<body>
+  <h1>Trimps panel — current vs polished target</h1>
+  <p class="sub">Same live data (Z34 save). AT-native parts (name, figures, gold sparkline, BREEDING/EMPLOYED pills) are unchanged — only the three adopted game nodes get restyled. Behaviour identical; CSS only.</p>
+
+  <div class="stage">
+    <!-- CURRENT -->
+    <div class="col">
+      <div class="ctitle">Current (raw adopted nodes)</div>
+      <div class="at-rt cur">
+        <div class="at-rt-head"><span class="at-rt-name">Trimps</span></div>
+        <div class="at-rt-figs"><span class="at-rt-amt">3.89e4<span class="at-rt-max"> / 3.89e4</span></span><span class="at-rt-rate">+1699/sec</span></div>
+        <svg class="spark" viewBox="0 0 240 52" preserveAspectRatio="none"><path class="area" d="M0 52 L0 40 L60 34 L100 30 L140 20 L180 14 L240 8 L240 52 Z"/><path class="line" d="M0 40 L60 34 L100 30 L140 20 L180 14 L240 8"/></svg>
+        <div class="substats">
+          <div class="substat"><div class="k">Breeding</div><div class="v">1.94e4</div></div>
+          <div class="substat"><div class="k">Employed</div><div class="v">1.94e4/1.94e4</div></div>
+        </div>
+        <div class="breed"><div class="breedbar"><span>3.7 Secs</span></div></div>
+        <div class="trap"><div class="trapbtn">Check Traps (186)</div><div class="trapbar"></div></div>
+      </div>
+    </div>
+
+    <!-- POLISHED -->
+    <div class="col">
+      <div class="ctitle">Polished target</div>
+      <div class="at-rt pol">
+        <div class="at-rt-head"><span class="at-rt-name">Trimps</span></div>
+        <div class="at-rt-figs"><span class="at-rt-amt">3.89e4<span class="at-rt-max"> / 3.89e4</span></span><span class="at-rt-rate">+1699/sec</span></div>
+        <svg class="spark" viewBox="0 0 240 52" preserveAspectRatio="none"><path class="area" d="M0 52 L0 40 L60 34 L100 30 L140 20 L180 14 L240 8 L240 52 Z"/><path class="line" d="M0 40 L60 34 L100 30 L140 20 L180 14 L240 8"/></svg>
+        <div class="substats">
+          <div class="substat"><div class="k">Breeding</div><div class="v">1.94e4</div></div>
+          <div class="substat"><div class="k">Employed</div><div class="v">1.94e4/1.94e4</div></div>
+        </div>
+        <div class="section">
+          <div class="rowlabel"><span class="k">Breeding</span><span class="t">3.7s</span></div>
+          <div class="breedbar"><div class="fill"></div></div>
+        </div>
+        <div class="trap">
+          <div class="trapbtn">Check Traps · 186</div>
+          <div class="trapbar"><div class="fill"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body></html>
