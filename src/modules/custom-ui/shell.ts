@@ -22,7 +22,7 @@ function injectMarkerStyles(): void {
     // The graduated native block is hidden with !important so the game's own reveal animation
     // (which sets an inline display:block on unlock) cannot un-hide it into a duplicate tile.
     '.at-rt-hidden{display:none !important}',
-    '.at-rt{background:linear-gradient(180deg,#353c47,#2f353e);border:1px solid #3f4753;border-radius:8px;overflow:hidden;margin-bottom:8px;--c:#d79246}',
+    '.at-rt{display:flex;flex-direction:column;background:linear-gradient(180deg,#353c47,#2f353e);border:1px solid #3f4753;border-radius:8px;overflow:hidden;margin-bottom:8px;--c:#d79246}',
     '.at-rt-food{--c:#63c583}.at-rt-wood{--c:#d79246}.at-rt-metal{--c:#93a6c2}.at-rt-science{--c:#4fb6e6}',
     '.at-rt-fragments{--c:#57c9c1}.at-rt-gems{--c:#b57ae0}.at-rt-helium{--c:#e8697f}',
     '.at-rt-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 0}',
@@ -37,10 +37,36 @@ function injectMarkerStyles(): void {
     '.at-rt-amt{font-family:ui-monospace,Menlo,monospace;font-weight:600;font-size:15px;color:#eef2f7}',
     '.at-rt-max{color:#7b8697;font-weight:500}',
     '.at-rt-rate{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:600;color:var(--c);white-space:nowrap}',
-    '.at-rt-spark{display:block;width:100%;height:40px}',
+    // flex-grow so shorter tiles expand to fill a matched-height column instead of leaving a gap.
+    '.at-rt-spark{display:block;width:100%;flex:1 1 auto;min-height:40px}',
     '.at-rt-area{fill:var(--c);opacity:.16}',
     '.at-rt-line{fill:none;stroke:var(--c);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}',
     '.at-rt-now{fill:var(--c);stroke:#2f353e;stroke-width:1.5}',
+    // #41 Phase 3 — the Trimps population panel (Variant A: stat pills). Adopts the game's live
+    // breed bar + trap area into slots; mirrors owned/rate/breeding/employed as text.
+    '.at-pop{--c:#e0b24a}',
+    '.at-pop .at-rt-name{font-size:16px}',
+    '.at-pop .at-rt-spark{min-height:52px}',
+    '.at-pop-breedslot,.at-pop-trapslot{padding:6px 12px 0}',
+    '.at-substats{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 12px 2px}',
+    '.at-substat{background:#2a2f38;border:1px solid #363d48;border-radius:6px;padding:6px 8px}',
+    '.at-substat .k{font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:#7b8697}',
+    '.at-substat .v{font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;color:#eef2f7;margin-top:1px}',
+    // Matched-height row: stretch the three HUD columns equal, and let the narrow misc column's
+    // three tiles share that height evenly. Scoped to #topRow inside our shell only.
+    // The game pins #topRow to a fixed height; let it grow so the tallest block (the Trimps panel)
+    // drives the row and the shorter blocks stretch up to match it.
+    '#atWrapper #topRow{display:flex;align-items:stretch;height:auto}',
+    '#atWrapper #miscColumn{display:flex;flex-direction:column;gap:8px}',
+    '#atWrapper #miscColumn .at-rt{flex:1 1 0;margin-bottom:0}',
+    // The resource 2x2 grid: neutralise bootstrap floats to flex so its two rows + four tiles stretch
+    // to the matched row height too (sparklines flex-grow to fill).
+    '#atWrapper #resourceColumn{display:flex;flex-direction:column;gap:8px}',
+    '#atWrapper #resourceColumn .resourceRow{flex:1 1 0;display:flex;gap:8px;margin:0}',
+    '#atWrapper #resourceColumn .resourceRow>.col-xs-6{flex:1 1 0;width:auto;padding:0;float:none}',
+    '#atWrapper #resourceColumn .resourceRow>.col-xs-6 .at-rt{height:100%;margin-bottom:0}',
+    // keep the adopted breed-timer label above its fill.
+    '#atWrapper #trimpsTimeToFill{position:relative;z-index:1;text-shadow:0 1px 2px rgba(0,0,0,.6)}',
   ].join('\n')
   document.head.appendChild(style)
 }
