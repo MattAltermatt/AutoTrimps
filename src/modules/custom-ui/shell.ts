@@ -51,7 +51,9 @@ function injectMarkerStyles(): void {
     // drives the row and the shorter blocks stretch up to match it. A uniform flex gap + zeroed
     // bootstrap column gutters make every inter-column gap match the 8px intra-column tile gaps.
     '#atWrapper #topRow{display:flex;align-items:stretch;height:auto;gap:8px;margin-left:0;margin-right:0}',
-    '#atWrapper #topRow>div{padding-left:0;padding-right:0;margin-left:0;margin-right:0}',
+    // height:auto on EVERY column overrides the game height rule that blocks align-items:stretch, so
+    // all four columns (incl. #trimpsColumn) stretch to the tallest-block-driven row height.
+    '#atWrapper #topRow>div{padding-left:0;padding-right:0;margin-left:0;margin-right:0;height:auto}',
     // The message log must NOT drive the row height — on a deep save it holds hundreds of messages
     // and would grow the row off the bottom of the viewport. Make the #log scroller a flex child with
     // a collapsed intrinsic height (min-height:0) so its content scrolls internally and the tile
@@ -70,6 +72,17 @@ function injectMarkerStyles(): void {
     // column height and the last tile (Helium) overflows/clips.
     '#atWrapper #miscColumn .at-rt{flex:1 1 0;margin-bottom:0;min-height:0}',
     '#atWrapper #miscColumn .at-rt-spark{min-height:0}',
+    // Compact, stacked figs for the short/narrow misc tiles: name / value / rate each on their own
+    // line with tighter fonts + padding, so real long rates (+1.86e5/sec) never clip and the
+    // sparkline still gets real height (~38px in an 88px tile).
+    // NOTE: the game forces `#miscColumn span { font-size: 1.2vw !important }` (style.css) — every span
+    // in this column, incl. our tile spans. We must override with !important or the text renders ~21px
+    // and swamps the tile. line-height clamped too so three lines + a sparkline fit in ~88px.
+    '#atWrapper #miscColumn .at-rt-head{padding:4px 8px 0}',
+    '#atWrapper #miscColumn .at-rt-name{font-size:12px !important;line-height:1.2}',
+    '#atWrapper #miscColumn .at-rt-figs{flex-direction:column;align-items:flex-start;gap:0;padding:0 8px 2px}',
+    '#atWrapper #miscColumn .at-rt-amt{font-size:15px !important;line-height:1.25}',
+    '#atWrapper #miscColumn .at-rt-rate{font-size:11px !important;line-height:1.2}',
     '#atWrapper #logColumn{flex:1 1 0}',
     // The resource 2x2 grid: neutralise bootstrap floats to flex so its two rows + four tiles stretch
     // to the matched row height too (sparklines flex-grow to fill).
