@@ -36,6 +36,11 @@ function runArm(reserveOn: boolean) {
         atBundlePath: TEST_BUNDLE,
         saveString: SAVE,
         atSettingsBlob: SETTINGS,
+        // Pin the boot clock to the save's own lastOnline so the offline gap is 0 (#146). Without this,
+        // load() replays offline progress against the REAL wall clock; once elapsed time since the
+        // fixture's capture crosses the 24h cap it grants a maxed ~13.5k wood, erasing the wood-starved
+        // stall this test depends on (raw wood is 81) and making off.minersTick collapse to 0.
+        fixedNow: 'lastOnline',
     })
     installSeededRandom(window, SEED)
     installFrozenClock(window)

@@ -17,10 +17,10 @@ const GAME_FILES = ['lz-string.js', 'decimal.min.js', 'config.js', 'updates.js',
 
 /**
  * Boot the Trimps clone (and optionally the AutoTrimps bundle) into jsdom.
- * @param {{ gameDir?: string, withAutoTrimps?: boolean, atBundlePath?: string, saveString?: string, atSettings?: Record<string, unknown>, atSettingsBlob?: string | Record<string, unknown> }} [opts]
+ * @param {{ gameDir?: string, withAutoTrimps?: boolean, atBundlePath?: string, saveString?: string, atSettings?: Record<string, unknown>, atSettingsBlob?: string | Record<string, unknown>, fixedNow?: number | 'lastOnline' }} [opts]
  * @returns {{ window: any, game: any, dom: any }}
  */
-export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, atBundlePath, saveString, atSettings, atSettingsBlob } = {}) {
+export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, atBundlePath, saveString, atSettings, atSettingsBlob, fixedNow } = {}) {
   const html = readFileSync(resolve(gameDir, 'index.html'), 'utf8')
   const dom = new JSDOM(html, { runScripts: 'outside-only', pretendToBeVisual: true, url: 'http://localhost/' })
   const { window } = dom
@@ -36,6 +36,36 @@ export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, a
   let combined = ''
   for (const f of GAME_FILES) combined += readFileSync(resolve(gameDir, f), 'utf8') + '\n;\n'
   window.eval(combined)
+
+  // Pin the wall clock BEFORE load(). The game computes offline progress as
+  // `new Date().getTime() - game.global.lastOnline` (main.js:1295/2889) DURING load() — and the
+  // sim's frozen clock (clock.mjs) is only installed AFTER bootGame returns, so without this the
+  // offline replay runs against the REAL clock. Elapsed time since a fixture's `lastOnline` grows
+  // every day, granting ever more resources, until (past the 24h cap) it plateaus at a maxed grant —
+  // which silently rewrites the fixture's boot state and makes any scarcity-dependent test a time bomb
+  // (this is what broke #142/#146: raw wood 81 → ~13.5k, erasing the wood-starved stall). Callers that
+  // want a deterministic boot pass `fixedNow` = the save's own `lastOnline`, so the offline gap is 0
+  // and the fixture boots in its exact saved state. Opt-in: unset ⇒ legacy real-clock behaviour, so
+  // this does not touch any existing oracle trace.
+  // `fixedNow: 'lastOnline'` derives the pin from the save itself (offline gap ⇒ 0), so a fixture stays
+  // deterministic across re-captures without hardcoding a timestamp. A number pins to that exact ms.
+  let pinNow = fixedNow
+  if (fixedNow === 'lastOnline') {
+    if (!saveString) throw new Error("bootGame({ fixedNow: 'lastOnline' }) requires a saveString")
+    pinNow = JSON.parse(window.LZString.decompressFromBase64(saveString)).global.lastOnline
+  }
+  if (pinNow != null) {
+    const RealDate = window.Date
+    class PinnedDate extends RealDate {
+      constructor(...args) {
+        super(...(args.length ? args : [pinNow]))
+      }
+      static now() {
+        return pinNow
+      }
+    }
+    window.Date = PinnedDate
+  }
 
   // Load a real save (LZString base64) to start from a representative mid-run state instead
   // of an inert newGame(). load(str) decompresses the string arg directly (main.js:269) and
