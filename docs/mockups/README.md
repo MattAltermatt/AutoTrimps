@@ -12,6 +12,8 @@ Keep the source HTML, not just a PNG — a PNG can't be re-rendered with tweaks.
 
 | Date | Mockup | What it shows |
 |------|--------|---------------|
+| 2026-07-18 | [turkimp-misc-stack](2026-07-18-turkimp-misc-stack.html) ([png](2026-07-18-turkimp-misc-stack.png)) | #41 misc column redesign — always-on Fragments/Gems/Helium; Helium drops its chart; Turkimp split into a slim gold timer row (🦃 countdown → ∞); matched column heights. |
+| 2026-07-18 | [turkimp-indicator](2026-07-18-turkimp-indicator.html) ([png](2026-07-18-turkimp-indicator.png)) | #41 turkimp "active" indicator concepts — 🦃-wrapped verb badges on food/wood/metal + three timer-placement options (A/B/C). |
 | 2026-07-17 | [custom-ui-trimps-panel](2026-07-17-custom-ui-trimps-panel.html) ([png](2026-07-17-custom-ui-trimps-panel.png)) | #41 Trimps population panel — current (raw adopted nodes) vs polished target (restyled breed bar / trap button / trap progress). |
 | 2026-07-16 | [custom-ui-resource-tiles-concepts](2026-07-16-custom-ui-resource-tiles-concepts.html) ([png](2026-07-16-custom-ui-resource-tiles-concepts.png)) | #41 Phase 2 resource-tile concept set (4 layouts A–D). "Base strip" (B) is the shipped layout. |
 | 2026-07-16 | [custom-ui-resource-cell](2026-07-16-custom-ui-resource-cell.html) | #41 atomic single-resource treatments (A ledger rows / B stat tiles / C capacity bars). |

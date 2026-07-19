@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Misc stack — split Helium + Turkimp, matched heights (custom-UI #41)</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:28px 22px 60px; background:#1b1f26; color:#cdd4de;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  h1 { font-size:20px; margin:0 0 4px; color:#eef2f7; }
+  .sub { font-size:13px; color:#8894a5; margin:0 0 26px; max-width:900px; line-height:1.5; }
+  .sub b { color:#cdd4de; }
+  h2 { font-size:14px; letter-spacing:.04em; text-transform:uppercase; color:#9fb1c8; margin:34px 0 4px; }
+  .cap { font-size:12.5px; color:#8894a5; margin:0 0 14px; max-width:840px; line-height:1.5; }
+  .cap b { color:#cdd4de; }
+  .divider { height:1px; background:#2a2f38; margin:30px 0; max-width:1100px; }
+  .board { display:flex; gap:34px; align-items:flex-start; flex-wrap:wrap; }
+  .lane { display:flex; flex-direction:column; }
+  .lane > .tag { font-size:12px; font-weight:700; color:#e0b24a; margin:0 0 9px; }
+  .pros { font-size:11.5px; color:#7f8b9c; margin:10px 2px 0; line-height:1.5; max-width:190px; }
+  .pros .good{color:#63c583;} .pros .bad{color:#e8697f;}
+
+  /* ===== REAL tile CSS — verbatim from src/modules/custom-ui/shell.ts ===== */
+  .at-rt{display:flex;flex-direction:column;background:linear-gradient(180deg,#353c47,#2f353e);border:1px solid #3f4753;border-radius:8px;overflow:hidden;--c:#d79246}
+  .at-rt-food{--c:#63c583}.at-rt-wood{--c:#d79246}.at-rt-metal{--c:#93a6c2}.at-rt-science{--c:#4fb6e6}
+  .at-rt-fragments{--c:#57c9c1}.at-rt-gems{--c:#b57ae0}.at-rt-helium{--c:#e8697f}
+  .at-rt-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 0}
+  .at-rt-name{font-weight:800;font-size:14px;color:#eef2f7}
+  .at-rt-auto{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;padding:2px 5px}
+  .at-rt-figs{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 10px 6px}
+  .at-rt-amt{font-family:ui-monospace,Menlo,monospace;font-weight:600;font-size:15px;color:#eef2f7}
+  .at-rt-rate{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:600;color:var(--c);white-space:nowrap}
+  .at-rt-spark{display:block;width:100%;flex:1 1 auto;min-height:40px}
+  .at-rt-area{fill:var(--c);opacity:.16}
+  .at-rt-line{fill:none;stroke:var(--c);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .at-rt-now{fill:var(--c);stroke:#2f353e;stroke-width:1.5}
+
+  /* ===== REAL #miscColumn overrides — from shell.ts (scope: .misc) ===== */
+  .misc{display:flex;flex-direction:column;gap:8px;flex:0 0 150px;width:150px}
+  .misc .at-rt{margin-bottom:0}
+  .misc .at-rt-head{padding:4px 8px 0}
+  .misc .at-rt-name{font-size:12px !important;line-height:1.2}
+  .misc .at-rt-figs{flex-direction:column;align-items:flex-start;gap:0;padding:0 8px 6px}
+  .misc .at-rt-amt{font-size:15px !important;line-height:1.25}
+  .misc .at-rt-rate{font-size:11px !important;line-height:1.2}
+  .misc .at-rt-spark{min-height:0}
+
+  /* ===== Split bottom slot: Helium (amount + /hr, no chart) + a SLIM Turkimp row ===== */
+  /* Turkimp shrunk to a single gold row (name left, timer right) so the two half-tiles together
+     take less than one graph tile — leaving the graph tiles to absorb the column's matched height. */
+  .at-turk{--c:#e0b24a;border-color:#5a4a24;flex:0 0 auto}
+  .at-turk-row{display:flex;align-items:center;justify-content:space-between;padding:5px 9px}
+  .at-turk .at-rt-name{color:#f0d089 !important}
+  .at-turk-timer{display:inline-flex;align-items:center;gap:4px;font-family:ui-monospace,Menlo,monospace;
+    font-weight:700;font-size:13px;color:#fbe7b0}
+  .at-turk-timer .tk{font-size:12px;line-height:1;vertical-align:-1px}
+  .at-turk-timer.inf{font-size:15px}
+  .at-turk.idle{--c:#6b7482;border-color:#333b46}
+  .at-turk.idle .at-rt-name{color:#7b8697 !important}
+  .at-turk.idle .at-turk-timer{color:#5c6675;font-weight:600}
+  .at-turk.idle .tk{filter:grayscale(1);opacity:.5}
+  /* Helium half sizes to content (no chart). */
+  .misc .at-rt-helium{flex:0 0 auto}
+
+  /* ===== Matched-height demo (in-context): resource col height drives, misc stretches to it. ===== */
+  .ctx{display:flex;gap:8px;align-items:stretch}
+  .ctx-res{display:flex;flex-direction:column;gap:8px;width:250px}
+  .ctx-res .at-rt{height:112px}
+  /* misc stretches (align-items:stretch) to the resource column's height. Graph tiles flex-grow to
+     fill; Helium + slim Turkimp stay compact — so all columns end on the same line. */
+  .ctx-misc{height:auto}
+  .ctx-misc .at-rt-fragments,.ctx-misc .at-rt-gems{flex:1 1 0;min-height:0}
+
+  /* verb badge with turkey wrap (approved treatment) */
+  .at-rt-auto.turk{background:#e0b24a;color:#2a1c00}
+  .turk .tk{font-size:11px;line-height:1;vertical-align:-1px}
+</style>
+</head>
+<body>
+
+<h1>🦃 Misc stack — split Helium + Turkimp, matched column heights</h1>
+<p class="sub">
+  <b>Helium</b> keeps its total + per-hour (no chart). <b>Turkimp</b> is now a <b>slim single gold row</b>
+  (name + timer) so the two half-tiles together are shorter than one graph tile — which lets
+  <b>Fragments &amp; Gems</b> flex-grow their sparklines to <b>absorb the column's height</b>, so the misc
+  column ends on the same line as its neighbours. Timer → permanent <b>∞</b> once <code>turkimp2</code> lands.
+</p>
+
+<h2>The stack — three turkimp states</h2>
+<p class="cap">
+  Fragments, Gems, then the <b>Helium</b> + slim <b>Turkimp</b> pair. Left → right: turkimp <b>active</b>,
+  <b>permanent</b> (∞), <b>idle</b> (no turkimp yet).
+</p>
+<div class="board">
+
+  <!-- Active -->
+  <div class="lane">
+    <span class="tag">Turkimp active</span>
+    <div class="misc">
+      <div class="at-rt at-rt-fragments">
+        <div class="at-rt-head"><span class="at-rt-name">Fragments</span></div>
+        <div class="at-rt-figs"><span class="at-rt-amt">4.82e7</span><span class="at-rt-rate">+2.1e5/s</span></div>
+        <svg class="at-rt-spark" viewBox="0 0 150 40" preserveAspectRatio="none"><path class="at-rt-area" d="M0 40 L0 30 L50 24 L100 26 L150 14 L150 40 Z"/><path class="at-rt-line" d="M0 30 L50 24 L100 26 L150 14"/><circle class="at-rt-now" cx="150" cy="14" r="3"/></svg>
+      </div>
+      <div class="at-rt at-rt-gems">
+        <div class="at-rt-head"><span class="at-rt-name">Gems</span></div>
+        <div class="at-rt-figs"><span class="at-rt-amt">1.19e6</span><span class="at-rt-rate">+8.4e3/s</span></div>
+        <svg class="at-rt-spark" viewBox="0 0 150 40" preserveAspectRatio="none"><path class="at-rt-area" d="M0 40 L0 32 L50 28 L100 20 L150 16 L150 40 Z"/><path class="at-rt-line" d="M0 32 L50 28 L100 20 L150 16"/><circle class="at-rt-now" cx="150" cy="16" r="3"/></svg>
+      </div>
+      <div class="at-rt at-rt-helium">
+        <div class="at-rt-head"><span class="at-rt-name">Helium</span></div>
+        <div class="at-rt-figs"><span class="at-rt-amt">3.07e4</span><span class="at-rt-rate">+412/hr</span></div>
+      </div>
+      <div class="at-rt at-turk">
+        <div class="at-turk-row"><span class="at-rt-name">Turkimp</span><span class="at-turk-timer"><span class="tk">🦃</span>4:32</span></div>
+      </div>
+    </div>
+    <p class="pros"><span class="good">+</span> slim gold row; Helium stays clean and chart-free.</p>
+  </div>
+
+  <!-- Permanent -->
+  <div class="lane">
+    <span class="tag">Permanent (turkimp2)</span>
+    <div class="misc">
+      <div class="at-rt at-rt-fragments">
+        <div class="at-rt-head"><span class="at-rt-name">Fragments</span></div>
+        <div class="at-rt-figs"><span class="at-rt-amt">4.82e7</span><span class="at-rt-rate">+2.1e5/s</span></div>
+        <svg class="at-rt-spark" viewBox="0 0 150 40" preserveAspectRatio="none"><path class="at-rt-area" d="M0 40 L0 30 L50 24 L100 26 L150 14 L150 40 Z"/><path class="at-rt-line" d="M0 30 L50 24 L100 26 L150 14"/><circle class="at-rt-now" cx="150" cy="14" r="3"/></svg>
+      </div>
+      <div class="at-rt at-rt-gems">
+        <div class="at-rt-head"><span class="at-rt-name">Gems</span></div>
+        <div class="at-rt-figs"><span class="at-rt-amt">1.19e6</span><span class="at-rt-rate">+8.4e3/s</span></div>
+        <svg class="at-rt-spark" viewBox="0 0 150 40" preserveAspectRatio="none"><path class="at-rt-area" d="M0 40 L0 32 L50 28 L100 20 L150 16 L150 40 Z"/><path class="at-rt-line" d="M0 32 L50 28 L100 20 L150 16"/><circle class="at-rt-now" cx="150" cy="16" r="3"/></svg>
+      </div>
+      <div class="at-rt at-rt-helium">
+        <div class="at-rt-head"><span class="at-rt-name">Helium</span></div>
+        <div class="at-rt-figs"><span class="at-rt-amt">9.44e9</span><span class="at-rt-rate">+3.1e6/hr</span></div>
+      </div>
+      <div class="at-rt at-turk">
+        <div class="at-turk-row"><span class="at-rt-name">Turkimp</span><span class="at-turk-timer inf"><span class="tk">🦃</span>∞</span></div>
+      </div>
+    </div>
+    <p class="pros"><span class="good">+</span> endgame: always present, always ∞. No churn.</p>
+  </div>
+
+  <!-- Idle -->
+  <div class="lane">
+    <span class="tag">Idle (no turkimp)</span>
+    <div class="misc">
+      <div class="at-rt at-rt-fragments">
+        <div class="at-rt-head"><span class="at-rt-name">Fragments</span></div>
+        <div class="at-rt-figs"><span class="at-rt-amt">2.15e3</span><span class="at-rt-rate">+18/s</span></div>
+        <svg class="at-rt-spark" viewBox="0 0 150 40" preserveAspectRatio="none"><path class="at-rt-area" d="M0 40 L0 34 L50 32 L100 30 L150 28 L150 40 Z"/><path class="at-rt-line" d="M0 34 L50 32 L100 30 L150 28"/><circle class="at-rt-now" cx="150" cy="28" r="3"/></svg>
+      </div>
+      <div class="at-rt at-rt-gems">
+        <div class="at-rt-head"><span class="at-rt-name">Gems</span></div>
+        <div class="at-rt-figs"><span class="at-rt-amt">0</span><span class="at-rt-rate">+0/s</span></div>
+        <svg class="at-rt-spark" viewBox="0 0 150 40" preserveAspectRatio="none"><path class="at-rt-area" d="M0 40 L0 38 L150 38 L150 40 Z"/><path class="at-rt-line" d="M0 38 L150 38"/><circle class="at-rt-now" cx="150" cy="38" r="3"/></svg>
+      </div>
+      <div class="at-rt at-rt-helium">
+        <div class="at-rt-head"><span class="at-rt-name">Helium</span></div>
+        <div class="at-rt-figs"><span class="at-rt-amt">0</span><span class="at-rt-rate">+0/hr</span></div>
+      </div>
+      <div class="at-rt at-turk idle">
+        <div class="at-turk-row"><span class="at-rt-name">Turkimp</span><span class="at-turk-timer"><span class="tk">🦃</span>—</span></div>
+      </div>
+    </div>
+    <p class="pros"><span class="good">+</span> slim dim row holds the slot; lights gold when fed.<br><span class="bad">?</span> or hide it entirely until first fed — your call.</p>
+  </div>
+
+</div>
+
+<div class="divider"></div>
+
+<h2>Matched heights — resource pills + the split misc stack</h2>
+<p class="cap">
+  The point of the slim Turkimp row: the misc column (4 entries) still ends on the <b>same line</b> as the
+  resource column (3 pills). Fragments &amp; Gems flex-grow their sparklines to absorb the height; Helium and
+  the Turkimp row stay compact. Verbs carry the approved <b>🦃 wrap</b>.
+</p>
+<div class="ctx">
+  <div class="ctx-res">
+    <div class="at-rt at-rt-food">
+      <div class="at-rt-head"><span class="at-rt-name">Food</span><span class="at-rt-auto turk"><span class="tk">🦃</span>Gathering<span class="tk">🦃</span></span></div>
+      <div class="at-rt-figs"><span class="at-rt-amt">1.44e6</span><span class="at-rt-rate">+9.6e4/s</span></div>
+      <svg class="at-rt-spark" viewBox="0 0 250 40" preserveAspectRatio="none"><path class="at-rt-area" d="M0 40 L0 30 L125 20 L250 12 L250 40 Z"/><path class="at-rt-line" d="M0 30 L125 20 L250 12"/><circle class="at-rt-now" cx="250" cy="12" r="3"/></svg>
+    </div>
+    <div class="at-rt at-rt-wood">
+      <div class="at-rt-head"><span class="at-rt-name">Wood</span><span class="at-rt-auto turk"><span class="tk">🦃</span>Chopping<span class="tk">🦃</span></span></div>
+      <div class="at-rt-figs"><span class="at-rt-amt">9.71e5</span><span class="at-rt-rate">+7.1e4/s</span></div>
+      <svg class="at-rt-spark" viewBox="0 0 250 40" preserveAspectRatio="none"><path class="at-rt-area" d="M0 40 L0 32 L125 22 L250 14 L250 40 Z"/><path class="at-rt-line" d="M0 32 L125 22 L250 14"/><circle class="at-rt-now" cx="250" cy="14" r="3"/></svg>
+    </div>
+    <div class="at-rt at-rt-metal">
+      <div class="at-rt-head"><span class="at-rt-name">Metal</span><span class="at-rt-auto turk"><span class="tk">🦃</span>Mining<span class="tk">🦃</span></span></div>
+      <div class="at-rt-figs"><span class="at-rt-amt">2.03e6</span><span class="at-rt-rate">+1.3e5/s</span></div>
+      <svg class="at-rt-spark" viewBox="0 0 250 40" preserveAspectRatio="none"><path class="at-rt-area" d="M0 40 L0 24 L125 16 L250 9 L250 40 Z"/><path class="at-rt-line" d="M0 24 L125 16 L250 9"/><circle class="at-rt-now" cx="250" cy="9" r="3"/></svg>
+    </div>
+  </div>
+  <div class="misc ctx-misc">
+    <div class="at-rt at-rt-fragments">
+      <div class="at-rt-head"><span class="at-rt-name">Fragments</span></div>
+      <div class="at-rt-figs"><span class="at-rt-amt">4.82e7</span><span class="at-rt-rate">+2.1e5/s</span></div>
+      <svg class="at-rt-spark" viewBox="0 0 150 60" preserveAspectRatio="none"><path class="at-rt-area" d="M0 60 L0 44 L50 36 L100 40 L150 20 L150 60 Z"/><path class="at-rt-line" d="M0 44 L50 36 L100 40 L150 20"/><circle class="at-rt-now" cx="150" cy="20" r="3"/></svg>
+    </div>
+    <div class="at-rt at-rt-gems">
+      <div class="at-rt-head"><span class="at-rt-name">Gems</span></div>
+      <div class="at-rt-figs"><span class="at-rt-amt">1.19e6</span><span class="at-rt-rate">+8.4e3/s</span></div>
+      <svg class="at-rt-spark" viewBox="0 0 150 60" preserveAspectRatio="none"><path class="at-rt-area" d="M0 60 L0 48 L50 42 L100 30 L150 24 L150 60 Z"/><path class="at-rt-line" d="M0 48 L50 42 L100 30 L150 24"/><circle class="at-rt-now" cx="150" cy="24" r="3"/></svg>
+    </div>
+    <div class="at-rt at-rt-helium">
+      <div class="at-rt-head"><span class="at-rt-name">Helium</span></div>
+      <div class="at-rt-figs"><span class="at-rt-amt">3.07e4</span><span class="at-rt-rate">+412/hr</span></div>
+    </div>
+    <div class="at-rt at-turk">
+      <div class="at-turk-row"><span class="at-rt-name">Turkimp</span><span class="at-turk-timer"><span class="tk">🦃</span>4:32</span></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
