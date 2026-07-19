@@ -43,11 +43,18 @@
       ".at-rt-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 0}",
       ".at-rt-name{font-weight:800;font-size:14px;color:#eef2f7}",
       ".at-rt-auto{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;padding:2px 5px}",
-      // Lit + pulsing only on the resource AT is actively gathering right now; hidden otherwise.
-      '.at-rt-auto[data-on="1"]{color:#08260f;background:#35c26b;animation:atRtPulse 1.6s ease-in-out infinite}',
+      // Badge shows when actively gathering (green) OR turkimp'd (gold); hidden otherwise.
       '.at-rt-auto[data-on="0"]{display:none}',
+      '.at-rt-auto[data-on="1"]{color:#08260f;background:#35c26b}',
+      // The pulse follows the resource AT is actively hand-gathering (green or gold).
+      '.at-rt-auto[data-gather="1"]{animation:atRtPulse 1.6s ease-in-out infinite}',
+      // Turkimp treatment: gold badge with the verb wrapped in turkeys. Pseudo-elements keep the span's
+      // textContent equal to the bare verb (tests + a11y), and the wrap toggles purely via data-turk.
+      '.at-rt-auto[data-turk="1"]{color:#2a1c00;background:#e0b24a}',
+      '.at-rt-auto[data-turk="1"]::before{content:"\u{1F983} "}',
+      '.at-rt-auto[data-turk="1"]::after{content:" \u{1F983}"}',
       "@keyframes atRtPulse{0%,100%{box-shadow:0 0 0 0 rgba(53,194,107,.55)}50%{box-shadow:0 0 0 5px rgba(53,194,107,0)}}",
-      '@media (prefers-reduced-motion:reduce){.at-rt-auto[data-on="1"]{animation:none}}',
+      '@media (prefers-reduced-motion:reduce){.at-rt-auto[data-gather="1"]{animation:none}}',
       ".at-rt-figs{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 10px 6px}",
       ".at-rt-amt{font-family:ui-monospace,Menlo,monospace;font-weight:600;font-size:15px;color:#eef2f7}",
       ".at-rt-max{color:#7b8697;font-weight:500}",
@@ -57,6 +64,18 @@
       ".at-rt-area{fill:var(--c);opacity:.16}",
       ".at-rt-line{fill:none;stroke:var(--c);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}",
       ".at-rt-now{fill:var(--c);stroke:#2f353e;stroke-width:1.5}",
+      // #149 Turkimp tile — a slim gold row in the misc column (name left, timer right). Mirrors
+      // #turkimpTime; goes ∞ when turkimp2 is owned; dims to a `—` placeholder when no turkimp is active.
+      ".at-turk{--c:#e0b24a;border-color:#5a4a24}",
+      ".at-turk-row{display:flex;align-items:center;justify-content:space-between;padding:5px 9px}",
+      "#atWrapper .at-turk .at-rt-name{color:#f0d089}",
+      ".at-turk-timer{display:inline-flex;align-items:center;gap:4px;font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:13px;color:#fbe7b0}",
+      ".at-turk-timer .tk{font-size:12px;line-height:1;vertical-align:-1px}",
+      ".at-turk-timer.inf .at-turk-val{font-size:15px}",
+      ".at-turk.idle{--c:#6b7482;border-color:#333b46}",
+      "#atWrapper .at-turk.idle .at-rt-name{color:#7b8697}",
+      ".at-turk.idle .at-turk-timer{color:#5c6675;font-weight:600}",
+      ".at-turk.idle .tk{filter:grayscale(1);opacity:.5}",
       // #41 Phase 3 — the Trimps population panel (Variant A: stat pills). Adopts the game's live
       // breed bar + trap area into slots; mirrors owned/rate/breeding/employed as text.
       ".at-pop{--c:#e0b24a}",
@@ -118,7 +137,12 @@
       // min-height:0 on the tiles AND their sparklines lets three tiles distribute the matched column
       // height evenly — without it their min-content (header+figs+40px spark floor) sums past the
       // column height and the last tile (Helium) overflows/clips.
-      "#atWrapper #miscColumn .at-rt{flex:1 1 0;margin-bottom:0;min-height:0}",
+      "#atWrapper #miscColumn .at-rt{margin-bottom:0;min-height:0}",
+      // #149 matched heights: only the two GRAPH tiles (Fragments/Gems) flex-grow to absorb the column
+      // height; the chart-free Helium tile + the slim Turkimp row stay compact, so the 4-entry misc column
+      // still ends level with its 3-tile / 2×2-grid neighbours.
+      "#atWrapper #miscColumn .at-rt-fragments,#atWrapper #miscColumn .at-rt-gems{flex:1 1 0}",
+      "#atWrapper #miscColumn .at-rt-helium,#atWrapper #miscColumn .at-turk{flex:0 0 auto}",
       "#atWrapper #miscColumn .at-rt-spark{min-height:0}",
       // Compact, stacked figs for the short/narrow misc tiles: name / value / rate each on their own
       // line with tighter fonts + padding, so real long rates (+1.86e5/sec) never clip and the
@@ -131,6 +155,16 @@
       "#atWrapper #miscColumn .at-rt-figs{flex-direction:column;align-items:flex-start;gap:0;padding:0 8px 2px}",
       "#atWrapper #miscColumn .at-rt-amt{font-size:15px !important;line-height:1.25}",
       "#atWrapper #miscColumn .at-rt-rate{font-size:11px !important;line-height:1.2}",
+      // The Turkimp tile's timer spans live in #miscColumn too, so they lose the same 1.2vw !important
+      // font fight — pin them with !important (matching the resource-tile overrides above), or the
+      // countdown swamps the slim row and the ∞ size-bump is defeated.
+      // Every span here needs its OWN !important size: the game's `#miscColumn span{1.2vw !important}` hits
+      // the nested .at-turk-val / .tk spans directly, so pinning only the .at-turk-timer parent leaves the
+      // countdown digits at 1.2vw (a child-span rule beats inherited size). Pin all three; ∞ bumps the val.
+      "#atWrapper #miscColumn .at-turk-timer{font-size:13px !important}",
+      "#atWrapper #miscColumn .at-turk-timer .tk{font-size:12px !important}",
+      "#atWrapper #miscColumn .at-turk-timer .at-turk-val{font-size:13px !important}",
+      "#atWrapper #miscColumn .at-turk-timer.inf .at-turk-val{font-size:15px !important}",
       "#atWrapper #logColumn{flex:1 1 0}",
       // The resource 2x2 grid: neutralise bootstrap floats to flex so its two rows + four tiles stretch
       // to the matched row height too (sparklines flex-grow to fill).
@@ -219,24 +253,30 @@
   // src/modules/custom-ui/tiles/resource-tile.ts
   var LABEL = { food: "Food", wood: "Wood", metal: "Metal", science: "Science", fragments: "Fragments", gems: "Gems", helium: "Helium" };
   var VERB = { food: "Gathering", wood: "Chopping", metal: "Mining", science: "Researching" };
+  var TURK_RESOURCES = /* @__PURE__ */ new Set(["food", "wood", "metal"]);
   var W = 240;
   var H = 40;
+  function turkimpActive() {
+    const g = globalThis.game;
+    return !!(g?.talents?.turkimp2?.purchased || (g?.global?.turkimpTimer ?? 0) > 0);
+  }
   var refs = {};
   function buildTile(r) {
-    const tile = document.createElement("div");
-    tile.className = `at-rt at-rt-${r}`;
-    tile.id = `atRT-${r}`;
-    tile.innerHTML = `<div class="at-rt-head"><span class="at-rt-name">${LABEL[r]}</span><span class="at-rt-auto" data-on="0">${VERB[r] ?? ""}</span></div><div class="at-rt-figs"><span class="at-rt-amt"><span class="at-rt-owned"></span><span class="at-rt-max"></span></span><span class="at-rt-rate"></span></div><svg class="at-rt-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path class="at-rt-area"/><path class="at-rt-line"/><circle class="at-rt-now" r="3"/></svg>`;
+    const tile2 = document.createElement("div");
+    tile2.className = `at-rt at-rt-${r}`;
+    tile2.id = `atRT-${r}`;
+    const spark = r === "helium" ? "" : `<svg class="at-rt-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path class="at-rt-area"/><path class="at-rt-line"/><circle class="at-rt-now" r="3"/></svg>`;
+    tile2.innerHTML = `<div class="at-rt-head"><span class="at-rt-name">${LABEL[r]}</span><span class="at-rt-auto" data-on="0">${VERB[r] ?? ""}</span></div><div class="at-rt-figs"><span class="at-rt-amt"><span class="at-rt-owned"></span><span class="at-rt-max"></span></span><span class="at-rt-rate"></span></div>` + spark;
     refs[r] = {
-      owned: tile.querySelector(".at-rt-owned"),
-      max: tile.querySelector(".at-rt-max"),
-      rate: tile.querySelector(".at-rt-rate"),
-      auto: tile.querySelector(".at-rt-auto"),
-      line: tile.querySelector(".at-rt-line"),
-      area: tile.querySelector(".at-rt-area"),
-      dot: tile.querySelector(".at-rt-now")
+      owned: tile2.querySelector(".at-rt-owned"),
+      max: tile2.querySelector(".at-rt-max"),
+      rate: tile2.querySelector(".at-rt-rate"),
+      auto: tile2.querySelector(".at-rt-auto"),
+      line: tile2.querySelector(".at-rt-line") ?? void 0,
+      area: tile2.querySelector(".at-rt-area") ?? void 0,
+      dot: tile2.querySelector(".at-rt-now") ?? void 0
     };
-    return tile;
+    return tile2;
   }
   function txt(id) {
     return document.getElementById(id)?.textContent ?? "";
@@ -260,7 +300,11 @@
     x.max.textContent = maxTxt ? ` / ${maxTxt}` : "";
     x.rate.textContent = txt(r === "helium" ? "heliumPh" : `${r}Ps`);
     const gathering = globalThis.game?.global?.playerGathering === r;
-    x.auto.setAttribute("data-on", gathering ? "1" : "0");
+    const turk = turkimpActive() && TURK_RESOURCES.has(r);
+    x.auto.setAttribute("data-gather", gathering ? "1" : "0");
+    x.auto.setAttribute("data-turk", turk ? "1" : "0");
+    x.auto.setAttribute("data-on", gathering || turk ? "1" : "0");
+    if (!x.line || !x.area || !x.dot) return;
     const p = sparkPath(history(r));
     x.line.setAttribute("d", p.line);
     x.area.setAttribute("d", p.area);
@@ -271,6 +315,7 @@
   // src/modules/custom-ui/tiles/resource-region.ts
   var HIDDEN_CLASS = "at-rt-hidden";
   var mounted = [];
+  var ALWAYS_ON = /* @__PURE__ */ new Set(["fragments", "gems", "helium"]);
   function isUnlocked(native) {
     return native.style.visibility !== "hidden" && native.style.display !== "none";
   }
@@ -281,12 +326,12 @@
       const native = document.getElementById(r);
       if (!native || !native.parentElement) continue;
       native.classList.add(HIDDEN_CLASS);
-      const unlocked = isUnlocked(native);
+      const unlocked = ALWAYS_ON.has(r) || isUnlocked(native);
       const isMounted = mounted.includes(r);
       if (unlocked && !isMounted) {
-        const tile = buildTile(r);
-        tile.classList.add("at-rt-mounted");
-        native.parentElement.insertBefore(tile, native);
+        const tile2 = buildTile(r);
+        tile2.classList.add("at-rt-mounted");
+        native.parentElement.insertBefore(tile2, native);
         mounted.push(r);
       } else if (!unlocked && isMounted) {
         document.getElementById(`atRT-${r}`)?.remove();
@@ -318,28 +363,28 @@
     slot.appendChild(node);
   }
   function buildPopulationTile() {
-    const tile = document.createElement("div");
-    tile.className = "at-rt at-pop";
-    tile.id = "atRT-population";
-    tile.innerHTML = `<div class="at-rt-head"><span class="at-rt-name">Trimps</span></div><div class="at-rt-figs"><span class="at-rt-amt"><span class="at-pop-owned"></span><span class="at-pop-max at-rt-max"></span></span><span class="at-rt-rate"></span></div><svg class="at-rt-spark" viewBox="0 0 ${W2} ${H2}" preserveAspectRatio="none"><path class="at-rt-area"/><path class="at-rt-line"/><circle class="at-rt-now" r="3"/></svg><div class="at-substats"><div class="at-substat"><div class="k">Breeding</div><div class="v at-pop-breeding"></div></div><div class="at-substat"><div class="k">Employed</div><div class="v"><span class="at-pop-employed"></span>/<span class="at-pop-maxemp"></span></div></div></div><div class="at-pop-breedslot"><span class="at-pop-breedtime"></span></div><div class="at-pop-trapslot"></div>`;
+    const tile2 = document.createElement("div");
+    tile2.className = "at-rt at-pop";
+    tile2.id = "atRT-population";
+    tile2.innerHTML = `<div class="at-rt-head"><span class="at-rt-name">Trimps</span></div><div class="at-rt-figs"><span class="at-rt-amt"><span class="at-pop-owned"></span><span class="at-pop-max at-rt-max"></span></span><span class="at-rt-rate"></span></div><svg class="at-rt-spark" viewBox="0 0 ${W2} ${H2}" preserveAspectRatio="none"><path class="at-rt-area"/><path class="at-rt-line"/><circle class="at-rt-now" r="3"/></svg><div class="at-substats"><div class="at-substat"><div class="k">Breeding</div><div class="v at-pop-breeding"></div></div><div class="at-substat"><div class="k">Employed</div><div class="v"><span class="at-pop-employed"></span>/<span class="at-pop-maxemp"></span></div></div></div><div class="at-pop-breedslot"><span class="at-pop-breedtime"></span></div><div class="at-pop-trapslot"></div>`;
     anchors = [];
     const breed = document.getElementById("trimpsBar")?.closest(".progress");
     const trap = document.getElementById("trapArea");
-    adopt(breed, tile.querySelector(".at-pop-breedslot"));
-    adopt(trap, tile.querySelector(".at-pop-trapslot"));
+    adopt(breed, tile2.querySelector(".at-pop-breedslot"));
+    adopt(trap, tile2.querySelector(".at-pop-trapslot"));
     refs2 = {
-      owned: tile.querySelector(".at-pop-owned"),
-      max: tile.querySelector(".at-pop-max"),
-      rate: tile.querySelector(".at-rt-rate"),
-      breeding: tile.querySelector(".at-pop-breeding"),
-      employed: tile.querySelector(".at-pop-employed"),
-      maxEmployed: tile.querySelector(".at-pop-maxemp"),
-      breedtime: tile.querySelector(".at-pop-breedtime"),
-      line: tile.querySelector(".at-rt-line"),
-      area: tile.querySelector(".at-rt-area"),
-      dot: tile.querySelector(".at-rt-now")
+      owned: tile2.querySelector(".at-pop-owned"),
+      max: tile2.querySelector(".at-pop-max"),
+      rate: tile2.querySelector(".at-rt-rate"),
+      breeding: tile2.querySelector(".at-pop-breeding"),
+      employed: tile2.querySelector(".at-pop-employed"),
+      maxEmployed: tile2.querySelector(".at-pop-maxemp"),
+      breedtime: tile2.querySelector(".at-pop-breedtime"),
+      line: tile2.querySelector(".at-rt-line"),
+      area: tile2.querySelector(".at-rt-area"),
+      dot: tile2.querySelector(".at-rt-now")
     };
-    return tile;
+    return tile2;
   }
   function updatePopulationTile() {
     const x = refs2;
@@ -376,8 +421,8 @@
     native.classList.add(HIDDEN_CLASS2);
     const unlocked = isUnlocked2(native);
     if (unlocked && !mounted2) {
-      const tile = buildPopulationTile();
-      native.parentElement.insertBefore(tile, native);
+      const tile2 = buildPopulationTile();
+      native.parentElement.insertBefore(tile2, native);
       mounted2 = true;
     } else if (!unlocked && mounted2) {
       releaseAdopted();
@@ -395,17 +440,76 @@
     document.getElementById("trimps")?.classList.remove(HIDDEN_CLASS2);
   }
 
+  // src/modules/custom-ui/tiles/turkimp-tile.ts
+  var tile = null;
+  var valEl = null;
+  var timerEl = null;
+  function turkimpPermanent() {
+    return !!globalThis.game?.talents?.turkimp2?.purchased;
+  }
+  function turkimpActive2() {
+    const g = globalThis.game;
+    return !!(g?.talents?.turkimp2?.purchased || (g?.global?.turkimpTimer ?? 0) > 0);
+  }
+  function buildTurkimpTile() {
+    const el = document.createElement("div");
+    el.className = "at-rt at-turk";
+    el.id = "atRT-turkimp";
+    el.innerHTML = '<div class="at-turk-row"><span class="at-rt-name">Turkimp</span><span class="at-turk-timer"><span class="tk">\u{1F983}</span><span class="at-turk-val"></span></span></div>';
+    tile = el;
+    timerEl = el.querySelector(".at-turk-timer");
+    valEl = el.querySelector(".at-turk-val");
+    return el;
+  }
+  function updateTurkimpTile() {
+    if (!tile || !valEl || !timerEl) return;
+    const permanent = turkimpPermanent();
+    const active = turkimpActive2();
+    tile.classList.toggle("idle", !active);
+    timerEl.classList.toggle("inf", permanent);
+    if (permanent) {
+      valEl.textContent = "\u221E";
+      return;
+    }
+    if (!active) {
+      valEl.textContent = "\u2014";
+      return;
+    }
+    const t = document.getElementById("turkimpTime")?.textContent?.trim();
+    valEl.textContent = t && t.length ? t : "";
+  }
+  function syncTurkimpTile() {
+    const col = document.getElementById("miscColumn");
+    if (!col) return;
+    let el = document.getElementById("atRT-turkimp");
+    if (!el) {
+      el = buildTurkimpTile();
+      const helium = col.querySelector(".at-rt-helium");
+      if (helium) helium.after(el);
+      else col.appendChild(el);
+    }
+    updateTurkimpTile();
+  }
+  function deactivateTurkimpTile() {
+    document.getElementById("atRT-turkimp")?.remove();
+    tile = null;
+    valEl = null;
+    timerEl = null;
+  }
+
   // src/modules/custom-ui/boot.ts
   var sampleTimer = null;
   var refreshTimer = null;
   function startTiles() {
     syncRegion();
     syncPopulationRegion();
+    syncTurkimpTile();
     sampleTick();
     if (sampleTimer === null) sampleTimer = setInterval(sampleTick, 1e3);
     if (refreshTimer === null) refreshTimer = setInterval(() => {
       syncRegion();
       syncPopulationRegion();
+      syncTurkimpTile();
     }, 200);
   }
   function stopTiles() {
@@ -419,6 +523,7 @@
     }
     deactivateRegion();
     deactivatePopulationRegion();
+    deactivateTurkimpTile();
   }
   function applyCustomUI(active) {
     if (active) {

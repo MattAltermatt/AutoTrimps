@@ -4,6 +4,11 @@ import { buildTile, updateTile } from './resource-tile'
 const HIDDEN_CLASS = 'at-rt-hidden'
 const mounted: string[] = []
 
+// Per #149: Fragments/Gems/Helium are ALWAYS shown — mounted even while the game still hides them
+// (pre-unlock), so the secondary column is never empty. The four hand-gathered resources still gate
+// on unlock (they'd be noise at zone 1). A resource here is never unmounted by a portal re-lock.
+const ALWAYS_ON = new Set(['fragments', 'gems', 'helium'])
+
 // Native resource blocks hide until unlocked — food/wood/metal/science/fragments/gems via
 // visibility:hidden, helium via display:none. Unlocked = neither hidden mechanism is active.
 function isUnlocked(native: HTMLElement): boolean {
@@ -24,7 +29,7 @@ export function syncRegion(): void {
     const native = document.getElementById(r)
     if (!native || !native.parentElement) continue
     native.classList.add(HIDDEN_CLASS)
-    const unlocked = isUnlocked(native)
+    const unlocked = ALWAYS_ON.has(r) || isUnlocked(native)
     const isMounted = mounted.includes(r)
     if (unlocked && !isMounted) {
       const tile = buildTile(r)

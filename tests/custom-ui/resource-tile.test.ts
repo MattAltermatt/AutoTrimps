@@ -51,6 +51,49 @@ describe('resource tile', () => {
     expect(t.querySelector('.at-rt-auto')!.getAttribute('data-on')).toBe('0')
   })
 
+  it('turkimp: food/wood/metal badges light gold (data-turk) even when not gathering', () => {
+    ;(globalThis as any).game.global.playerGathering = 'food' // gathering food, not wood
+    ;(globalThis as any).game.global.turkimpTimer = 9e5 // turkimp active
+    const wood = buildTile('wood')
+    document.body.appendChild(wood)
+    updateTile('wood')
+    // wood isn't being gathered, but turkimp lights it gold + visible
+    expect(wood.querySelector('.at-rt-auto')!.getAttribute('data-turk')).toBe('1')
+    expect(wood.querySelector('.at-rt-auto')!.getAttribute('data-on')).toBe('1')
+    expect(wood.querySelector('.at-rt-auto')!.getAttribute('data-gather')).toBe('0')
+  })
+
+  it('turkimp: the permanent turkimp2 talent also lights the treatment; science never turkimp-lit', () => {
+    ;(globalThis as any).game.global.turkimpTimer = 0
+    ;(globalThis as any).game.talents = { turkimp2: { purchased: true } }
+    const metal = buildTile('metal')
+    const science = buildTile('science')
+    document.body.append(metal, science)
+    updateTile('metal')
+    updateTile('science')
+    expect(metal.querySelector('.at-rt-auto')!.getAttribute('data-turk')).toBe('1')
+    expect(science.querySelector('.at-rt-auto')!.getAttribute('data-turk')).toBe('0') // not a turkimp resource
+  })
+
+  it('no turkimp: badge only reflects gathering (data-turk stays 0)', () => {
+    const wood = buildTile('wood')
+    document.body.appendChild(wood)
+    updateTile('wood')
+    expect(wood.querySelector('.at-rt-auto')!.getAttribute('data-turk')).toBe('0')
+    expect(wood.querySelector('.at-rt-auto')!.getAttribute('data-on')).toBe('1') // gathering wood
+  })
+
+  it('helium is chart-free: no sparkline, mirrors owned + per-hour, update never throws', () => {
+    document.body.innerHTML += `<span id="heliumOwned">3.07e4</span><span id="heliumPh">+412/hr</span>`
+    ;(globalThis as any).game.resources.helium = { owned: 1 }
+    const t = buildTile('helium')
+    document.body.appendChild(t)
+    expect(t.querySelector('.at-rt-spark')).toBeNull() // no chart
+    expect(() => updateTile('helium')).not.toThrow()
+    expect(t.querySelector('.at-rt-owned')!.textContent).toBe('3.07e4')
+    expect(t.querySelector('.at-rt-rate')!.textContent).toBe('+412/hr')
+  })
+
   it('draws a sparkline path once sampled', () => {
     ;(globalThis as any).game.resources.wood.owned = 5
     sampleTick()

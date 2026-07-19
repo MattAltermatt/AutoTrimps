@@ -36,4 +36,11 @@ describe('custom-ui completeness', () => {
     const html = readFileSync(resolve(process.cwd(), '.trimps-game/index.html'), 'utf8')
     expect(html).toMatch(/id=["']trimps["']/)
   })
+
+  it('#149: the Turkimp tile mirrors a real native (#turkimpTime exists in the clone)', () => {
+    // The turkimp tile reads #turkimpTime.textContent (drift-free mirror). If an upstream bump renamed
+    // that span, the mirror would silently go blank — this net turns that into a red test instead.
+    const html = readFileSync(resolve(process.cwd(), '.trimps-game/index.html'), 'utf8')
+    expect(html).toMatch(/id=["']turkimpTime["']/)
+  })
 })

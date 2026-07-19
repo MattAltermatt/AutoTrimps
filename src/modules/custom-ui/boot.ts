@@ -3,6 +3,7 @@ import { adoptHud, releaseHud } from './adopt'
 import { customUIState } from './state'
 import { syncRegion, deactivateRegion, sampleTick } from './tiles/resource-region'
 import { syncPopulationRegion, deactivatePopulationRegion } from './tiles/population-region'
+import { syncTurkimpTile, deactivateTurkimpTile } from './tiles/turkimp-tile'
 
 // getPageSetting is the global ambient seam (src/game/at-legacy.d.ts) — no local redeclare (#36).
 
@@ -14,17 +15,19 @@ let refreshTimer: ReturnType<typeof setInterval> | null = null
 function startTiles(): void {
   syncRegion()
   syncPopulationRegion()
+  syncTurkimpTile() // after syncRegion so it lands below the helium tile
   sampleTick() // seed one sample so the tiles aren't empty
-  // The 200ms refresh also re-runs both syncs, so a resource/population unlocked mid-session (or
-  // re-locked by a portal reset) is picked up without a native-panel flash.
+  // The 200ms refresh also re-runs the syncs, so a resource/population unlocked mid-session (or
+  // re-locked by a portal reset) is picked up without a native-panel flash. Turkimp last (below helium).
   if (sampleTimer === null) sampleTimer = setInterval(sampleTick, 1000)
-  if (refreshTimer === null) refreshTimer = setInterval(() => { syncRegion(); syncPopulationRegion() }, 200)
+  if (refreshTimer === null) refreshTimer = setInterval(() => { syncRegion(); syncPopulationRegion(); syncTurkimpTile() }, 200)
 }
 function stopTiles(): void {
   if (sampleTimer !== null) { clearInterval(sampleTimer); sampleTimer = null }
   if (refreshTimer !== null) { clearInterval(refreshTimer); refreshTimer = null }
   deactivateRegion()
   deactivatePopulationRegion()
+  deactivateTurkimpTile()
 }
 
 export function applyCustomUI(active: boolean): void {

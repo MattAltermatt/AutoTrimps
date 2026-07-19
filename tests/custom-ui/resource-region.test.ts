@@ -70,4 +70,29 @@ describe('resource region graduation', () => {
     syncRegion()
     expect(document.querySelectorAll('#atRT-food').length).toBe(1)
   })
+
+  it('#149: Fragments/Gems/Helium mount even while the game hides them (always-on)', () => {
+    // Add the secondaries as the game ships them pre-unlock: fragments/gems visibility:hidden, helium display:none.
+    document.getElementById('resourceColumn')!.innerHTML += `
+      <div class="cell"><div id="fragments" style="visibility:hidden;"><span id="fragmentsOwned">0</span><span id="fragmentsPs">+0/sec</span></div></div>
+      <div class="cell"><div id="gems" style="visibility:hidden;"><span id="gemsOwned">0</span><span id="gemsPs">+0/sec</span></div></div>
+      <div class="cell"><div id="helium" style="display:none;"><span id="heliumOwned">0</span><span id="heliumPh">+0/hr</span></div></div>`
+    Object.assign((globalThis as any).game.resources, { fragments: { owned: 0 }, gems: { owned: 0 }, helium: { owned: 0 } })
+    syncRegion()
+    expect(document.getElementById('atRT-fragments')).not.toBeNull()
+    expect(document.getElementById('atRT-gems')).not.toBeNull()
+    expect(document.getElementById('atRT-helium')).not.toBeNull()
+  })
+
+  it('#149: an always-on secondary is NOT unmounted by a portal re-lock', () => {
+    document.getElementById('resourceColumn')!.innerHTML += `
+      <div class="cell"><div id="helium" style="display:none;"><span id="heliumOwned">0</span><span id="heliumPh">+0/hr</span></div></div>`
+    ;(globalThis as any).game.resources.helium = { owned: 0 }
+    syncRegion()
+    expect(document.getElementById('atRT-helium')).not.toBeNull()
+    // portal re-lock would re-hide the native; always-on keeps the tile mounted
+    document.getElementById('helium')!.style.display = 'none'
+    syncRegion()
+    expect(document.getElementById('atRT-helium')).not.toBeNull()
+  })
 })

@@ -21,11 +21,18 @@ function injectMarkerStyles(): void {
     '.at-rt-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 0}',
     '.at-rt-name{font-weight:800;font-size:14px;color:#eef2f7}',
     '.at-rt-auto{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;padding:2px 5px}',
-    // Lit + pulsing only on the resource AT is actively gathering right now; hidden otherwise.
-    '.at-rt-auto[data-on="1"]{color:#08260f;background:#35c26b;animation:atRtPulse 1.6s ease-in-out infinite}',
+    // Badge shows when actively gathering (green) OR turkimp'd (gold); hidden otherwise.
     '.at-rt-auto[data-on="0"]{display:none}',
+    '.at-rt-auto[data-on="1"]{color:#08260f;background:#35c26b}',
+    // The pulse follows the resource AT is actively hand-gathering (green or gold).
+    '.at-rt-auto[data-gather="1"]{animation:atRtPulse 1.6s ease-in-out infinite}',
+    // Turkimp treatment: gold badge with the verb wrapped in turkeys. Pseudo-elements keep the span's
+    // textContent equal to the bare verb (tests + a11y), and the wrap toggles purely via data-turk.
+    '.at-rt-auto[data-turk="1"]{color:#2a1c00;background:#e0b24a}',
+    '.at-rt-auto[data-turk="1"]::before{content:"🦃 "}',
+    '.at-rt-auto[data-turk="1"]::after{content:" 🦃"}',
     '@keyframes atRtPulse{0%,100%{box-shadow:0 0 0 0 rgba(53,194,107,.55)}50%{box-shadow:0 0 0 5px rgba(53,194,107,0)}}',
-    '@media (prefers-reduced-motion:reduce){.at-rt-auto[data-on="1"]{animation:none}}',
+    '@media (prefers-reduced-motion:reduce){.at-rt-auto[data-gather="1"]{animation:none}}',
     '.at-rt-figs{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 10px 6px}',
     '.at-rt-amt{font-family:ui-monospace,Menlo,monospace;font-weight:600;font-size:15px;color:#eef2f7}',
     '.at-rt-max{color:#7b8697;font-weight:500}',
@@ -35,6 +42,18 @@ function injectMarkerStyles(): void {
     '.at-rt-area{fill:var(--c);opacity:.16}',
     '.at-rt-line{fill:none;stroke:var(--c);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}',
     '.at-rt-now{fill:var(--c);stroke:#2f353e;stroke-width:1.5}',
+    // #149 Turkimp tile — a slim gold row in the misc column (name left, timer right). Mirrors
+    // #turkimpTime; goes ∞ when turkimp2 is owned; dims to a `—` placeholder when no turkimp is active.
+    '.at-turk{--c:#e0b24a;border-color:#5a4a24}',
+    '.at-turk-row{display:flex;align-items:center;justify-content:space-between;padding:5px 9px}',
+    '#atWrapper .at-turk .at-rt-name{color:#f0d089}',
+    '.at-turk-timer{display:inline-flex;align-items:center;gap:4px;font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:13px;color:#fbe7b0}',
+    '.at-turk-timer .tk{font-size:12px;line-height:1;vertical-align:-1px}',
+    '.at-turk-timer.inf .at-turk-val{font-size:15px}',
+    '.at-turk.idle{--c:#6b7482;border-color:#333b46}',
+    '#atWrapper .at-turk.idle .at-rt-name{color:#7b8697}',
+    '.at-turk.idle .at-turk-timer{color:#5c6675;font-weight:600}',
+    '.at-turk.idle .tk{filter:grayscale(1);opacity:.5}',
     // #41 Phase 3 — the Trimps population panel (Variant A: stat pills). Adopts the game's live
     // breed bar + trap area into slots; mirrors owned/rate/breeding/employed as text.
     '.at-pop{--c:#e0b24a}',
@@ -96,7 +115,12 @@ function injectMarkerStyles(): void {
     // min-height:0 on the tiles AND their sparklines lets three tiles distribute the matched column
     // height evenly — without it their min-content (header+figs+40px spark floor) sums past the
     // column height and the last tile (Helium) overflows/clips.
-    '#atWrapper #miscColumn .at-rt{flex:1 1 0;margin-bottom:0;min-height:0}',
+    '#atWrapper #miscColumn .at-rt{margin-bottom:0;min-height:0}',
+    // #149 matched heights: only the two GRAPH tiles (Fragments/Gems) flex-grow to absorb the column
+    // height; the chart-free Helium tile + the slim Turkimp row stay compact, so the 4-entry misc column
+    // still ends level with its 3-tile / 2×2-grid neighbours.
+    '#atWrapper #miscColumn .at-rt-fragments,#atWrapper #miscColumn .at-rt-gems{flex:1 1 0}',
+    '#atWrapper #miscColumn .at-rt-helium,#atWrapper #miscColumn .at-turk{flex:0 0 auto}',
     '#atWrapper #miscColumn .at-rt-spark{min-height:0}',
     // Compact, stacked figs for the short/narrow misc tiles: name / value / rate each on their own
     // line with tighter fonts + padding, so real long rates (+1.86e5/sec) never clip and the
@@ -109,6 +133,16 @@ function injectMarkerStyles(): void {
     '#atWrapper #miscColumn .at-rt-figs{flex-direction:column;align-items:flex-start;gap:0;padding:0 8px 2px}',
     '#atWrapper #miscColumn .at-rt-amt{font-size:15px !important;line-height:1.25}',
     '#atWrapper #miscColumn .at-rt-rate{font-size:11px !important;line-height:1.2}',
+    // The Turkimp tile's timer spans live in #miscColumn too, so they lose the same 1.2vw !important
+    // font fight — pin them with !important (matching the resource-tile overrides above), or the
+    // countdown swamps the slim row and the ∞ size-bump is defeated.
+    // Every span here needs its OWN !important size: the game's `#miscColumn span{1.2vw !important}` hits
+    // the nested .at-turk-val / .tk spans directly, so pinning only the .at-turk-timer parent leaves the
+    // countdown digits at 1.2vw (a child-span rule beats inherited size). Pin all three; ∞ bumps the val.
+    '#atWrapper #miscColumn .at-turk-timer{font-size:13px !important}',
+    '#atWrapper #miscColumn .at-turk-timer .tk{font-size:12px !important}',
+    '#atWrapper #miscColumn .at-turk-timer .at-turk-val{font-size:13px !important}',
+    '#atWrapper #miscColumn .at-turk-timer.inf .at-turk-val{font-size:15px !important}',
     '#atWrapper #logColumn{flex:1 1 0}',
     // The resource 2x2 grid: neutralise bootstrap floats to flex so its two rows + four tiles stretch
     // to the matched row height too (sparklines flex-grow to fill).
