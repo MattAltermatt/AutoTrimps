@@ -300,10 +300,10 @@
     x.max.textContent = maxTxt ? ` / ${maxTxt}` : "";
     x.rate.textContent = txt(r === "helium" ? "heliumPh" : `${r}Ps`);
     const gathering = globalThis.game?.global?.playerGathering === r;
-    const turk = turkimpActive() && TURK_RESOURCES.has(r);
+    const turk = gathering && turkimpActive() && TURK_RESOURCES.has(r);
     x.auto.setAttribute("data-gather", gathering ? "1" : "0");
     x.auto.setAttribute("data-turk", turk ? "1" : "0");
-    x.auto.setAttribute("data-on", gathering || turk ? "1" : "0");
+    x.auto.setAttribute("data-on", gathering ? "1" : "0");
     if (!x.line || !x.area || !x.dot) return;
     const p = sparkPath(history(r));
     x.line.setAttribute("d", p.line);

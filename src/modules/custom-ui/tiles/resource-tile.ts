@@ -79,16 +79,15 @@ export function updateTile(r: string): void {
   const maxTxt = txt(`${r}Max`)
   x.max.textContent = maxTxt ? ` / ${maxTxt}` : ''
   x.rate.textContent = txt(r === 'helium' ? 'heliumPh' : `${r}Ps`)
-  // Badge visibility + treatment:
-  //  - data-gather: this resource is the one AT is CURRENTLY hand-gathering (green, pulsing).
-  //  - data-turk: turkimp is active AND this is food/wood/metal (gold, 🦃-wrapped verb via CSS).
-  //  - data-on: visible when either applies. During turkimp all three of food/wood/metal light gold
-  //    (a loud "turkimp is ON"); the actively-gathered one additionally pulses (data-gather).
+  // Badge visibility + treatment: the badge shows ONLY on the resource being gathered right now
+  // (data-on = data-gather). When that resource is food/wood/metal AND a turkimp is active, the badge
+  // gets the gold 🦃-wrapped treatment (data-turk) — so the flair tracks the single active action, not
+  // all three at once. The persistent Turkimp tile (misc column) carries the global "buff is on" signal.
   const gathering = (globalThis as any).game?.global?.playerGathering === r
-  const turk = turkimpActive() && TURK_RESOURCES.has(r)
+  const turk = gathering && turkimpActive() && TURK_RESOURCES.has(r)
   x.auto.setAttribute('data-gather', gathering ? '1' : '0')
   x.auto.setAttribute('data-turk', turk ? '1' : '0')
-  x.auto.setAttribute('data-on', gathering || turk ? '1' : '0')
+  x.auto.setAttribute('data-on', gathering ? '1' : '0')
   // Helium is chart-free (no sparkline refs) — skip the redraw for it.
   if (!x.line || !x.area || !x.dot) return
   const p = sparkPath(history(r))

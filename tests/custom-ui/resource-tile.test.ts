@@ -51,36 +51,43 @@ describe('resource tile', () => {
     expect(t.querySelector('.at-rt-auto')!.getAttribute('data-on')).toBe('0')
   })
 
-  it('turkimp: food/wood/metal badges light gold (data-turk) even when not gathering', () => {
-    ;(globalThis as any).game.global.playerGathering = 'food' // gathering food, not wood
+  it('turkimp: only the ACTIVELY-gathered resource gets the gold treatment, not all three', () => {
+    ;(globalThis as any).game.global.playerGathering = 'wood' // gathering wood
     ;(globalThis as any).game.global.turkimpTimer = 9e5 // turkimp active
     const wood = buildTile('wood')
-    document.body.appendChild(wood)
+    const food = buildTile('food')
+    document.body.append(wood, food)
     updateTile('wood')
-    // wood isn't being gathered, but turkimp lights it gold + visible
+    updateTile('food')
+    // wood IS being gathered under turkimp → gold + visible
     expect(wood.querySelector('.at-rt-auto')!.getAttribute('data-turk')).toBe('1')
     expect(wood.querySelector('.at-rt-auto')!.getAttribute('data-on')).toBe('1')
-    expect(wood.querySelector('.at-rt-auto')!.getAttribute('data-gather')).toBe('0')
+    // food is NOT being gathered → no badge at all, even though turkimp boosts it too
+    expect(food.querySelector('.at-rt-auto')!.getAttribute('data-turk')).toBe('0')
+    expect(food.querySelector('.at-rt-auto')!.getAttribute('data-on')).toBe('0')
   })
 
-  it('turkimp: the permanent turkimp2 talent also lights the treatment; science never turkimp-lit', () => {
+  it('turkimp: nothing gathered (e.g. trapping) → no food/wood/metal badge lights', () => {
+    ;(globalThis as any).game.global.playerGathering = 'trimps' // trapping, not gathering a resource
     ;(globalThis as any).game.global.turkimpTimer = 0
-    ;(globalThis as any).game.talents = { turkimp2: { purchased: true } }
-    const metal = buildTile('metal')
-    const science = buildTile('science')
-    document.body.append(metal, science)
-    updateTile('metal')
-    updateTile('science')
-    expect(metal.querySelector('.at-rt-auto')!.getAttribute('data-turk')).toBe('1')
-    expect(science.querySelector('.at-rt-auto')!.getAttribute('data-turk')).toBe('0') // not a turkimp resource
+    ;(globalThis as any).game.talents = { turkimp2: { purchased: true } } // even permanent turkimp
+    for (const r of ['food', 'wood', 'metal']) {
+      const t = buildTile(r)
+      document.body.appendChild(t)
+      updateTile(r)
+      expect(t.querySelector('.at-rt-auto')!.getAttribute('data-on')).toBe('0')
+      expect(t.querySelector('.at-rt-auto')!.getAttribute('data-turk')).toBe('0')
+    }
   })
 
-  it('no turkimp: badge only reflects gathering (data-turk stays 0)', () => {
-    const wood = buildTile('wood')
-    document.body.appendChild(wood)
-    updateTile('wood')
-    expect(wood.querySelector('.at-rt-auto')!.getAttribute('data-turk')).toBe('0')
-    expect(wood.querySelector('.at-rt-auto')!.getAttribute('data-on')).toBe('1') // gathering wood
+  it('turkimp: gathered SCIENCE shows a plain green badge (never the turkimp treatment)', () => {
+    ;(globalThis as any).game.global.playerGathering = 'science'
+    ;(globalThis as any).game.global.turkimpTimer = 9e5
+    const science = buildTile('science')
+    document.body.appendChild(science)
+    updateTile('science')
+    expect(science.querySelector('.at-rt-auto')!.getAttribute('data-on')).toBe('1') // gathering → visible
+    expect(science.querySelector('.at-rt-auto')!.getAttribute('data-turk')).toBe('0') // not a turkimp resource
   })
 
   it('helium is chart-free: no sparkline, mirrors owned + per-hour, update never throws', () => {
