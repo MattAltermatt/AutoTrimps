@@ -4,3 +4,6 @@ dist/
 .vitest-report.json
 .claude/worktrees/
 .superpowers/
+
+# macOS Finder metadata
+.DS_Store

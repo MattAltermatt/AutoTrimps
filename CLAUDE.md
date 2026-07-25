@@ -114,6 +114,14 @@ note) — per-module correctness finders + conversion-seam audits, each finding 
 `docs/superpowers/specs/2026-07-08-code-review-findings.md`). Filter faithful-to-legacy-intended from
 genuine defects; numeric game-parity mirrors are user-gated (sacrosanct tuning).
 
+**Every branch gets a reviewer agent before FF-merge — standing-authorized, never asked.** Dispatch a
+fresh agent with no implementation bias (`feature-dev:code-reviewer`, or the adversarial multi-agent
+shape above for anything wider than a single module). This holds even when the change is "obviously
+safe" and every gate is green: on this repo a green gate has three times been a gate that *could not
+fail*, so gates and reviewers are independent evidence, not substitutes. If a session instruction says
+not to use the Agent tool without an ask, the standing directive in the global CLAUDE.md is that ask —
+dispatch, don't offer.
+
 **Byte-parity gate before FF-merge** (`.claude/agents/legacy-parity-verifier.md`): diff the
 ordered `createSetting` id list + per-function bodies against the pre-conversion source. The
 `createSetting` define-pass is the persistence contract — a dropped/reordered call leaves a
