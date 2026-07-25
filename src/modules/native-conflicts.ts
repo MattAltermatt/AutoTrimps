@@ -100,6 +100,74 @@ const atBuysStorage = (): boolean =>
 const atBuildingsHandedOff = (): boolean => getPageSetting('BuyBuildingsNew') === 0
 const atJobsHandedOff = (): boolean => getPageSetting('BuyJobsNew') === 0
 
+// ── AutoGold (#152), and why this row compares CHOICES instead of "both are on" ────────────────────
+// Golden Upgrades are a scarce, permanent, run-defining purchase: getAvailableGoldenUpgrades()
+// (main.js:14299) is a COUNT, and BOTH automations spend it through the same buyGoldenUpgrade(). So two
+// automations that agree are harmless — the second call finds nothing left and no-ops — while two that
+// disagree race for every golden the run produces. "Both are running" would therefore be the wrong
+// claim, and the same overclaim #150's review had to strip out of four rows. The honest claim is that
+// they disagree about which pool.
+//
+// The two vocabularies line up 1:1, which is what makes the comparison possible at all. Native's modes
+// are toggleAutoGolden's own order (main.js:18116-18130), and its 3/4 differ ONLY in which fallback is
+// used once the Void pool caps out — exactly how AT's 'Void' and 'Void + Battle' differ
+// (other.ts:137-144, upgrades.ts:245-252):
+//   native 1 Helium ("Radon" in U2)  ↔ AT 'Helium' / 'Radon'  → the Helium pool either way
+//   native 2 Battle                  ↔ AT 'Battle'
+//   native 3 Voidlium                ↔ AT 'Void'
+//   native 4 Voidtle                 ↔ AT 'Void + Battle'
+//   native 5 Custom (archoGolden)    ↔ nothing AT can express → always a disagreement
+//
+// ⚠ DELIBERATE FALSE NEGATIVE. AT's Helium↔Battle switch-over thresholds (radonbattle / battleradon and
+// their d*/R* variants) mean AT's EFFECTIVE choice can drift from its configured one mid-run, so two
+// sides configured alike can still diverge. Modelling that would mean re-implementing other.ts:128-133
+// here, and a second copy of a code-owned rule is the thing that rots ([[reference-derive-dont-retype]]).
+// An advisory that misses a case is a far smaller failure than one that invents a conflict.
+const NATIVE_GOLDEN_POOL = ['Off', 'Helium', 'Battle', 'Void', 'Void + Battle', 'Custom']
+
+// -1 (button hidden) and 0 (Off) both mean "not picking"; anything above 0 is an active strategy.
+const nativeGoldenMode = (): number =>
+    typeof getAutoGoldenSetting === 'function' ? Number(getAutoGoldenSetting()) : 0
+
+const nativeGoldenPool = (): string => NATIVE_GOLDEN_POOL[nativeGoldenMode()] ?? 'Custom'
+
+// AT itself normalises 'Radon' onto the Helium pool (upgrades.ts:231-232) — U2 has no golden pool of its
+// own — so compare pools, never the labels the two universes happen to print.
+const atGoldenPool = (raw: unknown): string => (raw === 'Radon' ? 'Helium' : String(raw))
+
+/**
+ * Every AT golden strategy DISPATCHING right now, as pool names.
+ *
+ * Mirrors main-loop.ts:424-426 (U1) and :585-587 (U2) exactly, including the part that looks like a bug
+ * and is faithfully reproduced: those three guards are evaluated INDEPENDENTLY, not as an if/else chain,
+ * so if a Daily and a Challenge2 are both flagged AT really does dispatch two strategies and either one
+ * can be the one that disagrees. Hence a list rather than a single winner — inventing a precedence the
+ * dispatcher does not have would be a claim about code that does not exist.
+ *
+ * The reads are assigned to locals, unlike the rest of this file: these are string DROPDOWNS, not
+ * multitoggles, so there are no option indices for dispatch-holes (#81) to route, and main-loop.ts
+ * already value-consumes the same six ids the same way. The literal id still sits at the callsite, which
+ * is what settings-reverse (#68) resolves.
+ */
+const atGoldenChoices = (): string[] => {
+    const normal = u2() ? getPageSetting('RAutoGoldenUpgrades') : getPageSetting('AutoGoldenUpgrades')
+    const daily = u2() ? getPageSetting('RdAutoGoldenUpgrades') : getPageSetting('dAutoGoldenUpgrades')
+    const c2 = u2() ? getPageSetting('RcAutoGoldenUpgrades') : getPageSetting('cAutoGoldenUpgrades')
+    const out: string[] = []
+    // `normal &&` before the != 'Off' compare is not redundant: a key absent from a veteran's store
+    // returns `false` (#68), and `false != 'Off'` is TRUE. Same guard main-loop.ts uses, same reason.
+    if (normal && normal != 'Off' && !game.global.runningChallengeSquared && game.global.challengeActive != 'Daily')
+        out.push(atGoldenPool(normal))
+    if (daily && daily != 'Off' && game.global.challengeActive == 'Daily') out.push(atGoldenPool(daily))
+    if (c2 && c2 != 'Off' && game.global.runningChallengeSquared) out.push(atGoldenPool(c2))
+    return out
+}
+
+const atGoldenDisagrees = (): boolean => {
+    const native = nativeGoldenPool()
+    return atGoldenChoices().some((choice) => choice !== native)
+}
+
 const REC = '<br><br><b>Recommended:</b> '
 
 export const CONFLICTS: readonly NativeConflict[] = [
@@ -173,6 +241,40 @@ export const CONFLICTS: readonly NativeConflict[] = [
             (atBuysStorage()
                 ? ' It costs nothing: AT buys storage ahead of time anyway, so AutoStorage only ever acts as a backstop.'
                 : ' AT is not buying storage in its current mode, so right now AutoStorage is the only thing that would.'),
+    },
+    {
+        key: 'autoGolden',
+        anchorId: 'autoGoldenBtn',
+        title: 'AutoGold and AT are buying different Golden Upgrades',
+        // `autoUpgradesAvailable` is load-bearing for exactly the reason it is on the autoPrestige row:
+        // autoGoldenUpgrades() is the FIRST statement inside autoUpgrades() (main.js:18435-18436), and
+        // autoUpgrades() has a single caller, guarded (main.js:19915). Below HZE 59 and before the
+        // Improbability, native AutoGold can read "AutoGold Battle" on a visible button and buy nothing.
+        when: () => nativeGoldenMode() > 0 && !!game.global.autoUpgradesAvailable && atGoldenDisagrees(),
+        body: () => {
+            const native = nativeGoldenPool()
+            const mine = atGoldenChoices().join(' / ')
+            return (
+                'Golden Upgrades are a fixed, permanent pool &mdash; the game grants a set number per run, and ' +
+                'both automations spend from the same count through the same purchase. AT is set to buy <b>' +
+                mine +
+                '</b>, while the game&rsquo;s AutoGold is set to buy <b>' +
+                native +
+                '</b>. Whichever fires first on a given tick wins that golden, so you get an unpredictable ' +
+                'mix of the two' +
+                (native === 'Custom'
+                    ? ' &mdash; and <b>Custom</b> AutoGold is a hand-built order AT cannot see or account for'
+                    : '') +
+                '. AT&rsquo;s switch-over rules (the ' +
+                (u2() ? 'Radon' : 'Helium') +
+                '/Battle purchase counts, the Void fallback zone) stop meaning anything once something else ' +
+                'is spending the same pool.' +
+                REC +
+                'pick one owner. To keep AT in charge, set AutoGold to <b>Off</b>. To hand Golden Upgrades to ' +
+                'the game, set AT&rsquo;s <b>AutoGoldenUpgrades</b> &mdash; and its <b>Daily</b> and <b>C2</b> ' +
+                'variants, which are separate settings &mdash; to <b>Off</b>.'
+            )
+        },
     },
     {
         key: 'buildingsOrphan',

@@ -829,6 +829,25 @@
   var atBuysStorage = () => u2() ? getPageSetting2("RBuyBuildingsNew") === true : getPageSetting2("BuyBuildingsNew") == 1 || getPageSetting2("BuyBuildingsNew") == 3;
   var atBuildingsHandedOff = () => getPageSetting2("BuyBuildingsNew") === 0;
   var atJobsHandedOff = () => getPageSetting2("BuyJobsNew") === 0;
+  var NATIVE_GOLDEN_POOL = ["Off", "Helium", "Battle", "Void", "Void + Battle", "Custom"];
+  var nativeGoldenMode = () => typeof getAutoGoldenSetting === "function" ? Number(getAutoGoldenSetting()) : 0;
+  var nativeGoldenPool = () => NATIVE_GOLDEN_POOL[nativeGoldenMode()] ?? "Custom";
+  var atGoldenPool = (raw) => raw === "Radon" ? "Helium" : String(raw);
+  var atGoldenChoices = () => {
+    const normal = u2() ? getPageSetting2("RAutoGoldenUpgrades") : getPageSetting2("AutoGoldenUpgrades");
+    const daily = u2() ? getPageSetting2("RdAutoGoldenUpgrades") : getPageSetting2("dAutoGoldenUpgrades");
+    const c2 = u2() ? getPageSetting2("RcAutoGoldenUpgrades") : getPageSetting2("cAutoGoldenUpgrades");
+    const out = [];
+    if (normal && normal != "Off" && !game.global.runningChallengeSquared && game.global.challengeActive != "Daily")
+      out.push(atGoldenPool(normal));
+    if (daily && daily != "Off" && game.global.challengeActive == "Daily") out.push(atGoldenPool(daily));
+    if (c2 && c2 != "Off" && game.global.runningChallengeSquared) out.push(atGoldenPool(c2));
+    return out;
+  };
+  var atGoldenDisagrees = () => {
+    const native = nativeGoldenPool();
+    return atGoldenChoices().some((choice) => choice !== native);
+  };
   var REC = "<br><br><b>Recommended:</b> ";
   var CONFLICTS = [
     {
@@ -877,6 +896,21 @@
       body: () => "You have <b>Auspicious Presence Part II</b>, which builds storage instantly and converts overflow into new storage with <b>zero waste</b> &mdash; but only while AutoStorage is on. With it off, everything you collect above your cap is simply lost." + REC + "turn AutoStorage <b>On</b>." + // Conditional, because "it costs nothing" is only true when AT is ALSO buying storage —
       // for Buy Neither / Buy Buildings there is no AT storage buyer to act as the backstop.
       (atBuysStorage() ? " It costs nothing: AT buys storage ahead of time anyway, so AutoStorage only ever acts as a backstop." : " AT is not buying storage in its current mode, so right now AutoStorage is the only thing that would.")
+    },
+    {
+      key: "autoGolden",
+      anchorId: "autoGoldenBtn",
+      title: "AutoGold and AT are buying different Golden Upgrades",
+      // `autoUpgradesAvailable` is load-bearing for exactly the reason it is on the autoPrestige row:
+      // autoGoldenUpgrades() is the FIRST statement inside autoUpgrades() (main.js:18435-18436), and
+      // autoUpgrades() has a single caller, guarded (main.js:19915). Below HZE 59 and before the
+      // Improbability, native AutoGold can read "AutoGold Battle" on a visible button and buy nothing.
+      when: () => nativeGoldenMode() > 0 && !!game.global.autoUpgradesAvailable && atGoldenDisagrees(),
+      body: () => {
+        const native = nativeGoldenPool();
+        const mine = atGoldenChoices().join(" / ");
+        return "Golden Upgrades are a fixed, permanent pool &mdash; the game grants a set number per run, and both automations spend from the same count through the same purchase. AT is set to buy <b>" + mine + "</b>, while the game&rsquo;s AutoGold is set to buy <b>" + native + "</b>. Whichever fires first on a given tick wins that golden, so you get an unpredictable mix of the two" + (native === "Custom" ? " &mdash; and <b>Custom</b> AutoGold is a hand-built order AT cannot see or account for" : "") + ". AT&rsquo;s switch-over rules (the " + (u2() ? "Radon" : "Helium") + "/Battle purchase counts, the Void fallback zone) stop meaning anything once something else is spending the same pool." + REC + "pick one owner. To keep AT in charge, set AutoGold to <b>Off</b>. To hand Golden Upgrades to the game, set AT&rsquo;s <b>AutoGoldenUpgrades</b> &mdash; and its <b>Daily</b> and <b>C2</b> variants, which are separate settings &mdash; to <b>Off</b>.";
+      }
     },
     {
       key: "buildingsOrphan",

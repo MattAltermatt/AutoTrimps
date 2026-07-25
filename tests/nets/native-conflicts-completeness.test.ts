@@ -41,10 +41,6 @@ const KNOWN_UNCOVERED: Record<string, string> = {
     'autoLevelEquipment / RautoEquip — AT\'s largest metal consumer (#108). The overlap is real but the ' +
     'conflict condition needs its own measurement (both can be partially correct at once), so #150 does ' +
     'not guess at it.',
-  autoGoldenBtn:
-    'autoGoldenUpgrades() (main.js:18554) vs AT\'s AutoGoldenUpgrades / dAutoGoldenUpgrades / ' +
-    'cAutoGoldenUpgrades, which are string-valued strategies rather than on/off — the conflict is a ' +
-    'strategy comparison, not a boolean, and belongs in its own pass.',
   // MEASURED, #152 — this is no longer a deferral. The overlap was audited against the clone and a live
   // z53 save, and the verdict is that there is NO conflict to warn about. Kept here rather than promoted
   // to a row precisely because a badge would be a false claim, and the four rows #150's review had to

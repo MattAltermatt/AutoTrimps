@@ -185,6 +185,104 @@ describe('native-conflicts matrix (#150)', () => {
     expect(keys()).not.toContain('jobsOrphan')
   })
 
+  // ── AutoGold (#152) ───────────────────────────────────────────────────────────────────────────────
+  // This row is the only one that compares two CHOICES rather than testing two booleans, because
+  // golden upgrades are a scarce shared count: agreeing automations are harmless, disagreeing ones
+  // race. Every test below is about that distinction.
+  describe('AutoGold', () => {
+    /** Native AutoGold mode, via the game's own universe-aware resolver (main.js:18082). */
+    function nativeGold(mode: number) {
+      ;(globalThis as any).game.global.autoGolden = mode
+      ;(globalThis as any).game.global.autoGoldenU2 = mode
+      ;(globalThis as any).getAutoGoldenSetting = () =>
+        (globalThis as any).game.global.universe === 2
+          ? (globalThis as any).game.global.autoGoldenU2
+          : (globalThis as any).game.global.autoGolden
+    }
+    /** A dropdown stores its choice on `.selected`, not `.value` (utils.ts:72-73). */
+    function atGold(id: string, selected: string) {
+      ;(globalThis as any).autoTrimpSettings[id] = { id, type: 'dropdown', selected }
+    }
+
+    it('the same pool on both sides is NOT a conflict — the loser just finds nothing to buy', () => {
+      nativeGold(2) // Battle
+      atGold('AutoGoldenUpgrades', 'Battle')
+      expect(keys()).not.toContain('autoGolden')
+    })
+
+    it('different pools ARE a conflict, and the body names both sides', () => {
+      nativeGold(2) // Battle
+      atGold('AutoGoldenUpgrades', 'Void')
+      expect(keys()).toContain('autoGolden')
+      const body = CONFLICTS.find((c) => c.key === 'autoGolden')!.body()
+      expect(body).toContain('Void') // AT's side
+      expect(body).toContain('Battle') // the game's side
+      expect(body).toContain('Recommended')
+    })
+
+    it("U2's 'Radon' is the Helium pool, so it AGREES with native mode 1 (#152)", () => {
+      // upgrades.ts:231-232 maps Radon onto Helium; comparing labels instead of pools would have
+      // reported a permanent phantom conflict for every U2 player.
+      setup(2)
+      nativeGold(1)
+      atGold('RAutoGoldenUpgrades', 'Radon')
+      expect(keys()).not.toContain('autoGolden')
+    })
+
+    it('native Custom (mode 5) always disagrees — AT cannot express a hand-built order', () => {
+      nativeGold(5)
+      atGold('AutoGoldenUpgrades', 'Void')
+      expect(keys()).toContain('autoGolden')
+      expect(CONFLICTS.find((c) => c.key === 'autoGolden')!.body()).toContain('Custom')
+    })
+
+    it('Off (0) and hidden (-1) are both "not picking", so neither conflicts', () => {
+      atGold('AutoGoldenUpgrades', 'Void')
+      for (const mode of [0, -1]) {
+        nativeGold(mode)
+        expect(keys(), `mode ${mode}`).not.toContain('autoGolden')
+      }
+    })
+
+    it('is inert without autoUpgradesAvailable — autoGoldenUpgrades() lives inside autoUpgrades()', () => {
+      // main.js:18435-18436 + the single guarded caller at :19915. A shrine-4 player below HZE 59 can
+      // have a visible "AutoGold Battle" button and zero golden automation actually running, which is
+      // the same trap the autoPrestige row documents.
+      ;(globalThis as any).game.global.autoUpgradesAvailable = false
+      nativeGold(2)
+      atGold('AutoGoldenUpgrades', 'Void')
+      expect(keys()).not.toContain('autoGolden')
+    })
+
+    it('a MISSING AT golden setting is no conflict — `false != "Off"` is TRUE (#68)', () => {
+      // The trap this pins: getPageSetting returns `false` for a key absent from a veteran's store, and
+      // a bare `!= 'Off'` test would therefore fire for every user who never touched the dropdown.
+      nativeGold(2)
+      expect((globalThis as any).autoTrimpSettings.AutoGoldenUpgrades).toBeUndefined()
+      expect(keys()).not.toContain('autoGolden')
+    })
+
+    it('picks the CONTEXT-correct setting: the Daily one during a Daily', () => {
+      // main-loop.ts:424-425 gates the normal strategy off during a Daily. Reading the normal setting
+      // regardless would report a conflict from a dropdown that is not dispatching.
+      nativeGold(2) // Battle
+      atGold('AutoGoldenUpgrades', 'Void') // would disagree, but is gated off
+      atGold('dAutoGoldenUpgrades', 'Battle') // the one that actually dispatches: agrees
+      ;(globalThis as any).game.global.challengeActive = 'Daily'
+      expect(keys()).not.toContain('autoGolden')
+
+      atGold('dAutoGoldenUpgrades', 'Void') // now the dispatching one disagrees
+      expect(keys()).toContain('autoGolden')
+    })
+
+    it('uses the C2 setting during a Challenge2', () => {
+      nativeGold(2)
+      atGold('cAutoGoldenUpgrades', 'Void')
+      ;(globalThis as any).game.global.runningChallengeSquared = true
+      expect(keys()).toContain('autoGolden')
+    })
+  })
+
   it('a throwing predicate is inactive, never fatal', () => {
     delete (globalThis as any).game
     expect(() => activeConflicts()).not.toThrow()

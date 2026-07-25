@@ -89,6 +89,10 @@ declare global {
   // (main.js:18026, :18046). Read-only from AT: the conflict matrix asks whether they are enabled.
   function getAutoStructureSetting(): { enabled: boolean }
   function getAutoJobsSetting(): { enabled: boolean }
+  // #152 — the universe-aware AutoGold mode (main.js:18082). Returns game.global.autoGolden in U1 and
+  // autoGoldenU2 in U2. A NUMBER, not an object like the two above: 0 Off · 1 Helium/Radon · 2 Battle ·
+  // 3 Voidlium · 4 Voidtle · 5 Custom, plus -1 meaning the button is hidden entirely (main.js:18107).
+  function getAutoGoldenSetting(): number
   function simpleSeconds(...args: any[]): number
   function scaleToCurrentMap(...args: any[]): number
   function getPsString(...args: any[]): number // updates.js
