@@ -283,6 +283,70 @@ describe('native-conflicts matrix (#150)', () => {
     })
   })
 
+  // ── AutoEquip (#152) ──────────────────────────────────────────────────────────────────────────────
+  // The row this pins was gated on an A/B, not an argument: at 10% native AutoEquip bought 2.9x the
+  // equipment levels for IDENTICAL zone progress, and at 50% it was 5.5% slower on both fixtures
+  // (noise floor 1.5-2.2%). So the conflict is real, and it is about LEVELS specifically.
+  describe('AutoEquip', () => {
+    function nativeEquip(enabled: boolean, unlocked = true) {
+      ;(globalThis as any).game.global.autoEquipUnlocked = unlocked
+      ;(globalThis as any).game.global.autoEquipSetting = { enabled }
+      ;(globalThis as any).game.global.autoEquipSettingU2 = { enabled }
+      ;(globalThis as any).getAutoEquipSetting = () =>
+        (globalThis as any).game.global.universe === 2
+          ? (globalThis as any).game.global.autoEquipSettingU2
+          : (globalThis as any).game.global.autoEquipSetting
+    }
+
+    it('native AutoEquip on while AT buys LEVELS conflicts', () => {
+      nativeEquip(true)
+      set('BuyWeaponsNew', 'multitoggle', 1) // "Buy Both" — includes levels
+      expect(keys()).toContain('autoEquip')
+    })
+
+    it('option 3 ("Levels") also conflicts — it is the other level-buying index', () => {
+      nativeEquip(true)
+      set('BuyArmorNew', 'multitoggle', 3)
+      expect(keys()).toContain('autoEquip')
+    })
+
+    it('option 2 ("Prestiges") does NOT conflict — AT is not buying levels at all', () => {
+      // This is the partition that makes the row honest: the autoPrestige row owns {1,2} of this same
+      // multitoggle, this row owns {1,3}. On 2 the two automations are a clean hand-off, not a fight.
+      nativeEquip(true)
+      set('BuyWeaponsNew', 'multitoggle', 2)
+      set('BuyArmorNew', 'multitoggle', 2)
+      expect(keys()).not.toContain('autoEquip')
+    })
+
+    it('is inert while autoEquipUnlocked is false — buyAutoEquip() returns early (main.js:18331)', () => {
+      nativeEquip(true, false)
+      set('BuyWeaponsNew', 'multitoggle', 1)
+      expect(keys()).not.toContain('autoEquip')
+    })
+
+    it('native master toggle off is no conflict, however AT is configured', () => {
+      nativeEquip(false)
+      set('BuyWeaponsNew', 'multitoggle', 1)
+      expect(keys()).not.toContain('autoEquip')
+    })
+
+    it('U2 reads Requipon, not the U1 multitoggles', () => {
+      setup(2)
+      nativeEquip(true)
+      set('BuyWeaponsNew', 'multitoggle', 1) // meaningless in U2 — must not be what fires
+      expect(keys()).not.toContain('autoEquip')
+      set('Requipon', 'boolean', true)
+      expect(keys()).toContain('autoEquip')
+    })
+
+    it('a MISSING AT setting never fires a phantom conflict (#68)', () => {
+      nativeEquip(true)
+      expect((globalThis as any).autoTrimpSettings.BuyWeaponsNew).toBeUndefined()
+      expect(keys()).not.toContain('autoEquip')
+    })
+  })
+
   it('a throwing predicate is inactive, never fatal', () => {
     delete (globalThis as any).game
     expect(() => activeConflicts()).not.toThrow()

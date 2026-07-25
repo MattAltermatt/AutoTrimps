@@ -163,6 +163,41 @@ const atGoldenChoices = (): string[] => {
     return out
 }
 
+// ── AutoEquip (#152), and the A/B that had to happen before this row could claim anything ─────────
+// buyAutoEquip() (main.js:18326) buys equipment LEVELS by spending a configured percent of your
+// resources per item, every tick, via calculateMaxAfford(..., value/100). AT's buyer does the opposite
+// by design: it SATISFICES — it declines affordable levels once your gear is strong enough and banks
+// the metal instead, which #108 measured as worth keeping (removing the brake cost -19.5%).
+//
+// Both being "on" is therefore not self-evidently wrong, which is why #152 declined to guess. Measured,
+// ticks-to-gain-2-zones, 5 seeds, two fixtures (12-warp-u1, 06-deep-u1), control noise floor 1.5-2.2%:
+//
+//   native %    12-warp-u1     06-deep-u1     equipment levels bought (06-deep)
+//   --------    -----------    -----------    ---------------------------------
+//   off (ctl)   2900 ticks     5120 ticks     27
+//   10%         2900 (0.0%)    5120 (0.0%)    78   <- 2.9x the gear, IDENTICAL progress
+//   50%         3060 (+5.5%)   5400 (+5.5%)   89   <- reproducibly SLOWER on both
+//
+// So the honest claim is NOT "this slows you down" — at 10% the progression effect is exactly zero. It
+// is that the extra levels buy nothing, and at aggressive percentages the metal drain turns negative.
+// The +5.5% is identical to one decimal across two independent fixtures and ~3x the noise floor.
+const nativeAutoEquipOn = (): boolean =>
+    typeof getAutoEquipSetting === 'function' &&
+    !!getAutoEquipSetting()?.enabled &&
+    !!game.global.autoEquipUnlocked
+
+// AT's LEVEL buying, which is the half of these multitoggles that overlaps AutoEquip: options 1
+// ("Buy Both") and 3 ("Levels") buy levels; 0 ("Buy Neither") and 2 ("Prestiges") do not
+// (equipment.ts:445-446). Note this is the SIBLING half of the same setting the autoPrestige row reads
+// as {1,2} — the two rows partition the same multitoggle, and index 0 stays a hole in both (#81).
+const atBuysLevels = (): boolean =>
+    u2()
+        ? getPageSetting('Requipon') === true
+        : getPageSetting('BuyWeaponsNew') == 1 ||
+          getPageSetting('BuyWeaponsNew') == 3 ||
+          getPageSetting('BuyArmorNew') == 1 ||
+          getPageSetting('BuyArmorNew') == 3
+
 const atGoldenDisagrees = (): boolean => {
     const native = nativeGoldenPool()
     return atGoldenChoices().some((choice) => choice !== native)
@@ -275,6 +310,29 @@ export const CONFLICTS: readonly NativeConflict[] = [
                 'variants, which are separate settings &mdash; to <b>Off</b>.'
             )
         },
+    },
+    {
+        key: 'autoEquip',
+        anchorId: 'autoEquipBtn',
+        title: 'AutoEquip is spending metal AT banks on purpose',
+        when: () => nativeAutoEquipOn() && atBuysLevels(),
+        body: () =>
+            'Both are buying equipment <b>levels</b>, but on opposite policies. AT stops once your gear is ' +
+            'strong enough and banks the rest, because the metal is worth more spent later. The game&rsquo;s ' +
+            'AutoEquip has no such rule &mdash; it spends a fixed percentage of your resources on every ' +
+            'enabled item, every tick, however strong you already are.' +
+            '<br><br>Measured over two saves, 5 seeds each: at <b>10%</b> it bought <b>2.9&times; the ' +
+            'equipment levels</b> and reached the same zone in exactly the same time &mdash; the extra gear ' +
+            'bought nothing. At <b>50%</b> it was <b>5.5% slower</b> to gain two zones, on both saves.' +
+            REC +
+            'turn AutoEquip <b>Off</b> and leave levels to AT&rsquo;s ' +
+            (u2() ? '<b>AutoEquip</b> setting' : '<b>Armor</b> / <b>Weapons</b> settings') +
+            '. If you would rather the game owned equipment, set ' +
+            (u2()
+                ? 'AT&rsquo;s <b>AutoEquip</b> off'
+                : 'AT&rsquo;s <b>Armor</b> and <b>Weapons</b> to <b>Prestiges</b>, so AT keeps prestiges and ' +
+                  'AutoEquip takes levels') +
+            '.',
     },
     {
         key: 'buildingsOrphan',

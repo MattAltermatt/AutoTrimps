@@ -844,6 +844,8 @@
     if (c2 && c2 != "Off" && game.global.runningChallengeSquared) out.push(atGoldenPool(c2));
     return out;
   };
+  var nativeAutoEquipOn = () => typeof getAutoEquipSetting === "function" && !!getAutoEquipSetting()?.enabled && !!game.global.autoEquipUnlocked;
+  var atBuysLevels = () => u2() ? getPageSetting2("Requipon") === true : getPageSetting2("BuyWeaponsNew") == 1 || getPageSetting2("BuyWeaponsNew") == 3 || getPageSetting2("BuyArmorNew") == 1 || getPageSetting2("BuyArmorNew") == 3;
   var atGoldenDisagrees = () => {
     const native = nativeGoldenPool();
     return atGoldenChoices().some((choice) => choice !== native);
@@ -911,6 +913,13 @@
         const mine = atGoldenChoices().join(" / ");
         return "Golden Upgrades are a fixed, permanent pool &mdash; the game grants a set number per run, and both automations spend from the same count through the same purchase. AT is set to buy <b>" + mine + "</b>, while the game&rsquo;s AutoGold is set to buy <b>" + native + "</b>. Whichever fires first on a given tick wins that golden, so you get an unpredictable mix of the two" + (native === "Custom" ? " &mdash; and <b>Custom</b> AutoGold is a hand-built order AT cannot see or account for" : "") + ". AT&rsquo;s switch-over rules (the " + (u2() ? "Radon" : "Helium") + "/Battle purchase counts, the Void fallback zone) stop meaning anything once something else is spending the same pool." + REC + "pick one owner. To keep AT in charge, set AutoGold to <b>Off</b>. To hand Golden Upgrades to the game, set AT&rsquo;s <b>AutoGoldenUpgrades</b> &mdash; and its <b>Daily</b> and <b>C2</b> variants, which are separate settings &mdash; to <b>Off</b>.";
       }
+    },
+    {
+      key: "autoEquip",
+      anchorId: "autoEquipBtn",
+      title: "AutoEquip is spending metal AT banks on purpose",
+      when: () => nativeAutoEquipOn() && atBuysLevels(),
+      body: () => "Both are buying equipment <b>levels</b>, but on opposite policies. AT stops once your gear is strong enough and banks the rest, because the metal is worth more spent later. The game&rsquo;s AutoEquip has no such rule &mdash; it spends a fixed percentage of your resources on every enabled item, every tick, however strong you already are.<br><br>Measured over two saves, 5 seeds each: at <b>10%</b> it bought <b>2.9&times; the equipment levels</b> and reached the same zone in exactly the same time &mdash; the extra gear bought nothing. At <b>50%</b> it was <b>5.5% slower</b> to gain two zones, on both saves." + REC + "turn AutoEquip <b>Off</b> and leave levels to AT&rsquo;s " + (u2() ? "<b>AutoEquip</b> setting" : "<b>Armor</b> / <b>Weapons</b> settings") + ". If you would rather the game owned equipment, set " + (u2() ? "AT&rsquo;s <b>AutoEquip</b> off" : "AT&rsquo;s <b>Armor</b> and <b>Weapons</b> to <b>Prestiges</b>, so AT keeps prestiges and AutoEquip takes levels") + "."
     },
     {
       key: "buildingsOrphan",

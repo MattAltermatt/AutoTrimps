@@ -93,6 +93,9 @@ declare global {
   // autoGoldenU2 in U2. A NUMBER, not an object like the two above: 0 Off · 1 Helium/Radon · 2 Battle ·
   // 3 Voidlium · 4 Voidtle · 5 Custom, plus -1 meaning the button is hidden entirely (main.js:18107).
   function getAutoGoldenSetting(): number
+  // #152 — the universe-aware AutoEquip config (main.js:18291). `enabled` is the master toggle; the
+  // per-item entries carry {enabled, value (a PERCENT string), buyMax}. Read-only from AT.
+  function getAutoEquipSetting(): { enabled: boolean; [item: string]: any }
   function simpleSeconds(...args: any[]): number
   function scaleToCurrentMap(...args: any[]): number
   function getPsString(...args: any[]): number // updates.js

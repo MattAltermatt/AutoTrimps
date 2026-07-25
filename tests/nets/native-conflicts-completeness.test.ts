@@ -36,11 +36,6 @@ const NATIVE_AUTOMATION_BUTTONS = [
 // the AT counterpart it would be compared against. Tracked in #152. This list may only SHRINK: adding
 // an entry means declining coverage in writing, which is the point — silence would read as "covered".
 const KNOWN_UNCOVERED: Record<string, string> = {
-  autoEquipBtn:
-    "buyAutoEquip() (main.js:18326) buys equipment LEVELS by percent-of-resources, against AT's " +
-    'autoLevelEquipment / RautoEquip — AT\'s largest metal consumer (#108). The overlap is real but the ' +
-    'conflict condition needs its own measurement (both can be partially correct at once), so #150 does ' +
-    'not guess at it.',
   // MEASURED, #152 — this is no longer a deferral. The overlap was audited against the clone and a live
   // z53 save, and the verdict is that there is NO conflict to warn about. Kept here rather than promoted
   // to a row precisely because a badge would be a false claim, and the four rows #150's review had to
