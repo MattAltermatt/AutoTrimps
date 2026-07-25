@@ -1,0 +1,749 @@
+# Decisions log — AutoTrimps
+
+The dated record of shipped work, moved out of `CLAUDE.md` (2026-07-24) so it stops loading
+into every session. The still-live gotchas distilled from this log stay in
+[CLAUDE.md](../CLAUDE.md#gotchas-that-still-bite); the canonical shipped record remains the
+closed [GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/issues).
+
+## Shipped decisions, newest first
+
+- **🧱 #41 UI OVERHAUL — PHASE 2 SHIPPED: FIRST REGION GRADUATION (resource tiles)** (2026-07-16) —
+  Food/Wood/Metal/Science graduated from adopted native DOM to **AT-native layout-B tiles** (rolling
+  60s chart replacing the time bar, AUTO badge, **no buttons**), behind the same `ATCustomUI` toggle
+  (still default OFF ⇒ byte-identical, baseline-zero neutral). New `src/modules/custom-ui/tiles/`:
+  `sampler.ts` (60-slot ring buffer of raw `game.resources[r].owned`, 1/s), `resource-tile.ts`
+  (build-once/mutate DOM, **mirrors the game's `#{res}Owned/Max/Ps` spans** — drift-free, never
+  recompute — + draws the sparkline), `resource-region.ts` (the graduation). Timers live only while
+  active (started/cleared in `applyCustomUI`). Design/plan specs dated 2026-07-16. 🎯 **THE SPARKLINE
+  NEEDS HISTORY THE GAME DOESN'T KEEP** — AT samples it; the display VALUES are mirrored from the
+  game's own live spans (they update even while the parent is `display:none`), so a tile can't disagree
+  with the game. 🪤 **TWO BUGS, BOTH THE SAME BLIND SPOT — I VERIFIED ON A DEEP SAVE (everything already
+  unlocked) AND MISSED THE FRESH-SAVE UNLOCK PATH TWICE.** (1) The code review caught that the original
+  `activateRegion` was **single-shot** (`if (mounted.length) return`) — resources locked at activate
+  time were skipped forever, so when the game unlocked one mid-run its **native panel + button
+  reappeared**. Fix: idempotent `syncRegion()` run every 200ms (mounts on unlock, unmounts on portal
+  re-lock). (2) The USER then caught a **duplicate tile** on a fresh save: the game's resource-**reveal
+  animation sets an inline `display:block`** on unlock, which **beat a plain `native.style.display =
+  'none'`** → native shown alongside the AT tile. Fix: hide via a **`display:none !important` CLASS**
+  (`at-rt-hidden`) the inline style can't override. **Both were invisible on a deep save.** ⇒
+  **[[feedback-verify-fresh-save-unlock-path]]: for any UI that hides/replaces game elements gated on
+  unlock, test the FRESH-SAVE unlock SEQUENCE (reset localStorage to zone 1), not just a deep
+  everything-unlocked save.** Reproduced the dup by backing up `trimpSave1`, clearing to zone 1,
+  watching AT unlock resources live — the native's inline style read `visibility:visible; display:block;
+  opacity:1.005` (the fade-in). 1148 tests, all gates green by exit code; Chrome-verified on both fresh
+  and deep saves; two code reviews. See [[reference-custom-ui-adopt-shell]], [[reference-reach-is-not-sensitivity]].
+
+- **🎨 #41 UI OVERHAUL — PHASE 1 FOUNDATION SHIPPED (opt-in, adopt-and-skin)** (2026-07-16) — the
+  first slice of the full opt-in UI replacement. New `src/modules/custom-ui/` + `ATCustomUI` toggle
+  (default **OFF ⇒ byte-identical**, `baseline-zero` neutral). 🏛️ **THE ARCHITECTURE IS A UI
+  STRANGLER, NOT A REIMPLEMENT — and a 4-agent dueling panel proved the reimplement is a trap.**
+  Reading the real clone, the falsifier killed "hide the game DOM, render from state": `updateLabels()`
+  runs every 100ms tick and **self-heals** (`checkAndDisplay*`: `if(!getElementById(item)) rebuild`,
+  `updates.js:5560-5623`) — you literally cannot delete the game DOM (removing `#foodOwned` **throws**,
+  `updates.js:5539`), and two subsystems (the message **log**, the **Spire**) have **no state source
+  at all**. Adopting the game's own nodes is instead *structurally safe*: 767 per-tick `getElementById`
+  re-resolutions, **zero cached node handles**, near-zero `appendChild` — so a reparented node keeps
+  its id and the next update lands. So: a permanent `#atWrapper` shell **adopts** the game's `#wrapper`
+  (the whole HUD, one node) intact; any un-graduated region **is** the game's live self-healing element
+  ⇒ "missing something" is impossible by construction. Regions graduate adopted→AT-native on a **dial**,
+  never all-or-nothing (not a stop-gap). 🔩 **THREE FALSIFIER-DERIVED RULES (load-bearing, in the
+  spec):** (1) adopt only at **container granularity** — `draw{Buildings,Jobs,…}`/`drawGrid` rewrite a
+  container's whole innerHTML on unlock, orphaning finer adoptions; (2) `#atWrapper` stays
+  `position:static`/no-transform — the game's absolute overlays (`#tooltipDiv`/portal/spire, px from
+  mouse `pageX/pageY`) resolve only against `<body>`, so they stay **unadopted body siblings** (the id
+  survives a move; the **containing block does not**); (3) **never drop/re-id** an adopted node or the
+  game resurrects a **duplicate**. Marker = green accent `outline` (no layout shift) + a `position:fixed`
+  "AutoTrimps UI" badge. `tests/nets/custom-ui-completeness.test.ts` mechanizes the fear (red if a HUD
+  region leaves the registry). Chrome-verified both states + round-trip + live ticking + tooltip
+  positioning + zero dup ids + clean console. Spec `docs/superpowers/specs/2026-07-16-custom-ui-adopt-shell-design.md`,
+  plan `docs/superpowers/plans/2026-07-16-custom-ui-phase-1-foundation.md`. Later phases (relocate/densify
+  regions per #41) are their own spec/plan cycles behind the same toggle + marker.
+
+- **🐌 #142 SHIPPED — early-run stall fixed (opt-in)** (2026-07-16, `d9f03946`) — a fresh run spun
+  its wheels ~4 min at world 2: Shield armor (wood) starves the **Miners** upgrade (wood 300)
+  because Artisanistry discounts the equip *level* below 300 but not the upgrade, and
+  `autoLevelEquipment` runs before `buyUpgrades` each tick. New `src/modules/upgrade-reserve.ts` +
+  opt-in `ReserveFoundationUpgrades` (default **off** ⇒ byte-identical) holds a resource back from the
+  equipment buyers while a foundational upgrade is *solely* blocked in it → Miners 5.8× sooner,
+  better-armored. Guard MUST pure-pass-through when off (`Best[stat].Cost` is a ceil'd overestimate);
+  uses the true `buyAmt`-level cost. Also **#141** (`a75ad51e`): keep repeating the current map when
+  health/damage-farming so `mapsSwitch()` doesn't wipe Titimp (`maps.ts:657`). See
+  [[reference-early-run-upgrade-reserve-142]], [[reference-map-keep-repeat-titimp]].
+
+- **🏁 #133 + #134 SHIPPED — THE STRANGLER IS COMPLETE, v6.0.0 CUT** (2026-07-15, `19f5ecbe`) — the
+  last first-party legacy file is gone. `legacy/AutoTrimps2.js` → `src/modules/main-loop.ts` (the
+  mainLoop/guiLoop tick dispatchers + startup bootstrap + base-state globals), a **faithful true-TS
+  port**: mainLoop/guiLoop/mainCleanup bodies are byte-identical to the shipped form (only type-only
+  `!`/`as` casts differ). Imported **FIRST** in `legacy-bridge.ts` so its `globalThis.MODULES = {}` etc.
+  seed before any module's load-time `MODULES["x"] = {}`. `deLoaderize` + the firstJs/restJs build split
+  deleted. #134 deleted dead `highcharts.js` + 5 upstream distribution shims. Version finalized
+  `6.0.0-dev.0` → **`6.0.0`** (first stable release, [tag `v6.0.0`](https://github.com/MattAltermatt/AutoTrimps/releases/tag/v6.0.0)).
+  All gates green, L0 baseline-zero neutral, code-review clean, Chrome live-verified.
+  🪤 **TWO REUSABLE esbuild GOTCHAS from moving the dispatcher INTO the src IIFE** (bite any future
+  bundle-text-anchored test): (1) **bare-global collision → `X2` rename** — mainLoop calls `autoPortal()`
+  etc. as free globals while those modules `export function autoPortal` in the SAME IIFE, so esbuild keeps
+  the free ref as `autoPortal` (→ `globalThis.autoPortal`, published by the bridge) and renames the
+  *definition* to `autoPortal2`. Runtime correct (bridge publishes by EXPORT name); only string anchors
+  move (`portal.test.ts` now uses `/function autoPortal\d*\(\) \{/`). (2) **own-module calls become
+  bundle-local** — mainLoop's `mainCleanup()` is a direct local binding now, so `window.mainCleanup = throw`
+  can't reach it; tests inject at a global-seam automation (`autoBoneChargeWhenMax`) instead. See
+  [[reference-porting-legacy-file-ripples-nets]]. 📊 Filed **#136** (He/Hr graph x-axis oddity, deferred).
+
+- **📊 GRAPHS PORTED TO `src/` + HIGHCHARTS → ECHARTS** (2026-07-14, branch `feature/graphs-echarts-port`,
+  tracks #131) — the last non-trivial legacy subsystem moved to TypeScript. 1109 tests, all gates green by
+  exit code; Chrome-verified rendering. First, a **Phase-1 bugfix pass shipped separately** (`d5e2eed4`,
+  deployed live): `overkill()` — a graph *data reader* — was force-enabling AND persisting the player's
+  `overkillColor` setting every zone (it counted DOM `cellColorOverkill` cells, which only exist when the
+  option is on); now counts `game.global.(map)gridArray` `.overkilled` state, no mutation. Plus a
+  corrupt-localStorage guard in `loadGraphData` (an unguarded throw there aborted createUI + the capture
+  wrappers), quota-recovery fixes, and a `diff()` NaN guard.
+  🏛️ **ARCHITECTURE — a pure/impure directory module** (`src/modules/graphs/`), validated by a 3-agent panel
+  (advocate/feasibility/**falsifier**): pure `types`/`transforms`/`graph-defs`/`option-builder` (no DOM/game/
+  echarts runtime, enforced by `tests/nets/graphs-purity.test.ts`) + impure `gamedata`/`storage`/`render`/
+  `state`. The bug-dense transform math and the Highcharts→ECharts option translation are **unit-tested**
+  (the seam is a pure `EChartsOption` builder); the render shell is Chrome-only. Shared mutable globals live
+  in `state.ts` (a `graphState` holder — a bare `export let` can't be reassigned across modules; loadGraphData
+  reassigns `portalSaveData`). `bootGraphs()` is called from `main.ts` AFTER `seedModuleDefaults()` (so
+  `MODULES.graphs` stays out of `MODULESdefault`, exactly as the post-IIFE legacy Graphs.js did); createUI
+  reads static game DOM (`#settingsTable`, index.html), present from load, so the timing is safe.
+  🔩 **THE FALSIFIER BROKE "no capability gap" IN TWO SPOTS** (both handled, neither a blocker): the multi-yAxis
+  "Portal Stats" grouped **bar** overlaps on a value x-axis, so it uses a **`type:'category'` x-axis** (a
+  deliberate semantic change); and the duration-tick axis needs a manual formatter (label is trivial). It also
+  corrected the testing rationale: asserting on a whole `EChartsOption` is a hollow change-detector — the real
+  value is the **library-agnostic data layer**, so option-builder tests assert only narrow structural
+  invariants (series count, `yAxisIndex`, toolbox present). And it flagged that there was **zero chart-render
+  coverage before** (jsdom never loaded the Highcharts CDN), so ECharts SVG-SSR is a coverage *gain*.
+  🔒 **SUPPLY-CHAIN HARDENED — ECharts is PINNED + SRI.** render.ts injects `echarts@5.6.0` from jsDelivr with
+  an `integrity` hash + `crossOrigin` on the dynamically-created `<script>` (the old Highcharts inject was
+  unpinned, no SRI). ECharts is Apache-2.0 (kills the proprietary-license flag) and ships #131's export
+  (`toolbox` dataView/saveAsImage) + font control built-in. The supply-chain net's path regex had to learn `@`
+  (jsDelivr version-pinned URLs) or it truncated the URL before `.js` and missed the `<script src>`.
+  🕸️ **PORTING A FILE OUT OF `legacy/` RIPPLES THROUGH THE NETS** — six had `legacy/Graphs.js` baked in and went
+  red: `dom-ids` (its corpus + a NEW `#graph` `getElementById` — Highcharts used a `renderTo` string, so the
+  lookup didn't exist before), `ambient-vars` (read-only externals `LZString`/`ctrlPressed` belong in
+  `trimps.d.ts`, not `at-legacy.d.ts` which demands a writer), `supply-chain`, `build-userscript` (order
+  anchors), `bridge-collision` (resolve directory modules → `index.ts`), `src-bundle-parity` (golden re-pinned,
+  #91 with `--reason`). Expect this whenever a file leaves the MANIFEST. Filed **#133** (port AutoTrimps2.js —
+  the last own-code legacy file) + **#134** (delete dead `highcharts.js` + the distribution shims).
+
+- **🌌 #128 SHIPPED — THE NET CAN SEE THE DEEP GAME NOW** (2026-07-14) — 1070 tests, all gates green by exit code.
+  The corpus topped out at world 8, so the entire late game — where players live — was **structurally invisible**.
+  `12-warp-u1` is a **world-62 post-portal** state (the first save past the Warpstation unlock), reached by
+  granting `06-deep-u1` a realistic perk spread and playing forward **~39k ticks** — constructible only because
+  #122 unfroze the metal economy (pre-#122 AT soft-locked at world 6).
+  🎯 **ACCEPTANCE IS A CENSUS RED, per #105 — not "the code executed".** `warpstation-noop` **0 → 1722** and
+  `gem-housing-rank` **0 → 1774**, both caught **ONLY on 12-warp-u1** (zero on all 20 other runs), pinned as
+  permanent positive controls in `blind-spot-sensitivity.test.ts`. **The census now has ZERO blind rows.** Bonus:
+  the deep fixture is damage-unsaturated enough that `damage-1e6` **also** lights up on it (+1684) — it strengthens
+  combat coverage too, not just buildings.
+  🕰️ **Warpstation unlocks via the game's OWN honest path** — `planetBreaker()` fires on the z60 Improbability
+  kill (config.js:9295), sets `brokenPlanet`, and Warpstation (`world: 60, brokenPlanet: 1`) unlocks. No poke; the
+  only fixture constant is the perk spread (**player state, not tuning**, exactly as 06/08 use it). Added an
+  `untilWorld` option to `playForward` — a deep fixture is defined by the STATE it must reach, and a fixed tick
+  count would land at an unpredictable zone as RNG drifts.
+  📐 **SIZED FOR SENSITIVITY, NOT VOLUME (#105).** 1500 ticks captures ~7 Warpstation + ~65 Nursery buys with live
+  combat; a full run to z73 banks **388 Nurseries** and would drown the trace. **Additive re-record, PROVEN:** all
+  11 existing traces re-recorded **byte-identical** (git showed only the new trace file); the new one is 1783 events,
+  exactly matching the pre-generation window probe.
+  ⛔ **GIGASTATION STAYS BLIND EVEN HERE, and it is worth knowing why:** `firstGiga()` only arms when AT **cannot
+  afford Coordination** (upgrades.ts:119 → `canAffordCoordinationTrimps` = `realMax >= send*3`), but **Coordination
+  tracks world 1:1 the whole way** (the invariant #128 itself observed — AT is never pop-blocked below z230). So
+  Gigastation is a separate *reach≠sensitivity* fixture needing a pop-STARVED state — a follow-up, not this issue.
+  📊 **Also filed #131** (improve Graphs: bigger text + data export) at user request.
+
+- **⚡ #129 CLOSED WONTFIX — AT IS NOT SLOW, AND ITS 10Hz CADENCE IS BEHAVIOURALLY INERT** (2026-07-14) — the
+  issue demanded a measurement before a patch, and the measurement killed it. **No code changed.**
+  📊 **`mainLoop` COSTS 0.4–0.6% OF FRAME TIME.** 0.675ms at world 14, **0.756ms at world 40** — it does *not*
+  scale with depth (everything it iterates is bounded: 98 `atGuard` blocks, ~30 buildings, 13 equipment slots, a
+  100-cell grid, the 100-map cap). 12s at 10Hz: **0 dropped frames, 0 long tasks**, p99 frame 9.3ms. The **game's
+  own** `gameLoop` is 0.232ms, so AT is only ~3x the work the browser already does ⇒ **a perfect optimisation
+  would be invisible.** `getPageSetting` memoization / dirty-checking / DOM batching are not wrong, they are
+  **pointless**.
+  🕰️ **THE 10Hz CADENCE BUYS NOTHING.** Running `mainLoop` every Nth tick (200/500/1000ms) reaches the same zones
+  at the same ticks — **inside the seed-to-seed noise floor at every zone**, and *non-monotonic* (500ms crossed
+  zone 8 **earlier** than 100ms). No reason to slow it either: it would re-record the whole corpus for ~0.3% of a
+  frame.
+  🪤 **THE L0 TRACE DIVERGES ANYWAY — AND `baseline-zero` IS THE WRONG INSTRUMENT HERE.** 06-deep goes 2013 → 291
+  events at 1000ms, which *looks* like a 7x behaviour change. It isn't: the trace is a **CALL LOG**, and the count
+  falls almost exactly **linearly** with cadence — the arithmetic signature of pure redundancy (~1800 of 06-deep's
+  events are `setFormation`; 04-u2-radon's are `buyJob` **no-op top-ups**). **AT wasn't deciding differently; it
+  was repeating itself less.** Ask an **outcome** metric (zone-crossing tick), not the call sequence, when the
+  change is "call it less often".
+  ⏱️ **THE GAME'S TICK IS 100ms, NOT 1000ms — SO THE PROOF NET'S CADENCE IS FAITHFUL.** `game.settings.speed = 10`
+  (config.js:8190) and `gameTimeout` computes `tick = 1000 / speed` (main.js:20016) ⇒ `driver.stepWithAT`'s one
+  `mainLoop()` per tick **IS** the shipping 100ms `runInterval`. I first read it as a 1-second tick and was one
+  step from filing a phantom "the net runs AT at 1/10th speed" harness bug. **The user's one-line correction
+  ("attack can be much faster than every 1 second — make sure that isn't just a perk") reversed the premise:**
+  fast attacks are `battleCoordinator` (main.js:11082) accruing 100ms/tick against `num` — base 1000ms, cut by
+  the **Agility perk** + hyperspeed talents — **not** a faster loop.
+  🕵️ **YOU CANNOT SPY ON `mainLoop` BY REASSIGNING THE GLOBAL** (the #127 shape again). `AutoTrimps2.js:93` does
+  `setInterval(mainLoop, runInterval)`, capturing the reference **at registration** — a wrapper on
+  `window.mainLoop` counted **0 calls** while AT demonstrably looped at 10Hz. **Intercept `setInterval` itself.**
+  🔬 **A MEASUREMENT TAKEN WHILE OTHER MEASUREMENTS RUN IS NOT A MEASUREMENT.** The first depth sweep showed a
+  **6x spike** at z32–36 that "recovered" at z37 — so plausible that the mechanism was already drafted (map list
+  grows → 100-map cap → `recycleBelow` prunes → cost collapses). **It did not reproduce** (same fixture, same
+  seed: 4.8ms, flat). It was **CPU contention from my own concurrent background jobs**, and the "recovery" was
+  the competing job exiting. **A cost that returns to baseline on its own usually means something EXTERNAL
+  stopped.** Reproduce a perf anomaly before explaining it.
+
+- **⛔ #57 CLOSED WONTFIX — THE SAVE-UP IDEA'S CEILING IS *ZERO*, AND THE DEEP GAME IS NOW REACHABLE (#128)**
+  (2026-07-14) — the rebuild gate ran in full for the first time (it was blocked on #122) and returned a
+  **negative answer**.
+  💀 **RUN THE UPPER-BOUND CONTROL BEFORE OPTIMISING ANYTHING — it is the cheapest possible kill.** Infinite
+  metal, every tick, **no tradeoff**, is the ceiling of *any* reserve however perfect (a reserve can only
+  *approach* it by sacrificing something else). Measured: **ZERO extra Coordination and ZERO extra progress**
+  — at z6 (`4 → 4` bought, world 7 either way; only *earlier*, and earlier bought nothing) **and at z63**
+  (`62 → 67` on ticks `[847,1347,1847,2347,2847]`, world 68 — **IDENTICAL**, not merely no-better). Purchases
+  are capped by the game's **`allowed`** counter, not by metal: `done == allowed`, one per zone, bought **the
+  instant the game permits one**. **AT is never behind ⇒ the reserve has nothing to do.** Its only funding
+  source is **equipment (52.3% of metal spend)** — exactly where #108 measured spending *sooner* is **−19.5%**.
+  🔄 **I PREDICTED THE WRONG CAUSE AND MEASURING CORRECTED ME — TWICE.** I expected **population** to be the
+  binding gate (`canAffordCoordinationTrimps`: `realMax >= send*3`; the post-mortem's "blocked population to buy
+  population" pointed there). **Population NEVER binds — 0 ticks.** At z6 metal is the *only* short resource, on
+  all **1,187** blocked ticks — so the reserve briefly looked **mechanically viable**, until the upper-bound
+  control showed the lever moves nothing. **A mechanism can be capable of acting and still be worth zero.**
+  🎁 **THE BY-PRODUCT OUTLIVES THE ISSUE — #128.** Running the gate proved **the deep game is reachable now that
+  #122 unfroze the economy**: z6 → **z47** by unaided play-forward (380k ticks, **no soft-lock** — it used to
+  freeze at world 6 for 25,000 ticks), then → **z63 with Warpstation UNLOCKED** on a real post-portal perk
+  spread (the z47 wall is a *damage* wall, not a structural one). The corpus tops out at z8, so **Warpstation
+  (42.5% of deep metal spend), Gigastation and Nursery are entirely invisible to the net.** `make-fixtures.mjs`
+  still carries the stale "deep states are unreachable" note — it is wrong.
+
+- **🚪 #127 SHIPPED — THE NET CAN SEE AT *PORTAL* NOW** (2026-07-14, `709e8da6`) — 1066 tests, all gates green.
+  `doPortal()` **RESETS THE RUN** and it had **never once executed in a sim run** — AT's single
+  highest-blast-radius action was wholly unexercised. Corpus is **11 saves**; census `portal-noop` → **510
+  divergences** on `11-portal-u1` alone. **Every census row is SEEN.**
+  🧩 **TWO INDEPENDENT CAUSES — DO NOT CONFLATE THEM.** (1) `autoPortal()` returns unless
+  `game.global.portalActive` (no save had it) **and** `AutoPortal` defaults to **"Off"** ⇒ dark before timers
+  even matter. (2) In **"Helium Per Hour"** mode the portal is **SCHEDULED** (`portal.ts:45`, timeout+100 =
+  **5100ms**) ⇒ the old `setTimeout` stub swallowed it. **"Custom" mode calls `doPortal()` SYNCHRONOUSLY** and
+  never depended on timers — measured **both ways**. He/Hr is the fixture's mode *because* it is the one the
+  stub killed, which makes it the end-to-end exercise of #126's queue.
+  📈 **THE FIXTURE NEEDS A *HISTORY*, NOT JUST A STATE.** He/Hr portals when the current rate falls below the
+  **run's best** by more than the buffer — and a synthetic save has **neither stat**, so `0 < 0` is false and it
+  **never arms**. Seeding `bestHeliumHourThisRun` is what a real mid-run player carries; `evaluate()` only ever
+  **RAISES** `storedValue` (config.js:6378), so it survives the load. *Reach ≠ sensitivity, third time.*
+  ⏳ **GENERATE IT AT `ticks: 0`.** Play it forward at all and AT **portals during generation**, committing the
+  **post-portal** state — the exact thing the fixture exists to capture the approach to.
+  🕵️ **YOU CANNOT SPY ON A CONVERTED MODULE'S INTERNAL CALLS BY REASSIGNING THE GLOBAL.** `w.doPortal = spy`
+  counted **0** while the portal demonstrably fired — `autoPortal()` calls it as a module-internal reference,
+  not through `window`. Assert on **state** (`totalPortals`, `world`), not on a global spy.
+
+- **⏱️ #126 SHIPPED — THE SIM HAS REAL TIMERS NOW** (2026-07-14, `928e84c9`) — 1062 tests, all gates green.
+  The `setTimeout = () => 0` stub's **third** victim, after #66 (`usingRealTimeOffline`) and #122
+  (`checkTriggers`). On a **stacked** void map the game grants one heirloom **per stack** and schedules each
+  on a timer (main.js:15679) ⇒ under the stub **every stacked-void completion silently dropped its rewards.**
+  🔑 **WHEN THE CALLBACK IS ANONYMOUS, YOU CANNOT HAND-FIX IT — MAKE THE PRIMITIVE WORK.** #122 was patchable
+  because `checkTriggers` is a *named* function the driver could call. The heirloom rewards are **anonymous
+  closures**, so the only honest fix is a real (virtual, game-time, deterministic) timer queue —
+  `scripts/sim/timers.mjs`, pumped by `driver.tickOnce()`.
+  ⛔ **BLOCKLIST THE SELF-DRIVING LOOPS BY IDENTITY, or the "fix" is worse than the bug.** `gameTimeout`
+  **re-enters the game loop** — the driver exists to replace it, so letting it run would **double-drive every
+  tick and make every trace a lie**. Also dropped: `autoSave` (LZString-compresses the whole save on a 10s
+  loop) and `costUpdatesTimeout` (its only state-bearing call is `checkTriggers`, which the driver already
+  makes — #122). **Install AFTER `load()`** (the offline replay is itself a setTimeout loop, torn down per #66)
+  **and after the AT bundle eval** (AT's startup chain would otherwise double-fire).
+  ✅ **TRACE-NEUTRAL, and that is a *measured* claim** — `baseline-zero` stays green: no corpus save runs voids.
+  Which is exactly why the net is a **direct** test: `void-heirlooms.test.ts` drives the **game's own**
+  `fight()` completion path and carries its own mutation check — stacked=2 gives **1** `createHeirloom` call
+  under the old stub (the synchronous reward; both deferred ones dropped) and **3** with the queue.
+  🚪 **AND IT FOUND #127: `doPortal()` HAS NEVER EXECUTED IN A SIM RUN.** `portal.ts:45` schedules the portal
+  on a timer too — so AT's **highest-consequence action** (it resets the run) is unexercised by the net. Now
+  *reachable*, but no fixture arms `OKtoPortal`. A blind spot, not a regression — and the next person to add a
+  deep fixture will otherwise meet it as a "mysterious divergence."
+
+- **🕳️ #105 SHIPPED — ZERO BLIND ROWS IN THE CENSUS, AND THE STALE ORACLE BEHIND THEM** (2026-07-14,
+  `5c14e8ed`) — 1055 tests, all gates green by exit code. Corpus 8 → **10 saves**; oracle **re-pinned v3 → v4**.
+  🎯 **THE ACCEPTANCE CRITERION IS A RED, NOT A NEW SAVE.** `housing-hut-divisor` **0 → 13** (`09-housing-u2`)
+  and `rhypo-invert` **0 → 19** (`10-hypo-u2`). Adding fixtures until the code *executes* is the #98 mistake;
+  a fixture only counts when the census row flips **BLIND → SEEN**.
+  📐 **REACH ≠ SENSITIVITY, demonstrated inside ONE function.** The crude break (always return `"Hut"`) lights
+  up `04-u2-radon` with **592** divergences while **#93's REAL bug diverges by ZERO there** — same function,
+  same save. On 04 only Hut and House are unlocked, so the divisor never moves the argmin. `09` unlocks the
+  tiers whose population gains differ (Hut **3** … Collector **5000**), where buggy picks **Hut** and correct
+  picks **Mansion**. Design it by **measuring the argmin flip first**, not by hoping.
+  🕰️ **THE FROZEN ORACLE *WAS* THE BUG — and this is the finding that generalizes.** v3 is pinned 2026-07-12;
+  **#93/#96/#101 all shipped AFTER it**, so the oracle bundle literally contained
+  `housingBonus = game.buildings.Hut.increase.by` and `bonfire > …slice(-1)`. **Nobody noticed because the
+  corpus never reached either region — the stale oracle and the blind spots are the SAME phenomenon.** It also
+  **INVERTS the census**: against a stale oracle, restoring the bug makes the mutant **AGREE** with the oracle
+  (0 divergences → reported *BLIND*) while the **clean** build is the one that diverges. **A census number is
+  meaningless unless `baseline-zero` is zero.** ⇒ **Whenever you add coverage for a region the corpus never
+  reached, ASK WHETHER THE ORACLE IS STALE THERE FIRST.**
+  🔒 **HOW TO PROVE A RE-PIN LAUNDERS NOTHING** (repeat this every time): `baseline-zero` was green against v3,
+  so current src and the v3 bundle already agree everywhere the old corpus could see ⇒ re-recording 01–08
+  against v4 **must** reproduce them **byte-identically**. It did — **17/17 cmp-clean**, checked before *and*
+  after the new fixtures landed. The re-pin therefore changes behavior **only** where the corpus was blind.
+  🚨 **THE CENSUS WAS REPORTING A DETECTION IT DID NOT MAKE.** Its run loop destructured
+  `{name, seeds, ticks}` — **dropping `settings`** — and called `runTrace` without `atSettings`, while the
+  oracle traces were recorded **with** them. So on any settings-gated fixture **every** mutant "diverged",
+  because it ran a differently-**CONFIGURED** bot, not a differently-behaving one. My `rhypo-invert` red was a
+  **false positive**. **Caught by tripwire, not by reading:** `10-hypo-u2` reported 13 divergences for
+  `canary-buildings-noop` — a mutation to **U1's** `buyBuildings()`, which is **provably inert in U2**
+  (`04-u2-radon` scores it **0**). **When a mutation that CANNOT touch a fixture reports a hit, the harness is
+  broken — not the code.** A net that certifies coverage it never measured is worse than no net.
+  🔩 **A settings-gated feature is untestable by construction without the `settings` hook.** `10` needs THREE
+  seeded settings or it goes quietly blind: `Rhypofarmstack` (default is the `[-1]` *unset* sentinel ⇒
+  `hasBonfireTarget` false ⇒ **the clause under test is inert**, #96), `Requipon` (default **false**, and it
+  gates `RautoEquip()` where the Shield-conserve consumer lives), and `RAutoMaps` (gates `RautoMap()`, where the
+  `Rhypo(reset)` call site is). Also: `make-fixtures.mjs` now takes `--only` — a full regen rewrites all eight
+  committed saves (it is deliberately **not** byte-reproducible), so adding a fixture should cost one trace.
+
+- **🧊 #122 SHIPPED — THE SIM'S METAL ECONOMY WAS FROZEN, AND THE NET WAS BLIND TO GEAR BECAUSE OF IT**
+  (2026-07-14, `7fdae3bb`) — 1050 tests, all gates green by exit code.
+  🚨 **`checkTriggers()` NEVER FIRED IN ANY SIM RUN, EVER.** `boot.mjs` stubs `window.setTimeout = () => 0`,
+  and the game calls `checkTriggers()` during play from exactly ONE place — `costUpdatesTimeout()`, a
+  `setTimeout(costUpdatesTimeout, 250)` loop (main.js:17970). **Forge is a *trigger*, not an upgrade**
+  (config.js:13226, fires at ≥350 metal) ⇒ Forge never unlocked ⇒ `metal.max` pinned at **500** on every
+  save ⇒ Coordination (507 metal at `done=2`) permanently unaffordable. **AT bought Coordination ZERO times
+  in the entire history of the proof net**, and the deep fixtures ran **metal-capped on up to 100% of ticks**.
+  Fix: `driver.mjs` `tickOnce()` calls `checkTriggers()` after `gameLoop()`.
+  👁️ **THE REAL PRIZE WAS A HOLE NOBODY HAD NAMED: the net could not see the EQUIPMENT subsystem on its own
+  deep fixtures.** Re-running the blind-spot census, `equipment-noop` — which rips out `autoLevelEquipment`
+  ENTIRELY — went from **0 divergences on all three `06-deep` runs and on `07-map-cap`** to **~1890 each**
+  (total 1997 → 10619). With a 500-metal cap the bot had nothing to spend, so deleting its gear automation
+  changed *nothing* and the net stayed green. That is **reach ≠ sensitivity (#98) inside the very fixtures
+  built to watch the bot.** `damage-1e6` also spread from 2 runs to 4. ⚠️ `housing-hut-divisor` (#93) and
+  `rhypo-invert` (#101) remain **BLIND 0/17** — unfreezing does not reach them; still #105's scope.
+  📐 **EARN THE RIGHT TO A ONE-LINER.** `costUpdatesTimeout` is FIVE calls. The four `checkButtons(...)` are
+  state-pure *here* — they resolve to `updateButtonColor` (DOM class swaps) + `updateSRBuyAmt`, which **no-ops
+  while `usingScreenReader` is false** (boot sets it), and the one call that could mutate,
+  `Archaeology.checkAutomator()`, only buys when passed `makePurchase`. Cherry-picking `checkTriggers` is
+  **shown, not assumed** — otherwise the "fix" is itself unaudited.
+  🧾 **HARNESS RE-RECORD, NOT A RE-PIN — and NOT additive, so don't claim it is.** The oracle bundle
+  (`v3-u2-autobuildings`) and `src/` are both **untouched**; the *simulated game* changed. **COUNT THE EVENTS**
+  (LCS over fn+args, not by index): `04-u2-radon` reproduces **BYTE-IDENTICAL** (1204→1204, 0 in / 0 out — the
+  control proving the change is inert where it should be), the shallow saves move explicably (+`buyBuilding(Forge)`),
+  and the **deep saves genuinely RESHAPE** (06-deep 1765→2013 events, 303 in / 55 out; setFormation churn, because
+  the bot now has metal, buys gear, and crosses its thresholds on different ticks). The manifest records that
+  honestly rather than borrowing #90/#98's byte-identity claim.
+  🦷 **RE-VERIFY THE NET STILL HAS TEETH AFTER ANY CORPUS CHANGE.** `08-starved-u1` earns its seat by leaving the
+  damage threshold **unsaturated**, and a live economy buys it more gear (equipment levels 70 → 79) — which could
+  have **saturated** it and quietly blunted the net. Checked: `damage-sensitivity`'s **positive control still goes
+  RED** against the fresh traces. ⚠️ My own saturation probe read `MODULES.maps.enoughDamage` and sampled **0
+  ticks** (the field is module-local, cf. the #70 note) — **a probe looking in the wrong place reports 0.0% and
+  looks like an answer.** The existing mutation self-test was the authoritative check; don't build a proxy when a
+  positive control already exists.
+  🎭 **THE ADVERSARIAL REVIEW EARNED ITS SEAT — AND WAS ALSO WRONG ONCE.** It caught (a) my comment's false
+  absolute — once-per-tick is **exact only for RESOURCE-cost triggers**; `Lumberjack` costs `jobs:{Farmer:1}` and
+  `breeding` reads `trimps.employed`, both moved by AT's own `mainLoop` **after** `checkTriggers` ⇒ a 1-tick lag;
+  (b) that my net proved "fires at least once", **not** "every tick" — a once-per-run regression passed all three
+  behavioural tests (now pinned by a cadence assertion, mutation-checked `expected 1 to be 50`); and (c) **a second
+  casualty of the same stub → #126** (stacked void-map completions schedule `createHeirloom` via `setTimeout`, so
+  those rewards are silently dropped). But it also **asserted `corpus-coverage` needed no update** — it had no Bash
+  and reasoned statically; the suite proved the pin **did** move (05 gains `buyEquipment` + `buyUpgrade` — the first
+  Coordination purchase in the net's history; 06/07 gain `buyEquipment`). **A static read is not a test run.**
+  🪤 **`npm run test:ci | tail` REPORTS `EXIT=0` — that is `tail`'s status, not the suite's.** I walked straight into
+  the trap CLAUDE.md already warns about, with **one test failing**. Redirect to a file, then read `$?`.
+
+- **🐛 THE TOOLTIP AUDIT'S NINE BUGS — #111/#112/#113/#114/#116/#117/#118/#119/#120 SHIPPED** (2026-07-13) —
+  1046 tests, deploys green. #115 closed as **not-a-bug**. Every fix is mutation-checked; none rest on a green
+  L0 (see below).
+  📖 **A TOOLTIP THAT DISAGREES WITH THE CODE IS EVIDENCE *ABOUT THE CODE*.** Asking "is this sentence true?"
+  of 574 descriptions found nine real defects. The recurring shape is a **sentinel whose truthiness
+  contradicts its documented meaning**: `GymWall` defaults to **-1** and `buildings.ts` tested
+  `if (getPageSetting('GymWall'))` — **-1 is TRUTHY**, so the "disabled" default silently clamped Gym buys to
+  1-at-a-time and ate the DecaBuild bonus **for every default user**. Its mirror: `MaxMapBonusAfterZone = 0`
+  means "always" and **0 is FALSY**, so the one value documented as "use it always" disabled the feature.
+  Also: `Rexterminate*` compared `"Extermination"` (the game's id is **`Exterminate`**) ⇒ dead since it
+  shipped; `SpireBreedTimer` captured `var prespiretimer` under `spireActive` and restored it under
+  `!spireActive` — mutually exclusive branches in a per-tick function ⇒ it wrote **`undefined`** over the
+  player's GA timer on every Spire exit; `"DAS: Normal"` never read its own value; `"Auto **No** Spire"` fired
+  **only inside** a Spire.
+  🕳️ **THE L0 NET'S GREEN MEANT NOTHING FOR HALF OF THESE — CHECK WHAT THE TRACES RECORD.** The traces log
+  `buyBuilding("Gym", …)` but **not `game.global.buyAmt`**, which is the only thing #112 changes; and the
+  corpus has no DecaBuild reward, so the bug **cannot even fire** there. ATGA is worse: **zero traces touch
+  `Geneticist`**. `baseline-zero` is green before and after. Evidence was hand-built and each test
+  mutation-checked by restoring the bug (`expected 1 to be 10`; `expected undefined to be 42`).
+  👁️ **READ `settings-visibility.ts` BEFORE JUDGING A SETTING — the runtime gate and the render gate are often
+  ONE INVARIANT EXPRESSED TWICE.** This reversed me **twice**. **#115**: I claimed `ATGA2timer` was a silent
+  trap (configure a Spire override, get nothing) — but `settings-visibility.ts:592` `turnOff()`s **all ten**
+  overrides unless the base timer is positive, *every tick*. The trapped user **cannot exist**; verified live,
+  overrides are **0/5 visible**. The gate is also semantically load-bearing (`var target` has no other
+  initialiser), so "fixing" it would mean **inventing a fallback breed-timer** = sacrosanct tuning. **#117**:
+  `turnwson` reads as dead (zero reads — true) but renders **only while Windstacking is OFF**, to explain why
+  the tab is empty. It is **signage**, not a dead control. A reference count answers "is it read?", never
+  "why does this control exist?"
+  🕸️ **TWO NETS HAD HOLES, AND THE AUDIT FOUND THEM (#120).** `settings-wired` asked *"is this id quoted
+  ANYWHERE?"* — which a `turnOn("turnwson")` mention satisfies, **and so do the two frozen
+  `serializeSettings` preset blobs in `utils.ts`**, JSON strings naming ~200 setting ids sitting **inside the
+  net's own corpus**. Every id they name auto-passed the check meant to prove it was wired. It was written
+  loosely on purpose (~50 settings are read via *dynamically constructed* ids — `getPageSetting('Max' + b)`,
+  `getPageSetting(shrineSettings[u][m].zone)`), so the fix is to **strip the constructs that fake a read** and
+  resolve the dynamic families explicitly, not to tighten the regex. `dom-ids` walked only
+  `byId`/`getElementById` — but `turnOn`/`turnOff` are a **one-call indirection onto the same sink**
+  (`toggleElem` → `getElementById`, returning on null: the exact silent no-op the net exists to catch).
+  Making them sinks **immediately found 7 more dead toggles**. ⚠️ A net that reports a false positive gets
+  muted, so ids the fork mints at runtime (`el.id = 'hiddenBreedTimer'`) are now a **derived** id source.
+  🎭 **THE FALSIFIER EARNED ITS SEAT.** A 3-agent panel on #115 (advocate-for / advocate-against / falsifier)
+  landed **2-1 against my own recommendation**, and the lone dissenter was the only one that never opened
+  `settings-visibility.ts`. Never hand a panel your premise as fact.
+
+- **📖 #107 — TOOLTIPS ARE COMPOSED RECORDS NOW, AND THE DRIFT IS DEAD AT THE SEAM** (2026-07-13) — all 574
+  descriptions rewritten against the code that implements them; 1022 tests green; persistence contract proven
+  byte-identical.
+  🧨 **THE AUDIT FOUND NINE CODE BUGS (#111–#119), NOT NINE TYPOS.** A tooltip that disagrees with the code is
+  evidence *about the code*. `Rexterminateon`/`Rexterminatecalc` compare `challengeActive === "Extermination"`
+  but the game's id is **`Exterminate`** (config.js:5451) ⇒ both settings **dead forever**. `GymWall`'s default
+  is **`-1`**, and `buildings.ts:81` tests `if (getPageSetting('GymWall'))` — **`-1` is truthy**, so the default
+  silently pins Gym buys to 1-at-a-time and eats the DecaBuild bonus (same species: `MaxMapBonusAfterZone = 0`
+  is *falsy*, so the documented "always" value disables the feature). `SpireBreedTimer` captures
+  `var prespiretimer` inside a `spireActive === true` branch and restores it in a `!spireActive` branch of the
+  **same per-tick function** ⇒ always `undefined`. `Hdshrine`'s "DAS: Normal" **never reads its own value**.
+  ⚠️ **NONE were fixed in #107** — descriptions-only is what keeps L0 baseline-zero green and makes the change
+  provably safe. Fix them alone; each is behavioural and will move the traces.
+  🎯 **DON'T RETYPE A TABLE — DELETE THE SECOND COPY.** `BuyJobsNew`'s tooltip hand-copied the seven worker-ratio
+  tiers and got **all six documented ones wrong**, omitted the 7th, and implied an ordering the selector does not
+  use (`world >= 300` is tested FIRST and beats every Tribute tier). Correcting the numbers would have rebuilt the
+  cause. The table now lives in **`src/modules/jobs-ratios.ts`**; `jobs.ts` publishes it onto MODULES and the
+  tooltip renders from it. Being wrong is no longer representable.
+  🔩 **DERIVE AT THE SEAM, NOT PER-CALLSITE.** The `Default: x` line is composed inside `createSetting`
+  (`settings-engine.ts` `defaultFacet`) from its **own `defaultValue` argument** — so it reaches all 574 settings
+  with **zero call sites touched**, and a description can no longer disagree with its default. Multitoggles resolve
+  the index to its **label** ("Default: Auto Worker Ratios", not "1"). A net now **fails any description that
+  hand-types its own default** — that second copy is exactly how `recommend: -1` outlived the code.
+  🕳️ **`MODULES` IS AMBIENT RUNTIME STATE — DO NOT READ IT FROM `settings-defs`.** Rendering the tiers from
+  `MODULES["jobs"]` made `initializeAllSettings()` **throw `ReferenceError: MODULES is not defined`** in every
+  harness that mounts settings without booting the bot. A pure import has no ordering hazard. (Found by running,
+  not reading.)
+  🚫 **A CANNED "AT OVERWRITES THIS" BADGE WOULD HAVE BEEN A *NEW* LIE.** My first design auto-badged all 12
+  `setPageSetting`'d ids. The code falsified it: the ratio boxes are rewritten every tick *but only while
+  `BuyJobsNew == 1`*; `AutoMaps` is written by the **user's own** AutoMaps button; `TrimpleZ` is a one-shot. So
+  `overwritten` is a **hand-written condition** and the net enforces its **PRESENCE, not its wording** — a 13th
+  write site fails CI.
+  🛠️ **METHOD (reusable):** 9 agents authored in parallel, each *verifying claims against consuming code*, each
+  writing **JSON to scratchpad — never editing `settings-defs.ts`** (subagents share one working tree; parallel
+  writes to the persistence-contract file would clobber). A lead-side applier swaps **only argument 3**, so ids,
+  order, types and defaults are *structurally* out of reach — then a contract check proved all six non-description
+  args byte-identical to `main`. Pre-apply validator caught a hand-typed default an agent slipped in **twice**.
+
+- **🏦 THE BOT WAS SATISFICING — #108/#109/#110 shipped** (2026-07-13, `81d78114`) — 1015 tests, deploy green,
+  published userscript verified to carry all three.
+  💰 **AT DECLINED AN AFFORDABLE GEAR LEVEL ON 18,503 OF 20,000 TICKS.** `autoLevelEquipment` gates armor on
+  `!enoughHealthE` and weapons on `!enoughDamageE || enoughHealthE` — so the moment it judges itself strong
+  enough *for the current zone* it converts **nothing** and banks the income. That, not a reserve or a late
+  arrival, is the 20M unspent metal #108 reported. Removing the brake is **−19.5% ticks-to-next-zone** (noise
+  floor 3.5%), shipped as the opt-in `InvestSpareMetal` (default OFF ⇒ byte-identical; L0 baseline-zero green).
+  🎯 **THE WIN IS TIMING, NOT VOLUME** — the unGated bot ends with only **~3 more levels**, bought *early*, where
+  the damage compounds into faster clears and more income; it ends with **more** metal banked despite spending
+  more, because it got deeper. "Strong enough for this zone" is the wrong bar: gear pays for itself.
+  🪤 **THE INTUITIVE FIX MEASURED HARMFUL — and reasoning would have shipped it.** AT keeps ONE candidate per
+  (stat,resource) key (`Best`, highest Factor), so an unaffordable Best buys nothing even with six cheaper
+  unlocked pieces affordable that tick. Falling back to the cheapest affordable piece is **−2.8% (INSIDE the
+  noise floor)** alone, and stacked on the real fix it drags **−19.5% → −8.6%**: metal spent on cheap low-Factor
+  gear is metal not spent on the good piece. **Rejected by measurement.** Method: instrument ONE clean run
+  (per-tick `metal.owned` + every DECLINED decision with its full gate vector, using the game's OWN oracle
+  `canAffordBuilding(name,null,null,true,false,1)`) → A/B vs a measured noise floor → `inf_metal` as the positive
+  control. Then **re-verify on the SHIPPED setting**: a splice is evidence about a patch, not about the product.
+  💬 **A RAW `"` IN A SETTING DESCRIPTION SILENTLY KILLS ITS TOOLTIP (#110).** `createSetting` splices name +
+  description into an `onmouseover` attribute holding a **double-quoted** JS string, so one quote closes the
+  literal, the handler **fails to compile**, and the browser leaves `onmouseover === null`. **Nothing throws** —
+  the control still renders, clicks and saves. **`RVoidMaps` shipped dead this way.** Escaped at the seam
+  (`tipAttr()`, all 8 injection sites). ⚠️ Do **NOT** escape `name`/`description` in place: both are stored on
+  the record and rendered as the label, and a multitoggle's `name` is an **ARRAY** of option labels. Net:
+  `tests/nets/settings-tooltips.test.ts` mounts all 574 settings and asserts every tooltip **compiles** — node
+  env + recording-DOM stub + **esbuild's parser**, because `no-new-func` is a real lint gate, jsdom raises an
+  **uncaught** SyntaxError when you read a broken handler, and **esbuild cannot run under jsdom**.
+  🧩 **#109** — `RScientistPercent` (minted by #106) was never routed through `settingsVisibility()`, so U1
+  rendered **both** "Scientist %" boxes. Net: of the **57 U1/U2 twin pairs**, both halves must appear in the
+  turnOn/turnOff table. It was the only violation.
+
+- **🌙 THE ALL-NIGHT SWEEP — 30 of 36 code-review-v2 issues closed** (2026-07-13) — 955 tests, deploy green.
+  Everything below is a *live* gotcha, not a changelog. The changelog is the closed issues.
+  🔬 **THE PROOF NET CAN FINALLY SEE THE BOT (#90/#98).** It used to record only buy events on 4 saves that all
+  decoded to HZE=3/world=4 — so a **1,000,000× damage multiplier passed the entire sim suite GREEN**. Now: 8
+  saves, **10/10 mutators**, and `tests/sim/damage-sensitivity.test.ts` is a **mutation SELF-TEST** that patches
+  the bundle every CI run and *demands* the differential go red.
+  🎯 **REACH ≠ SENSITIVITY — the deepest lesson of the night.** Fixing corpus *reach* was not enough: on a deep
+  save with AT mapping and fighting every tick, the 1e6× injection **still diffed to zero**. AT's damage
+  decisions are **threshold predicates** (`dmg * cutoff > enemyHealth`), and on a *healthy* save that predicate
+  is **already true** — multiplying its input by a million leaves it true. **Calling a function is not the same
+  as depending on its answer.** The fix was `08-starved-u1`: damage-*starved* but *perked*, so the threshold sits
+  **unsaturated**. Any future coverage claim must prove sensitivity, not just execution.
+  🕳️ **The recorder was watching the WRONG functions.** AT creates maps via `buyMap()` (38 sites) and recycles
+  via `recycleBelow()` — *neither was wrapped*. The `recycleMap` that *was* wrapped only fires at the game's
+  100-map cap. #90 blamed corpus depth; that was the smaller half.
+  🚨 **PHANTOM SETTINGS ARE NOT TYPOS — re-minting one is a DATA-LOSS BUG.** Three were REAL settings deleted
+  upstream in 2020 (`701faab4`). `createSetting` applies its default **only when nothing is stored**, and
+  `serializeSettings` round-trips unknown keys **forever** — so re-minting a deleted id **resurrects the user's
+  five-year-old value**. Three dispositions: **repoint** at an existing id (mints nothing) · **delete** the read ·
+  **mint only if `git log --all -S"createSetting.*<id>"` is EMPTY**. `MaxTox`'s phantom was *accidentally
+  protective* — defining it would throw in the portal path; it was **deleted**, not defined.
+  🧩 **FIX THE CONSUMER BEFORE THE DEFAULT.** Proven twice (#96, #100). A default change **cannot reach existing
+  users** (their localStorage already holds the old value), so the consumer fix is the *only* step that helps
+  anyone who already plays — and adopting the "correct" default first actively regresses them. #96: `[NaN×9]`
+  **was** the load-bearing "unset" semantic, and the codebase's own `[-1]` convention would have blocked Smithy
+  for the whole Hypothermia challenge. #100: flipping the default first makes `archstring()` write
+  `game.global.archString = ''` into the live game.
+  🪤 **CHECK EXIT CODES, NOT GREP.** I verified lint with `| grep -cE '^\s*(error|warning)'` — which never matches
+  oxlint's format. It printed `0` every time, **a gate incapable of failing ran for hours**, and the Pages deploy
+  went **RED on `main`** invisibly. Use `npm run lint >/dev/null 2>&1; echo $?`. See
+  [[feedback-check-exit-codes-not-grep]].
+  🔒 **The golden-regen laundering hatch is CLOSED (#91).** `regen-src-golden.mjs` now **refuses to run without
+  `--reason`**, records it + the sha256 in a committed manifest, and the parity test rejects any golden whose hash
+  disagrees. It cannot stop a determined liar; it converts a *silent side effect of a build command* into an
+  *attributable claim in the diff*. (Its `bytes` field must be `Buffer.byteLength`, not `String.length` — they
+  diverge the moment a non-ASCII char lands in the emit.)
+  🧹 **ZERO `oxlint-disable` suppressions remain in `src/` (#92, 69 → 0), and `no-eval`/`no-new-func`/
+  `no-implied-eval` are ON with a test forbidding their suppression.** #76 found a live `eval()` RCE that had
+  shipped for **nine years** behind an `oxlint-disable-next-line no-eval` — and the feature it guarded had been a
+  **no-op since 2016** (the importer truncates at the first `;`; the exporter emits JSON, which has none).
+  💀 **31 unreachable exports deleted (#85) via a call-graph WALK, not a reference count** — that is how it found
+  dead *cycles* (`RsafeBuyBuilding` and friends have real callers; every caller is itself dead). ⚠️ `RsafeBuyBuilding`
+  must **not** be resurrected: it was a copy of `safeBuyBuilding` **with the coordinator hook missing**.
+  📌 Oracle re-pinned once (`oracle/v3-u2-autobuildings`, #69 ship C). **COUNT THE EVENTS BEFORE BELIEVING A
+  DIVERGENCE COUNT** — "1167 divergences" was 1201 → 1204: three *inserted* events, every pre-existing one
+  unchanged. #90/#98's re-record was **additive, not a re-pin** (all 10 prior traces byte-identical).
+
+- **👁️ #90 + #98 SHIPPED — THE NET CAN SEE THE BOT NOW** (2026-07-13) — the L0 proof net was structurally
+  blind to combat: a **1,000,000× damage multiplier passed the entire sim suite GREEN**. It now goes **RED
+  with 1542 divergences**, and that is enforced forever by `tests/sim/damage-sensitivity.test.ts` — a
+  **mutation self-test** that patches the built bundle on every CI run and demands the differential notice.
+  Corpus: 4 saves → **8**; recorded mutators: 8 → **10**; coverage **10/10, zero blind mutators**.
+  🎯 **THE LESSON THAT GENERALIZES — REACH ≠ SENSITIVITY, and this is the part that nearly shipped wrong.**
+  Fixing reach was NOT enough. After adding a deep save where AT maps, fights and sets formations every tick
+  — with `calcOurDmg` genuinely called — the 1e6× injection **still diffed to ZERO**. AT's damage decisions
+  are **threshold predicates** (`enoughDamage = (dmg * cutoff > enemyHealth)`, maps.ts:403) and on a healthy
+  save that predicate is **already true**, so multiplying its input by a million leaves it true. **Calling a
+  function is not the same as depending on its answer.** The fix is `08-starved-u1`: damage-STARVED but
+  PERKED, so the threshold sits **unsaturated** (`enoughDamage === false` on all 2000 ticks) and the value is
+  load-bearing. **When you add a fixture to cover a calculation, ask whether its result can still change an
+  outcome there — then prove it by mutation.**
+  🕳️ **#90 named the wrong cause.** It blamed corpus depth alone. The bigger half was that **the recorder was
+  watching the wrong functions**: AT creates every map via `buyMap()` (**38 callsites**) and mass-recycles via
+  `recycleBelow()` (**3**) — *neither was wrapped*. The `recycleMap` that WAS wrapped is only the fallback at
+  the game's **100-map cap** (`buyMap() == -2`, main.js:6597), so it was never going to fire on an ordinary
+  save; `07-map-cap-u1` sits on the cap deliberately and is the only fixture that reaches it. Wrapping the
+  wrong function and then blaming the saves is the #66 mistake in a new costume.
+  🔒 **The blindness had ONE mechanical cause, and it is worth knowing:** every save decoded to world=4 with
+  **`mapsUnlocked === false`**, and `maps.ts:253` opens `if (!game.global.mapsUnlocked || calcOurDmg(...) <= 0)
+  { enoughDamage = true; ... return }` — so the damage term was **short-circuited out of every decision**. Not
+  mysterious; arithmetic on dead code. Root cause of the shallowness: **`totalPortals = 0`** on every save ⇒ no
+  helium ⇒ no perks ⇒ `antiStacks` pinned at 0 forever (main.js:11682) ⇒ AT hits a damage wall at z6 and
+  **soft-locks inside a map it cannot clear** (measured: world 6 for 25,000 consecutive ticks). **jsdom was
+  never the obstacle** — the old "deep states need progression jsdom can't reach" note was a hypothesis
+  written down as a fact. Grant perks (what every post-portal player has) and AT advances immediately.
+  ✅ **ADDITIVE RE-RECORD, NOT A RE-PIN** — the oracle bundle is untouched (`oracle/v3-u2-autobuildings`). All
+  **10 pre-existing traces re-recorded BYTE-IDENTICAL** (cmp-clean). *That byte-identity is the check to repeat
+  on any future corpus growth* — it is what proves additivity rather than a laundered behavior change.
+  ⚠️ **Do not weaken `damage-sensitivity.test.ts`.** If it goes red, the net has lost its ability to see combat
+  regressions and every green baseline-zero for damage code is worthless. **Fix the corpus, not the test.**
+
+- **🕸️ THE `needs-net` CLUSTER SHIPPED — #68–#74 + #88, five permanent nets + every fix** (2026-07-12, `10494e92`…`bd0cc71d`)
+  — 725 tests green, Pages deploy green. Each bug class is now closed by a **mechanical set-difference**, not by
+  reading, and each net carries a **shrinking baseline**: fix a bug and the net goes RED until you delete its
+  entry. That cluster added 5; **`tests/nets/` now holds 15** — `ls tests/nets/` is the list, don't
+  hand-maintain one here.
+  🎯 **The nets caught MY OWN errors, repeatedly — that is the argument for them.** My first MODULES net was blind
+  to `const customVars = MODULES["maps"]` (31 reads hidden); my ambient-var mutation-check was inadequate and the
+  agent said so; my DOM-id resolution rule was over-broad in exactly the way that lets typos survive. Each would
+  have shipped a net that *certified a class as closed while it wasn't*. **Always mutation-check a net, and pin
+  anti-false-green counts — a walk that breaks collapses to ∅ and passes vacuously.**
+  🚨 **PHANTOM SETTINGS ARE NOT TYPOS — and "just add the missing createSetting" is a DATA-LOSS BUG.**
+  `RCapEquiparm`/`Rgearamounttobuy`/`Ronlystackedvoids` were REAL settings, added 2019 (`d33ea06b`), **deleted
+  upstream 2020 (`701faab4`)** with their reads left behind. `createSetting` applies its default **only when
+  nothing is stored**, while `loadPageVariables()` restores the whole localStorage blob and `serializeSettings()`
+  round-trips unknown keys **forever** (`cleanupAutoTrimps()` only runs on a manual click). ⇒ **Re-minting a
+  deleted id RESURRECTS the user's 2020 value.** Three dispositions, not two: **repoint** at an existing id (mints
+  nothing) · **delete** the read · **mint** only if `git log --all -S"createSetting.*<id>"` is EMPTY. Corollary:
+  `getPageSetting` returns **`undefined`, not `false`**, for a veteran user (`hasOwnProperty` succeeds on the stale
+  primitive). See [[reference-settings-stale-key-resurrection]].
+  ⚠️ **THE L0 NET IS BLIND TO `calcOurDmg` — a 1,000,000× damage multiplier PASSES THE SIM SUITE GREEN** (#98,
+  reproduced by two agents independently). The recorder emits only buy events (#90) **and every corpus save decodes
+  to HZE=3/world=4** — so combat/mapping/zone-gated paths are *structurally unreachable*, not merely uncovered.
+  **"I shipped it and the net stayed green" is a MEANINGLESS sentence for combat math.** Run the **positive
+  control** (break your own change, confirm the net can see it); if it can't, build the evidence by hand —
+  `tests/calc.damageTrio.test.ts` is the pattern. AT had been **under-rating its own damage 6×**.
+  📌 **ORACLE RE-PINNED `oracle/v2-post-bugfix` → `oracle/v3-u2-autobuildings`** (#69 ship C only). **COUNT THE
+  EVENTS BEFORE YOU BELIEVE A DIVERGENCE COUNT:** baseline-zero cried "1167 divergences", which looks like the
+  wholly-shifted trajectory the re-pin rule exists to refuse — but tallied *by event*, oracle 1201 → working 1204:
+  every pre-existing event **unchanged**, exactly **three inserted**. The 1167 is the index shift they cause. Only
+  `04-u2-radon` moved; the other nine reproduced byte-identically against a bundle containing the whole cluster —
+  an independent proof the rest is trace-neutral.
+  🔴 **U2 AutoBuildings had NEVER EXECUTED** (`RBuyBuildingsNew` = the STRING `'true'`; its only gate is `== true`).
+  In U2 the mainLoop never calls U1's `buyBuildings()`, so `RbuyBuildings()` is the *only* building automation —
+  and its `else` branch is what enables vanilla AutoStorage. U2 players got **neither housing nor storage**: every
+  resource pegged at 100% of cap, **permanently**. Enabling it: **+68% max population**. Blocker fixed first — the
+  never-run body **seized the player's AutoStorage button** (`toggleAutoStorage` is a **flip**, not a setter, so AT
+  forced it back on ~100ms after the player turned it off, forever). Now one-shot.
+  🧪 **New issues from this pass:** **#93** (🎚️ `mostEfficientHousing` scores EVERY housing type with
+  `Hut.increase.by` — a Collector (+5000 pop) graded as **+3**; AT would never buy one) · **#94** (`RbuyBuildings`
+  bypasses the #57 coordinator) · **#95** (`for..in` over an array → 7 phantom `RMax<idx>` reads) · **#96**
+  (`Rhypofarmstack` default is the *string* `'undefined'` → `[NaN×9]`) · **#97** (`Rdheirloomswap` gates on DAILY
+  ids but calls the NON-DAILY equip fns; five correct daily twins exist with **zero callers**) · **#98** (the net
+  blindness above).
+  🪤 **`oxlint` no-unused-vars does NOT count uses inside a comma-sequence expression** — a legacy one-liner will
+  report a genuinely-used local as unused. De-comma it (#92 sanctions this "behind the live net"); do **not** add a
+  suppression to hide a phantom warning.
+
+- **🚦 #67 SHIPPED — THE DEPLOY GATE IS REAL NOW** (2026-07-12, `79f96935`) — the proof net had never once
+  run in the Pages gate. Fixed, and **verified end-to-end on the runner in both directions**: a clean tree
+  gives **637 passed / 0 skipped** (was 587 passed / **34 silently skipped** / exit 0), and the injected
+  `jobs.ts` regression that previously shipped to `dist/` **green** is now **red with 28 unexplained
+  divergences**.
+  🏗️ **The fix is NOT the one the issue proposed.** #67 recommended a CI checkout step + a hard-fail guard.
+  That is a stop-gap: it fixes the runner and leaves **every laptop with the identical silent-skip hole**,
+  and puts the game SHA in a third uncross-checked place. Instead the clone became a **SHA-pinned dependency
+  `npm ci` materializes** (`scripts/fetch-game-clone.mjs` → `.trimps-game/`). It is present everywhere **by
+  construction**, which is what let **`tests/sim/guard.ts` be DELETED** — no conditional-skip mechanism
+  survives anywhere in the tree. The pin lives **once**, in `package.json` `trimpsGame`, and the fetch
+  verifies the tree's own `config.js stringVersion` against it *before* it may become the oracle.
+  **Neither workflow contains a clone step** — if you find yourself adding one, the pin has drifted.
+  🕳️ **Two holes the issue never named, both found by RUNNING, not reading:** (a) **`deploy.yml` is the gate
+  that protects production** — my own first spike only fixed a new `ci.yml`, which guards nothing; (b)
+  **`boot.mjs` implicitly defaulted the bundle to the gitignored `dist/`**, so the net's input was *ambient*
+  — absent on CI, stale locally. That default is deleted; tests boot a bundle built in-process
+  (`tests/globalSetup.ts` → `AT_TEST_BUNDLE`). **Never point a test at `dist/`.**
+  📌 **Trace portability is CLOSED BY MEASUREMENT** — traces recorded on darwin/arm64 reproduce exactly on
+  linux/x64 (node 26.5), and the positive control fails there with *identical* divergence counts. **No oracle
+  re-record was needed, and none should be done.** ⚠️ A champion agent reported the opposite; it had branched
+  off the positive-control branch and was **measuring the injected bug, blaming the platform**. Acting on it
+  would have laundered a regression into the new oracle. **Always check the provenance of a red.**
+  🧪 **Three nets, each mutation-tested to prove it CAN go red** (the one it replaced could not — `ci-gates`'
+  pin check stayed green against an all-zeros SHA): `scripts/ci/assert-no-skips.mjs` (in CI, **zero tests may
+  skip** — any future `.skip`/`.todo`/env-guard fails on arrival), `tests/ci-gates.test.ts` (every declared
+  gate invoked by **both** workflows; clone + node pins must equal the oracle manifest), and `--deny-warnings`
+  (a linter that always exits 0 is not a gate). Also: `.nvmrc` now pins the **exact patch** (a floating `26`
+  resolved to 26.5.0 and would make `fingerprint.mjs` cry "runtime MISMATCH" on every divergence); sim tests
+  need a **120s** timeout (~34s on ubuntu vs <30s locally) — a flaky gate gets disabled, which is how #67
+  happened.
+  🐛 **`no-unused-expressions` stays ON — it found a real bug.** Triaging all 543 `src/` hits (not disabling
+  them) gave **541 benign / 2 REAL**: `MODULES["jobs"].customRatio` and `RcustomRatio` are bare member
+  accesses with the assignment dropped, read as the *highest-priority* branch of `workerRatios()` and never
+  written → **#88**. Calibrate rules (`allowShortCircuit`/`allowTernary`), never blind them. New issues from
+  this pass: **#88** (customRatio) · **#89** (MAZ dropdown HTML) · **#90** (**the net records ZERO
+  `runMap`/`selectMap`/`setFormation`/`recycleMap` events corpus-wide — it proves the buy path, not the
+  bot**) · **#91** (`src-bundle-parity` regen laundering hatch) · **#92** (lint debt).
+- **🔬 CODE REVIEW v2 — ~91 distinct defects; milestone #9, issues #67–#87. REVIEW ONLY, no code changed**
+  (2026-07-12) — an adversarial review of the whole codebase. Report:
+  `docs/superpowers/specs/2026-07-12-code-review-v2-findings.md`. **Fix order is load-bearing and is encoded in
+  the issue numbers.**
+  ✅ **#67 (the blocker) is FIXED — see the entry above.** It was: the proof net had never run in the deploy
+  gate, because `tests/sim/guard.ts` skipped 11 suites whenever the clone was absent (i.e. always, on CI).
+  `guard.ts` no longer exists and the gate is verified in both directions. **#68–#87 are unblocked and will
+  now land behind a net that actually runs.**
+  ✅ **#87 — SHIPPED (`d99702ca`). The mainLoop HAS an error boundary.** 99 `atGuard(...)` sites in
+  `legacy/AutoTrimps2.js`; `src/modules/guard.ts` catches, throttles and reports, and
+  `tests/sim/guard-silence.test.ts` demands the whole L0 corpus run with **zero** caught errors. A throw
+  inside one automation is contained to that automation.
+  ⚠️ **This bullet used to read "mainLoop has NO error boundary … fix LAST and ALONE", and on 2026-07-13 I
+  quoted that stale text as a live risk in TWO design analyses (#115, #119)** — pricing changes against a
+  "permanent cascading outage" that cannot happen. A subagent caught it, not me. **Do not argue from the
+  cascade.** When a `Recent decisions` bullet describes an OPEN problem, check whether it has since shipped
+  before you reason from it.
+  🕸️ **Systemic classes (#68–#74), each `needs-net`:** 28 phantom `getPageSetting` ids (dead guards; ⚠️ do NOT
+  fix by defining them — `MaxTox`'s phantom is *accidentally protective*); ~34 booleans `createSetting`'d with
+  a **string** default (`'false'` is truthy → behavior differs per reader); ambient state read-but-never-written
+  (`storedMODULES` → ReferenceError, and `tsc` is green because the `.d.ts` lies); **#70 `MODULES["maps"]
+  .enoughDamageCutoff` is never written** → `>= undefined` → "CAM: H:D" is dead in all four Armor Magic
+  settings, both universes; an **empty** `settingsProfileMakeGUI(){}` in `settings-visibility.ts` **shadows the
+  real one** in `import-export.ts` via the bridge's `Object.assign` spread order (last spread wins — exactly one
+  such collision exists in 401 exports); `byId("advExtraMapLevelselect")` — that element **does not exist**
+  (the game's id is `advExtraLevelSelect`).
+  **#32 and #58 WERE BOTH CLOSED PREMATURELY** — #32 recorded "FULLY COMPLETE" while `portal.ts:238` /
+  `mapfunctions-amp.ts:463` still carry live `ReferenceError`s *marked `@ts-expect-error #32 latent`*; #58 fixed
+  2 phantoms while 26 remained, including `RCapEquiparm` — phantom **inside the very function #58's own comment
+  declares repaired** (`other.ts:221`), so `RbuyArms()` still buys nothing (`level < false` → `level < 0`).
+  **Both drains closed on the MARKERS, not the BUGS.**
+  📐 **Two method lessons, and they generalize:**
+  (1) **NETS > READERS.** The review named `never-written` as a class, instantiated it 32 times, and closed it
+  with 45 *reading agents* instead of one exhaustive *mechanical net* — so it missed instances of the class it
+  had itself named. A ten-minute `MODULES.<field>` read-vs-write net found #70, which all 45 finders walked
+  past. **Where a class can be mechanized, mechanize it.**
+  (2) **THE SKEPTIC LAYER WAS DECORATIVE.** 297 adversarial votes changed almost nothing (95% pass rate), and
+  **4 of the 12 kills came from findings the skeptics passed *unanimously*** — killed later by the reproduction
+  stage. Adversarial *argument* is far weaker than adversarial *execution*. Next time skip the debate layer and
+  go straight to "make it fail." (Both audits of the confirmed set — lead's and post-mortem's — broke **0** of
+  the sampled findings, so the 91% survival rate is real: the codebase genuinely is this bad.)
+- **Bug-hunt session: #63/#64/#65/#66 shipped; ORACLE RE-PINNED to v2** (2026-07-12) — started from a user
+  bug report ("AT only researches, ignores the Turkimp") and cascaded. **#63** (`d749a7d4`): `needGymystic`
+  was `var needGymystic = true` in AutoTrimps2.js and **never reset** (a 2016 upstream commit flipped its
+  initial value), so `setScienceNeeded()` added Gymystic's flat **5,000,000** science cost forever — even
+  with Gymystic locked/unbuyable. `scienceNeeded` never reached 0 → `needScience` stayed true → gather's
+  research branch (gather.ts:140) fired *above* the Turkimp branch (:154) and returned first. Readers now
+  check `allowed > done` live; the global is retired. **#64** (`57a837ba`): `ManualGather2 == 3` ("Science
+  Research OFF") and `RManualGather2 == 2` dispatched **nothing** — picking them silently disabled ALL
+  gather automation and froze `playerGathering`. The four `!= 2` science guards in `manualLabor2` were
+  left over from when "Science Research OFF" WAS index 2, before "Mining/Building Only" was inserted ahead
+  of it. **#65** (`572c3f8c`, `514b790d`): audited all **571** settings — `SpamNature` was rendered but read
+  by nobody; `Rmayhemmap == 1` ("M: Highest Map") was a total no-op (implemented to its own tooltip; it's
+  the only selector needing a MAX-level match, every other matches an EXACT level); and portal.ts's
+  `typetokeep != 'None'` guard was **always true** (numeric index vs label string) — which mattered because
+  `autoheirlooms3()` **un-carries every heirloom** before re-carrying per `typetokeep`, and index 0 has no
+  carry branch, so Auto-Heirlooms-on + default type **stripped every carried heirloom**. Two permanent nets
+  in `tests/settings-wired.test.ts` (every createSetting id must be read; no `getPageSetting(<multitoggle>)`
+  vs string literal), both mutation-checked.
+  🚨 **#66 (`6b056258`) — THE SIM WAS BLIND, AND SO WAS THE L0 NET.** `boot.mjs` left `usingRealTimeOffline`
+  stuck true after `load()` (the game's offline replay sets it at main.js:2901 and clears it via a
+  `setTimeout` loop the sim stubs out). AT's mainLoop gates `setScienceNeeded()` + `autoLevelEquipment()`
+  on `!usingRealTimeOffline` — so **every AT-driven sim run ever executed with all gear-buying and science
+  tracking dark** (AT banked metal to its cap, never equipped). It hid because the sim still fought/mapped/
+  hired, and the tests only asserted "AT calls native mutators" (`buyJob` satisfied that). Consequences:
+  (a) L0 traces contained **zero** `buyEquipment` events — `baseline-zero` compared a crippled AT against a
+  crippled AT while reporting green; (b) `corpus-coverage.test.ts` had **enshrined the blindness as a
+  "documented gap"**, misattributing it to corpus depth (see [[feedback-verify-the-harness-measures-what-it-claims]]);
+  (c) **#40's conclusion was circular** and had to be re-measured. Fix = call the game's own
+  `offlineProgress.finish(true)`. **ORACLE RE-PINNED `oracle/phase1-faithful` (5e51f56d) → `oracle/v2-post-bugfix`
+  (514b790d)**: the old pin contains the #63 bug, so diffing against it asserted "keep behaving like the bug"
+  (on 02-mid-u1 the old oracle computes `scienceNeeded=5,001,452` and gathers science; the fixed build
+  computes 1,452 and gathers buildings — every downstream buy timing cascades). The `(save,index,fn)` waiver
+  mechanism is for a few *localized* divergences, not a wholly shifted trajectory (~130 brittle entries).
+  **Re-pinning is NOT routine — a naked oracle change is exactly the accidental-drift alarm the net exists to
+  raise; only re-pin behind a root-caused, reviewed, intentional behavior change.** Rationale in
+  `build-oracle.mjs` + the trace manifest. v2 traces are strictly *richer*, so the net is now more sensitive
+  than it has ever been. **#48 + #40 then CLOSED by measurement** on the honest harness: the early game is
+  **not worker-allocation-limited** (F/L/M spans ~2.5%; miner-heavy is *worse*; 5× scientists = +0.9%), and
+  `scientistRatio2` is **inert for divisors ≥5** (hardcoded `<10` floor at jobs.ts:118) — see
+  [[reference-early-game-not-worker-limited]]. 621 tests green.
+- **Phase 3 — Divergence milestone (#7) CLOSED** (2026-07-11) — #43 (opt-in Efficiency Metal-priority,
+  OFF = byte-identical) + #44 (U2 void discoverability) shipped; #41 moved to Phase 4 UI (#8). #44's
+  force-abandon actuator was a **sim+duel NO-GO** (net loss: forfeits map bonus/fragments; collides with
+  breedtimer's abandon path; Bubble absent from the clone so it's unverifiable) — resolved as
+  discoverability instead. 🚨 **GOTCHA — the Pages deploy was silently RED for a whole session**
+  (`f73aa718`→`a3cee184`): a breed golden asserted 21 digits of a native `Math.pow` value → libm drift
+  local↔CI. **Always verify `gh run list --branch main` is green after pushing main.**
+- **Purchase Coordinator (#57) — Phase 1 shipped, Phase 2 PAUSED, no compelling next slice** (2026-07-10/11)
+  — `src/modules/coordinator.ts`: a `coordinatorAllows(name,res,cost)` reservation guard at the
+  `safeBuyBuilding` chokepoint + a per-tick `computeTopTarget()`. Setting `PurchaseCoordinator` (default
+  off); **OFF is byte-identical**. The load-bearing finding: buyer resource pools are largely **disjoint**
+  (only metal is contended), which is why a lightweight guard beats a full allocator. Three dueling-agent
+  rounds then falsified *every* Phase-2 direction — economy look-ahead is misconceived (a building's "extra
+  income" is unreadable), and **U1 literally cannot build Smithy** (`blockU1`, config.js:11703) so all
+  Smithy automation is U2-only by necessity — see [[reference-u1-smithy-blocku1]]. **#57 stays open but has
+  no next slice.** GOTCHAS: never gate a buy on a bare `canAffordBuilding()` — it reads the *ambient UI
+  buyAmt* and re-stalls; a live "verification" that force-sets a game flag you don't understand
+  (`Smithy.locked = 0`) masks the real rule *and* auto-saves the mutation into later checks
+  ([[feedback-verify-without-mutating-game-state]]); a new `createSetting` updates BOTH the settings-inventory
+  `.snap` AND an inline `toMatchInlineSnapshot` count — commit both or CI goes red and blocks the deploy.
+- **Proof-net Phase 3 giant-splits shipped** (2026-07-10) — `mapfunctions.ts` 2799→1963 and `other.ts`
+  2378→621 via pure byte-faithful extractions (`mapfunctions-amp.ts`, `other-praiding.ts`). Method:
+  **split-first** — a pure move is verified by the golden + src-bundle-parity net alone (no behavioral net
+  needed); refactor the moved code in a later pass. Rejected the `RcalcOurHealth`↔`calcOurHealth` "dedupe"
+  (distinct U1/U2 models = tuning, not duplication).
+- **Planning is 100% GitHub-native** (2026-07-08) — ROADMAP/CHANGELOG/HISTORY deleted; Issues +
+  Milestones + issue #23 (frozen Phases 0–2) are canonical. In-repo docs point at GitHub, never
+  duplicate it.
+- **Phase 2 + Phase UI (#20) + Phase Parity (#21) shipped** — 26 modules converted, `SettingsGUI.js`
+  decomposed into 5 modules, automation synced v5.9.0→v5.10.1 (11 gaps). Only `AutoTrimps2.js` +
+  `Graphs.js`/highcharts/mods remain legacy.
+- **Phase Bugs (#22) shipped** (2026-07-08) — an adversarial multi-agent review found 26 confirmed bugs,
+  all fixed HIGH→LOW + pushed to `gh-pages`. Also landed the **true-TS modernization** design spec + a
+  proven Phase-0 characterization harness (see Conventions), and the `other.ts` missing-setting fix.
+- **Phase 1 true-TS (milestone #5) — COMPLETE** (2026-07-09) — all 31 modules `@ts-nocheck` → strict TS,
+  and the ambient seam (`trimps.d.ts` + `at-legacy.d.ts`) is stable.
+  🚨 **THE "ZERO `@ts-nocheck` REMAIN" CLAIM WAS FALSE FOR MONTHS, AND THIS FILE IS WHERE IT LIVED**
+  (found 2026-07-13 by a *doc audit*, not by any gate). `buildings.ts:5` — the project's most
+  game-coupled module — had a header comment that *wrapped* onto a line beginning
+  `// @ts-nocheck original, the conversion gate).` That is **prose**, but **TypeScript honours
+  `@ts-nocheck` ANYWHERE in a file's leading comment block**, so the entire module was exempt from
+  `tsc`. Proven by probe: appending `const x: number = "s"` produced **ZERO** typecheck errors. It hid
+  because every signal agreed it was fine — the file *looks* converted, this doc said the class was
+  closed, and **`tsc` exits 0 precisely BECAUSE the file is skipped: a disabled gate reports success.**
+  (Re-checked, it typechecks clean — no latent bugs, just an unverified module.) Now netted:
+  `tests/nets/no-ts-nocheck.test.ts` forbids the token from *beginning* a comment line in `src/`
+  (mid-sentence mentions, which five modules have, stay legal).
+  **GOTCHA — the byte-diff gate invocation:** `npx esbuild <file> --tsconfig-raw='{}'` on BOTH
+  sides (`--tsconfig-raw='{}'` normalizes the `"use strict";` esbuild otherwise emits only for in-tree
+  files); **NEVER pass `--loader=ts` with a file arg — it errors and emits nothing = a false green.**
+- **A prior from-scratch rewrite was abandoned** — refactor in place via the strangler, don't
+  reinvent the wheel.
