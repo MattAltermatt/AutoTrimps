@@ -1637,8 +1637,8 @@
       atGuard("ATspirebreed", function() {
         if (getPageSetting("SpireBreedTimer") > 0 && getPageSetting("IgnoreSpiresUntil") <= game.global.world) ATspirebreed();
       });
-      atGuard("buyshitspire", function() {
-        if (getPageSetting("spireshitbuy") == true && (isActiveSpireAT() || disActiveSpireAT())) buyshitspire();
+      atGuard("buySpirePrep", function() {
+        if (getPageSetting("spireshitbuy") == true && (isActiveSpireAT() || disActiveSpireAT())) buySpirePrep();
       });
       atGuard("praiding", function() {
         if (getPageSetting("PraidHarder") == true && getPageSetting("Praidingzone").length > 0 && game.global.challengeActive != "Daily" || getPageSetting("dPraidHarder") == true && getPageSetting("dPraidingzone").length > 0 && game.global.challengeActive == "Daily") PraidHarder();
@@ -5842,17 +5842,17 @@
     for (const upgrade of upgradeList) {
       const gameUpgrade = game.upgrades[upgrade];
       const available = gameUpgrade.allowed > gameUpgrade.done && canAffordTwoLevel(gameUpgrade);
-      const fuckbuildinggiga = bwRewardUnlocked("AutoStructure") === true && bwRewardUnlocked("DecaBuild") && getPageSetting2("hidebuildings") == true && getPageSetting2("BuyBuildingsNew") == 0;
+      const structureHandoffGiga = bwRewardUnlocked("AutoStructure") === true && bwRewardUnlocked("DecaBuild") && getPageSetting2("hidebuildings") == true && getPageSetting2("BuyBuildingsNew") == 0;
       if (upgrade === "Coordination" && (getPageSetting2("BuyUpgradesNew") == 2 || !canAffordCoordinationTrimps())) continue;
       if (upgrade === "Coordination" && getPageSetting2("amalcoord") == true && getPageSetting2("amalcoordhd") > 0 && calcHDratio() < getPageSetting2("amalcoordhd") && (getPageSetting2("amalcoordt") < 0 && (game.global.world < getPageSetting2("amalcoordz") || getPageSetting2("amalcoordz") < 0) || getPageSetting2("amalcoordt") > 0 && getPageSetting2("amalcoordt") > game.jobs.Amalgamator.owned && game.resources.trimps.realMax() / game.resources.trimps.getCurrentSend() > 2e3)) continue;
       if (upgrade === "Coordination" && getEmpowerment() == "Wind" && (getPageSetting2("AutoStance") == 3 && game.global.challengeActive !== "Daily" && getPageSetting2("WindStackingMin") > 0 && game.global.world >= getPageSetting2("WindStackingMin") && calcHDratio() < 5 || getPageSetting2("use3daily") == true && game.global.challengeActive === "Daily" && getPageSetting2("dWindStackingMin") > 0 && game.global.world >= getPageSetting2("dWindStackingMin") && calcHDratio() < 5)) continue;
       if (upgrade === "Coordination" && (getPageSetting2("AutoStance") == 3 && game.global.challengeActive !== "Daily" && getPageSetting2("wsmax") > 0 && getPageSetting2("wsmaxhd") > 0 && game.global.world >= getPageSetting2("wsmax") && calcHDratio() < getPageSetting2("wsmaxhd") || getPageSetting2("use3daily") == true && game.global.challengeActive === "Daily" && getPageSetting2("dwsmax") > 0 && getPageSetting2("dwsmaxhd") > 0 && game.global.world >= getPageSetting2("dwsmax") && calcHDratio() < getPageSetting2("dwsmaxhd"))) continue;
-      if (upgrade === "Gigastation" && !fuckbuildinggiga) {
+      if (upgrade === "Gigastation" && !structureHandoffGiga) {
         if (getPageSetting2("AutoGigas") && game.upgrades.Gigastation.done === 0 && !firstGiga()) continue;
         else if (game.buildings.Warpstation.owned < Math.floor(game.upgrades.Gigastation.done * getPageSetting2("DeltaGigastation")) + getPageSetting2("FirstGigastation")) continue;
       }
       if (upgrade === "Shieldblock" && !getPageSetting2("BuyShieldblock")) continue;
-      if (upgrade === "Gigastation" && !fuckbuildinggiga && (game.global.lastWarp ? game.buildings.Warpstation.owned < Math.floor(game.upgrades.Gigastation.done * getPageSetting2("DeltaGigastation")) + getPageSetting2("FirstGigastation") : game.buildings.Warpstation.owned < getPageSetting2("FirstGigastation"))) continue;
+      if (upgrade === "Gigastation" && !structureHandoffGiga && (game.global.lastWarp ? game.buildings.Warpstation.owned < Math.floor(game.upgrades.Gigastation.done * getPageSetting2("DeltaGigastation")) + getPageSetting2("FirstGigastation") : game.buildings.Warpstation.owned < getPageSetting2("FirstGigastation"))) continue;
       if (upgrade === "Bloodlust" && game.global.challengeActive === "Scientist" && getPageSetting2("BetterAutoFight")) continue;
       if (!available) continue;
       if (game.upgrades.Scientists.done < game.upgrades.Scientists.allowed && upgrade !== "Scientists" && canAffordTwoLevel(game.upgrades.Scientists)) continue;
@@ -13762,8 +13762,8 @@
     autoshrine: () => autoshrine2,
     avoidempower: () => avoidempower2,
     buyArms: () => buyArms,
+    buySpirePrep: () => buySpirePrep2,
     buyWeps: () => buyWeps2,
-    buyshitspire: () => buyshitspire2,
     dailyexitSpireCell: () => dailyexitSpireCell2,
     disActiveSpireAT: () => disActiveSpireAT2,
     exitSpireCell: () => exitSpireCell2,
@@ -13854,7 +13854,7 @@
   function helptrimpsnotdie2() {
     if (!game.global.preMapsActive && !game.global.fighting) buyArms();
   }
-  function buyshitspire2() {
+  function buySpirePrep2() {
     if (true == getPageSetting2("spireshitbuy") && game.global.spireActive && game.global.world >= getPageSetting2("IgnoreSpiresUntil")) {
       buyWeps2();
       buyArms();
@@ -16416,28 +16416,28 @@
     !radonon ? turnOn("BuyBuildingsNew") : turnOff("BuyBuildingsNew");
     !radonon ? turnOn("MaxGym") : turnOff("MaxGym");
     !radonon ? turnOn("GymWall") : turnOff("GymWall");
-    var fuckbuilding = bwRewardUnlocked("AutoStructure") == true && bwRewardUnlocked("DecaBuild") && getPageSetting("hidebuildings") == true && getPageSetting("BuyBuildingsNew") == 0;
+    var structureHandoffActive = bwRewardUnlocked("AutoStructure") == true && bwRewardUnlocked("DecaBuild") && getPageSetting("hidebuildings") == true && getPageSetting("BuyBuildingsNew") == 0;
     !radonon && bwRewardUnlocked("AutoStructure") == true && bwRewardUnlocked("DecaBuild") ? turnOn("hidebuildings") : turnOff("hidebuildings");
-    !radonon && !fuckbuilding ? turnOn("MaxHut") : turnOff("MaxHut");
-    !radonon && !fuckbuilding ? turnOn("MaxHouse") : turnOff("MaxHouse");
-    !radonon && !fuckbuilding ? turnOn("MaxMansion") : turnOff("MaxMansion");
-    !radonon && !fuckbuilding ? turnOn("MaxHotel") : turnOff("MaxHotel");
-    !radonon && !fuckbuilding ? turnOn("MaxResort") : turnOff("MaxResort");
-    !radonon && !fuckbuilding ? turnOn("MaxGateway") : turnOff("MaxGateway");
-    !radonon && !fuckbuilding ? turnOn("MaxWormhole") : turnOff("MaxWormhole");
-    !radonon && !fuckbuilding ? turnOn("MaxCollector") : turnOff("MaxCollector");
-    !radonon && !fuckbuilding ? turnOn("MaxTribute") : turnOff("MaxTribute");
-    !radonon && !fuckbuilding ? turnOn("MaxNursery") : turnOff("MaxNursery");
-    !radonon && !fuckbuilding ? turnOn("NoNurseriesUntil") : turnOff("NoNurseriesUntil");
-    !radonon && !fuckbuilding ? turnOn("NurseryWall") : turnOff("NurseryWall");
-    !radonon && !fuckbuilding ? turnOn("WarpstationCap") : turnOff("WarpstationCap");
-    !radonon && !fuckbuilding ? turnOn("WarpstationCoordBuy") : turnOff("WarpstationCoordBuy");
-    !radonon && !fuckbuilding ? turnOn("FirstGigastation") : turnOff("FirstGigastation");
-    !radonon && !fuckbuilding ? turnOn("DeltaGigastation") : turnOff("DeltaGigastation");
-    !radonon && !fuckbuilding ? turnOn("AutoGigas") : turnOff("AutoGigas");
-    !radonon && !fuckbuilding && getPageSetting("AutoGigas") == true ? turnOn("CustomTargetZone") : turnOff("CustomTargetZone");
-    !radonon && !fuckbuilding && getPageSetting("AutoGigas") == true ? turnOn("CustomDeltaFactor") : turnOff("CustomDeltaFactor");
-    !radonon && !fuckbuilding ? turnOn("WarpstationWall3") : turnOff("WarpstationWall3");
+    !radonon && !structureHandoffActive ? turnOn("MaxHut") : turnOff("MaxHut");
+    !radonon && !structureHandoffActive ? turnOn("MaxHouse") : turnOff("MaxHouse");
+    !radonon && !structureHandoffActive ? turnOn("MaxMansion") : turnOff("MaxMansion");
+    !radonon && !structureHandoffActive ? turnOn("MaxHotel") : turnOff("MaxHotel");
+    !radonon && !structureHandoffActive ? turnOn("MaxResort") : turnOff("MaxResort");
+    !radonon && !structureHandoffActive ? turnOn("MaxGateway") : turnOff("MaxGateway");
+    !radonon && !structureHandoffActive ? turnOn("MaxWormhole") : turnOff("MaxWormhole");
+    !radonon && !structureHandoffActive ? turnOn("MaxCollector") : turnOff("MaxCollector");
+    !radonon && !structureHandoffActive ? turnOn("MaxTribute") : turnOff("MaxTribute");
+    !radonon && !structureHandoffActive ? turnOn("MaxNursery") : turnOff("MaxNursery");
+    !radonon && !structureHandoffActive ? turnOn("NoNurseriesUntil") : turnOff("NoNurseriesUntil");
+    !radonon && !structureHandoffActive ? turnOn("NurseryWall") : turnOff("NurseryWall");
+    !radonon && !structureHandoffActive ? turnOn("WarpstationCap") : turnOff("WarpstationCap");
+    !radonon && !structureHandoffActive ? turnOn("WarpstationCoordBuy") : turnOff("WarpstationCoordBuy");
+    !radonon && !structureHandoffActive ? turnOn("FirstGigastation") : turnOff("FirstGigastation");
+    !radonon && !structureHandoffActive ? turnOn("DeltaGigastation") : turnOff("DeltaGigastation");
+    !radonon && !structureHandoffActive ? turnOn("AutoGigas") : turnOff("AutoGigas");
+    !radonon && !structureHandoffActive && getPageSetting("AutoGigas") == true ? turnOn("CustomTargetZone") : turnOff("CustomTargetZone");
+    !radonon && !structureHandoffActive && getPageSetting("AutoGigas") == true ? turnOn("CustomDeltaFactor") : turnOff("CustomDeltaFactor");
+    !radonon && !structureHandoffActive ? turnOn("WarpstationWall3") : turnOff("WarpstationWall3");
     radonon ? turnOn("RBuyBuildingsNew") : turnOff("RBuyBuildingsNew");
     radonon ? turnOn("RMaxHut") : turnOff("RMaxHut");
     radonon ? turnOn("RMaxHouse") : turnOff("RMaxHouse");
@@ -16455,15 +16455,15 @@
     radonon && getPageSetting("Rsmithylogic") == true ? turnOn("Rsmithyseconds") : turnOff("Rsmithyseconds");
     !radonon ? turnOn("BuyJobsNew") : turnOff("BuyJobsNew");
     !radonon ? turnOn("AutoMagmamancers") : turnOff("AutoMagmamancers");
-    var fuckjobbies = bwRewardUnlocked("AutoJobs") && getPageSetting("fuckjobs") == true && getPageSetting("BuyJobsNew") == 0;
+    var jobBoxesHidden = bwRewardUnlocked("AutoJobs") && getPageSetting("fuckjobs") == true && getPageSetting("BuyJobsNew") == 0;
     !radonon && bwRewardUnlocked("AutoJobs") ? turnOn("fuckjobs") : turnOff("fuckjobs");
-    !radonon && !fuckjobbies ? turnOn("FarmerRatio") : turnOff("FarmerRatio");
-    !radonon && !fuckjobbies ? turnOn("LumberjackRatio") : turnOff("LumberjackRatio");
-    !radonon && !fuckjobbies ? turnOn("MinerRatio") : turnOff("MinerRatio");
-    !radonon && !fuckjobbies ? turnOn("ScientistPercent") : turnOff("ScientistPercent");
-    !radonon && !fuckjobbies ? turnOn("MaxScientists") : turnOff("MaxScientists");
-    !radonon && !fuckjobbies ? turnOn("MaxExplorers") : turnOff("MaxExplorers");
-    !radonon && !fuckjobbies ? turnOn("MaxTrainers") : turnOff("MaxTrainers");
+    !radonon && !jobBoxesHidden ? turnOn("FarmerRatio") : turnOff("FarmerRatio");
+    !radonon && !jobBoxesHidden ? turnOn("LumberjackRatio") : turnOff("LumberjackRatio");
+    !radonon && !jobBoxesHidden ? turnOn("MinerRatio") : turnOff("MinerRatio");
+    !radonon && !jobBoxesHidden ? turnOn("ScientistPercent") : turnOff("ScientistPercent");
+    !radonon && !jobBoxesHidden ? turnOn("MaxScientists") : turnOff("MaxScientists");
+    !radonon && !jobBoxesHidden ? turnOn("MaxExplorers") : turnOff("MaxExplorers");
+    !radonon && !jobBoxesHidden ? turnOn("MaxTrainers") : turnOff("MaxTrainers");
     radonon ? turnOn("RBuyJobsNew") : turnOff("RBuyJobsNew");
     radonon ? turnOn("RFarmerRatio") : turnOff("RFarmerRatio");
     radonon ? turnOn("RLumberjackRatio") : turnOff("RLumberjackRatio");

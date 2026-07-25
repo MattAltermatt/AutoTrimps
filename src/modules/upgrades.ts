@@ -153,7 +153,7 @@ export function buyUpgrades() {
     for (const upgrade of upgradeList) {
         const gameUpgrade = game.upgrades[upgrade];
         const available = gameUpgrade.allowed > gameUpgrade.done && canAffordTwoLevel(gameUpgrade);
-        const fuckbuildinggiga = (bwRewardUnlocked("AutoStructure") === true && bwRewardUnlocked("DecaBuild") && getPageSetting('hidebuildings') == true && getPageSetting('BuyBuildingsNew') == 0);
+        const structureHandoffGiga = (bwRewardUnlocked("AutoStructure") === true && bwRewardUnlocked("DecaBuild") && getPageSetting('hidebuildings') == true && getPageSetting('BuyBuildingsNew') == 0);
 
         //Coord & Amals
         if (upgrade === 'Coordination' && (getPageSetting('BuyUpgradesNew') == 2 || !canAffordCoordinationTrimps())) continue;
@@ -177,14 +177,14 @@ export function buyUpgrades() {
         ) continue;
 
         //Gigastations
-        if (upgrade === 'Gigastation' && !fuckbuildinggiga) {
+        if (upgrade === 'Gigastation' && !structureHandoffGiga) {
             if (getPageSetting("AutoGigas") && game.upgrades.Gigastation.done === 0 && !firstGiga()) continue;
             else if (game.buildings.Warpstation.owned < (Math.floor(game.upgrades.Gigastation.done * getPageSetting('DeltaGigastation')) + getPageSetting('FirstGigastation'))) continue;
         }
 
         //Other
         if (upgrade === 'Shieldblock' && !getPageSetting('BuyShieldblock')) continue;
-        if (upgrade === 'Gigastation' && !fuckbuildinggiga && (game.global.lastWarp ? game.buildings.Warpstation.owned < (Math.floor(game.upgrades.Gigastation.done * getPageSetting('DeltaGigastation')) + getPageSetting('FirstGigastation')) : game.buildings.Warpstation.owned < getPageSetting('FirstGigastation'))) continue;
+        if (upgrade === 'Gigastation' && !structureHandoffGiga && (game.global.lastWarp ? game.buildings.Warpstation.owned < (Math.floor(game.upgrades.Gigastation.done * getPageSetting('DeltaGigastation')) + getPageSetting('FirstGigastation')) : game.buildings.Warpstation.owned < getPageSetting('FirstGigastation'))) continue;
         if (upgrade === 'Bloodlust' && game.global.challengeActive === 'Scientist' && getPageSetting('BetterAutoFight')) continue;
 
         if (!available) continue;

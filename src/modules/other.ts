@@ -110,7 +110,7 @@ export function helptrimpsnotdie() {
     if (!game.global.preMapsActive && !game.global.fighting) buyArms();
 }
 
-export function buyshitspire() {
+export function buySpirePrep() {
     if (!0 == getPageSetting('spireshitbuy') && game.global.spireActive && game.global.world >= getPageSetting('IgnoreSpiresUntil')) {
         buyWeps();
         buyArms();

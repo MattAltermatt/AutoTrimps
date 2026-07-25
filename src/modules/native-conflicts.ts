@@ -85,8 +85,11 @@ const atBuysStorage = (): boolean =>
 //     (main-loop.ts:290, buildings.ts:264, upgrades.ts:156, settings-visibility.ts:336) — and
 //     main-loop.ts:290 dispatches buyBuildings() *because* both are set. Inside, `hidebuild` suppresses
 //     housing/Wormhole/Tribute/Nursery but NOT Gym (buildings.ts:314) ⇒ that combination is "Gyms only".
-//   · `fuckjobs` has no behavioural consumer at all — its only reads are the two render gates in
-//     settings-visibility.ts:382-383. Hiring is stopped solely by BuyJobsNew == 0.
+//   · `fuckjobs` has no behavioural consumer at all — its ONLY read anywhere in src/ is the
+//     `jobBoxesHidden` predicate in settings-visibility.ts, which decides whether the jobs boxes
+//     render. (The `turnOn("fuckjobs")` line next to it gates the control's own visibility by id and
+//     does not read the value.) Hiring is stopped solely by BuyJobsNew == 0. Cited by SYMBOL, not by
+//     line — the #151 rename shifted these lines and the old line citation silently went stale.
 // So the state worth warning about is keyed on the DISPATCH setting, not the cosmetic one. Both orphan
 // sub-cases collapse into one predicate: BuyBuildingsNew == 0 with AutoStructure off means either
 // nothing at all is bought (Hide Buildings off ⇒ no branch matches) or Gyms only (Hide Buildings on).

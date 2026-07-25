@@ -340,7 +340,7 @@ describe('upgrades.buyUpgrades — L1b actuator spy-log (helium upgrade loop)', 
     expect(buyUpgradeCalls).toEqual([])
   })
 
-  it('fuckbuildinggiga===true bypasses BOTH Gigastation delta gates and buys anyway', () => {
+  it('structureHandoffGiga===true bypasses BOTH Gigastation delta gates and buys anyway', () => {
     ;(globalThis as any).bwRewardUnlocked = () => true // AutoStructure===true && DecaBuild
     ;(globalThis as any).autoTrimpSettings = {
       hidebuildings: { type: 'boolean', enabled: true },

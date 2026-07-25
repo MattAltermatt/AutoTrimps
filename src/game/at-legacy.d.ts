@@ -531,7 +531,7 @@ declare global {
   var exitSpireCell: typeof import('../modules/other').exitSpireCell
   var dailyexitSpireCell: typeof import('../modules/other').dailyexitSpireCell
   var ATspirebreed: typeof import('../modules/other').ATspirebreed
-  var buyshitspire: typeof import('../modules/other').buyshitspire
+  var buySpirePrep: typeof import('../modules/other').buySpirePrep
   var autoGoldenUpgradesAT: typeof import('../modules/other').autoGoldenUpgradesAT
   var archstring: typeof import('../modules/other').archstring
   var finishChallengeSquared: typeof import('../modules/portal').finishChallengeSquared

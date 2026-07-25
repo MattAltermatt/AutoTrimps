@@ -333,28 +333,28 @@ export function updateCustomButtons() {
     !radonon ? turnOn("BuyBuildingsNew") : turnOff("BuyBuildingsNew");
     !radonon ? turnOn("MaxGym") : turnOff("MaxGym");
     !radonon ? turnOn("GymWall") : turnOff("GymWall");
-    var fuckbuilding = (bwRewardUnlocked("AutoStructure") == true && bwRewardUnlocked("DecaBuild") && getPageSetting('hidebuildings') == true && getPageSetting('BuyBuildingsNew') == 0);
+    var structureHandoffActive = (bwRewardUnlocked("AutoStructure") == true && bwRewardUnlocked("DecaBuild") && getPageSetting('hidebuildings') == true && getPageSetting('BuyBuildingsNew') == 0);
     (!radonon && bwRewardUnlocked("AutoStructure") == true && bwRewardUnlocked("DecaBuild")) ? turnOn("hidebuildings") : turnOff("hidebuildings");
-    (!radonon && !fuckbuilding) ? turnOn("MaxHut") : turnOff("MaxHut");
-    (!radonon && !fuckbuilding) ? turnOn("MaxHouse") : turnOff("MaxHouse");
-    (!radonon && !fuckbuilding) ? turnOn("MaxMansion") : turnOff("MaxMansion");
-    (!radonon && !fuckbuilding) ? turnOn("MaxHotel") : turnOff("MaxHotel");
-    (!radonon && !fuckbuilding) ? turnOn("MaxResort") : turnOff("MaxResort");
-    (!radonon && !fuckbuilding) ? turnOn("MaxGateway") : turnOff("MaxGateway");
-    (!radonon && !fuckbuilding) ? turnOn("MaxWormhole") : turnOff("MaxWormhole");
-    (!radonon && !fuckbuilding) ? turnOn("MaxCollector") : turnOff("MaxCollector");
-    (!radonon && !fuckbuilding) ? turnOn("MaxTribute") : turnOff("MaxTribute");
-    (!radonon && !fuckbuilding) ? turnOn("MaxNursery") : turnOff("MaxNursery");
-    (!radonon && !fuckbuilding) ? turnOn("NoNurseriesUntil") : turnOff("NoNurseriesUntil");
-    (!radonon && !fuckbuilding) ? turnOn("NurseryWall") : turnOff("NurseryWall");
-    (!radonon && !fuckbuilding) ? turnOn("WarpstationCap") : turnOff("WarpstationCap");
-    (!radonon && !fuckbuilding) ? turnOn("WarpstationCoordBuy") : turnOff("WarpstationCoordBuy");
-    (!radonon && !fuckbuilding) ? turnOn("FirstGigastation") : turnOff("FirstGigastation");
-    (!radonon && !fuckbuilding) ? turnOn("DeltaGigastation") : turnOff("DeltaGigastation");
-    (!radonon && !fuckbuilding) ? turnOn("AutoGigas") : turnOff("AutoGigas");
-    (!radonon && !fuckbuilding && getPageSetting("AutoGigas") == true) ? turnOn("CustomTargetZone") : turnOff("CustomTargetZone");
-    (!radonon && !fuckbuilding && getPageSetting("AutoGigas") == true) ? turnOn("CustomDeltaFactor") : turnOff("CustomDeltaFactor");
-    (!radonon && !fuckbuilding) ? turnOn("WarpstationWall3") : turnOff("WarpstationWall3");
+    (!radonon && !structureHandoffActive) ? turnOn("MaxHut") : turnOff("MaxHut");
+    (!radonon && !structureHandoffActive) ? turnOn("MaxHouse") : turnOff("MaxHouse");
+    (!radonon && !structureHandoffActive) ? turnOn("MaxMansion") : turnOff("MaxMansion");
+    (!radonon && !structureHandoffActive) ? turnOn("MaxHotel") : turnOff("MaxHotel");
+    (!radonon && !structureHandoffActive) ? turnOn("MaxResort") : turnOff("MaxResort");
+    (!radonon && !structureHandoffActive) ? turnOn("MaxGateway") : turnOff("MaxGateway");
+    (!radonon && !structureHandoffActive) ? turnOn("MaxWormhole") : turnOff("MaxWormhole");
+    (!radonon && !structureHandoffActive) ? turnOn("MaxCollector") : turnOff("MaxCollector");
+    (!radonon && !structureHandoffActive) ? turnOn("MaxTribute") : turnOff("MaxTribute");
+    (!radonon && !structureHandoffActive) ? turnOn("MaxNursery") : turnOff("MaxNursery");
+    (!radonon && !structureHandoffActive) ? turnOn("NoNurseriesUntil") : turnOff("NoNurseriesUntil");
+    (!radonon && !structureHandoffActive) ? turnOn("NurseryWall") : turnOff("NurseryWall");
+    (!radonon && !structureHandoffActive) ? turnOn("WarpstationCap") : turnOff("WarpstationCap");
+    (!radonon && !structureHandoffActive) ? turnOn("WarpstationCoordBuy") : turnOff("WarpstationCoordBuy");
+    (!radonon && !structureHandoffActive) ? turnOn("FirstGigastation") : turnOff("FirstGigastation");
+    (!radonon && !structureHandoffActive) ? turnOn("DeltaGigastation") : turnOff("DeltaGigastation");
+    (!radonon && !structureHandoffActive) ? turnOn("AutoGigas") : turnOff("AutoGigas");
+    (!radonon && !structureHandoffActive && getPageSetting("AutoGigas") == true) ? turnOn("CustomTargetZone") : turnOff("CustomTargetZone");
+    (!radonon && !structureHandoffActive && getPageSetting("AutoGigas") == true) ? turnOn("CustomDeltaFactor") : turnOff("CustomDeltaFactor");
+    (!radonon && !structureHandoffActive) ? turnOn("WarpstationWall3") : turnOff("WarpstationWall3");
 
 
     //RBuildings
@@ -379,18 +379,24 @@ export function updateCustomButtons() {
     //Jobs
     !radonon ? turnOn("BuyJobsNew") : turnOff("BuyJobsNew");
     !radonon ? turnOn("AutoMagmamancers") : turnOff("AutoMagmamancers");
-    var fuckjobbies = (bwRewardUnlocked("AutoJobs") && getPageSetting('fuckjobs') == true && getPageSetting('BuyJobsNew') == 0);
+    // #151: named "Hidden", not "Handoff", and the asymmetry with structureHandoffActive above is the
+    // point. `fuckjobs` has NO behavioural consumer — this predicate is its ONLY read anywhere in src/,
+    // and all it decides is whether the jobs boxes render. (The turnOn/turnOff line below gates the
+    // control's own visibility by id; it does not read the value.) Hiring is stopped solely by
+    // BuyJobsNew == 0. See the orphan-predicate block in native-conflicts.ts for the full trace; a name
+    // like "HandJobsToAutoJobs" would assert a handoff this setting does not perform.
+    var jobBoxesHidden = (bwRewardUnlocked("AutoJobs") && getPageSetting('fuckjobs') == true && getPageSetting('BuyJobsNew') == 0);
     (!radonon && bwRewardUnlocked("AutoJobs")) ? turnOn("fuckjobs") : turnOff("fuckjobs");
-    (!radonon && !fuckjobbies) ? turnOn("FarmerRatio") : turnOff("FarmerRatio");
-    (!radonon && !fuckjobbies) ? turnOn("LumberjackRatio") : turnOff("LumberjackRatio");
-    (!radonon && !fuckjobbies) ? turnOn("MinerRatio") : turnOff("MinerRatio");
+    (!radonon && !jobBoxesHidden) ? turnOn("FarmerRatio") : turnOff("FarmerRatio");
+    (!radonon && !jobBoxesHidden) ? turnOn("LumberjackRatio") : turnOff("LumberjackRatio");
+    (!radonon && !jobBoxesHidden) ? turnOn("MinerRatio") : turnOff("MinerRatio");
     // #106: unlike the three ratio boxes above, ScientistPercent is NOT overwritten by "Auto Worker
     // Ratios" — workerRatios() only rewrites Farmer/Lumberjack/Miner — so it is a live control in every
     // BuyJobsNew mode, and stays visible whenever the Jobs panel is.
-    (!radonon && !fuckjobbies) ? turnOn("ScientistPercent") : turnOff("ScientistPercent");
-    (!radonon && !fuckjobbies) ? turnOn("MaxScientists") : turnOff("MaxScientists");
-    (!radonon && !fuckjobbies) ? turnOn("MaxExplorers") : turnOff("MaxExplorers");
-    (!radonon && !fuckjobbies) ? turnOn("MaxTrainers") : turnOff("MaxTrainers");
+    (!radonon && !jobBoxesHidden) ? turnOn("ScientistPercent") : turnOff("ScientistPercent");
+    (!radonon && !jobBoxesHidden) ? turnOn("MaxScientists") : turnOff("MaxScientists");
+    (!radonon && !jobBoxesHidden) ? turnOn("MaxExplorers") : turnOff("MaxExplorers");
+    (!radonon && !jobBoxesHidden) ? turnOn("MaxTrainers") : turnOff("MaxTrainers");
 
 
     //RJobs

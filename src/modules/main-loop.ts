@@ -381,8 +381,8 @@ export function mainLoop() {
         atGuard('ATspirebreed', function () {
             if (getPageSetting('SpireBreedTimer') > 0 && getPageSetting('IgnoreSpiresUntil') <= game.global.world) ATspirebreed();
         });
-        atGuard('buyshitspire', function () {
-            if (getPageSetting('spireshitbuy') == true && (isActiveSpireAT() || disActiveSpireAT())) buyshitspire();
+        atGuard('buySpirePrep', function () {
+            if (getPageSetting('spireshitbuy') == true && (isActiveSpireAT() || disActiveSpireAT())) buySpirePrep();
         });
 
         //Raiding
