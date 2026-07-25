@@ -40,7 +40,8 @@ export type SettingIdMigration = {
     readonly from: string
     /** The current id. MUST be a live `createSetting` id — asserted by the net. */
     readonly to: string
-    /** AT version that shipped this row, so the table reads as a dated log. */
+    /** AT version + issue that shipped this row. package.json 6.0.0 predates this wave, so the issue
+     *  number is what actually discriminates -- version alone cannot. */
     readonly since: string
     /** Why the id was retired. One line; it is the only record a future reader gets. */
     readonly why: string
@@ -52,7 +53,41 @@ export type SettingIdMigration = {
 // `"mapcutoff":4` that no build has ever defined, so the "obvious" typo fix mapcuntoff → mapcutoff
 // would have handed every z550-preset user a five-year-old 4. The net refuses any `to` found in
 // either frozen preset blob for exactly that reason.
-export const SETTING_ID_MIGRATIONS: readonly SettingIdMigration[] = []
+export const SETTING_ID_MIGRATIONS: readonly SettingIdMigration[] = [
+    // The four cut-off ids are a TYPO nobody chose ("cuntoff" for "cutoff"), and they are absent from
+    // both frozen preset blobs — so once migrated, nothing re-introduces them and the delete is
+    // durable. Each U1/U2 pair moves together: settings-wired derives its twin list as "id X is a twin
+    // iff 'R' + X also exists", so renaming one half dissolves the pair. That assertion WAS a floor
+    // (twins > 50, actual 57), which meant a dissolved pair would have stayed GREEN while silently
+    // dropping the U2 half from visibility checking — hence the exact toBe(57) pin, plus a membership
+    // check naming both pairs, added alongside these rows.
+    { from: 'dmgcuntoff', to: 'EquipDamageCutoff', since: '6.0.0 (#151)', why: 'typo of cut-off; the AutoEquip damage threshold' },
+    { from: 'Rdmgcuntoff', to: 'REquipDamageCutoff', since: '6.0.0 (#151)', why: 'typo of cut-off; U2 twin of EquipDamageCutoff' },
+    { from: 'mapcuntoff', to: 'MapDamageCutoff', since: '6.0.0 (#151)', why: 'typo of cut-off; the map H:D threshold' },
+    { from: 'Rmapcuntoff', to: 'RMapDamageCutoff', since: '6.0.0 (#151)', why: 'typo of cut-off; U2 twin of MapDamageCutoff' },
+
+    // NOT `mapcutoff` for the row above, however obvious that looks: serializeSettings550() already
+    // carries a junk "mapcutoff":4 that no build has ever defined, so every user who imported the
+    // z550 preset holds one. Migrating onto it would hand them a five-year-old 4 in place of their
+    // configured value. The mechanical net refuses any `to` found in either blob for this reason.
+
+    // These two are in BOTH frozen blobs, which is fine and is precisely why the seam is createSetting
+    // rather than boot: importing a pre-rename preset re-introduces the old key, and the very next
+    // initializeAllSettings() — which an import triggers directly — migrates it again.
+    { from: 'spireshitbuy', to: 'SpirePrepGear', since: '6.0.0 (#151)', why: 'profanity; buys cheap prep gear before a Spire' },
+    { from: 'fuckjobs', to: 'HideJobBoxes', since: '6.0.0 (#151)', why: 'profanity; hides the job boxes, and that is all it does' },
+
+    // DELIBERATELY ABSENT, recorded so nobody re-derives the same wrong answer from the id alone:
+    //   · `hidebuildings`  — not profane. Its name IS misleading (ON means "Gyms only", and per
+    //     main-loop.ts it makes AT buy MORE than OFF, not less), but that is a LABEL defect with a
+    //     free fix, not worth a migration across its four behavioural consumers and six fixtures.
+    //   · `screwessence`   — "screw" is mild, and its accurate name is its existing label,
+    //     "Remaining Essence Only". The proposed `IgnoreEssence` names the OFF state: reading it ON
+    //     means RESPECT remaining essence. Risk with no naming gain.
+    //   · `fuckanti`       — profane, but it is a PHANTOM: never createSetting'd, read nowhere, alive
+    //     only inside the two frozen blobs. A migration cannot help it because there is no target to
+    //     migrate to. Its disposition is cleanupCandidates(), not a rename.
+]
 
 /**
  * Move a retired id's stored value onto its current id, in place, if the retired key is present.

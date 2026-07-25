@@ -318,7 +318,7 @@ export function autoLevelEquipment() {
     //WS
     // getEmpowerment()=='Wind' + every getPageSetting(...) compare stays LOOSE (polymorphic); the
     // challengeActive string compares go strict.
-    let enoughDamageCutoff = getPageSetting("dmgcuntoff");
+    let enoughDamageCutoff = getPageSetting("EquipDamageCutoff");
     if (getEmpowerment() == 'Wind' && game.global.challengeActive !== "Daily" && !game.global.runningChallengeSquared && getPageSetting("AutoStance") == 3 && getPageSetting("WindStackingMin") > 0 && game.global.world >= getPageSetting("WindStackingMin") && getPageSetting("windcutoff") > 0)
         enoughDamageCutoff = getPageSetting("windcutoff");
     if (getEmpowerment() == 'Wind' && game.global.challengeActive === "Daily" && !game.global.runningChallengeSquared && (getPageSetting("AutoStance") == 3 || getPageSetting("use3daily") == true) && getPageSetting("dWindStackingMin") > 0 && game.global.world >= getPageSetting("dWindStackingMin") && getPageSetting("dwindcutoff") > 0)
@@ -833,7 +833,7 @@ export function RautoEquip() {
         let equipName = bestBuys[0];
         let resourceUsed: any = (equipName === 'Shield') ? 'wood' : 'metal';
         let equipCap = attackEquipCap;
-        let underStats = RcalcHDratio() >= getPageSetting('Rdmgcuntoff');
+        let underStats = RcalcHDratio() >= getPageSetting('REquipDamageCutoff');
 
         for (let i = 0; i < 2; i++){
             if (canAffordBuilding(equipName, null, null, true, false, 1)) {

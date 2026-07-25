@@ -382,7 +382,7 @@ export function mainLoop() {
             if (getPageSetting('SpireBreedTimer') > 0 && getPageSetting('IgnoreSpiresUntil') <= game.global.world) ATspirebreed();
         });
         atGuard('buySpirePrep', function () {
-            if (getPageSetting('spireshitbuy') == true && (isActiveSpireAT() || disActiveSpireAT())) buySpirePrep();
+            if (getPageSetting('SpirePrepGear') == true && (isActiveSpireAT() || disActiveSpireAT())) buySpirePrep();
         });
 
         //Raiding

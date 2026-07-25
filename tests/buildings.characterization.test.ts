@@ -795,7 +795,7 @@ describe('buildings.RbuyBuildings — L1b orchestrator spy-log', () => {
 
   // L591/594: challengeActive == 'Quest' + questcheck() == 7 → Smithy bought once, smithybought set
   it('Smithy on Quest: questcheck()==7 → buys Smithy', () => {
-    ;(globalThis as any).autoTrimpSettings = { Rnurtureon: { type: 'boolean', enabled: false }, Rmapcuntoff: { type: 'value', value: 999 } }
+    ;(globalThis as any).autoTrimpSettings = { Rnurtureon: { type: 'boolean', enabled: false }, RMapDamageCutoff: { type: 'value', value: 999 } }
     ;(globalThis as any).questcheck = () => 7
     ;(globalThis as any).game = baseGame({
       global: { buyAmt: 1, firing: false, maxSplit: 1, world: 5, challengeActive: 'Quest', autoStorage: true },

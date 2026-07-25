@@ -922,7 +922,7 @@ export function initializeAllSettings() {
     //Jobs
 
     //Line 1
-    createSetting('fuckjobs', 'Hide Jobs',tip({
+    createSetting('HideJobBoxes', 'Hide Jobs',tip({
         what: 'Hides the Farmer / Lumberjack / Miner / Scientist / Max Explorers / Max Trainers boxes once they stop mattering.',
         how: 'Needs two things at once: the <b>AutoJobs</b> Bone Shrine mastery bought, and <b>Buy Jobs</b> set to <b>Don\'t Buy Jobs</b> (AutoJobs replaces this automation entirely once both are true).',
     }), 'boolean', false, null, "Jobs");
@@ -1059,7 +1059,7 @@ export function initializeAllSettings() {
         what: 'Do not level armor past this level.',
         how: 'Helps avoid wasting metal leveling armor high only to prestige it right after. Disable with -1 or 0. During liquified or heavily-overkilled zones the effective cap drops to a tenth of this value.<br><br>Levels only get bought while AT judges it does not have enough survivability yet (or, with <b>Invest Spare Metal</b> on, whenever it can afford a level) — reaching this cap does not by itself force any leveling. During Spire, armor is leveled to this cap unconditionally.'
     }), 'value', 10, null, 'Gear');
-    createSetting('dmgcuntoff', 'Equipment Cut Off',tip({
+    createSetting('EquipDamageCutoff', 'Equipment Cut Off',tip({
         what: 'Controls how much damage margin AT wants before it stops leveling weapons.',
         how: 'AT judges itself to have "enough damage" once your damage times this value exceeds the enemy\'s health. A higher number reaches "enough" sooner, so AT stops leveling weapons earlier; a lower number keeps it leveling weapons more aggressively. 4 is the historical default.'
     }), 'value', '4', null, 'Gear');
@@ -1126,7 +1126,7 @@ export function initializeAllSettings() {
         what: 'The U2 master switch for AutoEquip: buys Prestiges and levels up equipment automatically.',
         how: 'Only buys prestiges when it judges them worth it, and levels whichever piece is currently most cost-efficient.'
     }), 'boolean', false, null, "Gear");
-    createSetting('Rdmgcuntoff', 'AE: Cut-off',tip({
+    createSetting('REquipDamageCutoff', 'AE: Cut-off',tip({
         what: 'Controls how aggressively AutoEquip levels weapons in U2.',
         how: 'While your Health:Damage ratio is at or above this value, AT keeps buying weapon levels regardless of the zone and percent overrides below. 1 is the historical default.',
         ignoredWhen: 'AutoEquip (Requipon) is off.'
@@ -1261,7 +1261,7 @@ export function initializeAllSettings() {
         what: 'Caps how many extra Map Bonus stacks AutoTrimps will farm purely to raise your health, when health is short.',
         how: 'Only kicks in below this many stacks, while AutoTrimps isn\'t already mapping for another reason and doesn\'t need to prestige. Above this many stacks, health-farming stops even if health is still short.',
     }), 'value', '10', null, 'Maps');
-    createSetting('mapcuntoff', 'Map Cut Off',tip({
+    createSetting('MapDamageCutoff', 'Map Cut Off',tip({
         what: 'Sets the Health:Damage ratio AutoTrimps uses to decide whether it has "enough damage" to stop mapping and push forward.',
         how: 'AutoTrimps expects to one-shot an enemy once your damage times this number exceeds the enemy\'s health. Raise it to demand a bigger damage margin (more mapping); lower it to accept a thinner margin (less mapping). This same threshold is also what the <b>CAM: H:D</b> Armor Magic option compares against.',
         ignoredWhen: 'Temporarily replaced by the Wind Stacking cutoff or the Mapology challenge cutoff whenever either of those is active &mdash; this box\'s value doesn\'t change, but it briefly stops being read.',
@@ -1418,7 +1418,7 @@ export function initializeAllSettings() {
         what: 'Sets how many enemy attacks AutoTrimps wants to be able to survive before it considers its health "enough" &mdash; used for both map-farming decisions and gear-buying decisions in Universe 2.',
         how: 'The lower this is, the less health AutoTrimps will farm or buy toward. Set it too high and AutoTrimps will over-farm for health, so be careful.',
     }), 'value', '10', null, 'Maps');
-    createSetting('Rmapcuntoff', 'Map Cut Off',tip({
+    createSetting('RMapDamageCutoff', 'Map Cut Off',tip({
         what: 'Sets the Health:Damage ratio AutoTrimps uses to decide whether it has "enough damage" to stop mapping and push forward &mdash; the Universe 2 twin of <b>Map Cut Off</b>.',
         how: 'AutoTrimps expects to one-shot an enemy while your Health:Damage ratio stays at or below this number. Raise it to demand a bigger damage margin (more mapping); lower it to accept a thinner margin (less mapping).',
     }), 'value', '1', null, 'Maps');
@@ -1622,7 +1622,7 @@ export function initializeAllSettings() {
         how: 'Overrides both <b>No Nurseries Until z</b> and <b>Max Nurseries</b> while active, so you can keep your general Nursery settings tight and still stock up before a Spire push.',
         cannot: '-1 disables it.',
     }), 'value', -1, null, 'Spire');
-    createSetting('spireshitbuy', 'Buy Gear in Spire',tip({
+    createSetting('SpirePrepGear', 'Buy Gear in Spire',tip({
         what: 'Buys Weapons and Armor while in the Spire regardless of your H:D ratio, so you keep gearing up even when AT would normally consider you strong enough already.',
         how: 'Still respects your max gear level cap.',
         ignoredWhen: 'Below your <b>Ignore Spires Until</b> zone, or you are not currently in an active Spire.',

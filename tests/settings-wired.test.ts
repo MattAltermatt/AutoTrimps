@@ -107,6 +107,13 @@ function readableCorpus(files: string[], contents: string[]): string {
       // settings-visibility.ts — turnOn/turnOff mention an id to SHOW or HIDE its control. That proves
       // the control renders, not that anything reads its value. `turnwson` (#117) hid in exactly this.
       src = src.replace(/turn(On|Off)\(\s*["'`][^"'`]+["'`]\s*\)/g, 'turnX()')
+      // settings-migrations.ts (#151) — THE THIRD LIAR, and the newest. Its table names a retired id and
+      // its replacement, in quotes; naming an id there proves only that it was renamed. Without this the
+      // table is its own witness: every migration target auto-passes the read-check forever, so a future
+      // rename whose consumer is dropped in the same wave ships a control that is defined, rendered and
+      // persisted, read by nothing, and GREEN. Verified by mutation — deleting both real reads of
+      // SpirePrepGear left this net green until this line existed.
+      if (rel.endsWith('settings-migrations.ts')) src = ''
       return src
     })
     .join('\n')
@@ -164,8 +171,10 @@ describe('every setting the UI renders is actually wired to code (#65)', () => {
     // Note buynojobsc is now genuinely READ (#117 wired it), so it can no longer serve as the example of
     // a blob-only mention. Assert the STRIPPING itself instead — that is the property, and it does not
     // rot when a setting's wiring changes underneath it.
+    expect(rawCorpus).toContain("to: 'SpirePrepGear'") //   …and so is the #151 migration table.
     expect(corpus).not.toContain('"buynojobsc":true') // the frozen preset blob is gone from the corpus
     expect(corpus).not.toContain('turnOn("turnwson")') // …and so is every visibility toggle
+    expect(corpus).not.toContain("to: 'SpirePrepGear'") // …and so is the whole migration table
     expect(isRead('turnwson', corpus)).toBe(false) // still signage: rendered, never read (ALLOWED_UNREAD)
     // A REAL read still resolves — otherwise the stripping is over-broad and the net is now blind.
     expect(isRead('AutoStance', corpus)).toBe(true)
@@ -305,7 +314,17 @@ describe('every U1/U2 twin setting appears in the visibility table (#109)', () =
   const twins = ids.filter((id) => idSet.has('R' + id))
 
   it('finds the twin pairs at all (anti-false-green: an empty walk passes vacuously)', () => {
-    expect(twins.length).toBeGreaterThan(50)
+    // #151: EXACT, not a floor. The pair list is DERIVED — X is a twin iff 'R' + X also exists — so
+    // renaming one half of a pair and not the other does not fail the routing check below; it makes
+    // the pair cease to exist, silently dropping the U2 half from visibility checking altogether.
+    // Under the old `> 50` floor that read as green: 57 -> 56 clears it comfortably. Two pairs moved
+    // in the Tier B rename (dmgcuntoff/Rdmgcuntoff, mapcuntoff/Rmapcuntoff) and this is what proved
+    // they moved together. Adding a genuine new twin pair should update this number in the same diff.
+    expect(twins.length).toBe(57)
+    // Count alone still admits one mutant: dissolve one pair and create another in the same commit and
+    // the total is unmoved. Naming the two pairs the #151 rename actually moved closes that for the
+    // case at hand — membership, not just arithmetic.
+    expect(twins).toEqual(expect.arrayContaining(['EquipDamageCutoff', 'MapDamageCutoff']))
     expect(shown.size).toBeGreaterThan(400)
   })
 

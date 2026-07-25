@@ -6,11 +6,11 @@ import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest'
 // anywhere ever assigns. `n >= undefined` is always false, so the middle option of both multitoggles
 // was a silent no-op — dead for every U1 player since it was written, while reading like working code.
 //
-// The fix reads getPageSetting('mapcuntoff'), the H:D threshold the tooltip already promises ("the H:D
+// The fix reads getPageSetting('MapDamageCutoff'), the H:D threshold the tooltip already promises ("the H:D
 // you have defined in maps"). NOT by giving the MODULES field a value — that would mean inventing a
-// balance number. Units check out: maps.ts:408 computes `enoughDamage = ourBaseDamage * mapcuntoff >
-// enemyHealth`, i.e. `HD < mapcuntoff`, and calcHDratio() is `calcEnemyHealth() / ourBaseDamage`. So
-// `calcHDratio() >= mapcuntoff` is exactly the complement — "not enough damage ⇒ buy armor".
+// balance number. Units check out: maps.ts:408 computes `enoughDamage = ourBaseDamage * MapDamageCutoff >
+// enemyHealth`, i.e. `HD < MapDamageCutoff`, and calcHDratio() is `calcEnemyHealth() / ourBaseDamage`. So
+// `calcHDratio() >= MapDamageCutoff` is exactly the complement — "not enough damage ⇒ buy armor".
 //
 // The U1 half had NO test at all before this file; other.rarmormagic.test.ts covers the U2 twin.
 
@@ -31,8 +31,8 @@ let buyEquipmentCalls: unknown[][]
 beforeEach(() => {
   buyEquipmentCalls = []
   ;(globalThis as any).autoTrimpSettings = {
-    // mapcuntoff is the U1 H:D threshold the ==2 arm now reads (default '4', settings-defs.ts:392).
-    mapcuntoff: { type: 'value', value: '4' },
+    // MapDamageCutoff is the U1 H:D threshold the ==2 arm now reads (default '4', settings-defs.ts:392).
+    MapDamageCutoff: { type: 'value', value: '4' },
     CapEquiparm: { type: 'value', value: '50' }, // buyArms' armour-level cap
     BuyArmorNew: { type: 'multitoggle', value: 1 }, // buyArms early-returns unless this is 1 or 3
   }
@@ -63,14 +63,14 @@ describe('#70: U1 armormagic "CAM: H:D" arm is live (it read a MODULES field not
     expect((globalThis as any).MODULES?.maps?.enoughDamageCutoff).toBeUndefined()
   })
 
-  it('carmormagic=2 (H:D) + H:D at/above mapcuntoff → buys armor', () => {
+  it('carmormagic=2 (H:D) + H:D at/above MapDamageCutoff → buys armor', () => {
     setCarmormagic(2)
     ;(globalThis as any).calcHDratio = vi.fn(() => 9) // 9 >= 4 → under-damaged → buy armor
     other.armormagic()
     expect(bought()).toEqual(ARMOR)
   })
 
-  it('carmormagic=2 (H:D) + H:D below mapcuntoff → does NOT buy', () => {
+  it('carmormagic=2 (H:D) + H:D below MapDamageCutoff → does NOT buy', () => {
     setCarmormagic(2)
     ;(globalThis as any).calcHDratio = vi.fn(() => 1) // 1 < 4 → damage is fine → no armor
     other.armormagic()
@@ -79,15 +79,15 @@ describe('#70: U1 armormagic "CAM: H:D" arm is live (it read a MODULES field not
     // above + this one is what proves the arm is live AND threshold-sensitive, not merely reachable.
   })
 
-  it('the arm tracks the PLAYER\'s mapcuntoff, not a hardcoded number', () => {
+  it('the arm tracks the PLAYER\'s MapDamageCutoff, not a hardcoded number', () => {
     setCarmormagic(2)
     ;(globalThis as any).calcHDratio = vi.fn(() => 3)
-    ;(globalThis as any).autoTrimpSettings.mapcuntoff.value = '10' // 3 < 10 → no buy
+    ;(globalThis as any).autoTrimpSettings.MapDamageCutoff.value = '10' // 3 < 10 → no buy
     other.armormagic()
     expect(bought()).toEqual([])
 
     buyEquipmentCalls.length = 0
-    ;(globalThis as any).autoTrimpSettings.mapcuntoff.value = '2' // 3 >= 2 → buy
+    ;(globalThis as any).autoTrimpSettings.MapDamageCutoff.value = '2' // 3 >= 2 → buy
     other.armormagic()
     expect(bought()).toEqual(ARMOR)
   })

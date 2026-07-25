@@ -111,7 +111,7 @@ export function helptrimpsnotdie() {
 }
 
 export function buySpirePrep() {
-    if (!0 == getPageSetting('spireshitbuy') && game.global.spireActive && game.global.world >= getPageSetting('IgnoreSpiresUntil')) {
+    if (!0 == getPageSetting('SpirePrepGear') && game.global.spireActive && game.global.world >= getPageSetting('IgnoreSpiresUntil')) {
         buyWeps();
         buyArms();
     }
@@ -223,15 +223,15 @@ export function fightalways() {
 // maps") — NOT to invent a number for the MODULES field, which would be a new game-balance literal.
 //
 // Same units, and this is not a guess. maps.ts:408 computes
-//     enoughDamage = (ourBaseDamage * mapcuntoff > enemyHealth)
-// which rearranges to `enemyHealth / ourBaseDamage < mapcuntoff`, i.e. `HD < mapcuntoff`. And
-// calcHDratio() IS `calcEnemyHealth() / ourBaseDamage` (calc.ts:901). So mapcuntoff already IS an H:D
-// threshold, and `calcHDratio() >= mapcuntoff` is exactly its complement: "not enough damage ⇒ buy
+//     enoughDamage = (ourBaseDamage * MapDamageCutoff > enemyHealth)
+// which rearranges to `enemyHealth / ourBaseDamage < MapDamageCutoff`, i.e. `HD < MapDamageCutoff`. And
+// calcHDratio() IS `calcEnemyHealth() / ourBaseDamage` (calc.ts:901). So MapDamageCutoff already IS an H:D
+// threshold, and `calcHDratio() >= MapDamageCutoff` is exactly its complement: "not enough damage ⇒ buy
 // armor", which is the branch's stated intent. The U2 twin below needs no algebra at all — maps.ts:974
-// literally does `RenoughDamage = (RcalcHDratio() <= getPageSetting("Rmapcuntoff"))` in production.
+// literally does `RenoughDamage = (RcalcHDratio() <= getPageSetting("RMapDamageCutoff"))` in production.
 export function armormagic() {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
-    if (((getPageSetting('carmormagic') == 1 || getPageSetting('darmormagic') == 1) && game.global.world >= armormagicworld && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('carmormagic') == 2 || getPageSetting('darmormagic') == 2) && calcHDratio() >= getPageSetting('mapcuntoff') && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('carmormagic') == 3 || getPageSetting('darmormagic') == 3) && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)))
+    if (((getPageSetting('carmormagic') == 1 || getPageSetting('darmormagic') == 1) && game.global.world >= armormagicworld && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('carmormagic') == 2 || getPageSetting('darmormagic') == 2) && calcHDratio() >= getPageSetting('MapDamageCutoff') && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('carmormagic') == 3 || getPageSetting('darmormagic') == 3) && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)))
         buyArms();
 }
 
@@ -319,12 +319,12 @@ export function Rfightalways() {
 }
 
 // #70 (U2 twin) — `MODULES["maps"].RenoughDamageCutoff` is likewise never assigned, so the "DAM: H:D"
-// arm was dead in both U2 multitoggles too. Repointed at `Rmapcuntoff`, the U2 H:D threshold the player
+// arm was dead in both U2 multitoggles too. Repointed at `RMapDamageCutoff`, the U2 H:D threshold the player
 // already configures. maps.ts:974 compares that exact setting to RcalcHDratio() in production, so the
 // units are confirmed by an existing call site — no new number is introduced.
 export function Rarmormagic() {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
-    if (((getPageSetting('Rcarmormagic') == 1 || getPageSetting('Rdarmormagic') == 1) && game.global.world >= armormagicworld && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('Rcarmormagic') == 2 || getPageSetting('Rdarmormagic') == 2) && RcalcHDratio() >= getPageSetting('Rmapcuntoff') && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('Rcarmormagic') == 3 || getPageSetting('Rdarmormagic') == 3) && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)))
+    if (((getPageSetting('Rcarmormagic') == 1 || getPageSetting('Rdarmormagic') == 1) && game.global.world >= armormagicworld && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('Rcarmormagic') == 2 || getPageSetting('Rdarmormagic') == 2) && RcalcHDratio() >= getPageSetting('RMapDamageCutoff') && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('Rcarmormagic') == 3 || getPageSetting('Rdarmormagic') == 3) && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)))
         RbuyArms();
 }
 

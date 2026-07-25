@@ -141,9 +141,9 @@ describe('native-conflicts matrix (#150)', () => {
   })
 
   // #150 review F1 — the orphan advisories key on the DISPATCH setting (BuyBuildingsNew / BuyJobsNew),
-  // never on the cosmetic hidebuildings / fuckjobs. `hidebuildings` does not stop AT buying (its only
+  // never on the cosmetic hidebuildings / HideJobBoxes. `hidebuildings` does not stop AT buying (its only
   // consumers conjoin it with BuyBuildingsNew===0, and main-loop.ts:290 dispatches buyBuildings BECAUSE
-  // both are set), and `fuckjobs` has no behavioural consumer at all.
+  // both are set), and `HideJobBoxes` has no behavioural consumer at all.
   it('Buy Neither + AutoStructure off is the orphan state, whatever Hide Buildings says', () => {
     set('BuyBuildingsNew', 'multitoggle', 0)
     expect(keys()).toContain('buildingsOrphan')
@@ -181,7 +181,7 @@ describe('native-conflicts matrix (#150)', () => {
 
   it('Hide Jobs alone is NOT an orphan — it has no behavioural consumer at all', () => {
     set('BuyJobsNew', 'multitoggle', 1)
-    set('fuckjobs', 'boolean', true)
+    set('HideJobBoxes', 'boolean', true)
     expect(keys()).not.toContain('jobsOrphan')
   })
 

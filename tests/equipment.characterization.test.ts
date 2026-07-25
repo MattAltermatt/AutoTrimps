@@ -777,7 +777,7 @@ describe('equipment — hard-gate branch coverage', () => {
 
   it('Lead `world % 2 === 1 && world !== 179` divides ourDamage by 1.5 — proven by the buy it suppresses', () => {
     // cutoff 0.6: 100 * 0.6 = 60 > 50 ⇒ enoughDamageE TRUE ⇒ the prestige is bought…
-    const settings = { dmgcuntoff: { type: 'value', value: 0.6 } }
+    const settings = { EquipDamageCutoff: { type: 'value', value: 0.6 } }
     expect(autoLevelBootsHinged({ settings, global: { world: 101, challengeActive: '' } })).toEqual(BOUGHT)
     // …and on Lead at an ODD world the /1.5 makes it (100/1.5) * 0.6 = 40 < 50 ⇒ FALSE ⇒ suppressed.
     expect(autoLevelBootsHinged({ settings, global: { world: 101, challengeActive: 'Lead' } })).toEqual([])
@@ -788,7 +788,7 @@ describe('equipment — hard-gate branch coverage', () => {
 
   it('Wind non-daily arm overrides enoughDamageCutoff with `windcutoff` — proven by the buy it enables', () => {
     const settings = {
-      dmgcuntoff: { type: 'value', value: 0.4 }, // 100 * 0.4 = 40 < 50 ⇒ no buy on the DEFAULT cutoff
+      EquipDamageCutoff: { type: 'value', value: 0.4 }, // 100 * 0.4 = 40 < 50 ⇒ no buy on the DEFAULT cutoff
       AutoStance: { type: 'multitoggle', value: 3 },
       WindStackingMin: { type: 'value', value: 50 },
       windcutoff: { type: 'value', value: 0.6 }, // 100 * 0.6 = 60 > 50 ⇒ buy, but only if the arm fires
@@ -805,7 +805,7 @@ describe('equipment — hard-gate branch coverage', () => {
 
   it('Wind DAILY arm overrides the cutoff with `dwindcutoff`, and `use3daily` alone satisfies its stance gate', () => {
     const settings = {
-      dmgcuntoff: { type: 'value', value: 0.4 },
+      EquipDamageCutoff: { type: 'value', value: 0.4 },
       use3daily: { type: 'boolean', enabled: true }, // the `|| use3daily == true` half — AutoStance is unset
       dWindStackingMin: { type: 'value', value: 50 },
       dwindcutoff: { type: 'value', value: 0.6 },

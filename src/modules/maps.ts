@@ -254,7 +254,7 @@ export function autoMap() {
     }
 
     //WS
-    let mapenoughdamagecutoff = getPageSetting("mapcuntoff");
+    let mapenoughdamagecutoff = getPageSetting("MapDamageCutoff");
     if (getEmpowerment() == 'Wind' && game.global.challengeActive != "Daily" && !game.global.runningChallengeSquared && getPageSetting("AutoStance") == 3 && getPageSetting("WindStackingMin") > 0 && game.global.world >= getPageSetting("WindStackingMin") && getPageSetting("windcutoffmap") > 0)
         mapenoughdamagecutoff = getPageSetting("windcutoffmap");
     if (getEmpowerment() == 'Wind' && game.global.challengeActive == "Daily" && !game.global.runningChallengeSquared && (getPageSetting("AutoStance") == 3 || getPageSetting("use3daily") == true) && getPageSetting("dWindStackingMin") > 0 && game.global.world >= getPageSetting("dWindStackingMin") && getPageSetting("dwindcutoffmap") > 0)
@@ -972,7 +972,7 @@ export function RautoMap() {
     const ourBaseDamage = RcalcOurDmg("avg", false, true);
     const ourBaseHealth = RcalcOurHealth();
     const enemyDamage = RcalcBadGuyDmg(null, RgetEnemyMaxAttack(game.global.world, 50, 'Snimp', 1.0));
-    const mapenoughdamagecutoff = getPageSetting("Rmapcuntoff");
+    const mapenoughdamagecutoff = getPageSetting("RMapDamageCutoff");
 
     if (getPageSetting('RDisableFarm') > 0) {
         RshouldFarm = (RcalcHDratio() >= getPageSetting('RDisableFarm'));

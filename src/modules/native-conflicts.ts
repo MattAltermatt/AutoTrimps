@@ -79,15 +79,15 @@ const atBuysStorage = (): boolean =>
         ? getPageSetting('RBuyBuildingsNew') === true
         : getPageSetting('BuyBuildingsNew') == 1 || getPageSetting('BuyBuildingsNew') == 3
 
-// ── THE ORPHAN PREDICATES, and why they do NOT read hidebuildings/fuckjobs ────────────────────────
-// The first draft gated these on `hidebuildings`/`fuckjobs` being on. That was backwards, both ways:
+// ── THE ORPHAN PREDICATES, and why they do NOT read hidebuildings/HideJobBoxes ────────────────────────
+// The first draft gated these on `hidebuildings`/`HideJobBoxes` being on. That was backwards, both ways:
 //   · `hidebuildings` does not stop AT buying. Its ONLY consumers conjoin it with BuyBuildingsNew==0
 //     (main-loop.ts:290, buildings.ts:264, upgrades.ts:156, settings-visibility.ts:336) — and
 //     main-loop.ts:290 dispatches buyBuildings() *because* both are set. Inside, `hidebuild` suppresses
 //     housing/Wormhole/Tribute/Nursery but NOT Gym (buildings.ts:314) ⇒ that combination is "Gyms only".
-//   · `fuckjobs` has no behavioural consumer at all — its ONLY read anywhere in src/ is the
+//   · `HideJobBoxes` has no behavioural consumer at all — its ONLY read anywhere in src/ is the
 //     `jobBoxesHidden` predicate in settings-visibility.ts, which decides whether the jobs boxes
-//     render. (The `turnOn("fuckjobs")` line next to it gates the control's own visibility by id and
+//     render. (The `turnOn("HideJobBoxes")` line next to it gates the control's own visibility by id and
 //     does not read the value.) Hiring is stopped solely by BuyJobsNew == 0. Cited by SYMBOL, not by
 //     line — the #151 rename shifted these lines and the old line citation silently went stale.
 // So the state worth warning about is keyed on the DISPATCH setting, not the cosmetic one. Both orphan

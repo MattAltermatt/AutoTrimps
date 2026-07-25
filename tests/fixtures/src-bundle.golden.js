@@ -970,7 +970,38 @@
   });
 
   // src/modules/settings-migrations.ts
-  var SETTING_ID_MIGRATIONS = [];
+  var SETTING_ID_MIGRATIONS = [
+    // The four cut-off ids are a TYPO nobody chose ("cuntoff" for "cutoff"), and they are absent from
+    // both frozen preset blobs — so once migrated, nothing re-introduces them and the delete is
+    // durable. Each U1/U2 pair moves together: settings-wired derives its twin list as "id X is a twin
+    // iff 'R' + X also exists", so renaming one half dissolves the pair. That assertion WAS a floor
+    // (twins > 50, actual 57), which meant a dissolved pair would have stayed GREEN while silently
+    // dropping the U2 half from visibility checking — hence the exact toBe(57) pin, plus a membership
+    // check naming both pairs, added alongside these rows.
+    { from: "dmgcuntoff", to: "EquipDamageCutoff", since: "6.0.0 (#151)", why: "typo of cut-off; the AutoEquip damage threshold" },
+    { from: "Rdmgcuntoff", to: "REquipDamageCutoff", since: "6.0.0 (#151)", why: "typo of cut-off; U2 twin of EquipDamageCutoff" },
+    { from: "mapcuntoff", to: "MapDamageCutoff", since: "6.0.0 (#151)", why: "typo of cut-off; the map H:D threshold" },
+    { from: "Rmapcuntoff", to: "RMapDamageCutoff", since: "6.0.0 (#151)", why: "typo of cut-off; U2 twin of MapDamageCutoff" },
+    // NOT `mapcutoff` for the row above, however obvious that looks: serializeSettings550() already
+    // carries a junk "mapcutoff":4 that no build has ever defined, so every user who imported the
+    // z550 preset holds one. Migrating onto it would hand them a five-year-old 4 in place of their
+    // configured value. The mechanical net refuses any `to` found in either blob for this reason.
+    // These two are in BOTH frozen blobs, which is fine and is precisely why the seam is createSetting
+    // rather than boot: importing a pre-rename preset re-introduces the old key, and the very next
+    // initializeAllSettings() — which an import triggers directly — migrates it again.
+    { from: "spireshitbuy", to: "SpirePrepGear", since: "6.0.0 (#151)", why: "profanity; buys cheap prep gear before a Spire" },
+    { from: "fuckjobs", to: "HideJobBoxes", since: "6.0.0 (#151)", why: "profanity; hides the job boxes, and that is all it does" }
+    // DELIBERATELY ABSENT, recorded so nobody re-derives the same wrong answer from the id alone:
+    //   · `hidebuildings`  — not profane. Its name IS misleading (ON means "Gyms only", and per
+    //     main-loop.ts it makes AT buy MORE than OFF, not less), but that is a LABEL defect with a
+    //     free fix, not worth a migration across its four behavioural consumers and six fixtures.
+    //   · `screwessence`   — "screw" is mild, and its accurate name is its existing label,
+    //     "Remaining Essence Only". The proposed `IgnoreEssence` names the OFF state: reading it ON
+    //     means RESPECT remaining essence. Risk with no naming gain.
+    //   · `fuckanti`       — profane, but it is a PHANTOM: never createSetting'd, read nowhere, alive
+    //     only inside the two frozen blobs. A migration cannot help it because there is no target to
+    //     migrate to. Its disposition is cleanupCandidates(), not a rename.
+  ];
   function migrateLegacyId(store, to, table = SETTING_ID_MIGRATIONS) {
     if (store === null || typeof store !== "object") return null;
     const has = (k) => Object.prototype.hasOwnProperty.call(store, k);
@@ -1662,7 +1693,7 @@
         if (getPageSetting("SpireBreedTimer") > 0 && getPageSetting("IgnoreSpiresUntil") <= game.global.world) ATspirebreed();
       });
       atGuard("buySpirePrep", function() {
-        if (getPageSetting("spireshitbuy") == true && (isActiveSpireAT() || disActiveSpireAT())) buySpirePrep();
+        if (getPageSetting("SpirePrepGear") == true && (isActiveSpireAT() || disActiveSpireAT())) buySpirePrep();
       });
       atGuard("praiding", function() {
         if (getPageSetting("PraidHarder") == true && getPageSetting("Praidingzone").length > 0 && game.global.challengeActive != "Daily" || getPageSetting("dPraidHarder") == true && getPageSetting("dPraidingzone").length > 0 && game.global.challengeActive == "Daily") PraidHarder();
@@ -4180,7 +4211,7 @@
   }
   function autoLevelEquipment2() {
     const gearamounttobuy = getPageSetting2("gearamounttobuy") > 0 ? getPageSetting2("gearamounttobuy") : 1;
-    let enoughDamageCutoff = getPageSetting2("dmgcuntoff");
+    let enoughDamageCutoff = getPageSetting2("EquipDamageCutoff");
     if (getEmpowerment() == "Wind" && game.global.challengeActive !== "Daily" && !game.global.runningChallengeSquared && getPageSetting2("AutoStance") == 3 && getPageSetting2("WindStackingMin") > 0 && game.global.world >= getPageSetting2("WindStackingMin") && getPageSetting2("windcutoff") > 0)
       enoughDamageCutoff = getPageSetting2("windcutoff");
     if (getEmpowerment() == "Wind" && game.global.challengeActive === "Daily" && !game.global.runningChallengeSquared && (getPageSetting2("AutoStance") == 3 || getPageSetting2("use3daily") == true) && getPageSetting2("dWindStackingMin") > 0 && game.global.world >= getPageSetting2("dWindStackingMin") && getPageSetting2("dwindcutoff") > 0)
@@ -4587,7 +4618,7 @@
       let equipName = bestBuys[0];
       let resourceUsed = equipName === "Shield" ? "wood" : "metal";
       let equipCap = attackEquipCap;
-      let underStats = RcalcHDratio() >= getPageSetting2("Rdmgcuntoff");
+      let underStats = RcalcHDratio() >= getPageSetting2("REquipDamageCutoff");
       for (let i = 0; i < 2; i++) {
         if (canAffordBuilding(equipName, null, null, true, false, 1)) {
           if (smithylogic(equipName, resourceUsed, true)) {
@@ -5078,7 +5109,7 @@
         if (smithybought > game.global.world) {
           smithybought = 0;
         }
-        if (smithybought < game.global.world && (questcheck() === 7 || RcalcHDratio() * 10 >= getPageSetting2("Rmapcuntoff"))) {
+        if (smithybought < game.global.world && (questcheck() === 7 || RcalcHDratio() * 10 >= getPageSetting2("RMapDamageCutoff"))) {
           if (safeBuyBuilding2("Smithy", 1)) smithybought = game.global.world;
         }
       } else {
@@ -8307,7 +8338,7 @@
       updateAutoMapsStatus2();
       return;
     }
-    let mapenoughdamagecutoff = getPageSetting2("mapcuntoff");
+    let mapenoughdamagecutoff = getPageSetting2("MapDamageCutoff");
     if (getEmpowerment() == "Wind" && game.global.challengeActive != "Daily" && !game.global.runningChallengeSquared && getPageSetting2("AutoStance") == 3 && getPageSetting2("WindStackingMin") > 0 && game.global.world >= getPageSetting2("WindStackingMin") && getPageSetting2("windcutoffmap") > 0)
       mapenoughdamagecutoff = getPageSetting2("windcutoffmap");
     if (getEmpowerment() == "Wind" && game.global.challengeActive == "Daily" && !game.global.runningChallengeSquared && (getPageSetting2("AutoStance") == 3 || getPageSetting2("use3daily") == true) && getPageSetting2("dWindStackingMin") > 0 && game.global.world >= getPageSetting2("dWindStackingMin") && getPageSetting2("dwindcutoffmap") > 0)
@@ -8896,7 +8927,7 @@
     const ourBaseDamage = RcalcOurDmg("avg", false, true);
     const ourBaseHealth = RcalcOurHealth();
     const enemyDamage = RcalcBadGuyDmg(null, RgetEnemyMaxAttack(game.global.world, 50, "Snimp", 1));
-    const mapenoughdamagecutoff = getPageSetting2("Rmapcuntoff");
+    const mapenoughdamagecutoff = getPageSetting2("RMapDamageCutoff");
     if (getPageSetting2("RDisableFarm") > 0) {
       RshouldFarm = RcalcHDratio() >= getPageSetting2("RDisableFarm");
       if (game.options.menu.repeatUntil.enabled == 1 && RshouldFarm)
@@ -13879,7 +13910,7 @@
     if (!game.global.preMapsActive && !game.global.fighting) buyArms();
   }
   function buySpirePrep2() {
-    if (true == getPageSetting2("spireshitbuy") && game.global.spireActive && game.global.world >= getPageSetting2("IgnoreSpiresUntil")) {
+    if (true == getPageSetting2("SpirePrepGear") && game.global.spireActive && game.global.world >= getPageSetting2("IgnoreSpiresUntil")) {
       buyWeps2();
       buyArms();
     }
@@ -13959,7 +13990,7 @@
   }
   function armormagic2() {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
-    if ((getPageSetting2("carmormagic") == 1 || getPageSetting2("darmormagic") == 1) && game.global.world >= armormagicworld && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("carmormagic") == 2 || getPageSetting2("darmormagic") == 2) && calcHDratio() >= getPageSetting2("mapcuntoff") && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("carmormagic") == 3 || getPageSetting2("darmormagic") == 3) && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)
+    if ((getPageSetting2("carmormagic") == 1 || getPageSetting2("darmormagic") == 1) && game.global.world >= armormagicworld && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("carmormagic") == 2 || getPageSetting2("darmormagic") == 2) && calcHDratio() >= getPageSetting2("MapDamageCutoff") && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("carmormagic") == 3 || getPageSetting2("darmormagic") == 3) && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)
       buyArms();
   }
   globalThis.trapIndexs = ["", "Fire", "Frost", "Poison", "Lightning", "Strength", "Condenser", "Knowledge"];
@@ -14010,7 +14041,7 @@
   }
   function Rarmormagic2() {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
-    if ((getPageSetting2("Rcarmormagic") == 1 || getPageSetting2("Rdarmormagic") == 1) && game.global.world >= armormagicworld && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("Rcarmormagic") == 2 || getPageSetting2("Rdarmormagic") == 2) && RcalcHDratio() >= getPageSetting2("Rmapcuntoff") && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("Rcarmormagic") == 3 || getPageSetting2("Rdarmormagic") == 3) && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)
+    if ((getPageSetting2("Rcarmormagic") == 1 || getPageSetting2("Rdarmormagic") == 1) && game.global.world >= armormagicworld && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("Rcarmormagic") == 2 || getPageSetting2("Rdarmormagic") == 2) && RcalcHDratio() >= getPageSetting2("RMapDamageCutoff") && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("Rcarmormagic") == 3 || getPageSetting2("Rdarmormagic") == 3) && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)
       RbuyArms();
   }
   function questcheck2() {
@@ -16479,8 +16510,8 @@
     radonon && getPageSetting("Rsmithylogic") == true ? turnOn("Rsmithyseconds") : turnOff("Rsmithyseconds");
     !radonon ? turnOn("BuyJobsNew") : turnOff("BuyJobsNew");
     !radonon ? turnOn("AutoMagmamancers") : turnOff("AutoMagmamancers");
-    var jobBoxesHidden = bwRewardUnlocked("AutoJobs") && getPageSetting("fuckjobs") == true && getPageSetting("BuyJobsNew") == 0;
-    !radonon && bwRewardUnlocked("AutoJobs") ? turnOn("fuckjobs") : turnOff("fuckjobs");
+    var jobBoxesHidden = bwRewardUnlocked("AutoJobs") && getPageSetting("HideJobBoxes") == true && getPageSetting("BuyJobsNew") == 0;
+    !radonon && bwRewardUnlocked("AutoJobs") ? turnOn("HideJobBoxes") : turnOff("HideJobBoxes");
     !radonon && !jobBoxesHidden ? turnOn("FarmerRatio") : turnOff("FarmerRatio");
     !radonon && !jobBoxesHidden ? turnOn("LumberjackRatio") : turnOff("LumberjackRatio");
     !radonon && !jobBoxesHidden ? turnOn("MinerRatio") : turnOff("MinerRatio");
@@ -16504,7 +16535,7 @@
     !radonon ? turnOn("BuyWeaponsNew") : turnOff("BuyWeaponsNew");
     !radonon ? turnOn("CapEquip2") : turnOff("CapEquip2");
     !radonon ? turnOn("CapEquiparm") : turnOff("CapEquiparm");
-    !radonon ? turnOn("dmgcuntoff") : turnOff("dmgcuntoff");
+    !radonon ? turnOn("EquipDamageCutoff") : turnOff("EquipDamageCutoff");
     !radonon ? turnOn("DynamicPrestige2") : turnOff("DynamicPrestige2");
     !radonon ? turnOn("Prestige") : turnOff("Prestige");
     !radonon ? turnOn("ForcePresZ") : turnOff("ForcePresZ");
@@ -16523,7 +16554,7 @@
     radonon && getPageSetting("Requipon") == true ? turnOn("Requipzone") : turnOff("Requipzone");
     radonon && getPageSetting("Requipon") == true ? turnOn("Requippercent") : turnOff("Requippercent");
     radonon && getPageSetting("Requipon") == true ? turnOn("Requip2") : turnOff("Requip2");
-    radonon && getPageSetting("Requipon") == true ? turnOn("Rdmgcuntoff") : turnOff("Rdmgcuntoff");
+    radonon && getPageSetting("Requipon") == true ? turnOn("REquipDamageCutoff") : turnOff("REquipDamageCutoff");
     radonon ? turnOn("Requipfarmon") : turnOff("Requipfarmon");
     radonon && getPageSetting("Requipfarmon") == true ? turnOn("Requipfarmzone") : turnOff("Requipfarmzone");
     radonon && getPageSetting("Requipfarmon") == true ? turnOn("RequipfarmHD") : turnOff("RequipfarmHD");
@@ -16543,7 +16574,7 @@
     !radonon ? turnOn("MaxMapBonusAfterZone") : turnOff("MaxMapBonusAfterZone");
     !radonon ? turnOn("MaxMapBonuslimit") : turnOff("MaxMapBonuslimit");
     !radonon ? turnOn("MaxMapBonushealth") : turnOff("MaxMapBonushealth");
-    !radonon ? turnOn("mapcuntoff") : turnOff("mapcuntoff");
+    !radonon ? turnOn("MapDamageCutoff") : turnOff("MapDamageCutoff");
     !radonon ? turnOn("DisableFarm") : turnOff("DisableFarm");
     !radonon ? turnOn("LowerFarmingZone") : turnOff("LowerFarmingZone");
     !radonon ? turnOn("FarmWhenNomStacks7") : turnOff("FarmWhenNomStacks7");
@@ -16574,7 +16605,7 @@
     radonon ? turnOn("RMaxMapBonuslimit") : turnOff("RMaxMapBonuslimit");
     radonon ? turnOn("RMaxMapBonushealth") : turnOff("RMaxMapBonushealth");
     radonon ? turnOn("Rhitssurvived") : turnOff("Rhitssurvived");
-    radonon ? turnOn("Rmapcuntoff") : turnOff("Rmapcuntoff");
+    radonon ? turnOn("RMapDamageCutoff") : turnOff("RMapDamageCutoff");
     radonon ? turnOn("RDisableFarm") : turnOff("RDisableFarm");
     radonon ? turnOn("Rtimefarm") : turnOff("Rtimefarm");
     radonon && getPageSetting("Rtimefarm") == true ? turnOn("Rtimefarmmaz") : turnOff("Rtimefarmmaz");
@@ -16617,7 +16648,7 @@
     !radonon ? turnOn("ExitSpireCell") : turnOff("ExitSpireCell");
     !radonon ? turnOn("SpireBreedTimer") : turnOff("SpireBreedTimer");
     !radonon ? turnOn("PreSpireNurseries") : turnOff("PreSpireNurseries");
-    !radonon ? turnOn("spireshitbuy") : turnOff("spireshitbuy");
+    !radonon ? turnOn("SpirePrepGear") : turnOff("SpirePrepGear");
     !radonon ? turnOn("SkipSpires") : turnOff("SkipSpires");
     !radonon ? turnOn("Praidingzone") : turnOff("Praidingzone");
     !radonon ? turnOn("Praidingcell") : turnOff("Praidingcell");
@@ -17879,7 +17910,7 @@
       what: "How close (in seconds, at your current income) you need to be to affording your next Smithy before Smithy Savings starts withholding other purchases.",
       how: "Example: 120 means Smithy Savings only kicks in once your Smithy is 120 seconds away from being affordable in wood, metal, or gems."
     }), "value", "-1", null, "Buildings");
-    createSetting("fuckjobs", "Hide Jobs", tip({
+    createSetting("HideJobBoxes", "Hide Jobs", tip({
       what: "Hides the Farmer / Lumberjack / Miner / Scientist / Max Explorers / Max Trainers boxes once they stop mattering.",
       how: "Needs two things at once: the <b>AutoJobs</b> Bone Shrine mastery bought, and <b>Buy Jobs</b> set to <b>Don't Buy Jobs</b> (AutoJobs replaces this automation entirely once both are true)."
     }), "boolean", false, null, "Jobs");
@@ -17973,7 +18004,7 @@
       what: "Do not level armor past this level.",
       how: "Helps avoid wasting metal leveling armor high only to prestige it right after. Disable with -1 or 0. During liquified or heavily-overkilled zones the effective cap drops to a tenth of this value.<br><br>Levels only get bought while AT judges it does not have enough survivability yet (or, with <b>Invest Spare Metal</b> on, whenever it can afford a level) \u2014 reaching this cap does not by itself force any leveling. During Spire, armor is leveled to this cap unconditionally."
     }), "value", 10, null, "Gear");
-    createSetting("dmgcuntoff", "Equipment Cut Off", tip({
+    createSetting("EquipDamageCutoff", "Equipment Cut Off", tip({
       what: "Controls how much damage margin AT wants before it stops leveling weapons.",
       how: `AT judges itself to have "enough damage" once your damage times this value exceeds the enemy's health. A higher number reaches "enough" sooner, so AT stops leveling weapons earlier; a lower number keeps it leveling weapons more aggressively. 4 is the historical default.`
     }), "value", "4", null, "Gear");
@@ -18032,7 +18063,7 @@
       what: "The U2 master switch for AutoEquip: buys Prestiges and levels up equipment automatically.",
       how: "Only buys prestiges when it judges them worth it, and levels whichever piece is currently most cost-efficient."
     }), "boolean", false, null, "Gear");
-    createSetting("Rdmgcuntoff", "AE: Cut-off", tip({
+    createSetting("REquipDamageCutoff", "AE: Cut-off", tip({
       what: "Controls how aggressively AutoEquip levels weapons in U2.",
       how: "While your Health:Damage ratio is at or above this value, AT keeps buying weapon levels regardless of the zone and percent overrides below. 1 is the historical default.",
       ignoredWhen: "AutoEquip (Requipon) is off."
@@ -18153,7 +18184,7 @@
       what: "Caps how many extra Map Bonus stacks AutoTrimps will farm purely to raise your health, when health is short.",
       how: "Only kicks in below this many stacks, while AutoTrimps isn't already mapping for another reason and doesn't need to prestige. Above this many stacks, health-farming stops even if health is still short."
     }), "value", "10", null, "Maps");
-    createSetting("mapcuntoff", "Map Cut Off", tip({
+    createSetting("MapDamageCutoff", "Map Cut Off", tip({
       what: 'Sets the Health:Damage ratio AutoTrimps uses to decide whether it has "enough damage" to stop mapping and push forward.',
       how: "AutoTrimps expects to one-shot an enemy once your damage times this number exceeds the enemy's health. Raise it to demand a bigger damage margin (more mapping); lower it to accept a thinner margin (less mapping). This same threshold is also what the <b>CAM: H:D</b> Armor Magic option compares against.",
       ignoredWhen: "Temporarily replaced by the Wind Stacking cutoff or the Mapology challenge cutoff whenever either of those is active &mdash; this box's value doesn't change, but it briefly stops being read."
@@ -18300,7 +18331,7 @@
       what: 'Sets how many enemy attacks AutoTrimps wants to be able to survive before it considers its health "enough" &mdash; used for both map-farming decisions and gear-buying decisions in Universe 2.',
       how: "The lower this is, the less health AutoTrimps will farm or buy toward. Set it too high and AutoTrimps will over-farm for health, so be careful."
     }), "value", "10", null, "Maps");
-    createSetting("Rmapcuntoff", "Map Cut Off", tip({
+    createSetting("RMapDamageCutoff", "Map Cut Off", tip({
       what: 'Sets the Health:Damage ratio AutoTrimps uses to decide whether it has "enough damage" to stop mapping and push forward &mdash; the Universe 2 twin of <b>Map Cut Off</b>.',
       how: "AutoTrimps expects to one-shot an enemy while your Health:Damage ratio stays at or below this number. Raise it to demand a bigger damage margin (more mapping); lower it to accept a thinner margin (less mapping)."
     }), "value", "1", null, "Maps");
@@ -18489,7 +18520,7 @@
       how: "Overrides both <b>No Nurseries Until z</b> and <b>Max Nurseries</b> while active, so you can keep your general Nursery settings tight and still stock up before a Spire push.",
       cannot: "-1 disables it."
     }), "value", -1, null, "Spire");
-    createSetting("spireshitbuy", "Buy Gear in Spire", tip({
+    createSetting("SpirePrepGear", "Buy Gear in Spire", tip({
       what: "Buys Weapons and Armor while in the Spire regardless of your H:D ratio, so you keep gearing up even when AT would normally consider you strong enough already.",
       how: "Still respects your max gear level cap.",
       ignoredWhen: "Below your <b>Ignore Spires Until</b> zone, or you are not currently in an active Spire."

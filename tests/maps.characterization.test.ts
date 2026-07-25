@@ -524,7 +524,7 @@ describe('maps.RautoMap — L1b actuator spy-log', () => {
 function automapSettings(over: Record<string, any> = {}) {
   return {
     AutoMaps: { type: 'value', value: 1 },
-    mapcuntoff: { type: 'value', value: 1 },
+    MapDamageCutoff: { type: 'value', value: 1 },
     MaxMapBonuslimit: { type: 'value', value: 10 },
     MaxMapBonusAfterZone: { type: 'valueNegative', value: -1 }, // deterministic doMaxMapBonus=false
     Prestige: { type: 'dropdown', selected: 'Off' },
@@ -749,7 +749,7 @@ describe('maps.RautoMap — L1b actuator core (create-map buy + recycle cascade)
   it('RselectMap→"create" drives the R create/buy/recycle cascade', () => {
     ;(globalThis as any).autoTrimpSettings = {
       RAutoMaps: { type: 'value', value: 1 },
-      Rmapcuntoff: { type: 'value', value: 1 },
+      RMapDamageCutoff: { type: 'value', value: 1 },
       Rmapselection: { type: 'dropdown', selected: 'Random' },
     }
     ;(globalThis as any).RselectMap = () => 'create'

@@ -589,7 +589,7 @@ export function RbuyBuildings() {
         if (game.global.challengeActive === 'Quest') {
             if (smithybought > game.global.world) { smithybought = 0; }
 
-            if (smithybought < game.global.world && (questcheck() === 7 || (RcalcHDratio() * 10 >= getPageSetting('Rmapcuntoff')))) {
+            if (smithybought < game.global.world && (questcheck() === 7 || (RcalcHDratio() * 10 >= getPageSetting('RMapDamageCutoff')))) {
                 // Pinned to 1: the Quest is "buy a Smithy", one completes it, and `smithybought` is a
                 // once-per-zone flag. A stack would pay 10 escalating costs for no extra progress. The
                 // flag is now set only if the buy actually happened — a Smithy already in the queue means

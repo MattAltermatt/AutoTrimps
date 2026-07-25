@@ -19,7 +19,7 @@ beforeAll(async () => {
   // #70/#74: this used to inject `MODULES = { maps: { RenoughDamageCutoff: 1 } }` — a field PRODUCTION
   // NEVER WRITES. That injection is what kept the bug invisible: the harness manufactured the value the
   // dead `>= undefined` comparison needed, so the suite went green over a branch that could not fire for
-  // any real user. Rarmormagic now reads getPageSetting('Rmapcuntoff'), a setting that really exists, so
+  // any real user. Rarmormagic now reads getPageSetting('RMapDamageCutoff'), a setting that really exists, so
   // the registry can be the empty shape production actually starts from.
   ;(globalThis as any).MODULES = {}
   ;(globalThis as any).autoTrimpSettings = {}
@@ -45,10 +45,10 @@ beforeEach(() => {
   buyEquipmentCalls = []
   // #68/#74: was `RCapEquiparm` — a phantom (deleted upstream 2020) that production can never read.
   // RbuyArms now reads the live U2 armour cap, so seed the id production actually uses.
-  // Rmapcuntoff is the U2 H:D threshold Rarmormagic's ==2 arm now reads (default '1', settings-defs:434).
+  // RMapDamageCutoff is the U2 H:D threshold Rarmormagic's ==2 arm now reads (default '1', settings-defs:434).
   ;(globalThis as any).autoTrimpSettings = {
     Requipcaphealth: { type: 'value', value: '50' },
-    Rmapcuntoff: { type: 'value', value: '1' },
+    RMapDamageCutoff: { type: 'value', value: '1' },
   }
   ;(globalThis as any).game = baseGame()
   ;(globalThis as any).preBuy = vi.fn()
@@ -85,33 +85,33 @@ describe('#59: Rarmormagic routes the real Rcarmormagic gate to RbuyArms', () =>
   // ── #70 regression: the "DAM: H:D" arm (index 2) ────────────────────────────────────────────────
   // It compared against MODULES["maps"].RenoughDamageCutoff, which NOTHING ever assigns → `n >= undefined`
   // → always false → the middle option of both U2 Armor Magic multitoggles was a silent no-op. It now
-  // reads Rmapcuntoff, the H:D threshold the tooltip already promises. These two tests are the proof the
+  // reads RMapDamageCutoff, the H:D threshold the tooltip already promises. These two tests are the proof the
   // arm is LIVE and THRESHOLD-SENSITIVE: before the fix both would have bought nothing.
-  it('#70: Rcarmormagic=2 (H:D) + H:D at/above Rmapcuntoff → buys armor', () => {
+  it('#70: Rcarmormagic=2 (H:D) + H:D at/above RMapDamageCutoff → buys armor', () => {
     setRcarmormagic(2)
     ;(globalThis as any).RcalcHDratio = vi.fn(() => 5) // 5 >= 1 → under-damaged → buy armor
     other.Rarmormagic()
     expect(buyEquipmentCalls.map((a) => a[0])).toEqual(ARMOR)
   })
 
-  it('#70: Rcarmormagic=2 (H:D) + H:D below Rmapcuntoff → does NOT buy', () => {
+  it('#70: Rcarmormagic=2 (H:D) + H:D below RMapDamageCutoff → does NOT buy', () => {
     setRcarmormagic(2)
     ;(globalThis as any).RcalcHDratio = vi.fn(() => 0.5) // 0.5 < 1 → damage is fine → no armor
     other.Rarmormagic()
     expect(buyEquipmentCalls).toEqual([])
   })
 
-  it('#70: the arm tracks the PLAYER\'s Rmapcuntoff, not a hardcoded number', () => {
+  it('#70: the arm tracks the PLAYER\'s RMapDamageCutoff, not a hardcoded number', () => {
     // Same H:D, different configured threshold → opposite decision. This is what makes it a real read
     // of the setting rather than an accidental constant.
     setRcarmormagic(2)
     ;(globalThis as any).RcalcHDratio = vi.fn(() => 3)
-    ;(globalThis as any).autoTrimpSettings.Rmapcuntoff.value = '10' // 3 < 10 → no buy
+    ;(globalThis as any).autoTrimpSettings.RMapDamageCutoff.value = '10' // 3 < 10 → no buy
     other.Rarmormagic()
     expect(buyEquipmentCalls).toEqual([])
 
     buyEquipmentCalls.length = 0
-    ;(globalThis as any).autoTrimpSettings.Rmapcuntoff.value = '2' // 3 >= 2 → buy
+    ;(globalThis as any).autoTrimpSettings.RMapDamageCutoff.value = '2' // 3 >= 2 → buy
     other.Rarmormagic()
     expect(buyEquipmentCalls.map((a) => a[0])).toEqual(ARMOR)
   })

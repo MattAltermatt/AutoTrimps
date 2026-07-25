@@ -380,13 +380,13 @@ export function updateCustomButtons() {
     !radonon ? turnOn("BuyJobsNew") : turnOff("BuyJobsNew");
     !radonon ? turnOn("AutoMagmamancers") : turnOff("AutoMagmamancers");
     // #151: named "Hidden", not "Handoff", and the asymmetry with structureHandoffActive above is the
-    // point. `fuckjobs` has NO behavioural consumer — this predicate is its ONLY read anywhere in src/,
+    // point. `HideJobBoxes` has NO behavioural consumer — this predicate is its ONLY read anywhere in src/,
     // and all it decides is whether the jobs boxes render. (The turnOn/turnOff line below gates the
     // control's own visibility by id; it does not read the value.) Hiring is stopped solely by
     // BuyJobsNew == 0. See the orphan-predicate block in native-conflicts.ts for the full trace; a name
     // like "HandJobsToAutoJobs" would assert a handoff this setting does not perform.
-    var jobBoxesHidden = (bwRewardUnlocked("AutoJobs") && getPageSetting('fuckjobs') == true && getPageSetting('BuyJobsNew') == 0);
-    (!radonon && bwRewardUnlocked("AutoJobs")) ? turnOn("fuckjobs") : turnOff("fuckjobs");
+    var jobBoxesHidden = (bwRewardUnlocked("AutoJobs") && getPageSetting('HideJobBoxes') == true && getPageSetting('BuyJobsNew') == 0);
+    (!radonon && bwRewardUnlocked("AutoJobs")) ? turnOn("HideJobBoxes") : turnOff("HideJobBoxes");
     (!radonon && !jobBoxesHidden) ? turnOn("FarmerRatio") : turnOff("FarmerRatio");
     (!radonon && !jobBoxesHidden) ? turnOn("LumberjackRatio") : turnOff("LumberjackRatio");
     (!radonon && !jobBoxesHidden) ? turnOn("MinerRatio") : turnOff("MinerRatio");
@@ -422,7 +422,7 @@ export function updateCustomButtons() {
     !radonon ? turnOn("BuyWeaponsNew") : turnOff("BuyWeaponsNew");
     !radonon ? turnOn("CapEquip2") : turnOff("CapEquip2");
     !radonon ? turnOn("CapEquiparm") : turnOff("CapEquiparm");
-    !radonon ? turnOn("dmgcuntoff") : turnOff("dmgcuntoff");
+    !radonon ? turnOn("EquipDamageCutoff") : turnOff("EquipDamageCutoff");
     !radonon ? turnOn("DynamicPrestige2") : turnOff("DynamicPrestige2");
     !radonon ? turnOn("Prestige") : turnOff("Prestige");
     !radonon ? turnOn("ForcePresZ") : turnOff("ForcePresZ");
@@ -445,7 +445,7 @@ export function updateCustomButtons() {
     (radonon && getPageSetting('Requipon') == true) ? turnOn("Requipzone") : turnOff("Requipzone");
     (radonon && getPageSetting('Requipon') == true) ? turnOn("Requippercent") : turnOff("Requippercent");
     (radonon && getPageSetting('Requipon') == true) ? turnOn("Requip2") : turnOff("Requip2");
-    (radonon && getPageSetting('Requipon') == true) ? turnOn("Rdmgcuntoff") : turnOff("Rdmgcuntoff");
+    (radonon && getPageSetting('Requipon') == true) ? turnOn("REquipDamageCutoff") : turnOff("REquipDamageCutoff");
 
     radonon ? turnOn("Requipfarmon") : turnOff("Requipfarmon");
     (radonon && getPageSetting('Requipfarmon') == true) ? turnOn("Requipfarmzone") : turnOff("Requipfarmzone");
@@ -472,7 +472,7 @@ export function updateCustomButtons() {
     !radonon ? turnOn("MaxMapBonusAfterZone") : turnOff("MaxMapBonusAfterZone");
     !radonon ? turnOn("MaxMapBonuslimit") : turnOff("MaxMapBonuslimit");
     !radonon ? turnOn("MaxMapBonushealth") : turnOff("MaxMapBonushealth");
-    !radonon ? turnOn("mapcuntoff") : turnOff("mapcuntoff");
+    !radonon ? turnOn("MapDamageCutoff") : turnOff("MapDamageCutoff");
     !radonon ? turnOn("DisableFarm") : turnOff("DisableFarm");
     !radonon ? turnOn("LowerFarmingZone") : turnOff("LowerFarmingZone");
     !radonon ? turnOn("FarmWhenNomStacks7") : turnOff("FarmWhenNomStacks7");
@@ -507,7 +507,7 @@ export function updateCustomButtons() {
     radonon ? turnOn("RMaxMapBonuslimit") : turnOff("RMaxMapBonuslimit");
     radonon ? turnOn("RMaxMapBonushealth") : turnOff("RMaxMapBonushealth");
     radonon ? turnOn("Rhitssurvived") : turnOff("Rhitssurvived");
-    radonon ? turnOn("Rmapcuntoff") : turnOff("Rmapcuntoff");
+    radonon ? turnOn("RMapDamageCutoff") : turnOff("RMapDamageCutoff");
     radonon ? turnOn("RDisableFarm") : turnOff("RDisableFarm");
 
     radonon ? turnOn("Rtimefarm") : turnOff("Rtimefarm");
@@ -558,7 +558,7 @@ export function updateCustomButtons() {
     !radonon ? turnOn("ExitSpireCell") : turnOff("ExitSpireCell");
     !radonon ? turnOn("SpireBreedTimer") : turnOff("SpireBreedTimer");
     !radonon ? turnOn("PreSpireNurseries") : turnOff("PreSpireNurseries");
-    !radonon ? turnOn("spireshitbuy") : turnOff("spireshitbuy");
+    !radonon ? turnOn("SpirePrepGear") : turnOff("SpirePrepGear");
     !radonon ? turnOn("SkipSpires") : turnOff("SkipSpires");
 
 

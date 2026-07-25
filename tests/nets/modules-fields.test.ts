@@ -180,7 +180,7 @@ const WRITTEN = new Set(writes.map(key))
 // get SMALLER: a new phantom field fails on arrival (see the guard test below).
 const KNOWN_PHANTOM: Record<string, string> = {
   // ✅ maps.enoughDamageCutoff / maps.RenoughDamageCutoff — FIXED (#70). armormagic()/Rarmormagic() now
-  // read getPageSetting('mapcuntoff') / ('Rmapcuntoff'), the H:D thresholds their tooltips already
+  // read getPageSetting('MapDamageCutoff') / ('RMapDamageCutoff'), the H:D thresholds their tooltips already
   // promise. The fields were NOT given writers — inventing a threshold number would have been a new
   // game-balance literal. They are simply no longer read, so the net drops them for free.
   'upgrades.autoGigas': '#70 (inst. 3) — buildings.ts:184 `== false` disjunct can never fire; real id is getPageSetting("AutoGigas")',
