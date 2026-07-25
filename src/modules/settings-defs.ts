@@ -29,6 +29,21 @@ export function initializeAllSettings() {
         how: 'Off, the stock game UI is unchanged. On, a marked shell adopts the game\'s own panels intact — nothing is missing — as the base for the streamlined AutoTrimps layout.'
     }), 'boolean', false, null, "Core");
 
+    // #150 — advisory only: AT never changes a native toggle or one of your settings. Default ON,
+    // deliberately: a warning nobody sees is worth nothing, and this setting cannot move a single game
+    // action (it only renders a badge).
+    //
+    // ⚠ Do NOT cite a green `baseline-zero` as evidence of that. `scripts/sim/boot.mjs:31` stubs
+    // `setInterval` dead, so **guiLoop never runs in the L0 proof net at all** — the badge sweep is
+    // structurally invisible to it, and to guard-silence.test.ts. The net is green here because it
+    // cannot see this code path, not because it checked one. The real evidence is the advisory-only net
+    // (tests/nets/native-conflicts-completeness.test.ts) plus the jsdom suites and live Chrome verify.
+    createSetting('WarnNativeAutomationConflicts', 'Warn: Auto Conflicts', tip({
+        what: "Shows a yellow warning beside the game's own AutoPrestige / AutoUpgrade / AutoStructure / AutoJobs / AutoStorage buttons when their setting fights AutoTrimps' automation.",
+        how: 'Hover the warning to read what AT does instead, why, and the one setting to change. It also warns in the other direction: AutoStorage off once you own Auspicious Presence Part II (overflow is being wasted), and Hide Buildings / Hide Jobs left on while the mastery they hand off to is off (nothing is buying at all).',
+        cannot: 'Cannot change anything on its own — it never touches a game toggle or one of your AT settings. Every fix is yours to make.'
+    }), 'boolean', true, null, "Core");
+
     //Line 1
     createSetting('ManualGather2', ['Manual Gather/Build', 'Auto Gather/Build', 'Mining/Building Only', 'Science Research OFF'],tip({
         what: 'Controls how AT gathers resources and builds in U1 (Helium).',
@@ -705,7 +720,12 @@ export function initializeAllSettings() {
     createSetting('hidebuildings', 'Hide Buildings',tip({
         what: 'Hands ordinary building purchases (housing, storage, Wormholes, Tributes, Nurseries) over to the game\'s own AutoStructure mastery instead of AT buying them.',
         how: 'Only takes effect when <b>Buy Buildings</b> is set to <b>Buy Neither</b> \u2014 with any other Buy Buildings option, AT keeps buying those buildings regardless of this setting.',
-        cannot: 'Cannot hide or affect Gym purchases. AutoStructure has no Gym automation of its own, so AT keeps buying Gyms (per <b>Max Gyms</b> / <b>Gym Wall</b>) even with this on \u2014 that\'s also why the Gym settings stay visible either way.',
+        // #150 review: the old wording claimed "AutoStructure has no Gym automation of its own", which
+        // is false \u2014 Gym is in buyAutoStructures()' order list (.trimps-game/main.js:18247) and carries
+        // `AP: true` in config.js, so it appears in the AutoStructure config table. What is TRUE is the
+        // AT half: `hidebuild` (buildings.ts:264) suppresses housing/Wormhole/Tribute/Nursery but not
+        // the Gym block (buildings.ts:314), so AT keeps buying Gyms in this mode.
+        cannot: 'Cannot hide or affect Gym purchases \u2014 AT keeps buying Gyms (per <b>Max Gyms</b> / <b>Gym Wall</b>) even with this on, which is why the Gym settings stay visible either way. AutoStructure can also buy Gyms itself, so with both enabled the two may overlap there.',
     }), 'boolean', false, null, "Buildings");
     createSetting('BuyBuildingsNew', ['Buy Neither', 'Buy Buildings & Storage', 'Buy Buildings', 'Buy Storage'],tip({
         what: 'Controls whether AT buys non-storage Buildings (Huts, Warpstations, Gateways, Nurseries, etc.), Storage (Barn/Shed/Forge), both, or neither.',

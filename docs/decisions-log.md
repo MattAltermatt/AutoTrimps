@@ -7,6 +7,50 @@ closed [GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/issues).
 
 ## Shipped decisions, newest first
 
+- **⚠️ #150 SHIPPED — NATIVE-AUTOMATION CONFLICT ADVISORIES (yellow badge + hover)** (2026-07-25) —
+  the game ships its own automations (AutoPrestige/AutoUpgrade/AutoStructure/AutoJobs/AutoStorage) that
+  overlap AT's, and nothing told the player when the two were fighting. New `src/modules/native-conflicts.ts`
+  (the matrix: 7 rows, each a `when()` predicate + universe-aware `body()`; DOM-free, mutation-free) +
+  `native-conflict-badges.ts` (idempotent 1 Hz sweep from `guiLoop`), setting `WarnNativeAutomationConflicts`
+  **default ON** (it renders a badge and changes nothing, so ON is safe). **Auto-fixing the player's
+  settings was rejected** — silently rewriting a persisted choice is the #69 seized-AutoStorage-button
+  mistake. 🎯 **THE MECHANISM WAS FINE; FOUR OF THE SEVEN ROWS MADE CLAIMS THE GAME SOURCE CONTRADICTED**,
+  all caught by a fresh-eyes review and each verified against the pinned clone before fixing: (1) both
+  "orphan" rows keyed on `hidebuildings`/`fuckjobs`, but **`hidebuildings` does not stop AT buying** (its
+  only consumers *conjoin* it with `BuyBuildingsNew===0`, and `main-loop.ts:290` dispatches `buyBuildings()`
+  BECAUSE both are set — inside, `hidebuild` suppresses housing/Wormhole/Tribute/Nursery but **not Gym**)
+  and **`fuckjobs` has no behavioural consumer at all** (two render gates only) ⇒ the badge cried wolf
+  while AT was buying and stayed silent in the real orphan state; (2) **"AutoStructure has no Gym
+  automation" is FALSE** — Gym is in `buyAutoStructures()`'s order list (`main.js:18247`) and carries
+  `AP: true`; the claim was *copied from the pre-existing `hidebuildings` tooltip*, the #107 retype
+  failure making a wrong fact's second and third copy (both corrected); (3) **"Buy Storage" (index 3) is
+  COMPLEMENTARY** — that order list has no Barn/Shed/Forge, so native takes buildings and AT takes storage;
+  (4) AutoPrestige fired while the native automation was **inert** (`autoPrestiges()` is reachable only via
+  `autoUpgrades()`, gated on `autoUpgradesAvailable`/HZE 59, while the *button* appears at Bone Shrine
+  sLevel 4). Also: "Auto No Coords" unlocks on clearing a Void Map **at zone 250+** (a U1-only stat storing
+  `game.global.world`), not on clearing 250 of them. ⇒ **[[reference-tooltips-are-evidence-about-code]] runs
+  both ways: writing new advisory copy is a code audit, and four rows failed it.** 🪤 **THE FIX ITSELF SHIPPED
+  A BUG THAT THE #68 TEST CAUGHT:** the corrected orphan predicate was `getPageSetting('BuyBuildingsNew') == 0`,
+  and **`false == 0` is TRUE** — `getPageSetting` returns `false` for a key absent from an existing user's
+  store, so every veteran would have seen a permanent bogus warning. Every *other* comparison in the file is
+  safe with `==` because `false` never loosely equals `1`/`2`/`true`; **zero is the one value where the usual
+  reasoning inverts.** Strict `===` throughout. 🕳️ **`anchorVisible()` READ THE WRONG THING, AND THE FIXTURE
+  ENCODED THE SAME WRONG MODEL** — the five buttons are hidden by a CSS **class** (`.autoUpgradeBtn{display:none}`,
+  8 elements carry it) and *revealed* with an inline `display:block`, so `anchor.style.display !== 'none'`
+  reported a never-revealed button **VISIBLE**; the jsdom fixture had no class and no stylesheet so it could
+  not catch it. Now `getComputedStyle`, with the class + rule in the fixture and a test asserting
+  `style.display === ''` while computed is `none`. Same shape as #41 Phase 2. 🔩 **THE SIBLING RULE:** the
+  badge is inserted as a SIBLING of the anchor, never a child — `toggleAutoStorage`/`toggleAutoUpgrades`/
+  `toggleAutoPrestiges` each assign `elem.innerHTML = "<label>"` on every click (`main.js:18379/18416/18432`),
+  which destroys a child badge; verified live by clicking. The anchor's own `onmouseover` is never touched
+  (all five already carry the game's tooltip). Two nets rejected a *tidier* version of the code and were
+  right: `settings-reverse` needs the setting id literal at the callsite, and **`dispatch-holes` (#81) treats
+  a read passed as an ARGUMENT as "value-consumed ⇒ every index routed"**, so wrapping it in a `num()` helper
+  made `BuyArmorNew[0]` look routed when it deliberately isn't — deleting that baseline entry would have
+  laundered a real hole. 133 test files green by exit code; Chrome-verified on a deep AND a fresh save
+  (full lifecycle: unlock → advise → player complies → clears). Follow-up **#152** (AutoEquip/AutoGolden/
+  AutoTraps advisories) and **#151** (naming hygiene) filed.
+
 - **🧱 #41 UI OVERHAUL — PHASE 2 SHIPPED: FIRST REGION GRADUATION (resource tiles)** (2026-07-16) —
   Food/Wood/Metal/Science graduated from adopted native DOM to **AT-native layout-B tiles** (rolling
   60s chart replacing the time bar, AUTO badge, **no buttons**), behind the same `ATCustomUI` toggle

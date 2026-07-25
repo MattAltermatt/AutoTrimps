@@ -85,6 +85,10 @@ declare global {
   function bwRewardUnlocked(...args: any[]): boolean
   function canAffordCoordinationTrimps(...args: any[]): boolean
   function toggleAutoStorage(...args: any[]): void
+  // #150 — the game's universe-aware resolvers for the AutoStructure / AutoJobs masteries
+  // (main.js:18026, :18046). Read-only from AT: the conflict matrix asks whether they are enabled.
+  function getAutoStructureSetting(): { enabled: boolean }
+  function getAutoJobsSetting(): { enabled: boolean }
   function simpleSeconds(...args: any[]): number
   function scaleToCurrentMap(...args: any[]): number
   function getPsString(...args: any[]): number // updates.js

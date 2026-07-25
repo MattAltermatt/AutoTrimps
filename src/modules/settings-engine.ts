@@ -123,11 +123,18 @@ const defaultFacet = (type: any, defaultValue: any, name: any): string => {
     return '<br><br><i>Default: ' + shown + '</i>';
 };
 
-const tipAttr = (label: any, description: any, type?: any, defaultValue?: any, name?: any) => {
-    const esc = (s: any) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    const body = String(description) + defaultFacet(type, defaultValue, name);
-    return 'tooltip("' + esc(label) + '", "customText", event, "' + esc(body) + '")';
-};
+// #150 — the escaping + attribute construction is a SEAM, not a local detail. The badge module
+// (native-conflict-badges.ts) needs the identical escaping, and a second hand-written copy of the
+// rule is how #110 happens twice. `tooltipAttr` deliberately carries NO default-value facet: it is
+// for tooltips that have no setting behind them.
+const escTipAttr = (s: any) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
+export function tooltipAttr(label: any, body: any): string {
+    return 'tooltip("' + escTipAttr(label) + '", "customText", event, "' + escTipAttr(body) + '")';
+}
+
+const tipAttr = (label: any, description: any, type?: any, defaultValue?: any, name?: any) =>
+    tooltipAttr(label, String(description) + defaultFacet(type, defaultValue, name));
 
 export function createSetting(id: any, name: any, description: any, type: any, defaultValue: any, list: any, container: any) {
     definedSettingIds.add(id);

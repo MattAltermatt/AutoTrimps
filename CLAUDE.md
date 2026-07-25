@@ -202,6 +202,22 @@ that has already cost a session at least once.
 - **🪤 esbuild renames the DEFINITION, not the free reference.** A module that calls a bare global
   which a sibling module also exports keeps the free ref and renames the definition to `X2`. Runtime
   is correct (the bridge publishes by export name); only bundle-text-anchored tests move (#133).
+- **🕳️ `guiLoop` NEVER RUNS IN THE L0 PROOF NET.** `scripts/sim/boot.mjs:31` stubs `setInterval` dead, so
+  anything dispatched from `guiLoop` (`updateCustomButtons`, the storedMODULES persist, the #150 badge
+  sweep) is structurally invisible to `baseline-zero` *and* to `guard-silence`. A green net there is not
+  evidence about that code — it is evidence the net cannot see it. Never cite `baseline-zero` for a
+  guiLoop-driven change; build the evidence by hand (#150).
+- **👻 `false == 0` is TRUE — the one place the phantom-setting reasoning inverts.** `getPageSetting`
+  returns **`false`** for a key absent from an existing user's store (#68), and every comparison against
+  `1`/`2`/`true` is therefore inert by luck. Against **zero** it is not: `getPageSetting('X') == 0`
+  fires for every user who has never touched the setting. Use `=== 0` (a present multitoggle returns a
+  real `parseInt` number). Shipped and caught by its own test in #150.
+- **🎭 A CSS CLASS can hide what an inline style says nothing about.** The game hides the five native
+  automation buttons with `.autoUpgradeBtn{display:none}` and *reveals* them with an inline
+  `display:block`, so `el.style.display !== 'none'` reports a never-revealed element **visible**. Read
+  `getComputedStyle`. Worse, a jsdom fixture built without the class + rule encodes the same wrong model
+  and cannot catch it — put the real class and a `<style>` in the fixture (#150; #41 Phase 2 is the
+  mirror image, where an inline style beat a plain assignment).
 - **🌱 Verify the FRESH-SAVE unlock path.** A deep everything-unlocked save is structurally blind to
   unlock and reveal bugs — two shipped that way, including a duplicate tile caused by the game's
   reveal animation setting an inline `display:block` that beat a plain style assignment (#41 Phase 2).

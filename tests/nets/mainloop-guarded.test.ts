@@ -118,7 +118,7 @@ const unguarded = calls.filter((c) => !c.guarded)
 // boundary without changing what `return` means. Pinned by name AND by count, so this is a two-entry
 // list rather than a category anyone can grow.
 const SKELETON: Record<string, string> = {
-  'mainLoop:getPageSetting@175':
+  'mainLoop:getPageSetting@177':
     "the PauseScript early-return. A `return` cannot be lifted into a closure, and getPageSetting() is " +
     'the loop\'s own gate rather than an automation. If getPageSetting itself throws, AT is over anyway.',
 }
@@ -179,7 +179,9 @@ describe('#87 — every mainLoop/guiLoop dispatch is inside an error boundary', 
     // storedMODULES persist, the enhanced grids and the AFK overlay. De-comma'ing it is a precondition
     // of guarding it, and re-comma'ing it would re-fuse them behind one boundary.
     const body = findFn('guiLoop').body!
-    expect(body.statements.length).toBe(4)
+    // 5 since #150 added the nativeConflictBadges sweep. The COUNT is a pin, not the invariant — the
+    // invariant is the loop below: every statement is its own atGuard() call.
+    expect(body.statements.length).toBe(5)
     for (const st of body.statements) {
       expect(ts.isExpressionStatement(st)).toBe(true)
       const ex = (st as ts.ExpressionStatement).expression

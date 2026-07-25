@@ -39,6 +39,8 @@ export function ATscriptLoad(_pathname?: any, _modulename?: any) { /* bundled: n
 // eval (no MODULES writes, no base-state reads), so importing it here does not perturb the "main-loop
 // seeds base state first" ordering. Booted from initializeAutoTrimps() below (post-bootSettingsUI).
 import { bootCustomUI } from './custom-ui'
+// #150 — same rationale: side-effect-free at eval, driven from guiLoop() below.
+import { syncConflictBadges, removeConflictBadges } from './native-conflict-badges'
 
 export function ATscriptUnload(_a?: any) { /* bundled: no-op */ }
 
@@ -600,6 +602,12 @@ export function guiLoop() {
     });
     atGuard('performance.UpdateAFKOverlay', function () {
         if ('undefined' != typeof MODULES && 'undefined' != typeof MODULES.performance && MODULES.performance.isAFK) MODULES.performance.UpdateAFKOverlay();
+    });
+    // #150 — 1/s is plenty for an advisory, and guiLoop already owns the atGuard boundary so a throw
+    // here cannot cost the other GUI work (#87). OFF removes the badges once and then stays quiet.
+    atGuard('nativeConflictBadges', function () {
+        if (getPageSetting('WarnNativeAutomationConflicts')) syncConflictBadges();
+        else removeConflictBadges();
     });
 }
 

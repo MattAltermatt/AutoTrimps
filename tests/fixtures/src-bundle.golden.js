@@ -544,6 +544,795 @@
     applyCustomUI(true);
   }
 
+  // src/modules/utils.ts
+  var utils_exports = {};
+  __export(utils_exports, {
+    byId: () => byId2,
+    debug: () => debug2,
+    filterMessage2: () => filterMessage2,
+    getPageSetting: () => getPageSetting2,
+    getPageSettingAt: () => getPageSettingAt,
+    loadPageVariables: () => loadPageVariables2,
+    message2: () => message2,
+    safeSetItems: () => safeSetItems2,
+    saveSettings: () => saveSettings2,
+    serializeSettings: () => serializeSettings2,
+    serializeSettings550: () => serializeSettings5502,
+    serializeSettings60: () => serializeSettings602,
+    setPageSetting: () => setPageSetting2,
+    setTitle: () => setTitle2,
+    textSettingIsSet: () => textSettingIsSet
+  });
+
+  // src/modules/time.ts
+  var time_exports = {};
+  __export(time_exports, {
+    formatMinutesForDescriptions: () => formatMinutesForDescriptions,
+    timeStamp: () => timeStamp
+  });
+  function timeStamp() {
+    for (var a = /* @__PURE__ */ new Date(), b = [a.getHours(), a.getMinutes(), a.getSeconds()], c = 1; 3 > c; c++) 10 > b[c] && (b[c] = "0" + b[c]);
+    return b.join(":");
+  }
+  function formatMinutesForDescriptions(number) {
+    var text;
+    var seconds = Math.floor(number * 60 % 60);
+    var minutes = Math.floor(number % 60);
+    var hours = Math.floor(number / 60);
+    if (hours == 0)
+      text = minutes + " minutes " + seconds + " seconds";
+    else if (minutes > 0) {
+      if (minutes < 10) minutes = "0" + minutes;
+      if (seconds < 10) seconds = "0" + seconds;
+      text = hours + ":" + minutes + ":" + seconds;
+    } else {
+      var hs = hours > 1 ? "s" : "";
+      var ms = minutes > 1 ? "s" : "";
+      var ss = seconds > 1 ? "s" : "";
+      text = hours + " hour" + hs + " " + minutes + " minute" + ms + " " + seconds + " second" + ss;
+    }
+    return text;
+  }
+
+  // src/modules/utils.ts
+  if (!String.prototype.includes) {
+    String.prototype.includes = function(search, start) {
+      "use strict";
+      if (typeof start !== "number") {
+        start = 0;
+      }
+      if (start + search.length > this.length) {
+        return false;
+      } else {
+        return this.indexOf(search, start) !== -1;
+      }
+    };
+  }
+  function loadPageVariables2() {
+    var tmp = JSON.parse(localStorage.getItem("autoTrimpSettings"));
+    if (tmp !== null && tmp["ATversion"] != void 0) {
+      autoTrimpSettings = tmp;
+    }
+  }
+  function safeSetItems2(a, b) {
+    try {
+      localStorage.setItem(a, b);
+    } catch (c) {
+      22 == c.code && debug2("Error: LocalStorage is full, or error. Attempt to delete some portals from your graph or restart browser.");
+    }
+  }
+  function serializeSettings2() {
+    return JSON.stringify(Object.keys(autoTrimpSettings).reduce((v, k) => {
+      const el = autoTrimpSettings[k];
+      switch (el.type) {
+        case "boolean":
+          return v[k] = el.enabled, v;
+        case "value":
+        case "multiValue":
+        case "textValue":
+        case "valueNegative":
+        case "multitoggle":
+          return v[k] = el.value, v;
+        case "dropdown":
+          return v[k] = el.selected, v;
+      }
+      return v[k] = el, v;
+    }, {}));
+  }
+  function serializeSettings602() {
+    return '{"ManualGather2":1,"ATversion":"2.1.6.9b-genbtc-4-2-2018 + KFrowde + Zeker0","BuyUpgrades":true,"TrapTrimps":true,"ManageBreedtimer":false,"UsePatience":true,"GeneticistTimer":-1,"SpireBreedTimer":60,"AutoAllocatePerks":0,"AutoStartDaily":false,"AutoFinishDaily":false,"AutoFinishDailyZone":-30,"FinishC2":-1,"AutoEggs":true,"ManualCoords":2,"AutoPortal":"Off","HeliumHourChallenge":"None","CustomAutoPortal":999,"HeHrDontPortalBefore":496,"HeliumHrBuffer":1,"PauseScript":false,"BuyStorage":true,"BuyBuildings":true,"WarpstationCap":true,"WarpstationCoordBuy":true,"MaxHut":100,"MaxHouse":100,"MaxMansion":100,"MaxHotel":100,"MaxResort":100,"MaxGateway":50,"MaxWormhole":"0","MaxCollector":-1,"MaxGym":"-1","MaxTribute":"-1","GymWall":-1,"FirstGigastation":10,"DeltaGigastation":2,"WarpstationWall3":1,"MaxNursery":-1,"NoNurseriesUntil":-1,"PreSpireNurseries":-1,"BuyJobs":true,"WorkerRatios":true,"AutoMagmamancers":true,"FarmerRatio":1,"LumberjackRatio":11,"MinerRatio":12,"MaxScientists":-1,"MaxExplorers":"-1","MaxTrainers":"-1","TrainerCaptoTributes":10,"BreedFire":false,"BuyArmor":true,"BuyArmorUpgrades":true,"BuyWeapons":true,"BuyWeaponUpgrades":true,"CapEquip2":15,"DynamicPrestige2":-1,"Prestige":"Dagadder","PrestigeBackup":{"selected":"Dagadder","id":"PrestigeBackup","name":"PrestigeBackup"},"ForcePresZ":-1,"PrestigeSkipMode":false,"PrestigeSkip2":false,"DelayArmorWhenNeeded":false,"BuyShieldblock":true,"AutoMaps":1,"DynamicSiphonology":true,"PreferMetal":false,"MaxMapBonusAfterZone":-1,"DisableFarm":16,"LowerFarmingZone":true,"MaxStacksForSpire":true,"MinutestoFarmBeforeSpire":0,"IgnoreSpiresUntil":0,"RunBionicBeforeSpire":false,"ExitSpireCell":-1,"CorruptionCalc":true,"FarmWhenNomStacks7":true,"VoidMaps":-1,"RunNewVoids":true,"RunNewVoidsUntil":-1,"VoidCheck":6,"MaxTox":false,"TrimpleZ":0,"AdvMapSpecialModifier":false,"BetterAutoFight":2,"AutoStance":1,"IgnoreCrits":0,"PowerSaving":0,"ForceAbandon":true,"DynamicGyms":true,"AutoRoboTrimp":60,"UseScryerStance":true,"ScryerUseWhenOverkill":true,"ScryerMinZone":181,"ScryerMaxZone":-1,"ScryerUseinMaps2":0,"ScryerUseinVoidMaps2":0,"ScryerUseinSpire2":0,"ScryerSkipBoss2":0,"ScryerSkipCorrupteds2":2,"ScryerDieToUseS":false,"ScryerDieZ":181,"UseAutoGen":true,"AutoGen2":1,"AutoGen2End":400,"AutoGen2SupplyEnd":true,"AutoGen3":0,"AutoGenDC":1,"AutoGenC2":1,"AutoGen2Override":1,"AutoMagmiteSpender2":1,"SupplyWall":2.4,"OneTimeOnly":false,"BuyOvclock":false,"AutoHeirlooms":true,"AutoHeirlooms2":true,"AutoUpgradeHeirlooms":false,"AutoGoldenUpgrades":"Helium","goldStrat":"Max then Helium","goldAlternating":1.5,"goldZone":401,"goldNoBattle":false,"AutoNatureTokens":true,"AutoPoison":"Empowerment","AutoWind":"Empowerment","AutoIce":"Empowerment","EnhanceGrids":false,"SpamGeneral":true,"SpamUpgrades":false,"SpamEquipment":false,"SpamMaps":true,"SpamOther":true,"SpamBuilding":false,"SpamJobs":false,"SpamGraphs":false,"SpamMagmite":true,"SpamPerks":true,"allowSettingsUpload":true,"analyticsID":"b93c4930-760d-4feb-9330-f72041b1d362","BuyUpgradesNew":1,"fastallocate":false,"lootdumpz":-1,"lootdumpa":-1,"AutoFinishDailyNew":1,"BuyBuildingsNew":1,"BuyJobsNew":1,"BuyArmorNew":1,"BuyWeaponsNew":1,"PrestigeSkip1_2":0,"RunNewVoidsUntilNew":-1,"DailyVoidMod":-1,"VoidPraid":false,"Praidingzone":[-1],"BWraid":false,"BWraidingz":[-1],"BWraidingmax":[-1],"WindStackingMin":100,"ScryUseinPoison":-1,"ScryUseinWind":0,"ScryUseinIce":-1,"BuyOneTimeOC":2,"AutoHeirloomsNew":2,"ShowSettings":true,"Raiding":false,"RaidingStartZone":506,"PrestigeRaiding":0,"AutomateAT":true,"DailyVMZone":525,"FillerVMZone":510,"FillerSpireCell":40,"WindStack":true,"WindStackCutOff":60,"Dailyportal":546,"dVoidPraid":true,"dPraidingzone":[-1],"dExitSpireCell":-1,"Dailybwraid":false,"dBWraidingz":[-1],"dBWraidingmax":[-1],"trimpsnotdie":true,"gearamounttobuy":1,"WindStackingMax":195,"buyheliumy":-1,"use3daily":false,"buynojobsc":true,"fightforever":-1,"windcutoff":-1,"spireshitbuy":true,"hardcorewind":-1,"dPraidHarder":false,"dMaxPraidZone":[-1],"dPraidFarmFragsZ":[-1],"dPraidBeforeFarmZ":[-1],"dWindStackingMin":100,"dWindStackingMax":195,"dwindcutoff":-1,"dhardcorewind":-1,"PraidHarder":false,"MaxPraidZone":[-1],"PraidFarmFragsZ":[-1],"PraidBeforeFarmZ":[-1],"fuellater":300,"ScryerSkipHealthy":2,"addpoison":false,"amalcoord":false,"dhardcorewindmax":-1,"cfightforever":true,"work":"false","in":"false","progress":"false","hardcorewindmax":"-1","dAutoGoldenUpgrades":"Helium","cAutoGoldenUpgrades":"Battle","dfightforever":2,"fuelend":260,"defaultgen":2,"spendmagmite":2,"spendmagmitesetting":0,"amalcoordhd":0.000025,"amalcoordz":-1,"dultwind":-1,"dultwindcut":-1,"dwindhealthy":"false","darmormagic":3,"carmormagic":1,"CapEquiparm":15,"ultwind":-1,"ultwindcut":"0.00025","windhealthy":false,"onlyminmaxworld":true,"fuckanti":-1,"dscryvoidmaps":false,"scryvoidmaps":false,"dusebstance":false,"AutoPortalDaily":0,"dHeliumHourChallenge":"None","dCustomAutoPortal":560,"dHeHrDontPortalBefore":"999","dHeliumHrBuffer":"0","usebstance":"false","hidebuildings":false,"fuckjobs":false,"amalcoordt":-1,"screwessence":true,"beforegen":2,"c2runnerstart":false,"c2runnerportal":"999","mapc2hd":6,"buywepsvoid":true,"ScryerUseinBW":0,"dwindcutoffmap":-1,"windcutoffmap":-1}';
+  }
+  function serializeSettings5502() {
+    return '{"ManualGather2":2,"ATversion":"2.1.6.9b-genbtc-4-2-2018 + KFrowde + Zeker0","BetterAutoFight":3,"AutoStance":2,"BuyStorage":true,"BuyBuildings":true,"BuyUpgrades":true,"BuyJobs":true,"TrapTrimps":false,"AutoHeirlooms":true,"HireScientists":true,"WorkerRatios":false,"ManageBreedtimer":false,"AutoPortal":"Custom","HeliumHourChallenge":"Corrupted","CustomAutoPortal":560,"HeHrDontPortalBefore":496,"HeliumHrBuffer":3,"AutoFinishDaily":true,"AutoFinishDailyZone":0,"AutoStartDaily":true,"PauseScript":false,"BuyArmor":true,"BuyArmorUpgrades":true,"BuyWeapons":true,"BuyWeaponUpgrades":true,"BuyShieldblock":false,"Prestige":"Dagadder","PrestigeBackup":{"selected":"Dagadder","id":"PrestigeBackup","name":"PrestigeBackup"},"DynamicPrestige2":-1,"PrestigeSkipMode":false,"AlwaysArmorLvl2":true,"WaitTill60":true,"DelayArmorWhenNeeded":false,"CapEquip2":200,"AutoMaps":1,"DynamicSiphonology":true,"LowerFarmingZone":true,"MinutestoFarmBeforeSpire":0,"RunBionicBeforeSpire":false,"ExitSpireCell":-1,"CorruptionCalc":true,"FarmWhenNomStacks7":true,"VoidMaps":555,"RunNewVoids":false,"RunNewVoidsUntil":600,"VoidCheck":1,"MaxTox":false,"DisableFarm":-1,"FarmerRatio":20,"LumberjackRatio":10,"MinerRatio":1000,"MaxScientists":"-1","MaxExplorers":3000,"MaxTrainers":-1,"MaxHut":100,"MaxHouse":0,"MaxMansion":0,"MaxHotel":0,"MaxResort":0,"MaxGateway":0,"MaxWormhole":0,"MaxCollector":0,"FirstGigastation":1,"DeltaGigastation":1,"MaxGym":"-1","MaxTribute":"-1","MaxNursery":-1,"BreedFire":false,"AutoMagmamancers":false,"WarpstationCap":false,"WarpstationWall3":-1,"WarpstationCoordBuy":false,"AutoRoboTrimp":270,"AutoGoldenUpgrades":"Void 60","AutoHeirlooms2":false,"AutoUpgradeHeirlooms":false,"TrainerCaptoTributes":"-1","NoNurseriesUntil":498,"AutoMagmiteSpender2":2,"ForceAbandon":true,"GymWall":-1,"DynamicGyms":true,"AutoAllocatePerks":2,"SpireBreedTimer":-1,"UseScryerStance":false,"ScryerUseWhenOverkill":false,"ScryerMinZone":530,"ScryerMaxZone":-1,"ScryerUseinMaps2":0,"ScryerUseinVoidMaps2":0,"ScryerUseinSpire2":0,"ScryerSkipBoss2":0,"ScryerSkipCorrupteds2":2,"ScryerDieToUseS":true,"SpamGeneral":true,"SpamUpgrades":false,"SpamEquipment":false,"SpamMaps":false,"SpamOther":false,"SpamBuilding":false,"SpamJobs":false,"ManualCoords":false,"TrimpleZ":0,"ScryerDieZ":230.6,"IgnoreCrits":2,"ForcePresZ":-1,"PreferMetal":false,"PreSpireNurseries":7000,"FinishC2":-1,"PowerSaving":0,"PrestigeSkip2":false,"AutoEggs":false,"UseAutoGen":1,"AutoGen2":3,"AutoGen2End":320,"AutoGen2SupplyEnd":false,"AutoGen3":0,"AutoGenDC":1,"AutoGenC2":1,"AutoGen2Override":1,"SupplyWall":1,"OneTimeOnly":false,"BuyOvclock":false,"IgnoreSpiresUntil":500,"goldStrat":"Max then Helium","goldAlternating":2,"goldZone":600,"MaxStacksForSpire":true,"UsePatience":false,"AutoNatureTokens":true,"AutoPoison":"Empowerment","AutoWind":"Convert to Poison","AutoIce":"Convert to Poison","MaxMapBonusAfterZone":-1,"SpamGraphs":false,"allowSettingsUpload":false,"EnhanceGrids":false,"EnableAFK":{"id":"EnableAFK","name":"Enable AFK","description":"Enables CPU and RAM saving AFK-mode","type":"action","value":1},"SpamMagmite":false,"SpamPerks":true,"analyticsID":"7f11701e-adc9-477c-a08d-2b66fe3ec2a2","ChangeLog":{"id":"ChangeLog","name":"Show Changelog","description":"Shows the changelog popup message that AT loads on startup in case you missed it.","type":"action","value":1},"AdvMapSpecialModifier":false,"GeneticistTimer":-1,"goldNoBattle":true,"BuyUpgradesNew":1,"AutoFinishDailyNew":0,"BuyBuildingsNew":0,"BuyJobsNew":0,"BuyArmorNew":1,"BuyWeaponsNew":1,"PrestigeSkip1_2":0,"RunNewVoidsUntilNew":0,"DailyVoidMod":570,"PlusMapVoidToggle":0,"Praidingzone":[495,546,555,561,566,570],"BWraid":false,"BWraidingmin":-1,"BWraidingmax":[640],"lootdumpz":265,"lootdumpa":10000,"WindStackingMin":-1,"ScryUseinPoison":-1,"ScryUseinWind":-1,"ScryUseinIce":-1,"BuyOneTimeOC":2,"AutoHeirloomsNew":2,"ShowSettings":true,"BWraidingz":[597],"fastallocate":true,"VoidPraid":true,"trimpsnotdie":true,"gearamounttobuy":5,"Dailyportal":560,"dVoidPraid":true,"dPraidingzone":[495,510,525,540,555,570],"Dailybwraid":false,"dBWraidingz":[495],"dBWraidingmax":[515],"dExitSpireCell":-1,"WindStackingMax":190,"buyheliumy":-1,"buynojobsc":true,"Trimpicide":true,"fightforever":0,"use3daily":true,"windcutoff":-1,"spireshitbuy":true,"hardcorewind":-1,"PraidHarder":false,"PraidFarmFrags":false,"PraidBeforeFarm":false,"dPraidHarder":false,"dMaxPraidZone":[-1],"dPraidFarmFragsZ":[-1],"dPraidBeforeFarmZ":[-1],"MaxPraidZone":[505,535,545,555,561],"PraidFarmFragsZ":[495],"PraidBeforeFarmZ":[-1],"fuellater":260,"dWindStackingMin":450,"dWindStackingMax":190,"dwindcutoff":160,"dhardcorewind":480,"ScryerSkipHealthy":2,"addpoison":true,"amalcoord":true,"dAutoGoldenUpgrades":"Void 60","cAutoGoldenUpgrades":"Battle","dhardcorewindmax":"-1","cfightforever":true,"work":false,"in":false,"progress":false,"hardcorewindmax":"-1","dfightforever":2,"fuelend":320,"defaultgen":0,"spendmagmite":2,"spendmagmitesetting":1,"ultwind":-1,"ultwindcut":0.05,"CapEquiparm":100,"amalcoordhd":0.0000025,"onlyminmaxworld":false,"amalcoordz":398,"dultwind":"-1","dultwindcut":"0.00025","dwindhealthy":"false","windhealthy":false,"mapcutoff":4,"darmormagic":3,"carmormagic":3,"fuckanti":"-1","dscryvoidmaps":true,"scryvoidmaps":true,"dusebstance":true,"usebstance":true,"AutoPortalDaily":2,"dCustomAutoPortal":575,"dHeHrDontPortalBefore":"999","dHeliumHrBuffer":"0","dHeliumHourChallenge":"Corrupted","hidebuildings":true,"fuckjobs":true,"amalcoordt":6,"screwessence":false,"beforegen":0,"c2runnerstart":false,"c2runnerportal":"999","buywepsvoid":true,"mapc2hd":"-1","ScryerUseinBW":0,"dwindcutoffmap":160,"windcutoffmap":"-1"}';
+  }
+  function getPageSetting2(setting) {
+    if (autoTrimpSettings.hasOwnProperty(setting) == false) {
+      return false;
+    }
+    if (autoTrimpSettings[setting].type == "boolean") {
+      return autoTrimpSettings[setting].enabled;
+    } else if (autoTrimpSettings[setting].type == "multiValue") {
+      return Array.from(autoTrimpSettings[setting].value).map((x) => parseInt(x));
+    } else if (autoTrimpSettings[setting].type == "textValue") {
+      return autoTrimpSettings[setting].value;
+    } else if (autoTrimpSettings[setting].type == "value" || autoTrimpSettings[setting].type == "valueNegative") {
+      return parseFloat(autoTrimpSettings[setting].value);
+    } else if (autoTrimpSettings[setting].type == "multitoggle") {
+      return parseInt(autoTrimpSettings[setting].value);
+    } else if (autoTrimpSettings[setting].type == "dropdown") {
+      return autoTrimpSettings[setting].selected;
+    }
+  }
+  function textSettingIsSet(setting) {
+    const v = getPageSetting2(setting);
+    return v !== void 0 && v !== null && v !== false && v !== "" && v !== "undefined";
+  }
+  function getPageSettingAt(setting, index) {
+    const v = getPageSetting2(setting);
+    if (v === void 0 || v === null) return void 0;
+    return v[index];
+  }
+  function setPageSetting2(setting, value) {
+    if (autoTrimpSettings.hasOwnProperty(setting) == false) {
+      return false;
+    }
+    if (autoTrimpSettings[setting].type == "boolean") {
+      autoTrimpSettings[setting].enabled = value;
+      document.getElementById(setting).setAttribute("class", "noselect settingsBtn settingBtn" + autoTrimpSettings[setting].enabled);
+    } else if (autoTrimpSettings[setting].type == "value" || autoTrimpSettings[setting].type == "valueNegative") {
+      autoTrimpSettings[setting].value = value;
+    } else if (autoTrimpSettings[setting].type == "textValue") {
+      autoTrimpSettings[setting].value = value;
+    } else if (autoTrimpSettings[setting].type == "multiValue" || autoTrimpSettings[setting].type == "valueNegative") {
+      autoTrimpSettings[setting].value = value;
+    } else if (autoTrimpSettings[setting].type == "multitoggle") {
+      autoTrimpSettings[setting].value = value;
+      document.getElementById(setting).setAttribute("class", "noselect settingsBtn settingBtn" + autoTrimpSettings[setting].value);
+    } else if (autoTrimpSettings[setting].type == "dropdown") {
+      autoTrimpSettings[setting].selected = value;
+    }
+  }
+  function saveSettings2() {
+    if (autoTrimpSettings["ATversion"] === void 0) autoTrimpSettings["ATversion"] = ATversion;
+    safeSetItems2("autoTrimpSettings", serializeSettings2());
+  }
+  function debug2(message3, type, lootIcon) {
+    var general = getPageSetting2("SpamGeneral");
+    var upgrades = getPageSetting2("SpamUpgrades");
+    var equips = getPageSetting2("SpamEquipment");
+    var maps = getPageSetting2("SpamMaps");
+    var other = getPageSetting2("SpamOther");
+    var buildings = getPageSetting2("SpamBuilding");
+    var jobs = getPageSetting2("SpamJobs");
+    var graphs = getPageSetting2("SpamGraphs");
+    var magmite = getPageSetting2("SpamMagmite");
+    var perks = getPageSetting2("SpamPerks");
+    var nature = getPageSetting2("SpamNature");
+    var output = true;
+    switch (type) {
+      case null:
+        break;
+      case "general":
+        output = general;
+        break;
+      case "upgrades":
+        output = upgrades;
+        break;
+      case "equips":
+        output = equips;
+        break;
+      case "buildings":
+        output = buildings;
+        break;
+      case "jobs":
+        output = jobs;
+        break;
+      case "maps":
+        output = maps;
+        break;
+      case "other":
+        output = other;
+        break;
+      case "graphs":
+        output = graphs;
+        break;
+      case "magmite":
+        output = magmite;
+        break;
+      case "perks":
+        output = perks;
+        break;
+      case "nature":
+        output = nature;
+        break;
+    }
+    if (output) {
+      if (enableDebug)
+        console.log(timeStamp() + " " + message3);
+      message2(message3, "AutoTrimps", lootIcon, type);
+    }
+  }
+  function setTitle2() {
+    aWholeNewWorld && (document.title = "(" + game.global.world + ") Trimps " + document.getElementById("versionNumber").innerHTML);
+  }
+  var lastmessagecount = 1;
+  function message2(a, b, c, d) {
+    var e = document.getElementById("log");
+    var f = e.scrollTop + 10 > e.scrollHeight - e.clientHeight;
+    var g = ATmessageLogTabVisible ? "block" : "none";
+    var h = "";
+    if (c && "*" == c.charAt(0)) {
+      c = c.replace("*", "");
+      h = "icomoon icon-";
+    } else h = "glyphicon glyphicon-";
+    if (game.options.menu.timestamps.enabled) a = (1 == game.options.menu.timestamps.enabled ? getCurrentTime() : updatePortalTimer(true)) + " " + a;
+    if (c) a = '<span class="' + h + c + '"></span> ' + a;
+    a = '<span class="glyphicon glyphicon-superscript"></span> ' + a;
+    a = '<span class="icomoon icon-text-color"></span>' + a;
+    var i = "<span class='" + b + "Message message " + d + "' style='display: " + g + "'>" + a + "</span>";
+    var j = document.getElementsByClassName(b + "Message");
+    if (1 < j.length && -1 < j[j.length - 1].innerHTML.indexOf(a)) {
+      var k = j[j.length - 1].innerHTML;
+      lastmessagecount++;
+      var l = k.lastIndexOf(" x");
+      if (-1 != l) j[j.length - 1].innerHTML = k.slice(0, l);
+      j[j.length - 1].innerHTML += " x" + lastmessagecount;
+    } else {
+      lastmessagecount = 1;
+      e.innerHTML += i;
+    }
+    if (f) e.scrollTop = e.scrollHeight;
+    trimMessages(b);
+  }
+  var ATbutton = document.createElement("button");
+  ATbutton.innerHTML = "AutoTrimps";
+  ATbutton.setAttribute("id", "AutoTrimpsFilter");
+  ATbutton.setAttribute("type", "button");
+  ATbutton.setAttribute("onclick", "filterMessage2('AutoTrimps')");
+  ATbutton.setAttribute("class", "btn btn-success logFlt");
+  var tab = document.createElement("DIV");
+  tab.setAttribute("class", "btn-group");
+  tab.setAttribute("role", "group");
+  tab.appendChild(ATbutton);
+  document.getElementById("logBtnGroup").appendChild(tab);
+  function filterMessage2(a) {
+    var displayed;
+    var b = document.getElementById("log");
+    displayed = !ATmessageLogTabVisible;
+    ATmessageLogTabVisible = displayed;
+    var c = document.getElementsByClassName(a + "Message");
+    var d = displayed ? a : a + " off";
+    var e = document.getElementById(a + "Filter");
+    e.innerHTML = d;
+    e.className = "";
+    e.className = getTabClass(displayed);
+    displayed = displayed ? "block" : "none";
+    for (var f = 0; f < c.length; f++) c[f].style.display = displayed;
+    b.scrollTop = b.scrollHeight;
+  }
+  window.onerror = function(b, c, d, e, f) {
+    var g = ["Message: " + b, "URL: " + c, "Line: " + d, "Column: " + e, "Error object: " + JSON.stringify(f)].join(" - ");
+    0 != d && console.log("AT logged error: " + g);
+  };
+  function byId2(id) {
+    return document.getElementById(id);
+  }
+
+  // src/modules/native-conflicts.ts
+  var u2 = () => game.global.universe === 2;
+  var structureOn = () => typeof getAutoStructureSetting === "function" && !!getAutoStructureSetting()?.enabled;
+  var jobsMasteryOn = () => typeof getAutoJobsSetting === "function" && !!getAutoJobsSetting()?.enabled;
+  var atBuysPrestiges = () => u2() ? getPageSetting2("Requipon") === true : getPageSetting2("BuyArmorNew") == 1 || getPageSetting2("BuyArmorNew") == 2 || getPageSetting2("BuyWeaponsNew") == 1 || getPageSetting2("BuyWeaponsNew") == 2;
+  var atBuysUpgrades = () => u2() ? getPageSetting2("RBuyUpgradesNew") > 0 : getPageSetting2("BuyUpgradesNew") > 0;
+  var atBuysBuildings = () => u2() ? getPageSetting2("RBuyBuildingsNew") === true : getPageSetting2("BuyBuildingsNew") == 1 || getPageSetting2("BuyBuildingsNew") == 2;
+  var atBuysJobs = () => u2() ? getPageSetting2("RBuyJobsNew") > 0 : getPageSetting2("BuyJobsNew") > 0;
+  var atBuysStorage = () => u2() ? getPageSetting2("RBuyBuildingsNew") === true : getPageSetting2("BuyBuildingsNew") == 1 || getPageSetting2("BuyBuildingsNew") == 3;
+  var atBuildingsHandedOff = () => getPageSetting2("BuyBuildingsNew") === 0;
+  var atJobsHandedOff = () => getPageSetting2("BuyJobsNew") === 0;
+  var REC = "<br><br><b>Recommended:</b> ";
+  var CONFLICTS = [
+    {
+      key: "autoPrestige",
+      anchorId: "autoPrestigeBtn",
+      title: "AutoPrestige fights AutoTrimps",
+      // `autoUpgradesAvailable` is load-bearing, not belt-and-braces: autoPrestiges() is reachable
+      // ONLY from autoUpgrades() (main.js:18464), which the game calls only under that flag
+      // (main.js:19915). The BUTTON, though, is revealed on a different condition — Bone Shrine
+      // sLevel >= 4 (updates.js:4804) — so a shrine-4 player below HZE 59 can have AutoPrestige set
+      // to All with a visible button and zero prestige automation actually running.
+      when: () => game.global.autoPrestiges > 0 && !!game.global.autoUpgradesAvailable && atBuysPrestiges(),
+      body: () => "AT buys equipment prestiges on a strategy: it skips cheap ones (Prestige Skip), can delay them by zone (Force Prestige Zone), and spends the metal on equipment LEVELS instead when levels are worth more. The game's AutoPrestige buys every affordable prestige the moment it can \u2014 which spends the metal AT was saving for levels and defeats prestige-skipping entirely." + REC + "set AutoPrestige to <b>Off</b> and leave prestiges to AT&rsquo;s " + (u2() ? "<b>AutoEquip</b> setting" : "<b>Armor</b> / <b>Weapons</b> settings") + "."
+    },
+    {
+      key: "autoUpgrade",
+      anchorId: "autoUpgradeBtn",
+      title: "AutoUpgrade ignores AT&rsquo;s upgrade holds",
+      // Mode 2 ("Auto No Coords", unlocked at 250 void maps) excludes Coordination and is compatible.
+      when: () => game.global.autoUpgrades === 1 && atBuysUpgrades(),
+      body: () => "AT buys upgrades in a deliberate priority order, with holds the game's AutoUpgrade does not have: Coordination is held back when your population cannot fill the bigger squad, while Wind empowerment is stacking, and by the Amalgamator hold; wood and metal can also be reserved for foundational upgrades like Miners. The game's AutoUpgrade buys any affordable upgrade every tick, in arbitrary order, ignoring all of it." + REC + "switch AutoUpgrade to <b>Auto No Coords</b>, which leaves Coordination to AT &mdash; or turn it Off. (That third mode appears once you have cleared a Void Map at zone 250 or deeper, and the stat behind it is Universe&nbsp;1 only.)"
+    },
+    {
+      key: "autoStructure",
+      anchorId: "autoStructureBtn",
+      title: "Two building automations are running",
+      when: () => structureOn() && atBuysBuildings(),
+      // NOTE: no "AT still buys Gyms" claim here. AutoStructure's order list DOES include Gym
+      // (main.js:18247, and Gym carries `AP: true` in config.js so it appears in the AutoStructure
+      // config table). The `hidebuildings` tooltip asserted the opposite for a long time; that claim is
+      // corrected in settings-defs.ts in this same change rather than copied forward.
+      body: () => "AutoStructure and AT&rsquo;s building automation are meant to be a <b>swap</b>, not a stack. Both are buying right now, so your build queue and resources are being scheduled twice, to two different plans." + REC + "pick one. To keep AT in charge, turn AutoStructure Off. To hand buildings to AutoStructure, " + (u2() ? "turn AT&rsquo;s <b>AutoBuildings</b> off." : "set AT&rsquo;s <b>Buy Buildings</b> to <b>Buy Neither</b> <i>and</i> turn on <b>Hide Buildings</b> &mdash; AT keeps buying Gyms only in that exact combination. <b>Buy Neither</b> on its own stops Gym purchases too.")
+    },
+    {
+      key: "autoJobs",
+      anchorId: "autoJobsBtn",
+      title: "Two job automations are running",
+      when: () => jobsMasteryOn() && atBuysJobs(),
+      body: () => "AutoJobs and AT&rsquo;s job automation are meant to be a <b>swap</b>, not a stack. Both are hiring right now, and AT rewrites the worker-ratio boxes every tick, so the two will keep undoing each other." + REC + "pick one. To hand jobs to AutoJobs, set AT&rsquo;s <b>Buy Jobs</b> to <b>Don&rsquo;t Buy Jobs</b>. To keep AT in charge, turn AutoJobs Off."
+    },
+    {
+      key: "autoStorageOff",
+      anchorId: "autoStorageBtn",
+      title: "AutoStorage off is costing you resources",
+      when: () => !!game.global.improvedAutoStorage && !game.global.autoStorage,
+      body: () => "You have <b>Auspicious Presence Part II</b>, which builds storage instantly and converts overflow into new storage with <b>zero waste</b> &mdash; but only while AutoStorage is on. With it off, everything you collect above your cap is simply lost." + REC + "turn AutoStorage <b>On</b>." + // Conditional, because "it costs nothing" is only true when AT is ALSO buying storage —
+      // for Buy Neither / Buy Buildings there is no AT storage buyer to act as the backstop.
+      (atBuysStorage() ? " It costs nothing: AT buys storage ahead of time anyway, so AutoStorage only ever acts as a backstop." : " AT is not buying storage in its current mode, so right now AutoStorage is the only thing that would.")
+    },
+    {
+      key: "buildingsOrphan",
+      // Anchored to the game's Buildings panel header, which is always present — NOT to AT's own
+      // `hidebuildings` control, which lives inside the settings window and is therefore closed
+      // exactly when the player needs to be told that nothing is buying buildings.
+      anchorId: "buildingsTitleDiv",
+      title: "Nothing is buying buildings",
+      when: () => atBuildingsHandedOff() && !structureOn(),
+      body: () => "AT&rsquo;s <b>Buy Buildings</b> is set to <b>Buy Neither</b>, which hands ordinary building purchases to the game&rsquo;s AutoStructure &mdash; but AutoStructure is currently <b>Off</b>, so " + (getPageSetting2("hidebuildings") === true ? "only Gyms are being bought. Housing, storage, Tributes and Nurseries are not." : "nothing is being bought at all &mdash; not housing, not storage, not even Gyms.") + REC + "turn AutoStructure On, or set <b>Buy Buildings</b> back to <b>Buy Buildings &amp; Storage</b>."
+    },
+    {
+      key: "jobsOrphan",
+      // Same reasoning as buildingsOrphan: the game's Jobs panel header, not AT's settings window.
+      // (This header carries its own inline display:none until Jobs unlock, which the renderer's
+      // visibility check honours.)
+      anchorId: "jobsTitleDiv",
+      title: "Nothing is hiring workers",
+      when: () => atJobsHandedOff() && !jobsMasteryOn(),
+      body: () => "AT&rsquo;s <b>Buy Jobs</b> is set to <b>Don&rsquo;t Buy Jobs</b>, which hands hiring to the game&rsquo;s AutoJobs mastery &mdash; but AutoJobs is currently <b>Off</b>, so no workers are being hired at all." + REC + "turn AutoJobs On, or set <b>Buy Jobs</b> back to <b>Auto Worker Ratios</b>."
+    }
+  ];
+  function activeConflicts() {
+    const out = [];
+    for (const c of CONFLICTS) {
+      try {
+        if (c.when()) out.push(c);
+      } catch {
+      }
+    }
+    return out;
+  }
+
+  // src/modules/settings-engine.ts
+  var settings_engine_exports = {};
+  __export(settings_engine_exports, {
+    autoSetText: () => autoSetText,
+    autoSetTextToolTip: () => autoSetTextToolTip,
+    autoSetValue: () => autoSetValue,
+    autoSetValueToolTip: () => autoSetValueToolTip,
+    createSetting: () => createSetting2,
+    definedSettingIds: () => definedSettingIds2,
+    onKeyPressSetting: () => onKeyPressSetting,
+    parseNum: () => parseNum,
+    renderControlFace: () => renderControlFace2,
+    settingChanged: () => settingChanged,
+    tooltipAttr: () => tooltipAttr
+  });
+  var ranstring = "";
+  function renderControlFace2(el, rec) {
+    let glyph = el.querySelector(":scope > .settingGlyph");
+    if (!glyph) {
+      el.textContent = "";
+      glyph = document.createElement("span");
+      glyph.className = "settingGlyph icomoon";
+      el.appendChild(glyph);
+      el.appendChild(document.createTextNode(""));
+    }
+    var label = el.childNodes[1];
+    if (rec.type == "boolean") {
+      glyph.className = "settingGlyph icomoon " + (rec.enabled ? "icon-checkmark" : "icon-cross");
+      label.textContent = " " + rec.name;
+    } else if (rec.type == "multitoggle") {
+      glyph.className = "settingGlyph icomoon icon-cycle";
+      label.textContent = " " + rec.name[rec.value] + " ";
+      let cnt = el.querySelector(":scope > .settingCount");
+      if (!cnt) {
+        cnt = document.createElement("span");
+        cnt.className = "settingCount";
+        el.appendChild(cnt);
+      }
+      cnt.textContent = "(" + (rec.value + 1) + "/" + rec.name.length + ")";
+    } else if (rec.type == "action") {
+      glyph.className = "settingGlyph icomoon icon-play3";
+      label.textContent = " " + rec.name;
+    } else if (rec.type == "infoclick") {
+      glyph.className = "settingGlyph icomoon icon-switch";
+      label.textContent = " " + rec.name;
+    }
+  }
+  function clampMultitoggle(id, name, defaultValue) {
+    var stored = parseInt(autoTrimpSettings[id].value);
+    if (Number.isInteger(stored) && stored >= 0 && stored < name.length) return;
+    var fallback = parseInt(defaultValue);
+    autoTrimpSettings[id].value = Number.isInteger(fallback) && fallback >= 0 && fallback < name.length ? fallback : 0;
+  }
+  var definedSettingIds2 = /* @__PURE__ */ new Set();
+  var defaultFacet = (type, defaultValue, name) => {
+    if (type === "action" || type === "infoclick") return "";
+    let shown;
+    if (type === "multitoggle")
+      shown = Array.isArray(name) && name[defaultValue] !== void 0 ? name[defaultValue] : String(defaultValue);
+    else if (type === "boolean")
+      shown = defaultValue === true || defaultValue === "true" ? "On" : "Off";
+    else shown = String(defaultValue);
+    return "<br><br><i>Default: " + shown + "</i>";
+  };
+  var escTipAttr = (s) => String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  function tooltipAttr(label, body) {
+    return 'tooltip("' + escTipAttr(label) + '", "customText", event, "' + escTipAttr(body) + '")';
+  }
+  var tipAttr = (label, description, type, defaultValue, name) => tooltipAttr(label, String(description) + defaultFacet(type, defaultValue, name));
+  function createSetting2(id, name, description, type, defaultValue, list, container) {
+    definedSettingIds2.add(id);
+    var btnParent = document.createElement("DIV");
+    btnParent.setAttribute("style", "display: inline-block; vertical-align: top; margin-left: 1vw; margin-bottom: 1vw; width: 13.142vw;");
+    var btn = document.createElement("DIV");
+    btn.id = id;
+    var loaded = autoTrimpSettings[id];
+    if (type == "boolean") {
+      if (!(loaded && id == loaded.id && loaded.type === type))
+        autoTrimpSettings[id] = {
+          id,
+          name,
+          description,
+          type,
+          enabled: loaded === void 0 ? defaultValue || false : loaded
+        };
+      if (typeof defaultValue === "boolean" && typeof autoTrimpSettings[id].enabled === "string")
+        autoTrimpSettings[id].enabled = autoTrimpSettings[id].enabled === "true";
+      btn.setAttribute("style", "font-size: 1.1vw;");
+      btn.setAttribute("class", "noselect settingsBtn settingKind-toggle settingBtn" + autoTrimpSettings[id].enabled);
+      btn.setAttribute("onclick", 'settingChanged("' + id + '")');
+      btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
+      btn.setAttribute("onmouseout", 'tooltip("hide")');
+      renderControlFace2(btn, autoTrimpSettings[id]);
+      btnParent.appendChild(btn);
+      if (container) document.getElementById(container).appendChild(btnParent);
+      else document.getElementById("autoSettings").appendChild(btnParent);
+    } else if (type == "value" || type == "valueNegative") {
+      if (!(loaded && id == loaded.id && loaded.type === type))
+        autoTrimpSettings[id] = {
+          id,
+          name,
+          description,
+          type,
+          value: loaded === void 0 ? defaultValue : loaded
+        };
+      btn.setAttribute("style", "font-size: 1.1vw;");
+      btn.setAttribute("class", "noselect settingsBtn btn-info settingKind-input");
+      btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == "valueNegative"}, ${type == "multiValue"})`);
+      btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
+      btn.setAttribute("onmouseout", 'tooltip("hide")');
+      btn.textContent = name;
+      btnParent.appendChild(btn);
+      if (container) document.getElementById(container).appendChild(btnParent);
+      else document.getElementById("autoSettings").appendChild(btnParent);
+    } else if (type == "multiValue" || type == "valueNegative") {
+      if (!(loaded && id == loaded.id && loaded.type === type))
+        autoTrimpSettings[id] = {
+          id,
+          name,
+          description,
+          type,
+          value: loaded === void 0 ? defaultValue : loaded
+        };
+      btn.setAttribute("style", "font-size: 1.1vw;");
+      btn.setAttribute("class", "noselect settingsBtn btn-info settingKind-input");
+      btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == "valueNegative"}, ${type == "multiValue"})`);
+      btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
+      btn.setAttribute("onmouseout", 'tooltip("hide")');
+      btn.textContent = name;
+      btnParent.appendChild(btn);
+      if (container) document.getElementById(container).appendChild(btnParent);
+      else document.getElementById("autoSettings").appendChild(btnParent);
+    } else if (type == "textValue") {
+      if (!(loaded && id == loaded.id && loaded.type === type))
+        autoTrimpSettings[id] = {
+          id,
+          name,
+          description,
+          type,
+          value: loaded === void 0 ? defaultValue : loaded
+        };
+      btn.setAttribute("style", "font-size: 1.1vw;");
+      btn.setAttribute("class", "noselect settingsBtn btn-info settingKind-input");
+      btn.setAttribute("onclick", `autoSetTextToolTip("${id}", "${name}", ${type == "textValue"})`);
+      btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
+      btn.setAttribute("onmouseout", 'tooltip("hide")');
+      btn.textContent = name;
+      btnParent.appendChild(btn);
+      if (container) document.getElementById(container).appendChild(btnParent);
+      else document.getElementById("autoSettings").appendChild(btnParent);
+    } else if (type == "dropdown") {
+      if (!(loaded && id == loaded.id && loaded.type === type))
+        autoTrimpSettings[id] = {
+          id,
+          name,
+          description,
+          type,
+          selected: loaded === void 0 ? defaultValue : loaded,
+          list
+        };
+      var btn = document.createElement("select");
+      btn.id = id;
+      if (game.options.menu.darkTheme.enabled == 2) btn.setAttribute("style", "color: #C8C8C8; font-size: 1.0vw;");
+      else btn.setAttribute("style", "color:black; font-size: 1.0vw;");
+      btn.setAttribute("class", "noselect settingKind-select");
+      btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
+      btn.setAttribute("onmouseout", 'tooltip("hide")');
+      btn.setAttribute("onchange", 'settingChanged("' + id + '")');
+      for (var item in list) {
+        var option = document.createElement("option");
+        option.value = list[item];
+        option.text = list[item];
+        btn.appendChild(option);
+      }
+      btn.value = autoTrimpSettings[id].selected;
+      var dropdownLabel = document.createElement("Label");
+      dropdownLabel.id = id + "Label";
+      dropdownLabel.innerHTML = name + ":";
+      dropdownLabel.setAttribute("style", "margin-right: 0.3vw; font-size: 0.8vw;");
+      btnParent.appendChild(dropdownLabel);
+      btnParent.appendChild(btn);
+      if (container) document.getElementById(container).appendChild(btnParent);
+      else document.getElementById("autoSettings").appendChild(btnParent);
+    } else if (type == "infoclick") {
+      btn.setAttribute("class", "noselect settingsBtn settingKind-action settingKind-info");
+      btn.setAttribute("onclick", "ImportExportTooltip('" + defaultValue + "', 'update')");
+      btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
+      btn.setAttribute("onmouseout", 'tooltip("hide")');
+      btn.setAttribute("style", "font-size: 1.1vw;");
+      renderControlFace2(btn, { type: "infoclick", name });
+      btnParent.appendChild(btn);
+      if (container) document.getElementById(container).appendChild(btnParent);
+      else document.getElementById("autoSettings").appendChild(btnParent);
+      return;
+    } else if (type == "multitoggle") {
+      if (!(loaded && id == loaded.id && loaded.type === type))
+        autoTrimpSettings[id] = {
+          id,
+          name,
+          description,
+          type,
+          value: loaded === void 0 ? defaultValue || 0 : loaded
+        };
+      clampMultitoggle(id, name, defaultValue);
+      btn.setAttribute("style", "font-size: 1.1vw;");
+      btn.setAttribute("class", "noselect settingsBtn settingKind-cycle settingBtn" + autoTrimpSettings[id].value);
+      btn.setAttribute("onclick", 'settingChanged("' + id + '")');
+      btn.setAttribute("onmouseover", tipAttr(name.join(" / "), description, type, defaultValue, name));
+      btn.setAttribute("onmouseout", 'tooltip("hide")');
+      renderControlFace2(btn, autoTrimpSettings[id]);
+      btnParent.appendChild(btn);
+      if (container) document.getElementById(container).appendChild(btnParent);
+      else document.getElementById("autoSettings").appendChild(btnParent);
+    } else if (type === "action") {
+      btn.setAttribute("style", "font-size: 1.1vw;");
+      btn.setAttribute("class", "noselect settingsBtn settingKind-action settingBtn3");
+      btn.setAttribute("onclick", defaultValue);
+      btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
+      btn.setAttribute("onmouseout", 'tooltip("hide")');
+      renderControlFace2(btn, { type: "action", name });
+      btnParent.appendChild(btn);
+      if (container) document.getElementById(container).appendChild(btnParent);
+      else document.getElementById("autoSettings").appendChild(btnParent);
+      return;
+    }
+    if (autoTrimpSettings[id].name != name)
+      autoTrimpSettings[id].name = name;
+    if (autoTrimpSettings[id].description != description)
+      autoTrimpSettings[id].description = description;
+    autoTrimpSettings["ATversion"] = ATversion;
+  }
+  function settingChanged(id) {
+    var btn = autoTrimpSettings[id];
+    if (btn.type == "boolean") {
+      btn.enabled = !btn.enabled;
+      var elB = document.getElementById(id);
+      elB.setAttribute("class", "noselect settingsBtn settingKind-toggle settingBtn" + btn.enabled);
+      renderControlFace2(elB, btn);
+      if (id == "ATCustomUI") applyCustomUI(btn.enabled);
+    }
+    if (btn.type == "multitoggle") {
+      if (id == "spendmagmite" && btn.value == 1) {
+        magmiteSpenderChanged = true;
+        setTimeout(function() {
+          magmiteSpenderChanged = false;
+        }, 5e3);
+      }
+      btn.value++;
+      if (btn.value > btn.name.length - 1)
+        btn.value = 0;
+      var elC = document.getElementById(id);
+      elC.setAttribute("class", "noselect settingsBtn settingKind-cycle settingBtn" + btn.value);
+      renderControlFace2(elC, btn);
+    }
+    if (btn.type == "dropdown") {
+      btn.selected = byId(id).value;
+      if (id == "Prestige") {
+        autoTrimpSettings["PrestigeBackup"] = {
+          selected: byId(id).value,
+          name: "PrestigeBackup",
+          id: "PrestigeBackup"
+        };
+      }
+    }
+    updateCustomButtons();
+    saveSettings();
+    checkPortalSettings();
+  }
+  function autoSetValueToolTip(id, text, negative, multi) {
+    ranstring = text;
+    var elem = document.getElementById("tooltipDiv");
+    var tooltipText = "Type a number below. You can also use shorthand such as 2e5 or 200k.";
+    if (negative)
+      tooltipText += " Accepts negative numbers as validated inputs.";
+    else
+      tooltipText += " Put -1 for Infinite.";
+    tooltipText += `<br/><br/><input id="customNumberBox" style="width: 50%" onkeypress="onKeyPressSetting(event, '${id}', ${negative}, ${multi})" value="${autoTrimpSettings[id].value}"></input>`;
+    var costText = `<div class="maxCenter"><div class="btn btn-info" onclick="autoSetValue('` + id + "'," + negative + "," + multi + ')">Apply</div><div class="btn btn-info" onclick="cancelTooltip()">Cancel</div></div>';
+    game.global.lockTooltip = true;
+    elem.style.left = "32.5%";
+    elem.style.top = "25%";
+    document.getElementById("tipTitle").textContent = ranstring + ":  Value Input";
+    document.getElementById("tipText").innerHTML = tooltipText;
+    document.getElementById("tipCost").innerHTML = costText;
+    elem.style.display = "block";
+    var box = document.getElementById("customNumberBox");
+    try {
+      box.setSelectionRange(0, box.value.length);
+    } catch (e) {
+      box.select();
+    }
+    box.focus();
+  }
+  function autoSetTextToolTip(id, text) {
+    ranstring = text;
+    var elem = document.getElementById("tooltipDiv");
+    var tooltipText = "Type your input below";
+    tooltipText += `<br/><br/><input id="customTextBox" style="width: 50%" onkeypress="onKeyPressSetting(event, '${id}')" value="${autoTrimpSettings[id].value}"></input>`;
+    var costText = `<div class="maxCenter"><div class="btn btn-info" onclick="autoSetText('` + id + `')">Apply</div><div class="btn btn-info" onclick="cancelTooltip()">Cancel</div></div>`;
+    game.global.lockTooltip = true;
+    elem.style.left = "32.5%";
+    elem.style.top = "25%";
+    document.getElementById("tipTitle").textContent = ranstring + ":  Value Input";
+    document.getElementById("tipText").innerHTML = tooltipText;
+    document.getElementById("tipCost").innerHTML = costText;
+    elem.style.display = "block";
+    var box = document.getElementById("customTextBox");
+    box.focus();
+  }
+  function onKeyPressSetting(event2, id, negative, multi) {
+    if (event2.which == 13 || event2.keyCode == 13) {
+      if (negative !== void 0 && multi !== void 0)
+        autoSetValue(id, negative, multi);
+      else
+        autoSetText(id);
+    }
+  }
+  function parseNum(num) {
+    if (num.split("e")[1]) {
+      num = num.split("e");
+      num = Math.floor(parseFloat(num[0]) * Math.pow(10, parseInt(num[1])));
+    } else {
+      var letters = num.replace(/[^a-z]/gi, "");
+      var base = 0;
+      if (letters.length) {
+        var suffices = ["K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc", "Ud", "Dd", "Td", "Qad", "Qid", "Sxd", "Spd", "Od", "Nd", "V", "Uv", "Dv", "Tv", "Qav", "Qiv", "Sxv", "Spv", "Ov", "Nv", "Tt"];
+        for (var x = 0; x < suffices.length; x++) {
+          if (suffices[x].toLowerCase() == letters) {
+            base = x + 1;
+            break;
+          }
+        }
+        if (base) num = Math.round(parseFloat(num.split(letters)[0]) * Math.pow(1e3, base));
+      }
+      if (!base) num = parseFloat(num);
+    }
+    return num;
+  }
+  function autoSetValue(id, negative, multi) {
+    var num = 0;
+    unlockTooltip();
+    tooltip("hide");
+    var numBox = document.getElementById("customNumberBox");
+    if (numBox) {
+      num = numBox.value.toLowerCase();
+      if (multi) {
+        num = num.split(",").map(parseNum);
+      } else {
+        num = parseNum(num);
+      }
+    } else return;
+    autoTrimpSettings[id].value = num;
+    if (Array.isArray(num)) {
+      document.getElementById(id).textContent = ranstring + ": " + num[0] + "+";
+    } else if (num > -1 || negative)
+      document.getElementById(id).textContent = ranstring + ": " + prettify(num);
+    else
+      document.getElementById(id).innerHTML = ranstring + ": <span class='icomoon icon-infinity'></span>";
+    saveSettings();
+    checkPortalSettings();
+  }
+  function autoSetText(id) {
+    var textVal = "empty";
+    unlockTooltip();
+    tooltip("hide");
+    var textBox = document.getElementById("customTextBox");
+    if (textBox) {
+      textVal = textBox.value;
+    } else return;
+    autoTrimpSettings[id].value = textVal;
+    if (textVal != void 0) {
+      document.getElementById(id).textContent = ranstring + ": " + textVal;
+    }
+    saveSettings();
+    checkPortalSettings();
+  }
+
+  // src/modules/native-conflict-badges.ts
+  var STYLE_ID2 = "at-nc-style";
+  var BADGE_CLASS = "at-nc-badge";
+  var ID_PREFIX = "atNC-";
+  function ensureStyle() {
+    if (document.getElementById(STYLE_ID2)) return;
+    const style = document.createElement("style");
+    style.id = STYLE_ID2;
+    style.textContent = [
+      "." + BADGE_CLASS + "{display:block;text-align:center;font-size:0.65vw;line-height:1.3;",
+      "cursor:help;color:#f0ad4e;font-weight:bold;white-space:nowrap;overflow:hidden}"
+    ].join("");
+    document.head.appendChild(style);
+  }
+  function anchorVisible(anchor) {
+    return getComputedStyle(anchor).display !== "none";
+  }
+  function buildBadge(key) {
+    const el = document.createElement("span");
+    el.id = ID_PREFIX + key;
+    el.className = BADGE_CLASS;
+    el.innerHTML = '<span class="glyphicon glyphicon-warning-sign"></span> AT conflict';
+    el.setAttribute("onmouseout", 'tooltip("hide")');
+    return el;
+  }
+  function syncConflictBadges() {
+    ensureStyle();
+    const live = new Set(activeConflicts().map((c) => c.key));
+    for (const c of CONFLICTS) {
+      const existing = document.getElementById(ID_PREFIX + c.key);
+      const anchor = document.getElementById(c.anchorId);
+      const wanted = live.has(c.key) && !!anchor && anchorVisible(anchor) && !!anchor.parentElement;
+      if (!wanted) {
+        existing?.remove();
+        continue;
+      }
+      const badge = existing ?? buildBadge(c.key);
+      badge.setAttribute("onmouseover", tooltipAttr(c.title, c.body()));
+      if (!existing) anchor.parentElement.insertBefore(badge, anchor.nextSibling);
+    }
+  }
+  function removeConflictBadges() {
+    for (const c of CONFLICTS) document.getElementById(ID_PREFIX + c.key)?.remove();
+    document.getElementById(STYLE_ID2)?.remove();
+  }
+
   // src/modules/main-loop.ts
   globalThis.ATversion = typeof __AT_BUILD_VERSION__ !== "undefined" ? "v" + __AT_BUILD_VERSION__ : "Zek v5.1.0";
   var atscript = document.getElementById("AutoTrimps-script");
@@ -978,6 +1767,10 @@
     atGuard("performance.UpdateAFKOverlay", function() {
       if ("undefined" != typeof MODULES && "undefined" != typeof MODULES.performance && MODULES.performance.isAFK) MODULES.performance.UpdateAFKOverlay();
     });
+    atGuard("nativeConflictBadges", function() {
+      if (getPageSetting("WarnNativeAutomationConflicts")) syncConflictBadges();
+      else removeConflictBadges();
+    });
   }
   function mainCleanup() {
     lastrunworld = currentworld;
@@ -1001,280 +1794,6 @@
   }
   if (document.getElementById("tooltipDiv").classList.contains("tooltipExtraLg") === false)
     document.getElementById("tooltipDiv").style.overflowY = "";
-
-  // src/modules/utils.ts
-  var utils_exports = {};
-  __export(utils_exports, {
-    byId: () => byId2,
-    debug: () => debug2,
-    filterMessage2: () => filterMessage2,
-    getPageSetting: () => getPageSetting2,
-    getPageSettingAt: () => getPageSettingAt,
-    loadPageVariables: () => loadPageVariables2,
-    message2: () => message2,
-    safeSetItems: () => safeSetItems2,
-    saveSettings: () => saveSettings2,
-    serializeSettings: () => serializeSettings2,
-    serializeSettings550: () => serializeSettings5502,
-    serializeSettings60: () => serializeSettings602,
-    setPageSetting: () => setPageSetting2,
-    setTitle: () => setTitle2,
-    textSettingIsSet: () => textSettingIsSet
-  });
-
-  // src/modules/time.ts
-  var time_exports = {};
-  __export(time_exports, {
-    formatMinutesForDescriptions: () => formatMinutesForDescriptions,
-    timeStamp: () => timeStamp
-  });
-  function timeStamp() {
-    for (var a = /* @__PURE__ */ new Date(), b = [a.getHours(), a.getMinutes(), a.getSeconds()], c = 1; 3 > c; c++) 10 > b[c] && (b[c] = "0" + b[c]);
-    return b.join(":");
-  }
-  function formatMinutesForDescriptions(number) {
-    var text;
-    var seconds = Math.floor(number * 60 % 60);
-    var minutes = Math.floor(number % 60);
-    var hours = Math.floor(number / 60);
-    if (hours == 0)
-      text = minutes + " minutes " + seconds + " seconds";
-    else if (minutes > 0) {
-      if (minutes < 10) minutes = "0" + minutes;
-      if (seconds < 10) seconds = "0" + seconds;
-      text = hours + ":" + minutes + ":" + seconds;
-    } else {
-      var hs = hours > 1 ? "s" : "";
-      var ms = minutes > 1 ? "s" : "";
-      var ss = seconds > 1 ? "s" : "";
-      text = hours + " hour" + hs + " " + minutes + " minute" + ms + " " + seconds + " second" + ss;
-    }
-    return text;
-  }
-
-  // src/modules/utils.ts
-  if (!String.prototype.includes) {
-    String.prototype.includes = function(search, start) {
-      "use strict";
-      if (typeof start !== "number") {
-        start = 0;
-      }
-      if (start + search.length > this.length) {
-        return false;
-      } else {
-        return this.indexOf(search, start) !== -1;
-      }
-    };
-  }
-  function loadPageVariables2() {
-    var tmp = JSON.parse(localStorage.getItem("autoTrimpSettings"));
-    if (tmp !== null && tmp["ATversion"] != void 0) {
-      autoTrimpSettings = tmp;
-    }
-  }
-  function safeSetItems2(a, b) {
-    try {
-      localStorage.setItem(a, b);
-    } catch (c) {
-      22 == c.code && debug2("Error: LocalStorage is full, or error. Attempt to delete some portals from your graph or restart browser.");
-    }
-  }
-  function serializeSettings2() {
-    return JSON.stringify(Object.keys(autoTrimpSettings).reduce((v, k) => {
-      const el = autoTrimpSettings[k];
-      switch (el.type) {
-        case "boolean":
-          return v[k] = el.enabled, v;
-        case "value":
-        case "multiValue":
-        case "textValue":
-        case "valueNegative":
-        case "multitoggle":
-          return v[k] = el.value, v;
-        case "dropdown":
-          return v[k] = el.selected, v;
-      }
-      return v[k] = el, v;
-    }, {}));
-  }
-  function serializeSettings602() {
-    return '{"ManualGather2":1,"ATversion":"2.1.6.9b-genbtc-4-2-2018 + KFrowde + Zeker0","BuyUpgrades":true,"TrapTrimps":true,"ManageBreedtimer":false,"UsePatience":true,"GeneticistTimer":-1,"SpireBreedTimer":60,"AutoAllocatePerks":0,"AutoStartDaily":false,"AutoFinishDaily":false,"AutoFinishDailyZone":-30,"FinishC2":-1,"AutoEggs":true,"ManualCoords":2,"AutoPortal":"Off","HeliumHourChallenge":"None","CustomAutoPortal":999,"HeHrDontPortalBefore":496,"HeliumHrBuffer":1,"PauseScript":false,"BuyStorage":true,"BuyBuildings":true,"WarpstationCap":true,"WarpstationCoordBuy":true,"MaxHut":100,"MaxHouse":100,"MaxMansion":100,"MaxHotel":100,"MaxResort":100,"MaxGateway":50,"MaxWormhole":"0","MaxCollector":-1,"MaxGym":"-1","MaxTribute":"-1","GymWall":-1,"FirstGigastation":10,"DeltaGigastation":2,"WarpstationWall3":1,"MaxNursery":-1,"NoNurseriesUntil":-1,"PreSpireNurseries":-1,"BuyJobs":true,"WorkerRatios":true,"AutoMagmamancers":true,"FarmerRatio":1,"LumberjackRatio":11,"MinerRatio":12,"MaxScientists":-1,"MaxExplorers":"-1","MaxTrainers":"-1","TrainerCaptoTributes":10,"BreedFire":false,"BuyArmor":true,"BuyArmorUpgrades":true,"BuyWeapons":true,"BuyWeaponUpgrades":true,"CapEquip2":15,"DynamicPrestige2":-1,"Prestige":"Dagadder","PrestigeBackup":{"selected":"Dagadder","id":"PrestigeBackup","name":"PrestigeBackup"},"ForcePresZ":-1,"PrestigeSkipMode":false,"PrestigeSkip2":false,"DelayArmorWhenNeeded":false,"BuyShieldblock":true,"AutoMaps":1,"DynamicSiphonology":true,"PreferMetal":false,"MaxMapBonusAfterZone":-1,"DisableFarm":16,"LowerFarmingZone":true,"MaxStacksForSpire":true,"MinutestoFarmBeforeSpire":0,"IgnoreSpiresUntil":0,"RunBionicBeforeSpire":false,"ExitSpireCell":-1,"CorruptionCalc":true,"FarmWhenNomStacks7":true,"VoidMaps":-1,"RunNewVoids":true,"RunNewVoidsUntil":-1,"VoidCheck":6,"MaxTox":false,"TrimpleZ":0,"AdvMapSpecialModifier":false,"BetterAutoFight":2,"AutoStance":1,"IgnoreCrits":0,"PowerSaving":0,"ForceAbandon":true,"DynamicGyms":true,"AutoRoboTrimp":60,"UseScryerStance":true,"ScryerUseWhenOverkill":true,"ScryerMinZone":181,"ScryerMaxZone":-1,"ScryerUseinMaps2":0,"ScryerUseinVoidMaps2":0,"ScryerUseinSpire2":0,"ScryerSkipBoss2":0,"ScryerSkipCorrupteds2":2,"ScryerDieToUseS":false,"ScryerDieZ":181,"UseAutoGen":true,"AutoGen2":1,"AutoGen2End":400,"AutoGen2SupplyEnd":true,"AutoGen3":0,"AutoGenDC":1,"AutoGenC2":1,"AutoGen2Override":1,"AutoMagmiteSpender2":1,"SupplyWall":2.4,"OneTimeOnly":false,"BuyOvclock":false,"AutoHeirlooms":true,"AutoHeirlooms2":true,"AutoUpgradeHeirlooms":false,"AutoGoldenUpgrades":"Helium","goldStrat":"Max then Helium","goldAlternating":1.5,"goldZone":401,"goldNoBattle":false,"AutoNatureTokens":true,"AutoPoison":"Empowerment","AutoWind":"Empowerment","AutoIce":"Empowerment","EnhanceGrids":false,"SpamGeneral":true,"SpamUpgrades":false,"SpamEquipment":false,"SpamMaps":true,"SpamOther":true,"SpamBuilding":false,"SpamJobs":false,"SpamGraphs":false,"SpamMagmite":true,"SpamPerks":true,"allowSettingsUpload":true,"analyticsID":"b93c4930-760d-4feb-9330-f72041b1d362","BuyUpgradesNew":1,"fastallocate":false,"lootdumpz":-1,"lootdumpa":-1,"AutoFinishDailyNew":1,"BuyBuildingsNew":1,"BuyJobsNew":1,"BuyArmorNew":1,"BuyWeaponsNew":1,"PrestigeSkip1_2":0,"RunNewVoidsUntilNew":-1,"DailyVoidMod":-1,"VoidPraid":false,"Praidingzone":[-1],"BWraid":false,"BWraidingz":[-1],"BWraidingmax":[-1],"WindStackingMin":100,"ScryUseinPoison":-1,"ScryUseinWind":0,"ScryUseinIce":-1,"BuyOneTimeOC":2,"AutoHeirloomsNew":2,"ShowSettings":true,"Raiding":false,"RaidingStartZone":506,"PrestigeRaiding":0,"AutomateAT":true,"DailyVMZone":525,"FillerVMZone":510,"FillerSpireCell":40,"WindStack":true,"WindStackCutOff":60,"Dailyportal":546,"dVoidPraid":true,"dPraidingzone":[-1],"dExitSpireCell":-1,"Dailybwraid":false,"dBWraidingz":[-1],"dBWraidingmax":[-1],"trimpsnotdie":true,"gearamounttobuy":1,"WindStackingMax":195,"buyheliumy":-1,"use3daily":false,"buynojobsc":true,"fightforever":-1,"windcutoff":-1,"spireshitbuy":true,"hardcorewind":-1,"dPraidHarder":false,"dMaxPraidZone":[-1],"dPraidFarmFragsZ":[-1],"dPraidBeforeFarmZ":[-1],"dWindStackingMin":100,"dWindStackingMax":195,"dwindcutoff":-1,"dhardcorewind":-1,"PraidHarder":false,"MaxPraidZone":[-1],"PraidFarmFragsZ":[-1],"PraidBeforeFarmZ":[-1],"fuellater":300,"ScryerSkipHealthy":2,"addpoison":false,"amalcoord":false,"dhardcorewindmax":-1,"cfightforever":true,"work":"false","in":"false","progress":"false","hardcorewindmax":"-1","dAutoGoldenUpgrades":"Helium","cAutoGoldenUpgrades":"Battle","dfightforever":2,"fuelend":260,"defaultgen":2,"spendmagmite":2,"spendmagmitesetting":0,"amalcoordhd":0.000025,"amalcoordz":-1,"dultwind":-1,"dultwindcut":-1,"dwindhealthy":"false","darmormagic":3,"carmormagic":1,"CapEquiparm":15,"ultwind":-1,"ultwindcut":"0.00025","windhealthy":false,"onlyminmaxworld":true,"fuckanti":-1,"dscryvoidmaps":false,"scryvoidmaps":false,"dusebstance":false,"AutoPortalDaily":0,"dHeliumHourChallenge":"None","dCustomAutoPortal":560,"dHeHrDontPortalBefore":"999","dHeliumHrBuffer":"0","usebstance":"false","hidebuildings":false,"fuckjobs":false,"amalcoordt":-1,"screwessence":true,"beforegen":2,"c2runnerstart":false,"c2runnerportal":"999","mapc2hd":6,"buywepsvoid":true,"ScryerUseinBW":0,"dwindcutoffmap":-1,"windcutoffmap":-1}';
-  }
-  function serializeSettings5502() {
-    return '{"ManualGather2":2,"ATversion":"2.1.6.9b-genbtc-4-2-2018 + KFrowde + Zeker0","BetterAutoFight":3,"AutoStance":2,"BuyStorage":true,"BuyBuildings":true,"BuyUpgrades":true,"BuyJobs":true,"TrapTrimps":false,"AutoHeirlooms":true,"HireScientists":true,"WorkerRatios":false,"ManageBreedtimer":false,"AutoPortal":"Custom","HeliumHourChallenge":"Corrupted","CustomAutoPortal":560,"HeHrDontPortalBefore":496,"HeliumHrBuffer":3,"AutoFinishDaily":true,"AutoFinishDailyZone":0,"AutoStartDaily":true,"PauseScript":false,"BuyArmor":true,"BuyArmorUpgrades":true,"BuyWeapons":true,"BuyWeaponUpgrades":true,"BuyShieldblock":false,"Prestige":"Dagadder","PrestigeBackup":{"selected":"Dagadder","id":"PrestigeBackup","name":"PrestigeBackup"},"DynamicPrestige2":-1,"PrestigeSkipMode":false,"AlwaysArmorLvl2":true,"WaitTill60":true,"DelayArmorWhenNeeded":false,"CapEquip2":200,"AutoMaps":1,"DynamicSiphonology":true,"LowerFarmingZone":true,"MinutestoFarmBeforeSpire":0,"RunBionicBeforeSpire":false,"ExitSpireCell":-1,"CorruptionCalc":true,"FarmWhenNomStacks7":true,"VoidMaps":555,"RunNewVoids":false,"RunNewVoidsUntil":600,"VoidCheck":1,"MaxTox":false,"DisableFarm":-1,"FarmerRatio":20,"LumberjackRatio":10,"MinerRatio":1000,"MaxScientists":"-1","MaxExplorers":3000,"MaxTrainers":-1,"MaxHut":100,"MaxHouse":0,"MaxMansion":0,"MaxHotel":0,"MaxResort":0,"MaxGateway":0,"MaxWormhole":0,"MaxCollector":0,"FirstGigastation":1,"DeltaGigastation":1,"MaxGym":"-1","MaxTribute":"-1","MaxNursery":-1,"BreedFire":false,"AutoMagmamancers":false,"WarpstationCap":false,"WarpstationWall3":-1,"WarpstationCoordBuy":false,"AutoRoboTrimp":270,"AutoGoldenUpgrades":"Void 60","AutoHeirlooms2":false,"AutoUpgradeHeirlooms":false,"TrainerCaptoTributes":"-1","NoNurseriesUntil":498,"AutoMagmiteSpender2":2,"ForceAbandon":true,"GymWall":-1,"DynamicGyms":true,"AutoAllocatePerks":2,"SpireBreedTimer":-1,"UseScryerStance":false,"ScryerUseWhenOverkill":false,"ScryerMinZone":530,"ScryerMaxZone":-1,"ScryerUseinMaps2":0,"ScryerUseinVoidMaps2":0,"ScryerUseinSpire2":0,"ScryerSkipBoss2":0,"ScryerSkipCorrupteds2":2,"ScryerDieToUseS":true,"SpamGeneral":true,"SpamUpgrades":false,"SpamEquipment":false,"SpamMaps":false,"SpamOther":false,"SpamBuilding":false,"SpamJobs":false,"ManualCoords":false,"TrimpleZ":0,"ScryerDieZ":230.6,"IgnoreCrits":2,"ForcePresZ":-1,"PreferMetal":false,"PreSpireNurseries":7000,"FinishC2":-1,"PowerSaving":0,"PrestigeSkip2":false,"AutoEggs":false,"UseAutoGen":1,"AutoGen2":3,"AutoGen2End":320,"AutoGen2SupplyEnd":false,"AutoGen3":0,"AutoGenDC":1,"AutoGenC2":1,"AutoGen2Override":1,"SupplyWall":1,"OneTimeOnly":false,"BuyOvclock":false,"IgnoreSpiresUntil":500,"goldStrat":"Max then Helium","goldAlternating":2,"goldZone":600,"MaxStacksForSpire":true,"UsePatience":false,"AutoNatureTokens":true,"AutoPoison":"Empowerment","AutoWind":"Convert to Poison","AutoIce":"Convert to Poison","MaxMapBonusAfterZone":-1,"SpamGraphs":false,"allowSettingsUpload":false,"EnhanceGrids":false,"EnableAFK":{"id":"EnableAFK","name":"Enable AFK","description":"Enables CPU and RAM saving AFK-mode","type":"action","value":1},"SpamMagmite":false,"SpamPerks":true,"analyticsID":"7f11701e-adc9-477c-a08d-2b66fe3ec2a2","ChangeLog":{"id":"ChangeLog","name":"Show Changelog","description":"Shows the changelog popup message that AT loads on startup in case you missed it.","type":"action","value":1},"AdvMapSpecialModifier":false,"GeneticistTimer":-1,"goldNoBattle":true,"BuyUpgradesNew":1,"AutoFinishDailyNew":0,"BuyBuildingsNew":0,"BuyJobsNew":0,"BuyArmorNew":1,"BuyWeaponsNew":1,"PrestigeSkip1_2":0,"RunNewVoidsUntilNew":0,"DailyVoidMod":570,"PlusMapVoidToggle":0,"Praidingzone":[495,546,555,561,566,570],"BWraid":false,"BWraidingmin":-1,"BWraidingmax":[640],"lootdumpz":265,"lootdumpa":10000,"WindStackingMin":-1,"ScryUseinPoison":-1,"ScryUseinWind":-1,"ScryUseinIce":-1,"BuyOneTimeOC":2,"AutoHeirloomsNew":2,"ShowSettings":true,"BWraidingz":[597],"fastallocate":true,"VoidPraid":true,"trimpsnotdie":true,"gearamounttobuy":5,"Dailyportal":560,"dVoidPraid":true,"dPraidingzone":[495,510,525,540,555,570],"Dailybwraid":false,"dBWraidingz":[495],"dBWraidingmax":[515],"dExitSpireCell":-1,"WindStackingMax":190,"buyheliumy":-1,"buynojobsc":true,"Trimpicide":true,"fightforever":0,"use3daily":true,"windcutoff":-1,"spireshitbuy":true,"hardcorewind":-1,"PraidHarder":false,"PraidFarmFrags":false,"PraidBeforeFarm":false,"dPraidHarder":false,"dMaxPraidZone":[-1],"dPraidFarmFragsZ":[-1],"dPraidBeforeFarmZ":[-1],"MaxPraidZone":[505,535,545,555,561],"PraidFarmFragsZ":[495],"PraidBeforeFarmZ":[-1],"fuellater":260,"dWindStackingMin":450,"dWindStackingMax":190,"dwindcutoff":160,"dhardcorewind":480,"ScryerSkipHealthy":2,"addpoison":true,"amalcoord":true,"dAutoGoldenUpgrades":"Void 60","cAutoGoldenUpgrades":"Battle","dhardcorewindmax":"-1","cfightforever":true,"work":false,"in":false,"progress":false,"hardcorewindmax":"-1","dfightforever":2,"fuelend":320,"defaultgen":0,"spendmagmite":2,"spendmagmitesetting":1,"ultwind":-1,"ultwindcut":0.05,"CapEquiparm":100,"amalcoordhd":0.0000025,"onlyminmaxworld":false,"amalcoordz":398,"dultwind":"-1","dultwindcut":"0.00025","dwindhealthy":"false","windhealthy":false,"mapcutoff":4,"darmormagic":3,"carmormagic":3,"fuckanti":"-1","dscryvoidmaps":true,"scryvoidmaps":true,"dusebstance":true,"usebstance":true,"AutoPortalDaily":2,"dCustomAutoPortal":575,"dHeHrDontPortalBefore":"999","dHeliumHrBuffer":"0","dHeliumHourChallenge":"Corrupted","hidebuildings":true,"fuckjobs":true,"amalcoordt":6,"screwessence":false,"beforegen":0,"c2runnerstart":false,"c2runnerportal":"999","buywepsvoid":true,"mapc2hd":"-1","ScryerUseinBW":0,"dwindcutoffmap":160,"windcutoffmap":"-1"}';
-  }
-  function getPageSetting2(setting) {
-    if (autoTrimpSettings.hasOwnProperty(setting) == false) {
-      return false;
-    }
-    if (autoTrimpSettings[setting].type == "boolean") {
-      return autoTrimpSettings[setting].enabled;
-    } else if (autoTrimpSettings[setting].type == "multiValue") {
-      return Array.from(autoTrimpSettings[setting].value).map((x) => parseInt(x));
-    } else if (autoTrimpSettings[setting].type == "textValue") {
-      return autoTrimpSettings[setting].value;
-    } else if (autoTrimpSettings[setting].type == "value" || autoTrimpSettings[setting].type == "valueNegative") {
-      return parseFloat(autoTrimpSettings[setting].value);
-    } else if (autoTrimpSettings[setting].type == "multitoggle") {
-      return parseInt(autoTrimpSettings[setting].value);
-    } else if (autoTrimpSettings[setting].type == "dropdown") {
-      return autoTrimpSettings[setting].selected;
-    }
-  }
-  function textSettingIsSet(setting) {
-    const v = getPageSetting2(setting);
-    return v !== void 0 && v !== null && v !== false && v !== "" && v !== "undefined";
-  }
-  function getPageSettingAt(setting, index) {
-    const v = getPageSetting2(setting);
-    if (v === void 0 || v === null) return void 0;
-    return v[index];
-  }
-  function setPageSetting2(setting, value) {
-    if (autoTrimpSettings.hasOwnProperty(setting) == false) {
-      return false;
-    }
-    if (autoTrimpSettings[setting].type == "boolean") {
-      autoTrimpSettings[setting].enabled = value;
-      document.getElementById(setting).setAttribute("class", "noselect settingsBtn settingBtn" + autoTrimpSettings[setting].enabled);
-    } else if (autoTrimpSettings[setting].type == "value" || autoTrimpSettings[setting].type == "valueNegative") {
-      autoTrimpSettings[setting].value = value;
-    } else if (autoTrimpSettings[setting].type == "textValue") {
-      autoTrimpSettings[setting].value = value;
-    } else if (autoTrimpSettings[setting].type == "multiValue" || autoTrimpSettings[setting].type == "valueNegative") {
-      autoTrimpSettings[setting].value = value;
-    } else if (autoTrimpSettings[setting].type == "multitoggle") {
-      autoTrimpSettings[setting].value = value;
-      document.getElementById(setting).setAttribute("class", "noselect settingsBtn settingBtn" + autoTrimpSettings[setting].value);
-    } else if (autoTrimpSettings[setting].type == "dropdown") {
-      autoTrimpSettings[setting].selected = value;
-    }
-  }
-  function saveSettings2() {
-    if (autoTrimpSettings["ATversion"] === void 0) autoTrimpSettings["ATversion"] = ATversion;
-    safeSetItems2("autoTrimpSettings", serializeSettings2());
-  }
-  function debug2(message3, type, lootIcon) {
-    var general = getPageSetting2("SpamGeneral");
-    var upgrades = getPageSetting2("SpamUpgrades");
-    var equips = getPageSetting2("SpamEquipment");
-    var maps = getPageSetting2("SpamMaps");
-    var other = getPageSetting2("SpamOther");
-    var buildings = getPageSetting2("SpamBuilding");
-    var jobs = getPageSetting2("SpamJobs");
-    var graphs = getPageSetting2("SpamGraphs");
-    var magmite = getPageSetting2("SpamMagmite");
-    var perks = getPageSetting2("SpamPerks");
-    var nature = getPageSetting2("SpamNature");
-    var output = true;
-    switch (type) {
-      case null:
-        break;
-      case "general":
-        output = general;
-        break;
-      case "upgrades":
-        output = upgrades;
-        break;
-      case "equips":
-        output = equips;
-        break;
-      case "buildings":
-        output = buildings;
-        break;
-      case "jobs":
-        output = jobs;
-        break;
-      case "maps":
-        output = maps;
-        break;
-      case "other":
-        output = other;
-        break;
-      case "graphs":
-        output = graphs;
-        break;
-      case "magmite":
-        output = magmite;
-        break;
-      case "perks":
-        output = perks;
-        break;
-      case "nature":
-        output = nature;
-        break;
-    }
-    if (output) {
-      if (enableDebug)
-        console.log(timeStamp() + " " + message3);
-      message2(message3, "AutoTrimps", lootIcon, type);
-    }
-  }
-  function setTitle2() {
-    aWholeNewWorld && (document.title = "(" + game.global.world + ") Trimps " + document.getElementById("versionNumber").innerHTML);
-  }
-  var lastmessagecount = 1;
-  function message2(a, b, c, d) {
-    var e = document.getElementById("log");
-    var f = e.scrollTop + 10 > e.scrollHeight - e.clientHeight;
-    var g = ATmessageLogTabVisible ? "block" : "none";
-    var h = "";
-    if (c && "*" == c.charAt(0)) {
-      c = c.replace("*", "");
-      h = "icomoon icon-";
-    } else h = "glyphicon glyphicon-";
-    if (game.options.menu.timestamps.enabled) a = (1 == game.options.menu.timestamps.enabled ? getCurrentTime() : updatePortalTimer(true)) + " " + a;
-    if (c) a = '<span class="' + h + c + '"></span> ' + a;
-    a = '<span class="glyphicon glyphicon-superscript"></span> ' + a;
-    a = '<span class="icomoon icon-text-color"></span>' + a;
-    var i = "<span class='" + b + "Message message " + d + "' style='display: " + g + "'>" + a + "</span>";
-    var j = document.getElementsByClassName(b + "Message");
-    if (1 < j.length && -1 < j[j.length - 1].innerHTML.indexOf(a)) {
-      var k = j[j.length - 1].innerHTML;
-      lastmessagecount++;
-      var l = k.lastIndexOf(" x");
-      if (-1 != l) j[j.length - 1].innerHTML = k.slice(0, l);
-      j[j.length - 1].innerHTML += " x" + lastmessagecount;
-    } else {
-      lastmessagecount = 1;
-      e.innerHTML += i;
-    }
-    if (f) e.scrollTop = e.scrollHeight;
-    trimMessages(b);
-  }
-  var ATbutton = document.createElement("button");
-  ATbutton.innerHTML = "AutoTrimps";
-  ATbutton.setAttribute("id", "AutoTrimpsFilter");
-  ATbutton.setAttribute("type", "button");
-  ATbutton.setAttribute("onclick", "filterMessage2('AutoTrimps')");
-  ATbutton.setAttribute("class", "btn btn-success logFlt");
-  var tab = document.createElement("DIV");
-  tab.setAttribute("class", "btn-group");
-  tab.setAttribute("role", "group");
-  tab.appendChild(ATbutton);
-  document.getElementById("logBtnGroup").appendChild(tab);
-  function filterMessage2(a) {
-    var displayed;
-    var b = document.getElementById("log");
-    displayed = !ATmessageLogTabVisible;
-    ATmessageLogTabVisible = displayed;
-    var c = document.getElementsByClassName(a + "Message");
-    var d = displayed ? a : a + " off";
-    var e = document.getElementById(a + "Filter");
-    e.innerHTML = d;
-    e.className = "";
-    e.className = getTabClass(displayed);
-    displayed = displayed ? "block" : "none";
-    for (var f = 0; f < c.length; f++) c[f].style.display = displayed;
-    b.scrollTop = b.scrollHeight;
-  }
-  window.onerror = function(b, c, d, e, f) {
-    var g = ["Message: " + b, "URL: " + c, "Line: " + d, "Column: " + e, "Error object: " + JSON.stringify(f)].join(" - ");
-    0 != d && console.log("AT logged error: " + g);
-  };
-  function byId2(id) {
-    return document.getElementById(id);
-  }
 
   // src/modules/guard.ts
   var guard_exports = {};
@@ -15361,382 +15880,6 @@
     }
   }
 
-  // src/modules/settings-engine.ts
-  var settings_engine_exports = {};
-  __export(settings_engine_exports, {
-    autoSetText: () => autoSetText,
-    autoSetTextToolTip: () => autoSetTextToolTip,
-    autoSetValue: () => autoSetValue,
-    autoSetValueToolTip: () => autoSetValueToolTip,
-    createSetting: () => createSetting2,
-    definedSettingIds: () => definedSettingIds2,
-    onKeyPressSetting: () => onKeyPressSetting,
-    parseNum: () => parseNum,
-    renderControlFace: () => renderControlFace2,
-    settingChanged: () => settingChanged
-  });
-  var ranstring = "";
-  function renderControlFace2(el, rec) {
-    let glyph = el.querySelector(":scope > .settingGlyph");
-    if (!glyph) {
-      el.textContent = "";
-      glyph = document.createElement("span");
-      glyph.className = "settingGlyph icomoon";
-      el.appendChild(glyph);
-      el.appendChild(document.createTextNode(""));
-    }
-    var label = el.childNodes[1];
-    if (rec.type == "boolean") {
-      glyph.className = "settingGlyph icomoon " + (rec.enabled ? "icon-checkmark" : "icon-cross");
-      label.textContent = " " + rec.name;
-    } else if (rec.type == "multitoggle") {
-      glyph.className = "settingGlyph icomoon icon-cycle";
-      label.textContent = " " + rec.name[rec.value] + " ";
-      let cnt = el.querySelector(":scope > .settingCount");
-      if (!cnt) {
-        cnt = document.createElement("span");
-        cnt.className = "settingCount";
-        el.appendChild(cnt);
-      }
-      cnt.textContent = "(" + (rec.value + 1) + "/" + rec.name.length + ")";
-    } else if (rec.type == "action") {
-      glyph.className = "settingGlyph icomoon icon-play3";
-      label.textContent = " " + rec.name;
-    } else if (rec.type == "infoclick") {
-      glyph.className = "settingGlyph icomoon icon-switch";
-      label.textContent = " " + rec.name;
-    }
-  }
-  function clampMultitoggle(id, name, defaultValue) {
-    var stored = parseInt(autoTrimpSettings[id].value);
-    if (Number.isInteger(stored) && stored >= 0 && stored < name.length) return;
-    var fallback = parseInt(defaultValue);
-    autoTrimpSettings[id].value = Number.isInteger(fallback) && fallback >= 0 && fallback < name.length ? fallback : 0;
-  }
-  var definedSettingIds2 = /* @__PURE__ */ new Set();
-  var defaultFacet = (type, defaultValue, name) => {
-    if (type === "action" || type === "infoclick") return "";
-    let shown;
-    if (type === "multitoggle")
-      shown = Array.isArray(name) && name[defaultValue] !== void 0 ? name[defaultValue] : String(defaultValue);
-    else if (type === "boolean")
-      shown = defaultValue === true || defaultValue === "true" ? "On" : "Off";
-    else shown = String(defaultValue);
-    return "<br><br><i>Default: " + shown + "</i>";
-  };
-  var tipAttr = (label, description, type, defaultValue, name) => {
-    const esc = (s) => String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-    const body = String(description) + defaultFacet(type, defaultValue, name);
-    return 'tooltip("' + esc(label) + '", "customText", event, "' + esc(body) + '")';
-  };
-  function createSetting2(id, name, description, type, defaultValue, list, container) {
-    definedSettingIds2.add(id);
-    var btnParent = document.createElement("DIV");
-    btnParent.setAttribute("style", "display: inline-block; vertical-align: top; margin-left: 1vw; margin-bottom: 1vw; width: 13.142vw;");
-    var btn = document.createElement("DIV");
-    btn.id = id;
-    var loaded = autoTrimpSettings[id];
-    if (type == "boolean") {
-      if (!(loaded && id == loaded.id && loaded.type === type))
-        autoTrimpSettings[id] = {
-          id,
-          name,
-          description,
-          type,
-          enabled: loaded === void 0 ? defaultValue || false : loaded
-        };
-      if (typeof defaultValue === "boolean" && typeof autoTrimpSettings[id].enabled === "string")
-        autoTrimpSettings[id].enabled = autoTrimpSettings[id].enabled === "true";
-      btn.setAttribute("style", "font-size: 1.1vw;");
-      btn.setAttribute("class", "noselect settingsBtn settingKind-toggle settingBtn" + autoTrimpSettings[id].enabled);
-      btn.setAttribute("onclick", 'settingChanged("' + id + '")');
-      btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
-      btn.setAttribute("onmouseout", 'tooltip("hide")');
-      renderControlFace2(btn, autoTrimpSettings[id]);
-      btnParent.appendChild(btn);
-      if (container) document.getElementById(container).appendChild(btnParent);
-      else document.getElementById("autoSettings").appendChild(btnParent);
-    } else if (type == "value" || type == "valueNegative") {
-      if (!(loaded && id == loaded.id && loaded.type === type))
-        autoTrimpSettings[id] = {
-          id,
-          name,
-          description,
-          type,
-          value: loaded === void 0 ? defaultValue : loaded
-        };
-      btn.setAttribute("style", "font-size: 1.1vw;");
-      btn.setAttribute("class", "noselect settingsBtn btn-info settingKind-input");
-      btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == "valueNegative"}, ${type == "multiValue"})`);
-      btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
-      btn.setAttribute("onmouseout", 'tooltip("hide")');
-      btn.textContent = name;
-      btnParent.appendChild(btn);
-      if (container) document.getElementById(container).appendChild(btnParent);
-      else document.getElementById("autoSettings").appendChild(btnParent);
-    } else if (type == "multiValue" || type == "valueNegative") {
-      if (!(loaded && id == loaded.id && loaded.type === type))
-        autoTrimpSettings[id] = {
-          id,
-          name,
-          description,
-          type,
-          value: loaded === void 0 ? defaultValue : loaded
-        };
-      btn.setAttribute("style", "font-size: 1.1vw;");
-      btn.setAttribute("class", "noselect settingsBtn btn-info settingKind-input");
-      btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == "valueNegative"}, ${type == "multiValue"})`);
-      btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
-      btn.setAttribute("onmouseout", 'tooltip("hide")');
-      btn.textContent = name;
-      btnParent.appendChild(btn);
-      if (container) document.getElementById(container).appendChild(btnParent);
-      else document.getElementById("autoSettings").appendChild(btnParent);
-    } else if (type == "textValue") {
-      if (!(loaded && id == loaded.id && loaded.type === type))
-        autoTrimpSettings[id] = {
-          id,
-          name,
-          description,
-          type,
-          value: loaded === void 0 ? defaultValue : loaded
-        };
-      btn.setAttribute("style", "font-size: 1.1vw;");
-      btn.setAttribute("class", "noselect settingsBtn btn-info settingKind-input");
-      btn.setAttribute("onclick", `autoSetTextToolTip("${id}", "${name}", ${type == "textValue"})`);
-      btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
-      btn.setAttribute("onmouseout", 'tooltip("hide")');
-      btn.textContent = name;
-      btnParent.appendChild(btn);
-      if (container) document.getElementById(container).appendChild(btnParent);
-      else document.getElementById("autoSettings").appendChild(btnParent);
-    } else if (type == "dropdown") {
-      if (!(loaded && id == loaded.id && loaded.type === type))
-        autoTrimpSettings[id] = {
-          id,
-          name,
-          description,
-          type,
-          selected: loaded === void 0 ? defaultValue : loaded,
-          list
-        };
-      var btn = document.createElement("select");
-      btn.id = id;
-      if (game.options.menu.darkTheme.enabled == 2) btn.setAttribute("style", "color: #C8C8C8; font-size: 1.0vw;");
-      else btn.setAttribute("style", "color:black; font-size: 1.0vw;");
-      btn.setAttribute("class", "noselect settingKind-select");
-      btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
-      btn.setAttribute("onmouseout", 'tooltip("hide")');
-      btn.setAttribute("onchange", 'settingChanged("' + id + '")');
-      for (var item in list) {
-        var option = document.createElement("option");
-        option.value = list[item];
-        option.text = list[item];
-        btn.appendChild(option);
-      }
-      btn.value = autoTrimpSettings[id].selected;
-      var dropdownLabel = document.createElement("Label");
-      dropdownLabel.id = id + "Label";
-      dropdownLabel.innerHTML = name + ":";
-      dropdownLabel.setAttribute("style", "margin-right: 0.3vw; font-size: 0.8vw;");
-      btnParent.appendChild(dropdownLabel);
-      btnParent.appendChild(btn);
-      if (container) document.getElementById(container).appendChild(btnParent);
-      else document.getElementById("autoSettings").appendChild(btnParent);
-    } else if (type == "infoclick") {
-      btn.setAttribute("class", "noselect settingsBtn settingKind-action settingKind-info");
-      btn.setAttribute("onclick", "ImportExportTooltip('" + defaultValue + "', 'update')");
-      btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
-      btn.setAttribute("onmouseout", 'tooltip("hide")');
-      btn.setAttribute("style", "font-size: 1.1vw;");
-      renderControlFace2(btn, { type: "infoclick", name });
-      btnParent.appendChild(btn);
-      if (container) document.getElementById(container).appendChild(btnParent);
-      else document.getElementById("autoSettings").appendChild(btnParent);
-      return;
-    } else if (type == "multitoggle") {
-      if (!(loaded && id == loaded.id && loaded.type === type))
-        autoTrimpSettings[id] = {
-          id,
-          name,
-          description,
-          type,
-          value: loaded === void 0 ? defaultValue || 0 : loaded
-        };
-      clampMultitoggle(id, name, defaultValue);
-      btn.setAttribute("style", "font-size: 1.1vw;");
-      btn.setAttribute("class", "noselect settingsBtn settingKind-cycle settingBtn" + autoTrimpSettings[id].value);
-      btn.setAttribute("onclick", 'settingChanged("' + id + '")');
-      btn.setAttribute("onmouseover", tipAttr(name.join(" / "), description, type, defaultValue, name));
-      btn.setAttribute("onmouseout", 'tooltip("hide")');
-      renderControlFace2(btn, autoTrimpSettings[id]);
-      btnParent.appendChild(btn);
-      if (container) document.getElementById(container).appendChild(btnParent);
-      else document.getElementById("autoSettings").appendChild(btnParent);
-    } else if (type === "action") {
-      btn.setAttribute("style", "font-size: 1.1vw;");
-      btn.setAttribute("class", "noselect settingsBtn settingKind-action settingBtn3");
-      btn.setAttribute("onclick", defaultValue);
-      btn.setAttribute("onmouseover", tipAttr(name, description, type, defaultValue, name));
-      btn.setAttribute("onmouseout", 'tooltip("hide")');
-      renderControlFace2(btn, { type: "action", name });
-      btnParent.appendChild(btn);
-      if (container) document.getElementById(container).appendChild(btnParent);
-      else document.getElementById("autoSettings").appendChild(btnParent);
-      return;
-    }
-    if (autoTrimpSettings[id].name != name)
-      autoTrimpSettings[id].name = name;
-    if (autoTrimpSettings[id].description != description)
-      autoTrimpSettings[id].description = description;
-    autoTrimpSettings["ATversion"] = ATversion;
-  }
-  function settingChanged(id) {
-    var btn = autoTrimpSettings[id];
-    if (btn.type == "boolean") {
-      btn.enabled = !btn.enabled;
-      var elB = document.getElementById(id);
-      elB.setAttribute("class", "noselect settingsBtn settingKind-toggle settingBtn" + btn.enabled);
-      renderControlFace2(elB, btn);
-      if (id == "ATCustomUI") applyCustomUI(btn.enabled);
-    }
-    if (btn.type == "multitoggle") {
-      if (id == "spendmagmite" && btn.value == 1) {
-        magmiteSpenderChanged = true;
-        setTimeout(function() {
-          magmiteSpenderChanged = false;
-        }, 5e3);
-      }
-      btn.value++;
-      if (btn.value > btn.name.length - 1)
-        btn.value = 0;
-      var elC = document.getElementById(id);
-      elC.setAttribute("class", "noselect settingsBtn settingKind-cycle settingBtn" + btn.value);
-      renderControlFace2(elC, btn);
-    }
-    if (btn.type == "dropdown") {
-      btn.selected = byId(id).value;
-      if (id == "Prestige") {
-        autoTrimpSettings["PrestigeBackup"] = {
-          selected: byId(id).value,
-          name: "PrestigeBackup",
-          id: "PrestigeBackup"
-        };
-      }
-    }
-    updateCustomButtons();
-    saveSettings();
-    checkPortalSettings();
-  }
-  function autoSetValueToolTip(id, text, negative, multi) {
-    ranstring = text;
-    var elem = document.getElementById("tooltipDiv");
-    var tooltipText = "Type a number below. You can also use shorthand such as 2e5 or 200k.";
-    if (negative)
-      tooltipText += " Accepts negative numbers as validated inputs.";
-    else
-      tooltipText += " Put -1 for Infinite.";
-    tooltipText += `<br/><br/><input id="customNumberBox" style="width: 50%" onkeypress="onKeyPressSetting(event, '${id}', ${negative}, ${multi})" value="${autoTrimpSettings[id].value}"></input>`;
-    var costText = `<div class="maxCenter"><div class="btn btn-info" onclick="autoSetValue('` + id + "'," + negative + "," + multi + ')">Apply</div><div class="btn btn-info" onclick="cancelTooltip()">Cancel</div></div>';
-    game.global.lockTooltip = true;
-    elem.style.left = "32.5%";
-    elem.style.top = "25%";
-    document.getElementById("tipTitle").textContent = ranstring + ":  Value Input";
-    document.getElementById("tipText").innerHTML = tooltipText;
-    document.getElementById("tipCost").innerHTML = costText;
-    elem.style.display = "block";
-    var box = document.getElementById("customNumberBox");
-    try {
-      box.setSelectionRange(0, box.value.length);
-    } catch (e) {
-      box.select();
-    }
-    box.focus();
-  }
-  function autoSetTextToolTip(id, text) {
-    ranstring = text;
-    var elem = document.getElementById("tooltipDiv");
-    var tooltipText = "Type your input below";
-    tooltipText += `<br/><br/><input id="customTextBox" style="width: 50%" onkeypress="onKeyPressSetting(event, '${id}')" value="${autoTrimpSettings[id].value}"></input>`;
-    var costText = `<div class="maxCenter"><div class="btn btn-info" onclick="autoSetText('` + id + `')">Apply</div><div class="btn btn-info" onclick="cancelTooltip()">Cancel</div></div>`;
-    game.global.lockTooltip = true;
-    elem.style.left = "32.5%";
-    elem.style.top = "25%";
-    document.getElementById("tipTitle").textContent = ranstring + ":  Value Input";
-    document.getElementById("tipText").innerHTML = tooltipText;
-    document.getElementById("tipCost").innerHTML = costText;
-    elem.style.display = "block";
-    var box = document.getElementById("customTextBox");
-    box.focus();
-  }
-  function onKeyPressSetting(event2, id, negative, multi) {
-    if (event2.which == 13 || event2.keyCode == 13) {
-      if (negative !== void 0 && multi !== void 0)
-        autoSetValue(id, negative, multi);
-      else
-        autoSetText(id);
-    }
-  }
-  function parseNum(num) {
-    if (num.split("e")[1]) {
-      num = num.split("e");
-      num = Math.floor(parseFloat(num[0]) * Math.pow(10, parseInt(num[1])));
-    } else {
-      var letters = num.replace(/[^a-z]/gi, "");
-      var base = 0;
-      if (letters.length) {
-        var suffices = ["K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc", "Ud", "Dd", "Td", "Qad", "Qid", "Sxd", "Spd", "Od", "Nd", "V", "Uv", "Dv", "Tv", "Qav", "Qiv", "Sxv", "Spv", "Ov", "Nv", "Tt"];
-        for (var x = 0; x < suffices.length; x++) {
-          if (suffices[x].toLowerCase() == letters) {
-            base = x + 1;
-            break;
-          }
-        }
-        if (base) num = Math.round(parseFloat(num.split(letters)[0]) * Math.pow(1e3, base));
-      }
-      if (!base) num = parseFloat(num);
-    }
-    return num;
-  }
-  function autoSetValue(id, negative, multi) {
-    var num = 0;
-    unlockTooltip();
-    tooltip("hide");
-    var numBox = document.getElementById("customNumberBox");
-    if (numBox) {
-      num = numBox.value.toLowerCase();
-      if (multi) {
-        num = num.split(",").map(parseNum);
-      } else {
-        num = parseNum(num);
-      }
-    } else return;
-    autoTrimpSettings[id].value = num;
-    if (Array.isArray(num)) {
-      document.getElementById(id).textContent = ranstring + ": " + num[0] + "+";
-    } else if (num > -1 || negative)
-      document.getElementById(id).textContent = ranstring + ": " + prettify(num);
-    else
-      document.getElementById(id).innerHTML = ranstring + ": <span class='icomoon icon-infinity'></span>";
-    saveSettings();
-    checkPortalSettings();
-  }
-  function autoSetText(id) {
-    var textVal = "empty";
-    unlockTooltip();
-    tooltip("hide");
-    var textBox = document.getElementById("customTextBox");
-    if (textBox) {
-      textVal = textBox.value;
-    } else return;
-    autoTrimpSettings[id].value = textVal;
-    if (textVal != void 0) {
-      document.getElementById(id).textContent = ranstring + ": " + textVal;
-    }
-    saveSettings();
-    checkPortalSettings();
-  }
-
   // src/modules/settings-menu.ts
   var settings_menu_exports = {};
   __export(settings_menu_exports, {
@@ -16878,6 +17021,11 @@
       what: "Replaces the game's UI with the AutoTrimps custom UI.",
       how: "Off, the stock game UI is unchanged. On, a marked shell adopts the game's own panels intact \u2014 nothing is missing \u2014 as the base for the streamlined AutoTrimps layout."
     }), "boolean", false, null, "Core");
+    createSetting("WarnNativeAutomationConflicts", "Warn: Auto Conflicts", tip({
+      what: "Shows a yellow warning beside the game's own AutoPrestige / AutoUpgrade / AutoStructure / AutoJobs / AutoStorage buttons when their setting fights AutoTrimps' automation.",
+      how: "Hover the warning to read what AT does instead, why, and the one setting to change. It also warns in the other direction: AutoStorage off once you own Auspicious Presence Part II (overflow is being wasted), and Hide Buildings / Hide Jobs left on while the mastery they hand off to is off (nothing is buying at all).",
+      cannot: "Cannot change anything on its own \u2014 it never touches a game toggle or one of your AT settings. Every fix is yours to make."
+    }), "boolean", true, null, "Core");
     createSetting("ManualGather2", ["Manual Gather/Build", "Auto Gather/Build", "Mining/Building Only", "Science Research OFF"], tip({
       what: "Controls how AT gathers resources and builds in U1 (Helium).",
       how: '<b>Manual Gather/Build</b> does nothing \u2014 you gather and build entirely by hand.<br><br><b>Auto Gather/Build</b> runs the full gather/build/trap/research loop.<br><br><b>Mining/Building Only</b> switches to a much simpler loop that just gathers metal or works your build queue, skipping trapping and research entirely \u2014 meant for once you have the Foremany mastery and no longer need food or wood.<br><br><b>Science Research OFF</b> behaves like Auto Gather/Build but never gathers science by hand (useful for the "reach Z120 without manual research" achievement).'
@@ -17487,7 +17635,12 @@
     createSetting("hidebuildings", "Hide Buildings", tip({
       what: "Hands ordinary building purchases (housing, storage, Wormholes, Tributes, Nurseries) over to the game's own AutoStructure mastery instead of AT buying them.",
       how: "Only takes effect when <b>Buy Buildings</b> is set to <b>Buy Neither</b> \u2014 with any other Buy Buildings option, AT keeps buying those buildings regardless of this setting.",
-      cannot: "Cannot hide or affect Gym purchases. AutoStructure has no Gym automation of its own, so AT keeps buying Gyms (per <b>Max Gyms</b> / <b>Gym Wall</b>) even with this on \u2014 that's also why the Gym settings stay visible either way."
+      // #150 review: the old wording claimed "AutoStructure has no Gym automation of its own", which
+      // is false \u2014 Gym is in buyAutoStructures()' order list (.trimps-game/main.js:18247) and carries
+      // `AP: true` in config.js, so it appears in the AutoStructure config table. What is TRUE is the
+      // AT half: `hidebuild` (buildings.ts:264) suppresses housing/Wormhole/Tribute/Nursery but not
+      // the Gym block (buildings.ts:314), so AT keeps buying Gyms in this mode.
+      cannot: "Cannot hide or affect Gym purchases \u2014 AT keeps buying Gyms (per <b>Max Gyms</b> / <b>Gym Wall</b>) even with this on, which is why the Gym settings stay visible either way. AutoStructure can also buy Gyms itself, so with both enabled the two may overlap there."
     }), "boolean", false, null, "Buildings");
     createSetting("BuyBuildingsNew", ["Buy Neither", "Buy Buildings & Storage", "Buy Buildings", "Buy Storage"], tip({
       what: "Controls whether AT buys non-storage Buildings (Huts, Warpstations, Gateways, Nurseries, etc.), Storage (Barn/Shed/Forge), both, or neither.",
