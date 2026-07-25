@@ -968,6 +968,29 @@
     settingChanged: () => settingChanged,
     tooltipAttr: () => tooltipAttr
   });
+
+  // src/modules/settings-migrations.ts
+  var SETTING_ID_MIGRATIONS = [];
+  function migrateLegacyId(store, to, table = SETTING_ID_MIGRATIONS) {
+    if (store === null || typeof store !== "object") return null;
+    const has = (k) => Object.prototype.hasOwnProperty.call(store, k);
+    for (const row of table) {
+      if (row.to !== to) continue;
+      if (!has(row.from)) continue;
+      store[to] = retag(store[row.from], to);
+      delete store[row.from];
+      return row.from;
+    }
+    return null;
+  }
+  function retag(value, to) {
+    if (value !== null && typeof value === "object" && !Array.isArray(value) && "id" in value) {
+      value.id = to;
+    }
+    return value;
+  }
+
+  // src/modules/settings-engine.ts
   var ranstring = "";
   function renderControlFace2(el, rec) {
     let glyph = el.querySelector(":scope > .settingGlyph");
@@ -1028,6 +1051,7 @@
     btnParent.setAttribute("style", "display: inline-block; vertical-align: top; margin-left: 1vw; margin-bottom: 1vw; width: 13.142vw;");
     var btn = document.createElement("DIV");
     btn.id = id;
+    migrateLegacyId(autoTrimpSettings, id);
     var loaded = autoTrimpSettings[id];
     if (type == "boolean") {
       if (!(loaded && id == loaded.id && loaded.type === type))

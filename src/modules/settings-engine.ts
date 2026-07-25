@@ -15,6 +15,7 @@
 // #41 — custom-UI toggle applier. Direct typed import (TS-called from settingChanged, not an
 // inline HTML handler). No cycle: custom-ui/* never imports settings-engine.
 import { applyCustomUI } from './custom-ui/boot';
+import { migrateLegacyId } from './settings-migrations';
 
 let ranstring = '';
 
@@ -142,6 +143,15 @@ export function createSetting(id: any, name: any, description: any, type: any, d
     btnParent.setAttribute('style', 'display: inline-block; vertical-align: top; margin-left: 1vw; margin-bottom: 1vw; width: 13.142vw;');
     var btn: any = document.createElement("DIV");
     btn.id = id;
+    // #151: rehome a retired id's stored value onto this one, if the retired key is still present.
+    // This line is the WHOLE migration seam, and it is here rather than at boot on purpose: every
+    // path that adopts a settings store — boot, pasted import, settings-profile switch, factory
+    // reset — funnels through initializeAllSettings() → createSetting, so hooking here covers all
+    // four by construction. It MUST stay above the `loaded` read below, because that read plus
+    // `loaded === undefined ? defaultValue : loaded` is precisely what would otherwise hand the user
+    // a default in place of the value they configured. No-ops (returns null) for every id with no
+    // table row, which today is all 576 of them. See settings-migrations.ts for the reasoning.
+    migrateLegacyId(autoTrimpSettings, id);
     var loaded = autoTrimpSettings[id];
     if (type == 'boolean') {
         if (!(loaded && id == loaded.id && loaded.type === type))
