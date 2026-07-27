@@ -338,12 +338,13 @@ describe('every setting id the code READS must have been createSetting\'d (#68)'
     GemEfficiencyIgnoresMax:
       'MINT-OR-DELETE (product decision) — buildings.ts:166. The `&& keysSorted[best] !== "Gateway"` ' +
       'carve-out in buyGemEfficientHousing can never apply. Behaviour-preserving mint = boolean, default false.',
-    GatewayWall:
-      'MINT-OR-DELETE (product decision) — buildings.ts:171-172. `false > 1` is false, so the Gateway ' +
-      'fragment-wall block is unreachable — which is ALSO what keeps the divide-by-false on the next line ' +
-      '(`fragments / false` = Infinity) from ever evaluating. Mint and that latent Infinity goes live, so a ' +
-      'mint MUST use a default that keeps the guard false (-1, matching the GymWall/WarpstationWall3 ' +
-      'siblings) and must fix the divisor at the same time. Do not mint it casually.',
+    // ✅ #157 — the 'GatewayWall' entry is GONE, resolved in the DELETE direction. Its read was the
+    // Gateway fragment-wall block in buyGemEfficientHousing, dead since it was written (`false > 1`),
+    // and the latent `fragments / false` = Infinity divisor it was shielding died with it. Nothing was
+    // repointed and nothing was minted: #154 shipped the un-tunable form of the same guard (skip a
+    // candidate you cannot afford), so the setting had no remaining job. This is the third disposition
+    // in the phantom rulebook actually being used — the entry does not get to sit here forever as
+    // "MINT-OR-DELETE (product decision)" once the product decision has been made.
   }
 
   it('no setting id is read but never defined', () => {
@@ -380,8 +381,13 @@ describe('every setting id the code READS must have been createSetting\'d (#68)'
     }
     // 29 → 28: Rgearamounttobuy repointed. 28 → 14: #85 deleted the dead nu-loom + RevaluateEquipmentEfficiency
     // readers. 14 → 5: #68 CLOSED — five ids repointed, four dead readers deleted (see the header above).
-    // The five that remain are all "the repair changes product behaviour", not "nobody looked yet".
-    expect(Object.keys(KNOWN_PHANTOM).length).toBeLessThanOrEqual(5)
+    // 5 → 4: #157 deleted the GatewayWall read (its product decision was made — #154 shipped the
+    // un-tunable replacement). The four that remain are all "the repair changes product behaviour",
+    // not "nobody looked yet".
+    // ⚠️ TIGHTEN THIS WITH EVERY REMOVAL. Shrinking the baseline without lowering the ceiling leaves a
+    // spare slot, and one new phantom then fits under it silently — a gate that has quietly stopped
+    // being able to fail, which is the failure mode this repo keeps re-learning. Only ever tighten.
+    expect(Object.keys(KNOWN_PHANTOM).length).toBeLessThanOrEqual(4)
   })
 
   it('the ALLOWED_DYNAMIC allowlist stays honest — every entry must still be a live call site', () => {
@@ -511,8 +517,13 @@ describe('a test may only seed setting ids that production defines (#74)', () =>
   // may be legitimately seeded elsewhere once its production bug is fixed). Each entry dies together with
   // the KNOWN_PHANTOM entry it is covering for.
   const KNOWN_TEST_LIE: Record<string, string> = {
-    'tests/buildings.characterization.test.ts:271': "#68/#74 — seeds phantom 'GatewayWall'",
-    'tests/buildings.characterization.test.ts:376': "#68/#74 — seeds phantom 'GemEfficiencyIgnoresMax'",
+    // ✅ #157 — the "seeds phantom 'GatewayWall'" entry is GONE with the test that seeded it. Same
+    // loop #85 exists to break: a test seeded a phantom id purely so a dead block could be exercised,
+    // and the resulting green was then available as evidence the block worked. The block is deleted,
+    // so the seed has nothing left to lie about.
+    // Line moved 376 -> 364 when the GatewayWall test above it was deleted (#157). The baseline is
+    // keyed by SITE, so a pure deletion elsewhere in the file re-keys every entry below it.
+    'tests/buildings.characterization.test.ts:364': "#68/#74 — seeds phantom 'GemEfficiencyIgnoresMax'",
     // ✅ #85 — the two "seeds phantom 'RCapEquip2'" entries are GONE. Nothing repointed them: the tests
     // that seeded the id were tests OF DEAD CODE (RevaluateEquipmentEfficiency), and they were deleted
     // along with the function. This is the exact loop #85 exists to break — a test seeds a phantom id so
@@ -546,7 +557,10 @@ describe('a test may only seed setting ids that production defines (#74)', () =>
     const live = new Set(seeds.filter((s) => !DEFINED.has(s.id)).map((s) => `${s.file}:${s.line}`))
     for (const k of Object.keys(KNOWN_TEST_LIE))
       expect(live.has(k), `${k} no longer seeds a phantom id — delete it from KNOWN_TEST_LIE`).toBe(true)
-    expect(Object.keys(KNOWN_TEST_LIE).length).toBeLessThanOrEqual(2) // 8 → 6 (#68 repointed the RCapEquiparm pair) → 2 (#86 2.2 dropped the loomswap/dloomswap seeds)
+    // 8 → 6 (#68 repointed the RCapEquiparm pair) → 2 (#86 2.2 dropped the loomswap/dloomswap seeds)
+    // → 1 (#157 deleted the GatewayWall-seeding test along with the dead block it existed to reach).
+    // Only ever tighten — see the note on the KNOWN_PHANTOM ceiling above.
+    expect(Object.keys(KNOWN_TEST_LIE).length).toBeLessThanOrEqual(1)
   })
 
   it('the synthetic-fixture allowlist stays inside the two files that own synthetic ids', () => {

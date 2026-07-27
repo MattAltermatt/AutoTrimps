@@ -4853,13 +4853,6 @@
       if (game.buildings[keysSorted[best]].owned < max || max == -1 || getPageSetting2("GemEfficiencyIgnoresMax") && keysSorted[best] !== "Gateway") {
         bestGemBuilding = keysSorted[best];
         document.getElementById(bestGemBuilding).style.border = "1px solid #00CC00";
-        if (bestGemBuilding === "Gateway" && getPageSetting2("GatewayWall") > 1) {
-          if (getBuildingItemPrice(game.buildings.Gateway, "fragments", false, 1) > game.resources.fragments.owned / getPageSetting2("GatewayWall")) {
-            document.getElementById(bestGemBuilding).style.border = "1px solid orange";
-            bestGemBuilding = null;
-            continue;
-          }
-        }
         let skipWarp = false;
         if (getPageSetting2("WarpstationCap") && bestGemBuilding === "Warpstation") {
           const firstGigaOK = MODULES["upgrades"].autoGigas == false || game.upgrades.Gigastation.done > 0;

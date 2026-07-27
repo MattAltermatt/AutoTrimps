@@ -239,15 +239,20 @@ export function buyGemEfficientHousing() {
             bestGemBuilding = keysSorted[best];
             document.getElementById(bestGemBuilding)!.style.border = "1px solid #00CC00";
 
-            //Gateway Wall
-            if (bestGemBuilding === "Gateway" && getPageSetting('GatewayWall') > 1) {
-                if (getBuildingItemPrice(game.buildings.Gateway, "fragments", false, 1) > (game.resources.fragments.owned / getPageSetting('GatewayWall'))) {
-                    document.getElementById(bestGemBuilding)!.style.border = "1px solid orange";
-                    bestGemBuilding = null;
-                    continue;
-                }
-            }
-
+            // #157 — the "Gateway Wall" block that used to sit here has been DELETED. It gated on
+            // `getPageSetting('GatewayWall') > 1`, and `GatewayWall` was never createSetting'd
+            // anywhere, so getPageSetting returned `false`, `false > 1` was false, and the block had
+            // never executed in production — not once. Its only other effect was to keep the
+            // divide-by-`false` on its own next line (`fragments / false` = Infinity) from ever
+            // evaluating, so anyone who "fixed" the phantom by minting the id would have activated
+            // that latent bug at the same moment.
+            //
+            // Deleted rather than minted because #154 shipped the un-tunable version of exactly this
+            // guard: the affordability fall-through below skips a Gateway you cannot pay for, using
+            // "can I actually afford it" as the threshold instead of a user-typed 1/X fraction.
+            // Keeping a dead read that LOOKS like it handles the fragment case is how #154 survived
+            // as long as it did — a reader who greps GatewayWall would reasonably conclude the wall
+            // was covered.
             let skipWarp = false;
             if (getPageSetting('WarpstationCap') && bestGemBuilding === "Warpstation") {
                 const firstGigaOK = MODULES["upgrades"].autoGigas == false || game.upgrades.Gigastation.done > 0;

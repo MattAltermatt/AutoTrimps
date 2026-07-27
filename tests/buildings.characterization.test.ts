@@ -266,23 +266,11 @@ describe('buildings.buyGemEfficientHousing — L1b actuator spy-log', () => {
     expect((globalThis as any).bestBuilding).toBe('Mansion')
   })
 
-  // L148: bestGemBuilding == "Gateway" (true) + GatewayWall wall blocks it
-  it('Gateway wall: bestGemBuilding=="Gateway" but wall trips → nulled, nothing bought', () => {
-    ;(globalThis as any).autoTrimpSettings = { GatewayWall: { type: 'value', value: 2 } }
-    // only Gateway unlocked → it is the sole candidate
-    ;(globalThis as any).getBuildingItemPrice = () => 999 // > fragments/GatewayWall → wall trips
-    const buildingsObj = bld({
-      Mansion: { locked: 1 }, Hotel: { locked: 1 }, Resort: { locked: 1 }, Collector: { locked: 1 }, Warpstation: { locked: 1 },
-    })
-    ;(globalThis as any).game = makeMinimalGame({
-      global: { buyAmt: 1, firing: false, maxSplit: 1 },
-      buildings: buildingsObj,
-      resources: { fragments: { owned: 100 } },
-      portal: { Resourceful: { modifier: 0, level: 0 } },
-    })
-    buildings.buyGemEfficientHousing()
-    expect(buyCalls).toEqual([])
-  })
+  // ✅ #157 — the "Gateway wall" test that lived here is DELETED along with the block it pinned.
+  // It seeded `GatewayWall: {value: 2}`, an id production never createSetting'd, purely so the dead
+  // fragment-wall branch would execute — so its green was never evidence about anything a real user
+  // could reach. #154 shipped the un-tunable replacement (skip a candidate you cannot afford), which
+  // is covered by tests/buildings.gemFallthrough.test.ts.
 
   // L157/163: bestGemBuilding == "Warpstation" (true) — WarpstationCap gate skips it
   it('Warpstation cap (WarpstationCap): bestGemBuilding=="Warpstation" skipped → nothing bought', () => {
