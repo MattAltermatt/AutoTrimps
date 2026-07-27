@@ -36,6 +36,25 @@ import { CORPUS } from '../../scripts/sim/corpus.mjs'
 // fixture that lost the property making the bug observable — 09 losing its unlocked housing tiers, or
 // 10 losing its seeded settings (Rhypofarmstack's default is the "unset" sentinel, which makes the
 // clause under test INERT, #96). Fix the corpus, not the test.
+//
+// ─── #160 — THE NEGATIVE CONTROLS DELIBERATELY DO NOT CONSULT THE WAIVER MANIFEST. ───────────────
+// baseline-zero compares each trace to its oracle THROUGH tests/fixtures/traces/manifest.json, so a
+// reviewed divergence can be waived and bug-fixing stays a first-class operation. The negative
+// controls below do NOT: they demand `diffTraces(oracle, clean) === []` outright.
+//
+// That asymmetry is the point, not an oversight. These fixtures exist for exactly one purpose — to
+// make a specific function's ANSWER load-bearing so the census can see a bug in it. A waiver is a
+// standing exemption at a (save, index, fn, args) slot; grant one here and the fixture stops guarding
+// the thing it was built to guard, on the very traces that are the census's only witness. 09's oracle
+// is TWELVE events, of which four are buyBuilding — there is no room for an exemption that is not
+// most of the artifact.
+//
+// The practical consequence, which cost a full design duel on #158 to rediscover: **a trace-moving
+// change to 09-housing-u2, 10-hypo-u2 or 12-warp-u1 cannot be shipped behind a waiver.** The only
+// route is a corrected oracle — and that is never a local re-record, because record-oracle.mjs
+// replays the FROZEN bundle at the tag in build-oracle.mjs, so it means re-pinning across every src
+// commit since that tag. Budget for that before you start, or park the change (as #158 did) and land
+// an executing witness for the defect instead.
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 
 const SAVES = resolve('tests/fixtures/saves')
@@ -84,6 +103,41 @@ const entry = (name: string) => {
   expect(e, `${name} is not in the corpus`).toBeTruthy()
   return e as { name: string; ticks: number; settings?: Record<string, unknown> }
 }
+
+// #160 — keeps the doctrine above HONEST rather than merely written down. The claim "waivers do not
+// apply to the census fixtures" is only true of the fixtures that actually have a manifest-free
+// negative control, so pin that set. Add a fourth sensitivity fixture without a negative control and
+// this reddens, instead of the comment quietly becoming a lie.
+const CENSUS_FIXTURES = ['09-housing-u2', '10-hypo-u2', '12-warp-u1'] as const
+
+describe('#160 — the census fixtures are exactly the ones held to a manifest-free negative control', () => {
+  it('every census fixture is in the corpus and single-seed (its trace is the sole witness)', () => {
+    for (const name of CENSUS_FIXTURES) {
+      const e = CORPUS.find((c: { name: string }) => c.name === name) as
+        | { name: string; seeds?: number[] }
+        | undefined
+      expect(e, `${name} is named as a census fixture but is not in CORPUS`).toBeTruthy()
+      // Single-seed is load-bearing: one trace is the entire witness, which is why an exemption on it
+      // is unaffordable and why a waiver is refused here (see the header).
+      expect(e!.seeds ?? [1], `${name} is no longer single-seed — re-read the #160 note above`).toEqual([1])
+    }
+  })
+
+  it('carries no waiver, because one could not help here anyway', () => {
+    const manifest = JSON.parse(readFileSync(resolve(TRACES, 'manifest.json'), 'utf8'))
+    const stray = (manifest.waivers ?? []).filter((w: { save: string }) =>
+      (CENSUS_FIXTURES as readonly string[]).includes(w.save),
+    )
+    // A waiver on one of these is worse than useless: baseline-zero would go green while the negative
+    // control stayed red, which reads as "the manifest is broken" rather than "this change needs a
+    // corrected oracle". Fail loudly with the actual instruction instead.
+    expect(
+      stray,
+      'a waiver was added for a census fixture — it cannot satisfy the manifest-free negative ' +
+        'control, so the change needs a corrected oracle or parking (#158/#160), not a waiver',
+    ).toEqual([])
+  })
+})
 
 describe('blind-spot sensitivity — the net can SEE #93 and #101 (#105 positive controls)', () => {
   const housing = entry('09-housing-u2')
