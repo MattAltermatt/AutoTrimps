@@ -26,7 +26,17 @@ MODULES["equipment"].numHitsSurvived = 10;
 MODULES["equipment"].numHitsSurvivedScry = 80;
 MODULES["equipment"].capDivisor = 10;
 MODULES["equipment"].alwaysLvl2 = getPageSetting('always2');
-MODULES["equipment"].waitTill60 = true;
+// #153 — `waitTill60` REMOVED. It hardcoded a Wall over zones 58-59 that blocked every gear level
+// AND every gear prestige, on the stated premise that "cost drops down to 10%" at zone 60. That
+// premise is false: equipment price is `base * 1.2^level * getEquipPriceMult()`, and
+// getEquipPriceMult (main.js:4712) never reads game.global.world — nor does getNextPrestigeCost
+// (main.js:5953). The only world>=60 discount in the game is `baseCost *= 0.74` on the slider sum
+// of MAP fragment cost (calculateMapCost, main.js:1649), which does not even make z60 maps cheaper
+// than z59 in absolute terms (measured on a real z58 save: 5.67e5 -> 6.91e5 fragments).
+// Measured, 5 seeds x 40k ticks from that save: with the wall ON, AT bought NOTHING for the whole
+// run -- gear levels and prestige count identical to the save's, metal 3.9e14 -> 9e14 -- and never
+// reached z60. With it off it bought 3-5 prestiges every seed, reached z60 in 2/5, and hit z59
+// sooner in 5/5 paired seeds. It was a stall, not a saving strategy.
 MODULES["equipment"].equipHealthDebugMessage = false;
 const equipmentList: Record<string, any> = {
     'Dagger': {
@@ -212,9 +222,6 @@ export function evaluateEquipmentEfficiency(equipName: string) {
         Wall = true;
     } else if (cap > 0 && gameResource.level >= cap) {
         Factor = 0;
-        Wall = true;
-    }
-    if (equipName !== 'Gym' && game.global.world < 60 && game.global.world >= 58 && MODULES["equipment"].waitTill60) {
         Wall = true;
     }
     // getPageSetting('always2') is polymorphic → KEEP == loose.
@@ -408,7 +415,7 @@ export function autoLevelEquipment() {
                 }
             }
 
-            if (evaluation.StatusBorder === 'red' && windstackingprestige() && !(game.global.world < 60 && game.global.world >= 58 && MODULES["equipment"].waitTill60)) {
+            if (evaluation.StatusBorder === 'red' && windstackingprestige()) {
                 const BuyWeaponUpgrades = ((getPageSetting('BuyWeaponsNew') == 1) || (getPageSetting('BuyWeaponsNew') == 2));
                 const BuyArmorUpgrades = ((getPageSetting('BuyArmorNew') == 1) || (getPageSetting('BuyArmorNew') == 2));
                 const DelayArmorWhenNeeded = getPageSetting('DelayArmorWhenNeeded');

@@ -3957,7 +3957,6 @@
   MODULES["equipment"].numHitsSurvivedScry = 80;
   MODULES["equipment"].capDivisor = 10;
   MODULES["equipment"].alwaysLvl2 = getPageSetting2("always2");
-  MODULES["equipment"].waitTill60 = true;
   MODULES["equipment"].equipHealthDebugMessage = false;
   var equipmentList = {
     "Dagger": {
@@ -4129,9 +4128,6 @@
       Factor = 0;
       Wall = true;
     }
-    if (equipName !== "Gym" && game.global.world < 60 && game.global.world >= 58 && MODULES["equipment"].waitTill60) {
-      Wall = true;
-    }
     if (gameResource.level < 2 && getPageSetting2("always2") == true) {
       Factor = 999 - gameResource.prestige;
     }
@@ -4284,7 +4280,7 @@
             $equipUpgrade.style.border = "2px solid red";
           }
         }
-        if (evaluation.StatusBorder === "red" && windstackingprestige() && !(game.global.world < 60 && game.global.world >= 58 && MODULES["equipment"].waitTill60)) {
+        if (evaluation.StatusBorder === "red" && windstackingprestige()) {
           const BuyWeaponUpgrades = getPageSetting2("BuyWeaponsNew") == 1 || getPageSetting2("BuyWeaponsNew") == 2;
           const BuyArmorUpgrades = getPageSetting2("BuyArmorNew") == 1 || getPageSetting2("BuyArmorNew") == 2;
           const DelayArmorWhenNeeded = getPageSetting2("DelayArmorWhenNeeded");
