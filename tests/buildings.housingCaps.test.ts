@@ -112,12 +112,19 @@ beforeEach(() => {
   ;(globalThis as any).bwRewardUnlocked = () => false
   ;(globalThis as any).calcHeirloomBonus = (_a: unknown, _b: unknown, v: number) => v
   ;(globalThis as any).Rhyposhouldwood = true
+  // #158 — mostEfficientHousing now derives the price from the game instead of retyping its
+  // arithmetic, so it needs the native pricer. Transcribed from main.js:4819 for purchaseAmt 1
+  // (exponent on `purchased`, no off-by-one) rather than stubbed to a constant, so this fixture's
+  // cap assertions still run against a realistic ranking.
+  ;(globalThis as any).getBuildingItemPrice = (toBuy: any, costItem: string) =>
+    Math.floor(toBuy.cost[costItem][0] * Math.pow(toBuy.cost[costItem][1], toBuy.purchased ?? 0))
 })
 
 afterEach(() => {
   for (const k of [
     'game', 'autoTrimpSettings', 'MODULES', 'getPsString', 'toggleAutoStorage', 'canAffordBuilding',
     'buyBuilding', 'getMaxAffordable', 'isBuildingInQueue', 'calcHeirloomBonus', 'Rhyposhouldwood',
+    'getBuildingItemPrice',
   ]) delete (globalThis as any)[k]
 })
 

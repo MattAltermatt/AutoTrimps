@@ -485,12 +485,22 @@ export function mostEfficientHousing() {
     for (const housing of housingTargets) {
 
         let worstTime = -Infinity;
-        const currentOwned = game.buildings[housing].owned;
         for (const resource in game.buildings[housing].cost) {
 
-            // Get production time for that resource
-            const baseCost = game.buildings[housing].cost[resource][0];
-            const costScaling = game.buildings[housing].cost[resource][1];
+            // #158 — PRICE THE UNIT WE ARE ACTUALLY ABOUT TO BUY. This used to re-derive the cost by
+            // hand as `baseCost * costScaling^(owned - 1)`, which was wrong twice over against the
+            // game's own getBuildingItemPrice (main.js:4819), and neither error cancels across
+            // candidates (each has its own costScaling and its own queue state), so both moved the
+            // ranking rather than just its scale:
+            //   1. the `- 1` priced one generation BEHIND the next unit, understating every
+            //      candidate by a factor of its own costScaling;
+            //   2. it read `owned` where the game exponentiates on `purchased`, so anything sitting
+            //      in the craft queue priced at its pre-purchase cost — which biased the selector
+            //      toward re-picking the building it had just bought (craftTime is 240-1200s for the
+            //      deep tiers, so that window is wide).
+            // Measured on 09-housing-u2: the two formulas disagreed about the winner on 53.3% of
+            // ticks. Deriving from the game instead of retyping its arithmetic is what makes this
+            // class of drift structurally impossible rather than merely corrected once.
             let avgProduction = getPsString(resource, true);
             if (avgProduction <= 0) avgProduction = 1;
             // #93: was `game.buildings.Hut.increase.by` — the HUT's population gain, for every housing
@@ -503,7 +513,8 @@ export function mostEfficientHousing() {
             if (!game.buildings.Hub.locked) { housingBonus += 500; }
 
             // Only keep the slowest producer, aka the one that would take the longest to generate resources for
-            worstTime = Math.max(baseCost * Math.pow(costScaling, currentOwned - 1) / (avgProduction * housingBonus), worstTime);
+            const price = getBuildingItemPrice(game.buildings[housing], resource, false, 1);
+            worstTime = Math.max(price / (avgProduction * housingBonus), worstTime);
             if (resource === 'wood' && !Rhyposhouldwood) worstTime = Infinity;
         }
 

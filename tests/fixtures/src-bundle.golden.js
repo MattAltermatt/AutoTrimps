@@ -5004,17 +5004,15 @@
     };
     for (const housing of housingTargets) {
       let worstTime = -Infinity;
-      const currentOwned = game.buildings[housing].owned;
       for (const resource in game.buildings[housing].cost) {
-        const baseCost = game.buildings[housing].cost[resource][0];
-        const costScaling = game.buildings[housing].cost[resource][1];
         let avgProduction = getPsString(resource, true);
         if (avgProduction <= 0) avgProduction = 1;
         let housingBonus = game.buildings[housing].increase.by;
         if (!game.buildings.Hub.locked) {
           housingBonus += 500;
         }
-        worstTime = Math.max(baseCost * Math.pow(costScaling, currentOwned - 1) / (avgProduction * housingBonus), worstTime);
+        const price = getBuildingItemPrice(game.buildings[housing], resource, false, 1);
+        worstTime = Math.max(price / (avgProduction * housingBonus), worstTime);
         if (resource === "wood" && !Rhyposhouldwood) worstTime = Infinity;
       }
       if (mostEfficient.time > worstTime) {
