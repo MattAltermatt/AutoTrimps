@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdtempSync, readdirSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { TEST_BUNDLE } from './bundle'
@@ -104,38 +104,102 @@ const entry = (name: string) => {
   return e as { name: string; ticks: number; settings?: Record<string, unknown> }
 }
 
-// #160 — keeps the doctrine above HONEST rather than merely written down. The claim "waivers do not
-// apply to the census fixtures" is only true of the fixtures that actually have a manifest-free
-// negative control, so pin that set. Add a fourth sensitivity fixture without a negative control and
-// this reddens, instead of the comment quietly becoming a lie.
-const CENSUS_FIXTURES = ['09-housing-u2', '10-hypo-u2', '12-warp-u1'] as const
+// #160 — keeps the doctrine above HONEST rather than merely written down.
+//
+// ⚠️ The first version of this guard hand-wrote the fixture list and its own describe title claimed
+// the list was exhaustive. It was not: damage-sensitivity.test.ts has a FOURTH manifest-free negative
+// control, on 08-starved-u1, and the guard could not see it because it only ever inspected itself.
+// The lesson is the one this repo keeps relearning — a check that restates a hand-maintained fact
+// cannot detect that the fact went stale. So the exhaustiveness claim is now DERIVED from the source
+// (see the last test), and the list below is only the documented set it is checked against.
+const WAIVER_IMMUNE_FIXTURES = [
+  '09-housing-u2', // this file — #93's housing-divisor witness
+  '10-hypo-u2', //    this file — #101's bonfire-clause witness
+  '12-warp-u1', //    this file — #128's deep-game witness
+  '08-starved-u1', // damage-sensitivity.test.ts — #90/#98's combat witness (NOT single-seed: [1,2],
+  //                  its negative control covers seed 1 only)
+] as const
 
-describe('#160 — the census fixtures are exactly the ones held to a manifest-free negative control', () => {
-  it('every census fixture is in the corpus and single-seed (its trace is the sole witness)', () => {
-    for (const name of CENSUS_FIXTURES) {
-      const e = CORPUS.find((c: { name: string }) => c.name === name) as
-        | { name: string; seeds?: number[] }
-        | undefined
-      expect(e, `${name} is named as a census fixture but is not in CORPUS`).toBeTruthy()
-      // Single-seed is load-bearing: one trace is the entire witness, which is why an exemption on it
-      // is unaffordable and why a waiver is refused here (see the header).
-      expect(e!.seeds ?? [1], `${name} is no longer single-seed — re-read the #160 note above`).toEqual([1])
+// Files that gate a REAL recorded trace: they diff against a committed oracle using a freshly built
+// bundle. trace.test.ts is excluded on purpose — it unit-tests diffTraces itself against synthetic
+// arrays and imports no TEST_BUNDLE, so it asserts nothing about any fixture.
+const TRACE_GATE_FILES = [
+  'tests/sim/blind-spot-sensitivity.test.ts',
+  'tests/sim/damage-sensitivity.test.ts',
+  'tests/sim/portal.test.ts',
+] as const
+
+describe('#160 — waiver-immune fixtures, and the claim that we know all of them', () => {
+  it('every documented waiver-immune fixture is a real corpus entry', () => {
+    for (const name of WAIVER_IMMUNE_FIXTURES) {
+      const e = CORPUS.find((c: { name: string }) => c.name === name)
+      expect(e, `${name} is documented as waiver-immune but is not in CORPUS`).toBeTruthy()
     }
   })
 
-  it('carries no waiver, because one could not help here anyway', () => {
+  it('none of them carries a waiver, because one could not help there anyway', () => {
     const manifest = JSON.parse(readFileSync(resolve(TRACES, 'manifest.json'), 'utf8'))
     const stray = (manifest.waivers ?? []).filter((w: { save: string }) =>
-      (CENSUS_FIXTURES as readonly string[]).includes(w.save),
+      (WAIVER_IMMUNE_FIXTURES as readonly string[]).includes(w.save),
     )
     // A waiver on one of these is worse than useless: baseline-zero would go green while the negative
     // control stayed red, which reads as "the manifest is broken" rather than "this change needs a
     // corrected oracle". Fail loudly with the actual instruction instead.
     expect(
       stray,
-      'a waiver was added for a census fixture — it cannot satisfy the manifest-free negative ' +
+      'a waiver was added for a waiver-immune fixture — it cannot satisfy the manifest-free negative ' +
         'control, so the change needs a corrected oracle or parking (#158/#160), not a waiver',
     ).toEqual([])
+  })
+
+  it('no trace gate has a manifest-free negative control this list does not know about', () => {
+    // DERIVED, not restated. Two independent scans, because each catches a different way the
+    // documented set can go stale.
+    //
+    // (1) A new FILE that diffs a real trace. If someone adds tests/sim/foo.test.ts importing both
+    //     diffTraces and TEST_BUNDLE, it is a new trace gate and its negative controls (if any) are
+    //     invisible to this doctrine until it is listed.
+    const gateFiles = readdirSync(resolve('tests/sim'))
+      .filter((f) => f.endsWith('.test.ts'))
+      .map((f) => `tests/sim/${f}`)
+      .filter((p) => {
+        const src = readFileSync(resolve(p), 'utf8')
+        return src.includes('diffTraces') && src.includes('TEST_BUNDLE')
+      })
+    expect(
+      gateFiles.sort(),
+      'a new trace-gate file appeared. Does it assert diffTraces(...).toEqual([]) on a fixture? If so ' +
+        'that fixture is waiver-immune too — add it to WAIVER_IMMUNE_FIXTURES and to the #160 notes ' +
+        'in this file and scripts/sim/manifest.mjs.',
+    ).toEqual([...TRACE_GATE_FILES].sort())
+
+    // (2) A new manifest-free EXACT assertion inside a known gate file.
+    //
+    // Counted PER FILE, not pinned by line number. Line-keyed baselines are brittle for a reason
+    // this repo has now been bitten by twice in one day: an unrelated edit above a pinned line
+    // silently re-keys it, so the guard reds for a reason that is not the thing it guards. A count
+    // moves only when a site is genuinely added or removed.
+    //
+    // The pattern requires `expect(` immediately before `diffTraces(` — WITHOUT that anchor the scan
+    // matches its own failure-message strings below, which mention the shape it is looking for. That
+    // self-match is not hypothetical; it is what the first version of this test did.
+    const countSites = (p: string) =>
+      readFileSync(resolve(p), 'utf8')
+        .split('\n')
+        .filter((line) => /expect\(\s*diffTraces\(/.test(line) && /toEqual\(\[\]\)/.test(line)).length
+
+    // 2 here — the 09/10 loop and 12-warp — plus 1 in damage-sensitivity for 08-starved.
+    // portal.test.ts diffs a trace but asserts a NON-empty divergence, so it has no control of this
+    // shape and is correctly 0.
+    expect(
+      Object.fromEntries(TRACE_GATE_FILES.map((p) => [p, countSites(p)])),
+      'the set of manifest-free exact-trace assertions changed. Each one makes its fixture ' +
+        'waiver-immune (#160) — update WAIVER_IMMUNE_FIXTURES and both #160 notes, then re-pin this.',
+    ).toEqual({
+      'tests/sim/blind-spot-sensitivity.test.ts': 2,
+      'tests/sim/damage-sensitivity.test.ts': 1,
+      'tests/sim/portal.test.ts': 0,
+    })
   })
 })
 

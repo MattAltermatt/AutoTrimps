@@ -18,15 +18,28 @@
 // there was no back-compat cost and therefore no reason to leave the loose form reachable by habit —
 // a missing declaration is a loud throw, not a permissive match.
 //
-// #160 — WAIVERS DO NOT WORK ON THE THREE CENSUS FIXTURES, BY DESIGN. This module is consulted by
-// tests/sim/baseline-zero.test.ts and by nothing else. In particular the NEGATIVE controls in
-// tests/sim/blind-spot-sensitivity.test.ts demand `diffTraces(oracle, clean) === []` outright, with
-// no manifest, for 09-housing-u2, 10-hypo-u2 and 12-warp-u1. Those fixtures exist to make one
-// function's answer load-bearing for the blind-spot census; an exemption there would disarm the only
-// witness the census has. So a trace-moving change to any of the three is re-pin-or-park, never
-// waive — see the header of that file for the full reasoning, and #158 for the worked example.
-// Do not "fix" a red negative control by reaching for a waiver; it will not help, and the reason it
-// will not help is the design working.
+// #160 — WAIVERS DO NOT WORK ON THE SENSITIVITY FIXTURES, BY DESIGN. This module gates only
+// tests/sim/baseline-zero.test.ts. Several NEGATIVE controls elsewhere demand
+// `diffTraces(oracle, clean) === []` outright, with no manifest at all:
+//
+//     09-housing-u2   blind-spot-sensitivity.test.ts   #93's housing-divisor witness
+//     10-hypo-u2      blind-spot-sensitivity.test.ts   #101's bonfire-clause witness
+//     12-warp-u1      blind-spot-sensitivity.test.ts   #128's deep-game witness
+//     08-starved-u1   damage-sensitivity.test.ts       #90/#98's combat witness
+//
+// Each exists to make one function's answer load-bearing for a census; an exemption there would
+// disarm the only witness that census has. So a trace-moving change to any of them is
+// re-pin-or-park, never waive — see the #160 header in blind-spot-sensitivity.test.ts for the full
+// reasoning, and #158 for the worked example.
+//
+// Do NOT "fix" a red negative control by reaching for a waiver. It cannot work: baseline-zero would
+// go green while the control stayed red, which reads as a broken manifest rather than as a change
+// that needs a corrected oracle. That the waiver does not help IS the design working.
+//
+// ⚠️ That list is DERIVED and pinned by a test, not maintained by hope — the first version of this
+// note named only three, and missed 08-starved-u1 entirely, because the guard checking it only ever
+// inspected its own file. If you add a manifest-free negative control anywhere, that test reddens
+// and points here.
 const key = (w) => `${w.save}#${w.index}#${w.fn}#${JSON.stringify(w.argsBefore ?? null)}#${JSON.stringify(w.argsAfter ?? null)}`
 
 // An absent side is a real value: `null` means "no event here", which is how an INSERTION (oracle
