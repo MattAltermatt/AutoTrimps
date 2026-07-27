@@ -4889,7 +4889,11 @@
             }
           }
         }
-        if (bestGemBuilding !== null && bestGemBuilding !== "Warpstation" && !canAffordBuilding(bestGemBuilding, false, false, false, false, 1) && gemsAffordable(bestGemBuilding)) {
+        if (bestGemBuilding === null) {
+          document.getElementById(keysSorted[best]).style.border = "1px solid orange";
+          continue;
+        }
+        if (bestGemBuilding !== "Warpstation" && !canAffordBuilding(bestGemBuilding, false, false, false, false, 1) && gemsAffordable(bestGemBuilding)) {
           document.getElementById(bestGemBuilding).style.border = "1px solid orange";
           bestGemBuilding = null;
           continue;

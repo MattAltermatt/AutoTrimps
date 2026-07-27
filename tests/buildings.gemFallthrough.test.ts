@@ -68,6 +68,10 @@ beforeEach(() => {
   mountBuildingDivs()
   buyCalls = []
   GEM_PRICE = { ...BASE_GEM_PRICE }
+  // Reset per test: MODULES is seeded once in beforeAll, so without this a leftover
+  // `{ autoGigas: false }` from one test leaks into later ones and silently satisfies `firstGigaOK`
+  // for a case that meant to control it explicitly.
+  ;(globalThis as any).MODULES = { upgrades: {} }
   ;(globalThis as any).game = makeMinimalGame({
     buildings: {},
     upgrades: {},
@@ -144,8 +148,9 @@ describe('buildings/gem-housing affordability fall-through', () => {
     expect(buyCalls).toEqual([])
   })
 
-  // MUTATION: drop the `bestGemBuilding !== null` guard -> throws on getElementById(null).
-  it('leaves an already-nulled winner alone (skipWarp / wall paths keep breaking)', () => {
+  // MUTATION: paint the nulled candidate via `bestGemBuilding` instead of `keysSorted[best]`
+  // -> getElementById(null) returns null and the `!` assertion throws.
+  it('a nulled winner with no candidates behind it terminates cleanly', () => {
     seedHousing(['Warpstation'])
     ;(globalThis as any).autoTrimpSettings = {
       WarpstationCap: { type: 'boolean', enabled: true },
@@ -160,5 +165,93 @@ describe('buildings/gem-housing affordability fall-through', () => {
 
     expect(() => buildings.buyGemEfficientHousing()).not.toThrow()
     expect(buyCalls).toEqual([])
+  })
+})
+
+// #155 — A NULLED WINNER MUST NOT TAKE THE REST OF THE LIST DOWN WITH IT.
+//
+// `skipWarp` (the Gigastation cap at buildings.ts:246-250 and the metal wall at :251-255) sets
+// `bestGemBuilding = null` to mean "do not buy a Warpstation this tick". The loop then fell to the
+// unconditional `break`, so every lower-ranked candidate went with it — an affordable, uncapped
+// Collector sitting right behind a giga-capped Warpstation was simply never considered.
+//
+// ⚠️ THE L0 CORPUS CANNOT REACH THIS. Measured on 12-warp-u1 over 45,000 ticks (world 62 -> 85):
+// Warpstation is the eligible top-ranked candidate for 30,951 of those ticks, but `skipWarp` fires
+// ZERO times, because `firstGigaOK` requires `game.upgrades.Gigastation.done > 0` and the fixture
+// never buys a Gigastation. (Its other disjunct, `MODULES["upgrades"].autoGigas == false`, is dead
+// code — the field is never assigned anywhere in src/, catalogued as #70 in
+// tests/nets/modules-fields.test.ts:186 — so `firstGigaOK` reduces to the Gigastation term alone.)
+// Gigastation is structurally blind to the proof net by construction, per #128/#132. So
+// `baseline-zero` staying green across this change is NOT evidence; these branch tests are the
+// only gate, which is why each is mutation-proven separately.
+describe('buildings/#155 giga-capped Warpstation must not block the rest of the list', () => {
+  /** Warpstation priced to rank FIRST, as it does at depth; Collector affordable behind it. */
+  function seedGigaCapped() {
+    GEM_PRICE.Warpstation = 5.0e11 // /10000 pop = 5.0e7, ranks ahead of Collector's 1.0e8
+    seedHousing(['Warpstation', 'Collector', 'Mansion'])
+    const game = (globalThis as any).game
+    game.resources.gems.owned = 1e15
+    game.buildings.Warpstation.owned = 999 // >= the giga cap
+    game.upgrades.Gigastation = { done: 5 }
+    ;(globalThis as any).autoTrimpSettings = {
+      WarpstationCap: { type: 'boolean', enabled: true },
+      FirstGigastation: { type: 'value', value: '1' },
+      DeltaGigastation: { type: 'value', value: '1' },
+    }
+    ;(globalThis as any).canAffordBuilding = () => true
+  }
+
+  // MUTATION: restore the unconditional `break` in place of the `bestGemBuilding === null`
+  // continue -> buyCalls becomes [] (the pre-#155 dead end, reproduced).
+  it('falls through a giga-capped Warpstation to the affordable Collector behind it', () => {
+    seedGigaCapped()
+
+    buildings.buyGemEfficientHousing()
+
+    expect(buyCalls).toEqual(['Collector'])
+    expect(borderOf('Warpstation')).toBe('1px solid orange')
+  })
+
+  // MUTATION: move the `bestGemBuilding === null` continue ABOVE the coord-buy block -> the
+  // override is preempted and buyCalls becomes ['Collector'] instead of ['Warpstation'].
+  it('still honours the WarpstationCoordBuy override, which deliberately beats the cap', () => {
+    seedGigaCapped()
+    ;(globalThis as any).autoTrimpSettings.WarpstationCoordBuy = { type: 'boolean', enabled: true }
+    // The override fires only when the next Coordination is unaffordable AND the Warpstations we
+    // could buy would close the population gap.
+    ;(globalThis as any).canAffordCoordinationTrimps = () => false
+    ;(globalThis as any).calculateMaxAfford = () => 100
+    const game = (globalThis as any).game
+    game.portal.Coordinated = { level: 0 }
+    game.portal.Carpentry = { level: 0 }
+    game.portal.Carpentry_II = { level: 0, modifier: 0 }
+    game.resources.trimps = { maxSoldiers: 1, realMax: () => 0 }
+
+    buildings.buyGemEfficientHousing()
+
+    expect(buyCalls).toEqual(['Warpstation'])
+  })
+
+  // MUTATION: restore the unconditional `break` -> buyCalls becomes [].
+  // Guards the OTHER skipWarp source (WarpstationWall3, the metal wall) through the same path.
+  it('falls through a metal-walled Warpstation too', () => {
+    seedGigaCapped()
+    ;(globalThis as any).autoTrimpSettings = {
+      WarpstationWall3: { type: 'value', value: '2' },
+    }
+    const game = (globalThis as any).game
+    game.resources.metal = { owned: 1 } // wall trips: price >> metal/2
+    game.portal.Resourceful = { level: 0, modifier: 0.05 }
+    ;(globalThis as any).getBuildingItemPrice = (b: any, item: string) => {
+      if (item === 'metal') return 1e12
+      if (item !== 'gems') return 0
+      const g = (globalThis as any).game
+      const name = Object.keys(GEM_PRICE).find((n) => g.buildings[n] === b)
+      return GEM_PRICE[name ?? ''] ?? 100
+    }
+
+    buildings.buyGemEfficientHousing()
+
+    expect(buyCalls).toEqual(['Collector'])
   })
 })

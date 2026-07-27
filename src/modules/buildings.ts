@@ -225,7 +225,13 @@ export function buyGemEfficientHousing() {
     const keysSorted = Object.keys(obj).sort(function (a, b) {
         return obj[a] - obj[b];
     });
-    let bestGemBuilding = null;
+    // Annotated rather than left to inference: `let x = null` is an EVOLVING ANY, so under `strict`
+    // the compiler gives this variable zero null-safety and the correctness of the `=== null`
+    // dispatch below rests entirely on a runtime control-flow argument. With the annotation, tsc
+    // narrows it — so a future edit that reintroduces a null between the null-check and the
+    // affordability fall-through is a compile error instead of a silently resurrected dead end.
+    // Types are erased, so this does not move the emitted bundle.
+    let bestGemBuilding: string | null = null;
     for (const best in keysSorted) {
         let max = getPageSetting('Max' + keysSorted[best]);
         if (max === false) max = -1;
@@ -292,9 +298,26 @@ export function buyGemEfficientHousing() {
             // cycle — a deep-game strategy change, not a deadlock fix — and it is measurably the sole
             // source of L0 corpus divergence: with this carve-out baseline-zero stays at zero.
             //
-            // Guarded on `!== null` so the skipWarp / Gateway-wall paths above, which null the winner
-            // to mean "buy nothing this tick", keep breaking exactly as before.
-            if (bestGemBuilding !== null && bestGemBuilding !== "Warpstation"
+            // #155 — A NULLED WINNER MEANS "SKIP THIS CANDIDATE", NOT "BUY NO GEM HOUSING AT ALL".
+            // skipWarp (the Gigastation cap and the metal wall) nulls the winner, and the loop then
+            // fell to `break` — so every lower-ranked candidate went with it. An affordable,
+            // uncapped Collector/Mansion/Hotel/Resort sitting right behind a giga-capped Warpstation
+            // was simply never considered. `WarpstationCap` defaults ON and only starts enforcing
+            // after the first Gigastation, and Warpstation ranks first outright past ~41 Collectors,
+            // so this dead end was live for essentially every deep U1 player.
+            //
+            // Placed AFTER the coord-buy block so `WarpstationCoordBuy`'s deliberate cap override
+            // still wins: if it re-set the winner to Warpstation, this is not null and we buy it.
+            //
+            // This also subsumes the Gateway-wall path's own `continue` above — every "this
+            // candidate is out" now exits the same way, which is what stops the next such guard from
+            // silently re-introducing the same dead end.
+            if (bestGemBuilding === null) {
+                document.getElementById(keysSorted[best])!.style.border = "1px solid orange";
+                continue;
+            }
+
+            if (bestGemBuilding !== "Warpstation"
                 && !canAffordBuilding(bestGemBuilding, false, false, false, false, 1)
                 && gemsAffordable(bestGemBuilding)) {
                 document.getElementById(bestGemBuilding)!.style.border = "1px solid orange";
