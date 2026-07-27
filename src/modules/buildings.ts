@@ -502,6 +502,35 @@ export function mostEfficientHousing() {
             let housingBonus = game.buildings[housing].increase.by;
             if (!game.buildings.Hub.locked) { housingBonus += 500; }
 
+            // ⚠️ #158 — THIS PRICE IS NOT THE PRICE THE GAME CHARGES, AND THAT IS DELIBERATE-FOR-NOW.
+            // The game charges `floor(base * scaling^purchased)` (getBuildingItemPrice,
+            // .trimps-game/main.js:4819). This line is wrong against it twice, and neither error
+            // cancels across candidates — housing scalings differ per tier (Hut 1.24, House 1.22,
+            // Mansion 1.20, Hotel 1.18, Resort 1.16, Gateway 1.14, Collector 1.12), so dividing each
+            // by a different factor moves the argmin, not just its scale:
+            //   1. the `- 1` prices one generation BEHIND the unit about to be bought;
+            //   2. it reads `owned` where the game exponentiates on `purchased`, so a unit sitting in
+            //      the craft queue prices at its pre-purchase cost.
+            // Error 2 has a measured consequence: after each purchase this function re-picks the
+            // building it just queued, safeBuyBuilding's isBuildingInQueue guard (line ~78) rejects
+            // it, `boughtHousing` stays false, and RbuyBuildings' do/while exits after ONE buy — so
+            // U2 housing is capped at one purchase per tick. Measured on 09-housing-u2 over 6000
+            // ticks: 0 ticks with more than one building bought, against 1 with the price corrected.
+            //
+            // NOT FIXED, and the reason is the load-bearing part. The corrected version exists and is
+            // green (branch `feature/158-u2-housing-price-unit`), but shipping it moves
+            // 09-housing-u2's recorded trace, and `blind-spot-sensitivity.test.ts`'s NEGATIVE control
+            // requires the census fixtures to reproduce their oracle EXACTLY with no manifest applied.
+            // Satisfying that is not a local re-record: record-oracle.mjs replays the FROZEN bundle at
+            // tag oracle/v4-post-fix-sweep, so it means re-pinning the oracle across 37+ commits of
+            // src. The measured benefit — one extra multi-buy tick in 6000, identical housing and
+            // population at the horizon — does not justify that, especially as the only fixture
+            // reaching this code has affordability deliberately removed (make-fixtures.mjs:313 pokes
+            // 1e9 of four resources). Re-open #158 when a resource-CONSTRAINED U2 fixture exists;
+            // that is the state where error 2's craft-queue window (craftTime 240-1200s at depth)
+            // would actually bind. tests/buildings.housingPrice.test.ts pins the disagreement so this
+            // is an executing witness, not a comment nobody re-checks.
+            //
             // Only keep the slowest producer, aka the one that would take the longest to generate resources for
             worstTime = Math.max(baseCost * Math.pow(costScaling, currentOwned - 1) / (avgProduction * housingBonus), worstTime);
             if (resource === 'wood' && !Rhyposhouldwood) worstTime = Infinity;
