@@ -185,6 +185,27 @@ export function buyFoodEfficientHousing() {
     }
 }
 
+/**
+ * Does the player hold enough GEMS for one unit of `building`?
+ *
+ * Mirrors canAffordBuilding's per-cost-item arithmetic (.trimps-game/main.js:4773-4788) for the single
+ * `gems` item: raw price at purchaseAmt 1, the Resourceful discount, Math.ceil, then `price > owned` /
+ * !isFinite. getPerkLevel (NOT game.portal.Resourceful.level) is what the native check itself calls, and
+ * it is universe-correct — the sibling walls in this file use the U1-only `.level` form, which is a
+ * latent U2 bug this helper deliberately does not copy.
+ *
+ * Module-private on purpose: nothing outside needs it, and the bridge must not publish a name this
+ * generic onto globalThis.
+ */
+function gemsAffordable(building: string): boolean {
+    const toBuy = game.buildings[building];
+    if (typeof toBuy.cost.gems === 'undefined') return true;
+    let price = parseFloat(String(getBuildingItemPrice(toBuy, "gems", false, 1)));
+    if (getPerkLevel("Resourceful"))
+        price = Math.ceil(price * Math.pow(1 - game.portal.Resourceful.modifier, getPerkLevel("Resourceful")));
+    return isFinite(price) && price <= game.resources.gems.owned;
+}
+
 export function buyGemEfficientHousing() {
     const gemHousing = ["Mansion", "Hotel", "Resort", "Gateway", "Collector", "Warpstation"];
     const unlockedHousing = [];
@@ -249,6 +270,36 @@ export function buyGemEfficientHousing() {
                             bestGemBuilding = "Warpstation";
                     }
                 }
+            }
+
+            // AFFORDABILITY FALL-THROUGH. The ranking above scores candidates on gemsCost /
+            // increase.by ONLY, so it is structurally blind to every OTHER cost item a building
+            // carries — Gateway's fragments, Warpstation's metal. When the winner is blocked on one
+            // of those, breaking here buys NOTHING, this tick and every tick after: the ranking is a
+            // pure function of state, and the failed purchase did not change that state. Measured on
+            // a real z60 save (96 Gateways; fragment price 8.71e8 vs 5.21e8 owned) with MaxGateway
+            // uncapped: zero gem housing bought, while gems ran away to 5e12 unspent.
+            //
+            // So — if the winner has the GEMS but is blocked on something else, fall through to the
+            // next-best deal. If it is blocked on GEMS ITSELF, keep breaking: that is AT saving up
+            // for the better deal, and it is the only thing stopping it from dumping gems into a
+            // 7x-worse Mansion while a Collector is a few hundred ticks away.
+            //
+            // Warpstation is deliberately EXCLUDED. Its metal cost is 10x its gem cost, so it is the
+            // one candidate that is routinely gem-rich / metal-poor, and it already owns three
+            // settings (Warpstation Cap / Wall / Coord Buy) that exist to express the user's intent
+            // about exactly that trade. Falling through it would divert gems out of the Gigastation
+            // cycle — a deep-game strategy change, not a deadlock fix — and it is measurably the sole
+            // source of L0 corpus divergence: with this carve-out baseline-zero stays at zero.
+            //
+            // Guarded on `!== null` so the skipWarp / Gateway-wall paths above, which null the winner
+            // to mean "buy nothing this tick", keep breaking exactly as before.
+            if (bestGemBuilding !== null && bestGemBuilding !== "Warpstation"
+                && !canAffordBuilding(bestGemBuilding, false, false, false, false, 1)
+                && gemsAffordable(bestGemBuilding)) {
+                document.getElementById(bestGemBuilding)!.style.border = "1px solid orange";
+                bestGemBuilding = null;
+                continue;
             }
             break;
         }

@@ -81,6 +81,9 @@ declare global {
   function canAffordBuilding(...args: any[]): boolean
   function calculateMaxAfford(...args: any[]): number
   function getBuildingItemPrice(...args: any[]): number
+  // main.js:2405 — universe-aware perk level (.level in U1, .radLevel in U2). What the native
+  // canAffordBuilding itself calls to apply the Resourceful discount.
+  function getPerkLevel(what: string, usePortalUniverse?: boolean): number
   function buyBuilding(...args: any[]): void
   function bwRewardUnlocked(...args: any[]): boolean
   function canAffordCoordinationTrimps(...args: any[]): boolean

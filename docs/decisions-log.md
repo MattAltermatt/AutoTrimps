@@ -7,6 +7,41 @@ closed [GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/issues).
 
 ## Shipped decisions, newest first
 
+- **🏚️ GEM-HOUSING AFFORDABILITY FALL-THROUGH — AT SAT ON AN UNPAYABLE GATEWAY AND BOUGHT NOTHING**
+  (2026-07-27) — `buyGemEfficientHousing` ranked candidates on `gemsCost / increase.by` alone and then
+  `break`'d on the winner **whether or not it could be bought**. Gateway is the only U1 gem housing
+  whose binding resource is *not* gems (`fragments: [3000, 1.14]`), and it stays the best gems-per-pop
+  deal until ~100 owned — so past a certain count AT locked onto a Gateway it could not pay for and
+  bought **nothing, permanently**: the ranking is a pure function of state, and the failed purchase does
+  not change that state. Reported from a real z60 save (96 Gateways, fragment price 8.71e8 vs 5.21e8
+  owned, gems 3.95e11 idle). Measured, 3000 ticks with `MaxGateway` uncapped: **nothing bought, gems
+  ballooning to 3.2e12 — versus 5 Collectors and +42.7% max population** with the fix. The fix: if the
+  winner has the GEMS but is blocked on a resource the ranking never examined, repaint it orange, null
+  it, and fall through to the next-best. **Blocked on GEMS itself still breaks** — that is AT saving up,
+  and it is the only thing stopping it from dumping gems into a 7x-worse Mansion.
+  🎠 **WARPSTATION IS CARVED OUT, AND THAT CARVE-OUT IS THE WHOLE DIFFERENCE BETWEEN A BUGFIX AND A
+  STRATEGY CHANGE.** Its metal cost is 10x its gem cost, so it is the one candidate that is *routinely*
+  gem-rich/metal-poor; letting it fall through diverts gems out of the Gigastation cycle and moves the
+  `12-warp-u1` trace by **2,118 events**. With the carve-out, all 14 corpus runs stay byte-identical.
+  🚨 **THE DEFAULT `MaxGateway` OF 25 IS THE ONLY THING THAT WAS MASKING THIS** — at 96 owned the cap
+  filters Gateway out of the loop entirely, so only users who follow the setting's own tooltip advice
+  (`-1` = no cap) hit it. That is also why `baseline-zero` was green through both the broken and the
+  fixed build: eight of nine U1 fixtures have every gem housing LOCKED, and the two deep ones run at the
+  stock cap, **below the branch**. Same species as #153 — a green net that could not look. New fixture
+  `14-gem-housing-frag-lock-u1` + `tests/sim/gem-housing-fallthrough.test.ts` is the eye that was
+  missing (deliberately *not* registered in the corpus: its oracle would be recorded from the fixed
+  build, so it could only catch future regressions, never prove this fix).
+  ⚠️ **ONE OF THE FOUR NEW BRANCH TESTS SHIPPED AS A FAKE GATE AND WAS CAUGHT ONLY BY MUTATION.** The
+  Warpstation-carve-out case passed *with and without* the carve-out, because the fixture had no
+  candidate ranked below Warpstation — so "carve-out honored" and "winner nulled" both bought nothing
+  and the assertion could not tell them apart. Fixed by pricing a Mansion below Warpstation. Every one
+  of the four now dies to its own mutation.
+  **Left alone deliberately:** the dead `GatewayWall` guard (a catalogued phantom — retiring it is a
+  separate decision), and the *identical* structural deadlock in the sibling `buyFoodEfficientHousing`
+  (same one-winner/no-fall-through shape over a food-only ranking, while all five candidates also cost
+  wood/metal/gems). The sibling's *shape* is confirmed; a reachable state for it is **not** — do not
+  cite it as a known bug without measuring one first.
+
 - **⚠️ #150 SHIPPED — NATIVE-AUTOMATION CONFLICT ADVISORIES (yellow badge + hover)** (2026-07-25) —
   the game ships its own automations (AutoPrestige/AutoUpgrade/AutoStructure/AutoJobs/AutoStorage) that
   overlap AT's, and nothing told the player when the two were fighting. New `src/modules/native-conflicts.ts`

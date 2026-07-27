@@ -4819,6 +4819,14 @@
       safeBuyBuilding2(bestFoodBuilding.name);
     }
   }
+  function gemsAffordable(building) {
+    const toBuy = game.buildings[building];
+    if (typeof toBuy.cost.gems === "undefined") return true;
+    let price = parseFloat(String(getBuildingItemPrice(toBuy, "gems", false, 1)));
+    if (getPerkLevel("Resourceful"))
+      price = Math.ceil(price * Math.pow(1 - game.portal.Resourceful.modifier, getPerkLevel("Resourceful")));
+    return isFinite(price) && price <= game.resources.gems.owned;
+  }
   function buyGemEfficientHousing() {
     const gemHousing = ["Mansion", "Hotel", "Resort", "Gateway", "Collector", "Warpstation"];
     const unlockedHousing = [];
@@ -4880,6 +4888,11 @@
                 bestGemBuilding = "Warpstation";
             }
           }
+        }
+        if (bestGemBuilding !== null && bestGemBuilding !== "Warpstation" && !canAffordBuilding(bestGemBuilding, false, false, false, false, 1) && gemsAffordable(bestGemBuilding)) {
+          document.getElementById(bestGemBuilding).style.border = "1px solid orange";
+          bestGemBuilding = null;
+          continue;
         }
         break;
       }

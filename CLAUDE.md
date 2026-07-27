@@ -226,6 +226,16 @@ that has already cost a session at least once.
   `getComputedStyle`. Worse, a jsdom fixture built without the class + rule encodes the same wrong model
   and cannot catch it — put the real class and a `<style>` in the fixture (#150; #41 Phase 2 is the
   mirror image, where an inline style beat a plain assignment).
+- **🏚️ A RANKING SCORED ON ONE RESOURCE IS BLIND TO THE ONE THAT ACTUALLY BINDS.** AT's housing
+  buyers rank candidates on a single cost item (`gemsCost / increase.by`, `foodPrice / increase.by`)
+  and then commit to the winner. A building whose *other* costs are the real constraint therefore wins
+  the ranking exactly when it is least payable — and because the ranking is a pure function of state, a
+  failed purchase changes nothing and the same winner is re-picked every tick, forever. Gateway did
+  this at z60 (best gems-per-pop until ~100 owned, but priced in fragments) and AT bought **nothing**
+  while gems ran to 3.2e12. When touching a buyer, ask which resources the score omits — and note the
+  sibling `buyFoodEfficientHousing` still has the same shape, unfixed and unmeasured. Fixing it needs a
+  carve-out for candidates whose trade the user already owns via settings (Warpstation's is worth 2,118
+  trace events).
 - **🌱 Verify the FRESH-SAVE unlock path.** A deep everything-unlocked save is structurally blind to
   unlock and reveal bugs — two shipped that way, including a duplicate tile caused by the game's
   reveal animation setting an inline `display:block` that beat a plain style assignment (#41 Phase 2).
