@@ -1,22 +1,57 @@
 // Known-diff manifest: reconciles intended bug-fix divergences with the trace differential so
 // bug-fixing is a first-class, auditable operation rather than a gate-breaker. Each waiver
-// declares an EXPECTED divergence (issue, save, index, fn); the gate passes iff every actual
-// divergence is waived (actualDiff \ manifest == ∅). A naked golden change with no waiver IS the
-// accidental-drift alarm. An unfired waiver (declared but never seen) warns — the corpus doesn't
-// reach the fix.
-const key = (w) => `${w.save}#${w.index}#${w.fn}`
+// declares an EXPECTED divergence (issue, save, index, fn, argsBefore, argsAfter); the gate passes
+// iff every actual divergence is waived (actualDiff \ manifest == ∅). A naked golden change with no
+// waiver IS the accidental-drift alarm. An unfired waiver (declared but never seen) warns — the
+// corpus doesn't reach the fix.
+//
+// #159 — A WAIVER PINS A SUBSTITUTION, NOT A SLOT. This used to match on (save, index, fn) alone,
+// ignoring the argsBefore/argsAfter that manifest.test.ts was already writing. That made every
+// waiver a blanket exemption: "AT buys a House at index 10 instead of at tick 1460" also silently
+// accepted a different building, a different quantity, at any tick, forever. On a short trace that
+// is enormous — 09-housing-u2's oracle is 12 events, of which 4 are buyBuilding, so a three-waiver
+// set would have exempted the entire tail of the fixture the blind-spot census names as the single
+// point of failure for mostEfficientHousing. Same species as the ratchet ceilings in #157: a gate
+// quietly losing the ability to fail.
+//
+// Args are REQUIRED, not optional-when-convenient. The waiver array was empty when this landed, so
+// there was no back-compat cost and therefore no reason to leave the loose form reachable by habit —
+// a missing declaration is a loud throw, not a permissive match.
+const key = (w) => `${w.save}#${w.index}#${w.fn}#${JSON.stringify(w.argsBefore ?? null)}#${JSON.stringify(w.argsAfter ?? null)}`
+
+// An absent side is a real value: `null` means "no event here", which is how an INSERTION (oracle
+// null) and a DELETION (working null) are declared. Normalising both to null keeps those
+// expressible rather than forcing a waiver to lie about them.
+const sameArgs = (declared, actual) => JSON.stringify(declared ?? null) === JSON.stringify(actual ?? null)
 
 /**
  * @param {{index:number,oracle:any,working:any}[]} diff
  * @param {string} save
- * @param {{ waivers?: {issue:string,save:string,index:number,fn:string}[] }} manifest
+ * @param {{ waivers?: {issue:string,save:string,index:number,fn:string,argsBefore:any,argsAfter:any}[] }} manifest
  * @returns {{ unexplained: any[], unfired: any[] }}
  */
 export function applyManifest(diff, save, manifest) {
-  const waivers = (manifest.waivers || []).filter((w) => w.save === save)
+  const all = manifest.waivers || []
+  for (const w of all) {
+    if (!('argsBefore' in w) || !('argsAfter' in w)) {
+      throw new Error(
+        `[manifest] waiver ${w.issue ?? '(no issue)'} for ${w.save}#${w.index}#${w.fn} declares no ` +
+          'argsBefore/argsAfter. A waiver must pin the exact substitution it is explaining — without ' +
+          'args it exempts the whole slot and any future divergence there passes silently (#159). ' +
+          'Use null for an absent side (insertion/deletion).',
+      )
+    }
+  }
+  const waivers = all.filter((w) => w.save === save)
   const seen = new Set()
   const unexplained = diff.filter((d) => {
-    const match = waivers.find((w) => w.index === d.index && w.fn === (d.working?.fn ?? d.oracle?.fn))
+    const match = waivers.find(
+      (w) =>
+        w.index === d.index &&
+        w.fn === (d.working?.fn ?? d.oracle?.fn) &&
+        sameArgs(w.argsBefore, d.oracle?.args) &&
+        sameArgs(w.argsAfter, d.working?.args),
+    )
     if (match) {
       seen.add(key(match))
       return false
