@@ -384,7 +384,19 @@ export function autoSetValueToolTip(id: any, text: any, negative: any, multi: an
         tooltipText += ' Accepts negative numbers as validated inputs.';
     else
         tooltipText += ' Put -1 for Infinite.';
-    tooltipText += `<br/><br/><input id="customNumberBox" style="width: 50%" onkeypress="onKeyPressSetting(event, '${id}', ${negative}, ${multi})" value="${autoTrimpSettings[id].value}"></input>`;
+    // #235 — the stored value USED TO BE spliced into `value="${…}"` inside this string, which is
+    // then assigned to tipText.innerHTML. Two failures, and the boring one is the common one:
+    //   · DATA LOSS. A `"` in the value closes the attribute, so the box showed a truncated string
+    //     and Apply wrote that truncation back. A value that STARTS with a quote was erased whole.
+    //     The HTML attribute parser also decodes character references, so a stored `&amp;` came back
+    //     as `&` — enough to break heirlooms.ts's exact-equality name match.
+    //   · INJECTION. `" onfocus="…` attached a live handler that the `box.focus()` below fires with
+    //     no further user action. Reachable for all 302 value/multiValue/textValue/valueNegative
+    //     controls from an imported settings string (see #210) and by typing for the 29 textValue.
+    // The value is set as a DOM PROPERTY after the markup is parsed, so it is never HTML at all —
+    // strictly stronger than escaping, and it fixes the entity-decoding half that escaping alone
+    // would still leave. Do not fold it back into the template.
+    tooltipText += `<br/><br/><input id="customNumberBox" style="width: 50%" onkeypress="onKeyPressSetting(event, '${id}', ${negative}, ${multi})"></input>`;
     var costText = '<div class="maxCenter"><div class="btn btn-info" onclick="autoSetValue(\'' + id + '\',' + negative + ',' + multi + ')">Apply</div><div class="btn btn-info" onclick="cancelTooltip()">Cancel</div></div>';
     game.global.lockTooltip = true;
     elem.style.left = '32.5%';
@@ -394,6 +406,7 @@ export function autoSetValueToolTip(id: any, text: any, negative: any, multi: an
     document.getElementById('tipCost')!.innerHTML = costText;
     elem.style.display = 'block';
     var box: any = document.getElementById('customNumberBox');
+    box.value = autoTrimpSettings[id].value;
     try {
         box.setSelectionRange(0, box.value.length);
     } catch (e) {
@@ -406,7 +419,9 @@ export function autoSetTextToolTip(id: any, text: any) {
     ranstring = text;
     var elem = document.getElementById("tooltipDiv")!;
     var tooltipText = 'Type your input below';
-    tooltipText += `<br/><br/><input id="customTextBox" style="width: 50%" onkeypress="onKeyPressSetting(event, '${id}')" value="${autoTrimpSettings[id].value}"></input>`;
+    // #235 — see autoSetValueToolTip above: the value is a DOM property, never markup. This is the
+    // box the 29 textValue settings use, i.e. the one a user can put a `"` into by typing.
+    tooltipText += `<br/><br/><input id="customTextBox" style="width: 50%" onkeypress="onKeyPressSetting(event, '${id}')"></input>`;
     var costText = '<div class="maxCenter"><div class="btn btn-info" onclick="autoSetText(\'' + id + '\')">Apply</div><div class="btn btn-info" onclick="cancelTooltip()">Cancel</div></div>';
     game.global.lockTooltip = true;
     elem.style.left = '32.5%';
@@ -416,6 +431,7 @@ export function autoSetTextToolTip(id: any, text: any) {
     document.getElementById('tipCost')!.innerHTML = costText;
     elem.style.display = 'block';
     var box: any = document.getElementById('customTextBox');
+    box.value = autoTrimpSettings[id].value;
     box.focus();
 }
 

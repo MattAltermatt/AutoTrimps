@@ -7,6 +7,15 @@
 // ambient. Behaviour-preserving: any body edits are TYPE-ONLY.
 import { saveSettings } from './utils'
 
+// #235 — writes a stored preset value onto an already-parsed input as a DOM property. This is the
+// whole reason MAZLookalike's row markup no longer carries `value='…'`: the value never becomes
+// HTML, so there is nothing for a quote — single OR double — to break out of. A field a given preset
+// does not render simply has no element, which is expected, not an error.
+function setRowFieldValue(id: string, value: any) {
+    var el = document.getElementById(id) as HTMLInputElement | null;
+    if (el) el.value = value;
+}
+
 export function MAZLookalike(titleText: any, _isItIn?: any, _event?: any) {
 
     var zone: any;
@@ -165,6 +174,18 @@ export function MAZLookalike(titleText: any, _isItIn?: any, _event?: any) {
 
     var current = autoTrimpSettings[zone].value;
 
+    // #235 — the per-row values are collected here and written as DOM PROPERTIES after the markup is
+    // parsed (see the loop below `tipText.innerHTML`), instead of being concatenated into
+    // `value='…'` attributes. This is the same fix as the two settings-engine input tooltips, and
+    // MAZ needed it MORE: every attribute in this builder is SINGLE-quoted, so escapeHtml() — which
+    // escapes & < > and " but not ' — would not have closed it. Twenty-nine splices of
+    // `autoTrimpSettings[…].value[x]` reached innerHTML at :302; a payload landing in any of the
+    // fourteen MAZ presets (Time/Tribute/Smithy Farm, Shrine, Quagmire, Insanity, Alch, Hypo, Praid,
+    // and their U2/daily twins) executed on one ordinary click of that preset's `*maz` button.
+    // Reached the same way as #210: a multiValue/textValue element is legitimately a string, so no
+    // import validator can reject it — the render seam is the only place this can be stopped.
+    var rowValues: any[] = [];
+
     for (var x = 0; x < maxSettings; x++) {
         var vals: any = {
             check: true,
@@ -229,52 +250,55 @@ export function MAZLookalike(titleText: any, _isItIn?: any, _event?: any) {
         var mapDropdown = "<option value='Random'" + ((vals.map == 'Random') ? " selected='selected'" : "") + ">Random</option><option value='Mountain'" + ((vals.map == 'Mountain') ? " selected='selected'" : "") + ">Moutain</option><option value='Forest'" + ((vals.map == 'Forest') ? " selected='selected'" : "") + ">Forest</option><option value='Sea'" + ((vals.map == 'Sea') ? " selected='selected'" : "") + ">Sea</option><option value='Depths'" + ((vals.map == 'Depths') ? " selected='selected'" : "") + ">Depths</option><option value='Plentiful'" + ((vals.map == 'Plentiful') ? " selected='selected'" : "") + ">Gardens</option><option value='Farmlands'" + ((vals.map == 'Farmlands') ? " selected='selected'" : "") + ">Farmlands</option>"
         var specialsDropdown = "<option value='fa'" + ((vals.special == 'fa') ? " selected='selected'" : "") + ">Fast Attack</option><option value='lc'" + ((vals.special == 'lc') ? " selected='selected'" : "") + ">Large Cache</option><option value='ssc'" + ((vals.special == 'ssc') ? " selected='selected'" : "") + ">Small Savory Cache</option><option value='swc'" + ((vals.special == 'swc') ? " selected='selected'" : "") + ">Small Wooden Cache</option><option value='smc'" + ((vals.special == 'smc') ? " selected='selected'" : "") + ">Small Metal Cache</option><option value='src'" + ((vals.special == 'src') ? " selected='selected'" : "") + ">Small Research Cache</option><option value='p'" + ((vals.special == 'p') ? " selected='selected'" : "") + ">Prestigious</option><option value='hc'" + ((vals.special == 'hc') ? " selected='selected'" : "") + ">Huge Cache</option><option value='lsc'" + ((vals.special == 'lsc') ? " selected='selected'" : "") + ">Large Savory Cache</option><option value='lwc'" + ((vals.special == 'lwc') ? " selected='selected'" : "") + ">Large Wooden Cache</option><option value='lmc'" + ((vals.special == 'lmc') ? " selected='selected'" : "") + ">Large Metal Cache</option><option value='lrc'" + ((vals.special == 'lrc') ? " selected='selected'" : "") + ">Large Research Cache</option>"
 
+        // #235 — a fresh object per iteration, so holding the reference is safe.
+        rowValues[x] = vals;
+
         var className = (vals.preset == 3) ? "windowBwMainOn" : "windowBwMainOff";
         tooltipText += "<div id='windowRow" + x + "' class='row windowRow " + className + "'" + style + ">";
         tooltipText += "<div class='windowDelete' onclick='removeRow(" + x + ")'><span class='icomoon icon-cross'></span></div>";
-        tooltipText += "<div class='windowZone'><input value='" + vals.zone + "' type='number' id='windowZone" + x + "'/></div>";
-        if (!titleText.includes('Quagmire')) tooltipText += "<div class='windowCell'><input value='" + vals.cell + "' type='number' id='windowCell" + x + "'/></div>";
+        tooltipText += "<div class='windowZone'><input type='number' id='windowZone" + x + "'/></div>";
+        if (!titleText.includes('Quagmire')) tooltipText += "<div class='windowCell'><input type='number' id='windowCell" + x + "'/></div>";
 
         //Tooltips
 
         if (titleText == 'Time Farm') {
-            tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
-            tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.map + "' id='windowMap" + x + "'>" + mapDropdown + "</select></div>"
-            tooltipText += "<div class='windowLevel'><input value='" + vals.level + "' type='number' id='windowLevel" + x + "'/></div>";
-            tooltipText += "<div class='windowSpecial' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.special + "' id='windowSpecial" + x + "'>" + specialsDropdown + "</select></div>"
-            tooltipText += "<div class='windowGather' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.gather + "' id='windowGather" + x + "'>" + gatherDropdown + "</select></div>"
+            tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
+            tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select id='windowMap" + x + "'>" + mapDropdown + "</select></div>"
+            tooltipText += "<div class='windowLevel'><input type='number' id='windowLevel" + x + "'/></div>";
+            tooltipText += "<div class='windowSpecial' onchange='updateWindowPreset(" + x + ")'><select id='windowSpecial" + x + "'>" + specialsDropdown + "</select></div>"
+            tooltipText += "<div class='windowGather' onchange='updateWindowPreset(" + x + ")'><select id='windowGather" + x + "'>" + gatherDropdown + "</select></div>"
         } else if (titleText == 'dTime Farm') {
-            tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
-            tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.map + "' id='windowMap" + x + "'>" + mapDropdown + "</select></div>"
-            tooltipText += "<div class='windowLevel'><input value='" + vals.level + "' type='number' id='windowLevel" + x + "'/></div>";
-            tooltipText += "<div class='windowSpecial' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.special + "' id='windowSpecial" + x + "'>" + specialsDropdown + "</select></div>"
-            tooltipText += "<div class='windowGather' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.gather + "' id='windowGather" + x + "'>" + gatherDropdown + "</select></div>"
+            tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
+            tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select id='windowMap" + x + "'>" + mapDropdown + "</select></div>"
+            tooltipText += "<div class='windowLevel'><input type='number' id='windowLevel" + x + "'/></div>";
+            tooltipText += "<div class='windowSpecial' onchange='updateWindowPreset(" + x + ")'><select id='windowSpecial" + x + "'>" + specialsDropdown + "</select></div>"
+            tooltipText += "<div class='windowGather' onchange='updateWindowPreset(" + x + ")'><select id='windowGather" + x + "'>" + gatherDropdown + "</select></div>"
         } else if (titleText.includes('Smithy Farm')) {
-            tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";    
+            tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";    
         } else if (titleText.includes('Tribute Farm')) {
-            tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
-            tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.map + "' id='windowMap" + x + "'>" + mapDropdown + "</select></div>"
-            tooltipText += "<div class='windowLevel'><input value='" + vals.level + "' type='number' id='windowLevel" + x + "'/></div>";
-            tooltipText += "<div class='windowSpecial' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.special + "' id='windowSpecial" + x + "'>" + specialsDropdown + "</select></div>"
-            tooltipText += "<div class='windowGather' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.gather + "' id='windowGather" + x + "'>" + gatherDropdown + "</select></div>"
+            tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
+            tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select id='windowMap" + x + "'>" + mapDropdown + "</select></div>"
+            tooltipText += "<div class='windowLevel'><input type='number' id='windowLevel" + x + "'/></div>";
+            tooltipText += "<div class='windowSpecial' onchange='updateWindowPreset(" + x + ")'><select id='windowSpecial" + x + "'>" + specialsDropdown + "</select></div>"
+            tooltipText += "<div class='windowGather' onchange='updateWindowPreset(" + x + ")'><select id='windowGather" + x + "'>" + gatherDropdown + "</select></div>"
         } else if (titleText.includes('Shrine')) {
-            tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
+            tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
         } else if (titleText.includes('Quagmire')) {
-            tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
+            tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
         } else if (titleText.includes('Insanity')) {
-            tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
-            tooltipText += "<div class='windowLevel'><input value='" + vals.level + "' type='number' id='windowLevel" + x + "'/></div>";
+            tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
+            tooltipText += "<div class='windowLevel'><input type='number' id='windowLevel" + x + "'/></div>";
         } else if (titleText.includes('Alch')) {
-            tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='text' id='windowSetting" + x + "'/></div>";
-            tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.map + "' id='windowMap" + x + "'>" + mapDropdown + "</select></div>"
-            tooltipText += "<div class='windowLevel'><input value='" + vals.level + "' type='number' id='windowLevel" + x + "'/></div>";
+            tooltipText += "<div class='windowSetting'><input type='text' id='windowSetting" + x + "'/></div>";
+            tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select id='windowMap" + x + "'>" + mapDropdown + "</select></div>"
+            tooltipText += "<div class='windowLevel'><input type='number' id='windowLevel" + x + "'/></div>";
         } else if (titleText.includes('Hypo')) {
-            tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
-            tooltipText += "<div class='windowLevel'><input value='" + vals.level + "' type='number' id='windowLevel" + x + "'/></div>";
+            tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
+            tooltipText += "<div class='windowLevel'><input type='number' id='windowLevel" + x + "'/></div>";
         } else if (titleText == 'Praid') {
-            tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
+            tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
         } else if (titleText == 'dPraid') {
-            tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
+            tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
         }
 
         tooltipText += "</div>"
@@ -301,6 +325,23 @@ export function MAZLookalike(titleText: any, _isItIn?: any, _event?: any) {
     document.getElementById("tipTitle")!.innerHTML = titleText;
     document.getElementById("tipText")!.innerHTML = tooltipText;
     document.getElementById("tipCost")!.innerHTML = costText;
+
+    // #235 — the stored preset values go in HERE, as DOM properties on the already-parsed elements,
+    // and never as text inside the markup above. A row does not carry every field (Quagmire has no
+    // cell, Shrine has no map), so a missing element is normal and skipped rather than asserted.
+    // The three <select>s deliberately get NO assignment: `<select value='…'>` was never a real HTML
+    // attribute and did nothing, and the selection is driven by the `selected='selected'` the option
+    // list already carries — writing `.value` here would instead CLEAR the selection whenever the
+    // stored value is the numeric 0 fallback, which is a behaviour change, not a fix.
+    for (var r = 0; r < rowValues.length; r++) {
+        var rv = rowValues[r];
+        if (!rv) continue;
+        setRowFieldValue('windowZone' + r, rv.zone);
+        setRowFieldValue('windowCell' + r, rv.cell);
+        setRowFieldValue('windowSetting' + r, rv.setting);
+        setRowFieldValue('windowLevel' + r, rv.level);
+    }
+
     elem.style.display = "block";
     if (ondisplay !== null) {
         ondisplay();

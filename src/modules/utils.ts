@@ -28,6 +28,28 @@ export function loadPageVariables() {
 
 export function safeSetItems(a: string,b: string){try{localStorage.setItem(a,b)}catch(c: any){22==c.code&&debug("Error: LocalStorage is full, or error. Attempt to delete some portals from your graph or restart browser.")}}
 
+// #235/#210 — the ONE escaper for persisted, attacker-influenceable text that has to be spliced
+// into an HTML string. It lives here rather than in import-export.ts (where it was born, guarding
+// the cleanup key preview) because three separate modules need exactly this rule, and a second
+// hand-written copy of an escaping rule is how #110 happened twice.
+//
+// Everything AT persists is attacker-influenceable in principle: importing another player's
+// settings string IS the documented feature (this file ships two third-party preset blobs), the
+// userscript runs with `@grant none` in page context, and the game page carries no CSP. So a stored
+// value is untrusted text, and the only safe splice is an escaped one.
+//
+// Order matters: `&` MUST be replaced first, or the ampersands introduced by the later replacements
+// get double-escaped. `"` is included because the main sink is an HTML *attribute*, not a text node.
+// Prefer removing the splice outright (textContent, or setting `.value` as a property) where that is
+// possible — this helper is for the cases where the surrounding markup genuinely has to be a string.
+export function escapeHtml(s: any): string {
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
 export function serializeSettings() {
     return JSON.stringify(Object.keys(autoTrimpSettings).reduce((v: Record<string, any>, k) => {
         const el = autoTrimpSettings[k];

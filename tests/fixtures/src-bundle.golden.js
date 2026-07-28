@@ -549,6 +549,7 @@
   __export(utils_exports, {
     byId: () => byId2,
     debug: () => debug2,
+    escapeHtml: () => escapeHtml,
     filterMessage2: () => filterMessage2,
     getPageSetting: () => getPageSetting2,
     getPageSettingAt: () => getPageSettingAt,
@@ -620,6 +621,9 @@
     } catch (c) {
       22 == c.code && debug2("Error: LocalStorage is full, or error. Attempt to delete some portals from your graph or restart browser.");
     }
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
   function serializeSettings2() {
     return JSON.stringify(Object.keys(autoTrimpSettings).reduce((v, k) => {
@@ -1284,7 +1288,7 @@
       tooltipText += " Accepts negative numbers as validated inputs.";
     else
       tooltipText += " Put -1 for Infinite.";
-    tooltipText += `<br/><br/><input id="customNumberBox" style="width: 50%" onkeypress="onKeyPressSetting(event, '${id}', ${negative}, ${multi})" value="${autoTrimpSettings[id].value}"></input>`;
+    tooltipText += `<br/><br/><input id="customNumberBox" style="width: 50%" onkeypress="onKeyPressSetting(event, '${id}', ${negative}, ${multi})"></input>`;
     var costText = `<div class="maxCenter"><div class="btn btn-info" onclick="autoSetValue('` + id + "'," + negative + "," + multi + ')">Apply</div><div class="btn btn-info" onclick="cancelTooltip()">Cancel</div></div>';
     game.global.lockTooltip = true;
     elem.style.left = "32.5%";
@@ -1294,6 +1298,7 @@
     document.getElementById("tipCost").innerHTML = costText;
     elem.style.display = "block";
     var box = document.getElementById("customNumberBox");
+    box.value = autoTrimpSettings[id].value;
     try {
       box.setSelectionRange(0, box.value.length);
     } catch (e) {
@@ -1305,7 +1310,7 @@
     ranstring = text;
     var elem = document.getElementById("tooltipDiv");
     var tooltipText = "Type your input below";
-    tooltipText += `<br/><br/><input id="customTextBox" style="width: 50%" onkeypress="onKeyPressSetting(event, '${id}')" value="${autoTrimpSettings[id].value}"></input>`;
+    tooltipText += `<br/><br/><input id="customTextBox" style="width: 50%" onkeypress="onKeyPressSetting(event, '${id}')"></input>`;
     var costText = `<div class="maxCenter"><div class="btn btn-info" onclick="autoSetText('` + id + `')">Apply</div><div class="btn btn-info" onclick="cancelTooltip()">Cancel</div></div>`;
     game.global.lockTooltip = true;
     elem.style.left = "32.5%";
@@ -1315,6 +1320,7 @@
     document.getElementById("tipCost").innerHTML = costText;
     elem.style.display = "block";
     var box = document.getElementById("customTextBox");
+    box.value = autoTrimpSettings[id].value;
     box.focus();
   }
   function onKeyPressSetting(event2, id, negative, multi) {
@@ -7268,6 +7274,10 @@
     settingsWindowSave: () => settingsWindowSave,
     updateWindowPreset: () => updateWindowPreset
   });
+  function setRowFieldValue(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.value = value;
+  }
   function MAZLookalike(titleText, _isItIn, _event) {
     var zone;
     var cell;
@@ -7405,6 +7415,7 @@
     }
     tooltipText += "</div>";
     var current = autoTrimpSettings[zone].value;
+    var rowValues = [];
     for (var x = 0; x < maxSettings; x++) {
       var vals = {
         check: true,
@@ -7463,49 +7474,50 @@
       var gatherDropdown = "<option value='food'" + (vals.gather == "food" ? " selected='selected'" : "") + ">Food</option><option value='metal'" + (vals.gather == "metal" ? " selected='selected'" : "") + ">Metal</option><option value='wood'" + (vals.gather == "wood" ? " selected='selected'" : "") + ">Wood</option><option value='science'" + (vals.gather == "science" ? " selected='selected'" : "") + ">Science</option>";
       var mapDropdown = "<option value='Random'" + (vals.map == "Random" ? " selected='selected'" : "") + ">Random</option><option value='Mountain'" + (vals.map == "Mountain" ? " selected='selected'" : "") + ">Moutain</option><option value='Forest'" + (vals.map == "Forest" ? " selected='selected'" : "") + ">Forest</option><option value='Sea'" + (vals.map == "Sea" ? " selected='selected'" : "") + ">Sea</option><option value='Depths'" + (vals.map == "Depths" ? " selected='selected'" : "") + ">Depths</option><option value='Plentiful'" + (vals.map == "Plentiful" ? " selected='selected'" : "") + ">Gardens</option><option value='Farmlands'" + (vals.map == "Farmlands" ? " selected='selected'" : "") + ">Farmlands</option>";
       var specialsDropdown = "<option value='fa'" + (vals.special == "fa" ? " selected='selected'" : "") + ">Fast Attack</option><option value='lc'" + (vals.special == "lc" ? " selected='selected'" : "") + ">Large Cache</option><option value='ssc'" + (vals.special == "ssc" ? " selected='selected'" : "") + ">Small Savory Cache</option><option value='swc'" + (vals.special == "swc" ? " selected='selected'" : "") + ">Small Wooden Cache</option><option value='smc'" + (vals.special == "smc" ? " selected='selected'" : "") + ">Small Metal Cache</option><option value='src'" + (vals.special == "src" ? " selected='selected'" : "") + ">Small Research Cache</option><option value='p'" + (vals.special == "p" ? " selected='selected'" : "") + ">Prestigious</option><option value='hc'" + (vals.special == "hc" ? " selected='selected'" : "") + ">Huge Cache</option><option value='lsc'" + (vals.special == "lsc" ? " selected='selected'" : "") + ">Large Savory Cache</option><option value='lwc'" + (vals.special == "lwc" ? " selected='selected'" : "") + ">Large Wooden Cache</option><option value='lmc'" + (vals.special == "lmc" ? " selected='selected'" : "") + ">Large Metal Cache</option><option value='lrc'" + (vals.special == "lrc" ? " selected='selected'" : "") + ">Large Research Cache</option>";
+      rowValues[x] = vals;
       var className = vals.preset == 3 ? "windowBwMainOn" : "windowBwMainOff";
       tooltipText += "<div id='windowRow" + x + "' class='row windowRow " + className + "'" + style + ">";
       tooltipText += "<div class='windowDelete' onclick='removeRow(" + x + ")'><span class='icomoon icon-cross'></span></div>";
-      tooltipText += "<div class='windowZone'><input value='" + vals.zone + "' type='number' id='windowZone" + x + "'/></div>";
-      if (!titleText.includes("Quagmire")) tooltipText += "<div class='windowCell'><input value='" + vals.cell + "' type='number' id='windowCell" + x + "'/></div>";
+      tooltipText += "<div class='windowZone'><input type='number' id='windowZone" + x + "'/></div>";
+      if (!titleText.includes("Quagmire")) tooltipText += "<div class='windowCell'><input type='number' id='windowCell" + x + "'/></div>";
       if (titleText == "Time Farm") {
-        tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
-        tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.map + "' id='windowMap" + x + "'>" + mapDropdown + "</select></div>";
-        tooltipText += "<div class='windowLevel'><input value='" + vals.level + "' type='number' id='windowLevel" + x + "'/></div>";
-        tooltipText += "<div class='windowSpecial' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.special + "' id='windowSpecial" + x + "'>" + specialsDropdown + "</select></div>";
-        tooltipText += "<div class='windowGather' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.gather + "' id='windowGather" + x + "'>" + gatherDropdown + "</select></div>";
+        tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
+        tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select id='windowMap" + x + "'>" + mapDropdown + "</select></div>";
+        tooltipText += "<div class='windowLevel'><input type='number' id='windowLevel" + x + "'/></div>";
+        tooltipText += "<div class='windowSpecial' onchange='updateWindowPreset(" + x + ")'><select id='windowSpecial" + x + "'>" + specialsDropdown + "</select></div>";
+        tooltipText += "<div class='windowGather' onchange='updateWindowPreset(" + x + ")'><select id='windowGather" + x + "'>" + gatherDropdown + "</select></div>";
       } else if (titleText == "dTime Farm") {
-        tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
-        tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.map + "' id='windowMap" + x + "'>" + mapDropdown + "</select></div>";
-        tooltipText += "<div class='windowLevel'><input value='" + vals.level + "' type='number' id='windowLevel" + x + "'/></div>";
-        tooltipText += "<div class='windowSpecial' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.special + "' id='windowSpecial" + x + "'>" + specialsDropdown + "</select></div>";
-        tooltipText += "<div class='windowGather' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.gather + "' id='windowGather" + x + "'>" + gatherDropdown + "</select></div>";
+        tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
+        tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select id='windowMap" + x + "'>" + mapDropdown + "</select></div>";
+        tooltipText += "<div class='windowLevel'><input type='number' id='windowLevel" + x + "'/></div>";
+        tooltipText += "<div class='windowSpecial' onchange='updateWindowPreset(" + x + ")'><select id='windowSpecial" + x + "'>" + specialsDropdown + "</select></div>";
+        tooltipText += "<div class='windowGather' onchange='updateWindowPreset(" + x + ")'><select id='windowGather" + x + "'>" + gatherDropdown + "</select></div>";
       } else if (titleText.includes("Smithy Farm")) {
-        tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
+        tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
       } else if (titleText.includes("Tribute Farm")) {
-        tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
-        tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.map + "' id='windowMap" + x + "'>" + mapDropdown + "</select></div>";
-        tooltipText += "<div class='windowLevel'><input value='" + vals.level + "' type='number' id='windowLevel" + x + "'/></div>";
-        tooltipText += "<div class='windowSpecial' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.special + "' id='windowSpecial" + x + "'>" + specialsDropdown + "</select></div>";
-        tooltipText += "<div class='windowGather' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.gather + "' id='windowGather" + x + "'>" + gatherDropdown + "</select></div>";
+        tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
+        tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select id='windowMap" + x + "'>" + mapDropdown + "</select></div>";
+        tooltipText += "<div class='windowLevel'><input type='number' id='windowLevel" + x + "'/></div>";
+        tooltipText += "<div class='windowSpecial' onchange='updateWindowPreset(" + x + ")'><select id='windowSpecial" + x + "'>" + specialsDropdown + "</select></div>";
+        tooltipText += "<div class='windowGather' onchange='updateWindowPreset(" + x + ")'><select id='windowGather" + x + "'>" + gatherDropdown + "</select></div>";
       } else if (titleText.includes("Shrine")) {
-        tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
+        tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
       } else if (titleText.includes("Quagmire")) {
-        tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
+        tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
       } else if (titleText.includes("Insanity")) {
-        tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
-        tooltipText += "<div class='windowLevel'><input value='" + vals.level + "' type='number' id='windowLevel" + x + "'/></div>";
+        tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
+        tooltipText += "<div class='windowLevel'><input type='number' id='windowLevel" + x + "'/></div>";
       } else if (titleText.includes("Alch")) {
-        tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='text' id='windowSetting" + x + "'/></div>";
-        tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select value='" + vals.map + "' id='windowMap" + x + "'>" + mapDropdown + "</select></div>";
-        tooltipText += "<div class='windowLevel'><input value='" + vals.level + "' type='number' id='windowLevel" + x + "'/></div>";
+        tooltipText += "<div class='windowSetting'><input type='text' id='windowSetting" + x + "'/></div>";
+        tooltipText += "<div class='windowMap' onchange='updateWindowPreset(" + x + ")'><select id='windowMap" + x + "'>" + mapDropdown + "</select></div>";
+        tooltipText += "<div class='windowLevel'><input type='number' id='windowLevel" + x + "'/></div>";
       } else if (titleText.includes("Hypo")) {
-        tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
-        tooltipText += "<div class='windowLevel'><input value='" + vals.level + "' type='number' id='windowLevel" + x + "'/></div>";
+        tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
+        tooltipText += "<div class='windowLevel'><input type='number' id='windowLevel" + x + "'/></div>";
       } else if (titleText == "Praid") {
-        tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
+        tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
       } else if (titleText == "dPraid") {
-        tooltipText += "<div class='windowSetting'><input value='" + vals.setting + "' type='number' id='windowSetting" + x + "'/></div>";
+        tooltipText += "<div class='windowSetting'><input type='number' id='windowSetting" + x + "'/></div>";
       }
       tooltipText += "</div>";
     }
@@ -7525,6 +7537,14 @@
     document.getElementById("tipTitle").innerHTML = titleText;
     document.getElementById("tipText").innerHTML = tooltipText;
     document.getElementById("tipCost").innerHTML = costText;
+    for (var r = 0; r < rowValues.length; r++) {
+      var rv = rowValues[r];
+      if (!rv) continue;
+      setRowFieldValue("windowZone" + r, rv.zone);
+      setRowFieldValue("windowCell" + r, rv.cell);
+      setRowFieldValue("windowSetting" + r, rv.setting);
+      setRowFieldValue("windowLevel" + r, rv.level);
+    }
     elem.style.display = "block";
     if (ondisplay !== null) {
       ondisplay();
@@ -12531,6 +12551,7 @@
     onDeleteProfile: () => onDeleteProfile,
     onDeleteProfileHandler: () => onDeleteProfileHandler,
     parseModuleVars: () => parseModuleVars,
+    parseSettingsBlob: () => parseSettingsBlob,
     resetAutoTrimps: () => resetAutoTrimps,
     resetModuleVars: () => resetModuleVars,
     seedModuleDefaults: () => seedModuleDefaults,
@@ -12607,26 +12628,40 @@
       if (results.length > 0) {
         resetAutoTrimps(results[0].data, profname);
         debug2("Successfully loaded existing profile: " + profname, "profile");
+      } else {
+        debug2("Could not find a saved profile named: " + profname, "profile");
+        ImportExportTooltip("message", 'No saved settings profile named "' + profname + '" was found.');
       }
     }
   }
+  function normalizeProfileName(raw) {
+    return String(raw).replace(/[\t\n\f\r ]+/g, " ").trim();
+  }
   function nameAndSaveNewProfile() {
     try {
-      var profname = byId("setSettingsNameTooltip").value.replace(/[\n\r]/gm, "");
-      if (profname == null) {
-        debug2("Error in naming, the string is empty.", "profile");
-        return;
-      }
+      var profname = normalizeProfileName(byId("setSettingsNameTooltip").value);
     } catch (err) {
       debug2("Error in naming, the string is bad." + err.message, "profile");
+      return;
+    }
+    if (profname === "") {
+      debug2("Error in naming, the string is empty.", "profile");
+      ImportExportTooltip("message", "A settings profile needs a name \u2014 nothing was saved.");
+      return;
+    }
+    var loadLastProfiles = localStorage.getItem("ATSelectedSettingsProfile");
+    var oldpresets = loadLastProfiles ? JSON.parse(loadLastProfiles) : new Array();
+    if (oldpresets.some(function(elem) {
+      return elem.name === profname;
+    })) {
+      debug2("A settings profile named '" + profname + "' already exists.", "profile");
+      ImportExportTooltip("message", 'A settings profile named "' + profname + '" already exists \u2014 pick another name.');
       return;
     }
     var profile = {
       name: profname,
       data: JSON.parse(serializeSettings())
     };
-    var loadLastProfiles = localStorage.getItem("ATSelectedSettingsProfile");
-    var oldpresets = loadLastProfiles ? JSON.parse(loadLastProfiles) : new Array();
     var presetlists = [profile];
     safeSetItems2("ATSelectedSettingsProfile", JSON.stringify(oldpresets.concat(presetlists)));
     debug2("Successfully created new profile: " + profile.name, "profile");
@@ -12637,12 +12672,25 @@
     $settingsProfiles.add(optionElementReference);
     $settingsProfiles.selectedIndex = $settingsProfiles.length - 1;
   }
+  function selectedProfileIndex() {
+    if ($settingsProfiles == null) return -1;
+    var index = $settingsProfiles.selectedIndex;
+    return index >= 3 ? index : -1;
+  }
   function onDeleteProfileHandler() {
+    if (selectedProfileIndex() < 0) {
+      ImportExportTooltip("message", "Select a saved settings profile in the dropdown first \u2014 there is nothing to delete.");
+      return;
+    }
     ImportExportTooltip("DeleteSettingsProfiles");
   }
   function onDeleteProfile() {
     if ($settingsProfiles == null) return;
-    var index = $settingsProfiles.selectedIndex;
+    var index = selectedProfileIndex();
+    if (index < 0) {
+      debug2("No settings profile is selected \u2014 nothing was deleted.", "profile");
+      return;
+    }
     $settingsProfiles.options.remove(index);
     $settingsProfiles.selectedIndex = index > $settingsProfiles.length - 1 ? $settingsProfiles.length - 1 : index;
     var loadLastProfiles = localStorage.getItem("ATSelectedSettingsProfile");
@@ -12652,20 +12700,17 @@
     safeSetItems2("ATSelectedSettingsProfile", JSON.stringify(oldpresets));
     debug2("Successfully deleted profile #: " + target, "profile");
   }
-  function escapeHtml(s) {
-    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  }
   function ImportExportTooltip(what, event2) {
     if (game.global.lockTooltip)
       return;
     var $elem = document.getElementById("tooltipDiv");
     swapClass("tooltipExtra", "tooltipExtraNone", $elem);
     var ondisplay = null;
-    var tooltipText;
+    var tooltipText = "";
     var costText = "";
     var titleText = what;
     if (what == "ExportAutoTrimps") {
-      tooltipText = "This is your AUTOTRIMPS save string. There are many like it but this one is yours. Save this save somewhere safe so you can save time next time. <br/><br/><textarea id='exportArea' style='width: 100%' rows='5'>" + serializeSettings() + "</textarea>";
+      tooltipText = "This is your AUTOTRIMPS save string. There are many like it but this one is yours. Save this save somewhere safe so you can save time next time. <br/><br/><textarea id='exportArea' style='width: 100%' rows='5'>" + escapeHtml(serializeSettings()) + "</textarea>";
       costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip()'>Got it</div>";
       if (document.queryCommandSupported("copy")) {
         costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
@@ -12687,7 +12732,7 @@
       }
       costText += "</div>";
     } else if (what == "Export550") {
-      tooltipText = "This is your AUTOTRIMPS z550+ save string. Use this string to import the settings. <br/><br/><textarea id='exportArea' style='width: 100%' rows='5'>" + serializeSettings550() + "</textarea>";
+      tooltipText = "This is your AUTOTRIMPS z550+ save string. Use this string to import the settings. <br/><br/><textarea id='exportArea' style='width: 100%' rows='5'>" + escapeHtml(serializeSettings550()) + "</textarea>";
       costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip()'>Got it</div>";
       if (document.queryCommandSupported("copy")) {
         costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
@@ -12704,7 +12749,7 @@
         };
       }
     } else if (what == "Export60") {
-      tooltipText = "This is your AUTOTRIMPS z60 save string. Use this string to import the settings. <br/><br/><textarea id='exportArea' style='width: 100%' rows='5'>" + serializeSettings60() + "</textarea>";
+      tooltipText = "This is your AUTOTRIMPS z60 save string. Use this string to import the settings. <br/><br/><textarea id='exportArea' style='width: 100%' rows='5'>" + escapeHtml(serializeSettings60()) + "</textarea>";
       costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip()'>Got it</div>";
       if (document.queryCommandSupported("copy")) {
         costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
@@ -12771,7 +12816,7 @@
       }
       costText += "</div>";
     } else if (what == "ImportModuleVars") {
-      tooltipText = "Enter your Autotrimps MODULE variable settings to load, and save locally for future use between refreshes:<br/><br/><textarea id='importBox' style='width: 100%' rows='5'></textarea>";
+      tooltipText = "Enter your Autotrimps MODULE variable settings to load. These apply to the current session only \u2014 they are NOT restored after a refresh:<br/><br/><textarea id='importBox' style='width: 100%' rows='5'></textarea>";
       costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip(); importModuleVars();'>Import</div><div class='btn btn-info' onclick='cancelTooltip()'>Cancel</div></div>";
       ondisplay = function() {
         byId("importBox").focus();
@@ -13371,11 +13416,11 @@
       };
     } else if (what == "DeleteSettingsProfiles") {
       titleText = "<b>WARNING:</b> Delete Profile???";
-      tooltipText = `You are about to delete the <B><U>${settingsProfiles.value}</B></U> settings profile.<br>This will not switch your current settings though. Continue ?<br/>`;
+      tooltipText = "You are about to delete the <B><U>" + escapeHtml(settingsProfiles.value) + "</B></U> settings profile.<br>This will not switch your current settings though. Continue ?<br/>";
       costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip(); onDeleteProfile();'>Delete Profile</div><div style='margin-left: 15%' class='btn btn-info' onclick='cancelTooltip();'>Cancel</div></div>";
     } else if (what == "message") {
       titleText = "Generic message";
-      tooltipText = event2;
+      tooltipText = escapeHtml(event2);
       costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' style='width: 50%' onclick='cancelTooltip();'>OK</div></div>";
     }
     game.global.lockTooltip = true;
@@ -13389,25 +13434,31 @@
       ondisplay();
   }
   function resetAutoTrimps(a, b) {
-    ATrunning = false;
-    setTimeout((function(d) {
+    if (a !== void 0 && a !== null) {
       try {
-        localStorage.removeItem("autoTrimpSettings");
-        autoTrimpSettings = d ? d : {};
-        var e = document.getElementById("settingsRow");
-        e.removeChild(document.getElementById("autoSettings"));
-        e.removeChild(document.getElementById("autoTrimpsTabBarMenu"));
-        automationMenuSettingsInit();
-        initializeAllTabs();
-        initializeAllSettings();
-        initializeSettingsProfiles();
-        updateCustomButtons();
-        saveSettings2();
-        checkPortalSettings();
-      } finally {
-        ATrunning = true;
+        validateSettingsBlob(a);
+      } catch (err) {
+        debug2("Refusing to apply a malformed settings store: " + err.message, "profile");
+        ImportExportTooltip("message", "Those settings could not be applied: " + err.message + " Nothing was changed.");
+        return;
       }
-    })(a), 101);
+    }
+    ATrunning = false;
+    try {
+      localStorage.removeItem("autoTrimpSettings");
+      autoTrimpSettings = a ? a : {};
+      var e = document.getElementById("settingsRow");
+      e.removeChild(document.getElementById("autoSettings"));
+      e.removeChild(document.getElementById("autoTrimpsTabBarMenu"));
+      automationMenuSettingsInit();
+      initializeAllTabs();
+      initializeAllSettings();
+      updateCustomButtons();
+      saveSettings2();
+      checkPortalSettings();
+    } finally {
+      ATrunning = true;
+    }
     if (a) {
       debug2("Successfully imported new AT settings...", "profile");
       if (b) ImportExportTooltip("message", "Successfully Imported Autotrimps Settings File!: " + b);
@@ -13417,16 +13468,36 @@
       ImportExportTooltip("message", "Autotrimps has been successfully reset to its defaults!");
     }
   }
+  function parseSettingsBlob(text) {
+    var incoming = JSON.parse(String(text).replace(/[\n\r]/gm, ""));
+    return validateSettingsBlob(incoming);
+  }
+  function validateSettingsBlob(incoming) {
+    if (!isPlainObject(incoming))
+      throw new Error("expected a JSON object of settings, got " + (incoming === null ? "null" : Array.isArray(incoming) ? "an array" : typeof incoming) + ".");
+    var keys = Object.keys(incoming);
+    if (keys.length === 0) throw new Error("the settings object is empty.");
+    if (!Object.prototype.hasOwnProperty.call(incoming, "ATversion"))
+      throw new Error("this is not an AutoTrimps settings string (no ATversion key).");
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i];
+      if (PROTO_KEYS.has(key)) throw new Error("illegal setting id: " + key);
+      if (!isJsonLiteral(incoming[key]))
+        throw new Error("unsupported value for " + key + " (settings may only contain JSON data).");
+    }
+    return incoming;
+  }
   function loadAutoTrimps() {
+    var parsed;
     try {
-      var a = byId("importBox").value.replace(/[\n\r]/gm, "");
-      var b = JSON.parse(a);
-      if (null == b) return void debug2("Error importing AT settings, the string is empty.", "profile");
+      parsed = parseSettingsBlob(byId("importBox").value);
     } catch (c) {
-      return void debug2("Error importing AT settings, the string is bad." + c.message, "profile");
+      debug2("Error importing AT settings, the string is bad. " + c.message, "profile");
+      ImportExportTooltip("message", "That settings string was not imported: " + c.message + " Your existing settings are untouched.");
+      return;
     }
     debug2("Importing new AT settings file...", "profile");
-    resetAutoTrimps(b);
+    resetAutoTrimps(parsed);
   }
   var NON_SETTING_KEYS = /* @__PURE__ */ new Set(["ATversion"]);
   function cleanupCandidates() {
@@ -16294,6 +16365,12 @@
     const own = id === "FarmerRatio" || id === "RFarmerRatio" ? f : id === "LumberjackRatio" || id === "RLumberjackRatio" ? l : m;
     return " (" + (own / total * workerShare).toFixed(1) + "%)";
   }
+  function renderInfinityFace(elem, name) {
+    elem.textContent = name + ": ";
+    const infinity = document.createElement("span");
+    infinity.className = "icomoon icon-infinity";
+    elem.appendChild(infinity);
+  }
   function updateCustomButtons2() {
     const isGraphModuleDefined = typeof MODULES.graphs !== "undefined";
     const isLastThemeDefined = isGraphModuleDefined && typeof MODULES.graphs._lastTheme !== "undefined";
@@ -17045,9 +17122,9 @@
             renderControlFace(elem, item);
           else if (item.type == "multiValue") {
             if (Array.isArray(item.value) && item.value.length == 1 && item.value[0] == -1)
-              elem.innerHTML = item.name + ": <span class='icomoon icon-infinity'></span>";
+              renderInfinityFace(elem, item.name);
             else if (Array.isArray(item.value))
-              elem.innerHTML = item.name + ": " + item.value[0] + "+";
+              elem.textContent = item.name + ": " + item.value[0] + "+";
             else
               elem.textContent = item.name + ": " + item.value.toString();
           } else if (item.type == "textValue" && item.value.substring !== void 0) {
@@ -17058,7 +17135,7 @@
           } else if (item.value > -1 || item.type == "valueNegative")
             elem.textContent = item.name + ": " + prettify(item.value) + jobRatioSuffix(item.id);
           else
-            elem.innerHTML = item.name + ": <span class='icomoon icon-infinity'></span>";
+            renderInfinityFace(elem, item.name);
         }
       }
     }

@@ -219,9 +219,11 @@ describe('#87 — the ATrunning latch cannot be stranded by a throw', () => {
     window.initializeAllTabs = () => {
       throw new Error('injected: initializeAllTabs')
     }
-    // The body is immediately-invoked (a pre-existing defect, out of scope here), so the throw
-    // propagates synchronously out of resetAutoTrimps — which is precisely the path that used to
-    // strand the latch.
+    // resetAutoTrimps runs its body synchronously — deliberately, since #243. (It USED to do so by
+    // accident, via a setTimeout whose handler was immediately invoked; the timer was dropped rather
+    // than made real, because a genuine defer regresses the factory-reset dropdown. See the comment
+    // above resetAutoTrimps.) So the throw propagates straight out — which is precisely the path
+    // that used to strand the latch.
     expect(() => window.resetAutoTrimps()).toThrow('injected: initializeAllTabs')
     expect(window.ATrunning).toBe(true)
   })

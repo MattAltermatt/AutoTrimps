@@ -63,6 +63,20 @@ export function jobRatioSuffix(id: string): string {
     return ' (' + ((own / total) * workerShare).toFixed(1) + '%)';
 }
 
+// #235/#210 — the "∞" face is the ONLY thing in the every-tick repaint loop below that genuinely
+// needs an element rather than text, and it used to be written as `elem.innerHTML = item.name +
+// ': ' + "<span …></span>"`. Keeping one string-splice alive in that loop is what let the sibling
+// multiValue branch splice a PERSISTED value the same way — which is the zero-click half of #210,
+// since updateCustomButtons runs from guiLoop every second and synchronously from resetAutoTrimps.
+// Building the span as a node makes "this loop never assigns innerHTML" a flat, checkable rule
+// instead of a judgement call about which of two adjacent lines carries user data.
+function renderInfinityFace(elem: any, name: any) {
+    elem.textContent = name + ': ';
+    const infinity = document.createElement('span');
+    infinity.className = 'icomoon icon-infinity';
+    elem.appendChild(infinity);
+}
+
 export function updateCustomButtons() {
 	const isGraphModuleDefined = typeof MODULES.graphs !== 'undefined';
 	const isLastThemeDefined = isGraphModuleDefined && typeof MODULES.graphs._lastTheme !== 'undefined';
@@ -1069,10 +1083,19 @@ export function updateCustomButtons() {
                 if (item.type == 'multitoggle')
                     renderControlFace(elem, item); // #39: preserve the glyph/counter (was elem.textContent = ...)
                 else if (item.type == 'multiValue') {
+                    // #235/#210 — this was the ZERO-CLICK sink. `elem.innerHTML = item.name + ': ' +
+                    // item.value[0] + '+'` rendered a persisted array element as MARKUP, and
+                    // updateCustomButtons runs from guiLoop every second AND synchronously from
+                    // resetAutoTrimps — so a payload arriving in an imported settings string executed
+                    // the instant the import was confirmed, with nothing ever clicked. The -1 guard
+                    // did not shield it (`['<payload>'][0] == -1` is false). Neither branch actually
+                    // needs innerHTML: text is text, and the infinity glyph is one <span> that can be
+                    // built as an element. Note guiLoop NEVER runs in the L0 net (setInterval is
+                    // stubbed dead in boot.mjs), so baseline-zero is not evidence about this line.
                     if (Array.isArray(item.value) && item.value.length == 1 && item.value[0] == -1)
-                        elem.innerHTML = item.name + ': ' + "<span class='icomoon icon-infinity'></span>";
+                        renderInfinityFace(elem, item.name);
                     else if (Array.isArray(item.value))
-                        elem.innerHTML = item.name + ': ' + item.value[0] + '+';
+                        elem.textContent = item.name + ': ' + item.value[0] + '+';
                     else
                         elem.textContent = item.name + ': ' + item.value.toString();
                 } else if (item.type == 'textValue' && item.value.substring !== undefined) {
@@ -1083,7 +1106,7 @@ export function updateCustomButtons() {
                 } else if (item.value > -1 || item.type == 'valueNegative')
                     elem.textContent = item.name + ': ' + prettify(item.value) + jobRatioSuffix(item.id);
                 else
-                    elem.innerHTML = item.name + ': ' + "<span class='icomoon icon-infinity'></span>";
+                    renderInfinityFace(elem, item.name);
             }
         }
     }

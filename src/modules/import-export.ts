@@ -1,7 +1,7 @@
 // TRUE TS (Phase 1 · #31): converted from the faithful port under strict.
 // Was: relocated verbatim from legacy/modules/import-export.js.
 // Settings import/export + profile GUI. Registers MODULES[import-export]. $settingsProfiles internal; ATrunning/script resolve to AutoTrimps2 globals.
-import { debug, safeSetItems, saveSettings } from './utils'
+import { debug, escapeHtml, safeSetItems, saveSettings } from './utils'
 
 MODULES["import-export"] = {};
 var $settingsProfiles: any;
@@ -103,30 +103,62 @@ export function confirmedSwitchNow() {
         if (results.length > 0) {
             resetAutoTrimps(results[0].data,profname);
             debug("Successfully loaded existing profile: " + profname, "profile");
+        } else {
+            // #255 — this branch used to be absent, so a profile whose stored name did not match its
+            // dropdown label (see normalizeProfileName) made the Confirm button do NOTHING, with no
+            // error, permanently. Names are normalised at the save seam now, so a miss here means the
+            // store and the dropdown have genuinely desynchronised — say so rather than no-op.
+            debug("Could not find a saved profile named: " + profname, "profile");
+            ImportExportTooltip('message', 'No saved settings profile named "' + profname + '" was found.');
         }
     }
+}
+
+// #255 — a profile name has to survive a round trip through the <select>. It is PERSISTED raw by
+// nameAndSaveNewProfile and READ BACK as `$settingsProfiles.options[index].text` by
+// confirmedSwitchNow (:96), and HTMLOptionElement.text is spec'd to strip and collapse ASCII
+// whitespace. So "Zone 60 " went into localStorage with its trailing space and came back out
+// without it, `elem.name == profname` matched nothing, and the profile became permanently
+// unloadable — one trailing space was enough. Normalising at the save seam makes the two sides the
+// same string by construction, which is the only fix that does not leave a second copy of the rule.
+// ASCII whitespace per the HTML spec is TAB / LF / FF / CR / SPACE.
+function normalizeProfileName(raw: any): string {
+    return String(raw).replace(/[\t\n\f\r ]+/g, ' ').trim();
 }
 
 //called by ImportExportTooltip('NameSettingsProfiles')
 export function nameAndSaveNewProfile() {
     //read the name in from tooltip
     try {
-        var profname = byId("setSettingsNameTooltip").value.replace(/[\n\r]/gm, "");
-        if (profname == null) {
-            debug("Error in naming, the string is empty.", "profile");
-            return;
-        }
+        var profname = normalizeProfileName(byId("setSettingsNameTooltip").value);
     } catch (err: any) {
         debug("Error in naming, the string is bad." + err.message, "profile");
+        return;
+    }
+    // #255 — WAS `if (profname == null)`. A textarea's `.value` is ALWAYS a string and `'' == null`
+    // is false, so this guard could never fire and an empty (or whitespace-only) name was saved as a
+    // blank row in the dropdown. Test the string, not null.
+    if (profname === '') {
+        debug("Error in naming, the string is empty.", "profile");
+        ImportExportTooltip('message', 'A settings profile needs a name — nothing was saved.');
+        return;
+    }
+    //load the old data in,
+    var loadLastProfiles = localStorage.getItem('ATSelectedSettingsProfile');
+    var oldpresets = loadLastProfiles ? JSON.parse(loadLastProfiles) : new Array(); //load the import.
+    // #255 — confirmedSwitchNow resolves a selection BY NAME and takes `results[0]`, so a second
+    // profile sharing a name can never be loaded: it is shadowed for as long as the first exists,
+    // and once the first is deleted the survivor's dropdown row matches nothing. Uniqueness is not
+    // a nicety here, it is what makes the by-name lookup a function of the user's selection.
+    if (oldpresets.some(function(elem: any){ return elem.name === profname; })) {
+        debug("A settings profile named '" + profname + "' already exists.", "profile");
+        ImportExportTooltip('message', 'A settings profile named "' + profname + '" already exists — pick another name.');
         return;
     }
     var profile = {
         name: profname,
         data: JSON.parse(serializeSettings())
     }
-    //load the old data in,
-    var loadLastProfiles = localStorage.getItem('ATSelectedSettingsProfile');
-    var oldpresets = loadLastProfiles ? JSON.parse(loadLastProfiles) : new Array(); //load the import.
     //rewrite the updated array in
     var presetlists = [profile];
     //add the two arrays together, string them, and store them.
@@ -141,14 +173,44 @@ export function nameAndSaveNewProfile() {
     $settingsProfiles.selectedIndex = $settingsProfiles.length-1;
 }
 
+// #211 — the first three <option>s are fixed commands, not saved profiles: "Current" (the BOOT
+// selection, :62), "Reset to Default" (where the factory-reset confirm parks the dropdown) and
+// "Save New…". Only indices >= 3 map onto the stored array. This predicate is the single place that
+// knows it; both the confirm gate and the delete itself read it, so they cannot disagree.
+function selectedProfileIndex(): number {
+    if ($settingsProfiles == null) return -1;
+    var index = $settingsProfiles.selectedIndex;
+    return index >= 3 ? index : -1;
+}
+
 //event handler for profile delete button - confirmation check tooltip
 export function onDeleteProfileHandler() {
+    // #211 — do not even offer the confirm when the selection is one of the three fixed options.
+    // The confirm text splices in `settingsProfiles.value`, so at the boot selection it read "You
+    // are about to delete the Current settings profile" — which parses as "the profile you are
+    // currently on" and actively fails to warn that something else is about to be destroyed.
+    if (selectedProfileIndex() < 0) {
+        ImportExportTooltip('message', 'Select a saved settings profile in the dropdown first — there is nothing to delete.');
+        return;
+    }
     ImportExportTooltip('DeleteSettingsProfiles');  //calls a tooltip then onDeleteProfile() below
 }
 //Delete Profile runs after.
 export function onDeleteProfile() {
     if ($settingsProfiles == null) return;
-    var index = $settingsProfiles.selectedIndex;
+    // #211 — WAS: `var index = selectedIndex` … `var target = (index-3); oldpresets.splice(target, 1)`
+    // with no lower bound. Array.prototype.splice counts a NEGATIVE start from the END, so deleting
+    // while a fixed option was selected removed a profile the user never picked (at the boot
+    // selection, with 5 saved profiles, it destroyed the third one) and the removal was unrecoverable
+    // — safeSetItems overwrites the key in the same call. #85 predicted this exact regression when
+    // #72 revived the GUI; the guard never landed. Defence in depth: onDeleteProfileHandler already
+    // refuses to raise the confirm, but this function is published on globalThis and reachable from
+    // an inline onclick, so it validates its own precondition rather than trusting the caller.
+    var index = selectedProfileIndex();
+    if (index < 0) {
+        debug("No settings profile is selected — nothing was deleted.", "profile");
+        return;
+    }
     //Remove the option
     $settingsProfiles.options.remove(index);
     //Stay on the same index (becomes next item) - so we dont have to Toggle into a new profile again and can keep chain deleting.
@@ -163,12 +225,9 @@ export function onDeleteProfile() {
     debug("Successfully deleted profile #: " + target, "profile");
 }
 
-// The cleanup preview prints keys that came out of the user's localStorage into an innerHTML string.
-// They are stale setting ids, but they are attacker-influenceable in principle (a bad settings-file
-// import writes them), so they are escaped rather than trusted.
-function escapeHtml(s: string): string {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+// escapeHtml moved to utils.ts under #235 — the cleanup preview below was the first caller, but
+// settings-engine and settings-visibility need the identical rule and a second copy of an escaping
+// rule is how #110 happened twice.
 
 export function ImportExportTooltip(what: any, event?: any) {
     if (game.global.lockTooltip)
@@ -176,11 +235,16 @@ export function ImportExportTooltip(what: any, event?: any) {
     var $elem = document.getElementById("tooltipDiv")!;
     swapClass("tooltipExtra", "tooltipExtraNone", $elem);
     var ondisplay = null;
-    var tooltipText;
+    // #235 — initialised, because it is no longer `any`. `tooltipText = event` (the 'message' branch)
+    // was the one untyped assignment in this function, and it widened the variable to `any`, which is
+    // what let an unmatched `what` fall through to `tipText.innerHTML = undefined` — i.e. a tooltip
+    // reading the literal word "undefined". Escaping that branch made tsc see `string | undefined`
+    // and say so. Every shipped caller matches a branch, so this is a belt-and-braces default.
+    var tooltipText = "";
     var costText = "";
     var titleText = what;
     if (what == "ExportAutoTrimps") {
-        tooltipText = "This is your AUTOTRIMPS save string. There are many like it but this one is yours. Save this save somewhere safe so you can save time next time. <br/><br/><textarea id='exportArea' style='width: 100%' rows='5'>" + serializeSettings() + "</textarea>";
+        tooltipText = "This is your AUTOTRIMPS save string. There are many like it but this one is yours. Save this save somewhere safe so you can save time next time. <br/><br/><textarea id='exportArea' style='width: 100%' rows='5'>" + escapeHtml(serializeSettings()) + "</textarea>";
         costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip()'>Got it</div>";
         if (document.queryCommandSupported('copy')) {
             costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
@@ -202,7 +266,7 @@ export function ImportExportTooltip(what: any, event?: any) {
         }
         costText += "</div>";
     } else if (what == "Export550") {
-        tooltipText = "This is your AUTOTRIMPS z550+ save string. Use this string to import the settings. <br/><br/><textarea id='exportArea' style='width: 100%' rows='5'>" + serializeSettings550() + "</textarea>";
+        tooltipText = "This is your AUTOTRIMPS z550+ save string. Use this string to import the settings. <br/><br/><textarea id='exportArea' style='width: 100%' rows='5'>" + escapeHtml(serializeSettings550()) + "</textarea>";
         costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip()'>Got it</div>";
         if (document.queryCommandSupported('copy')) {
             costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
@@ -219,7 +283,7 @@ export function ImportExportTooltip(what: any, event?: any) {
             };
         }
     } else if (what == "Export60") {
-        tooltipText = "This is your AUTOTRIMPS z60 save string. Use this string to import the settings. <br/><br/><textarea id='exportArea' style='width: 100%' rows='5'>" + serializeSettings60() + "</textarea>";
+        tooltipText = "This is your AUTOTRIMPS z60 save string. Use this string to import the settings. <br/><br/><textarea id='exportArea' style='width: 100%' rows='5'>" + escapeHtml(serializeSettings60()) + "</textarea>";
         costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip()'>Got it</div>";
         if (document.queryCommandSupported('copy')) {
             costText += "<div id='clipBoardBtn' class='btn btn-success'>Copy to Clipboard</div>";
@@ -291,7 +355,29 @@ export function ImportExportTooltip(what: any, event?: any) {
         }
         costText += "</div>";
     } else if (what == "ImportModuleVars") {
-        tooltipText = "Enter your Autotrimps MODULE variable settings to load, and save locally for future use between refreshes:<br/><br/><textarea id='importBox' style='width: 100%' rows='5'></textarea>";
+        // #242 — this copy USED TO END "…and save locally for future use between refreshes", and both
+        // halves of that promise were false. Nothing anywhere reads `localStorage.storedMODULES` back:
+        // `grep -rn "getItem(" src/` returns twenty sites and none is this key, and the only readers in
+        // the repo are assertions checking what was just written. So MODULE overrides do not survive a
+        // reload — and worse, nine seconds after the next boot guiLoop (main-loop.ts:597) rewrites the
+        // key from the live diff, erasing the record of what the user had set.
+        //
+        // Fixing the SENTENCE rather than the mechanism is deliberate. The two real options are a
+        // boot-time restore or ripping the persistence out, and both are larger than they look:
+        //   · a restore must not naively replay the whole diff — settings-visibility recomputes
+        //     MODULES.maps.preferGardens from PreferMetal every guiLoop tick, so the persisted blob is
+        //     part user config and part derived state
+        //   · deleting the write cascades into the five unmounted tooltip branches, which are the only
+        //     callers of importModuleVars / resetModuleVars / exportModuleVars — i.e. it would orphan
+        //     parseModuleVars, the hardened importer #76B built to replace a dynamic-code sink, and the
+        //     four test files that guard #71/#71a/#76B against regression
+        // A tooltip that lies is the part that costs a user something today, so that is what is fixed
+        // here. The mechanism decision is filed separately with the preferGardens hazard recorded.
+        //
+        // Note this branch is ALSO unreachable from the UI: nothing mounts an 'ImportModuleVars'
+        // control, so it is console-only (tests/nets/dom-ids.test.ts:278 already baselines the sibling
+        // ATModuleListDropdown as dead for the same reason).
+        tooltipText = "Enter your Autotrimps MODULE variable settings to load. These apply to the current session only — they are NOT restored after a refresh:<br/><br/><textarea id='importBox' style='width: 100%' rows='5'></textarea>";
         costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip(); importModuleVars();'>Import</div><div class='btn btn-info' onclick='cancelTooltip()'>Cancel</div></div>";
         ondisplay = function() {
             byId('importBox').focus();
@@ -892,11 +978,15 @@ export function ImportExportTooltip(what: any, event?: any) {
         };
     } else if (what == 'DeleteSettingsProfiles') {
         titleText = "<b>WARNING:</b> Delete Profile???"
-        tooltipText = "You are about to delete the <B><U>"+`${settingsProfiles.value}`+"</B></U> settings profile.<br>This will not switch your current settings though. Continue ?<br/>";
+        // #235 — the profile NAME is user-supplied text going into an innerHTML string.
+        tooltipText = "You are about to delete the <B><U>"+escapeHtml(settingsProfiles.value)+"</B></U> settings profile.<br>This will not switch your current settings though. Continue ?<br/>";
         costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' onclick='cancelTooltip(); onDeleteProfile();'>Delete Profile</div><div style='margin-left: 15%' class='btn btn-info' onclick='cancelTooltip();'>Cancel</div></div>";
     } else if (what == 'message') {
         titleText = "Generic message";
-        tooltipText = event;
+        // #235 — every caller passes plain prose (verified: seven call sites, no intentional markup),
+        // and several splice a user-supplied profile name into it. Escaping here closes that channel
+        // at ONE seam instead of asking each caller to remember.
+        tooltipText = escapeHtml(event);
         costText = "<div class='maxCenter'><div id='confirmTooltipBtn' class='btn btn-info' style='width: 50%' onclick='cancelTooltip();'>OK</div></div>";
     }
     game.global.lockTooltip = true;
@@ -918,26 +1008,67 @@ export function ImportExportTooltip(what: any, event?: any) {
 // non-null assertions that are only *asserted* to be non-null), which is exactly the kind of code that
 // throws. #71a was the same shape in resetModuleVars() and it really did kill AT with one click.
 // A `finally` makes the latch un-strandable regardless of what the body does.
+// #243 — WAS: `setTimeout((function(d) { …body… } as any)(a), 101)`. The parenthesised operand is
+// the function expression and `(a)` CALLS it, so the whole body ran SYNCHRONOUSLY inside the click
+// handler and setTimeout received the closure's `undefined` return. There was no 101 ms defer — the
+// same defect #71a found and fixed in the sibling resetModuleVars. Two consequences: a stray
+// `setTimeout(undefined, 101)` per reset (per the HTML spec a non-callable TimerHandler is coerced
+// to a string and compiled as a classic script — inert here, since the text is the literal
+// "undefined" and the game page ships no CSP), and a hand-written `as any` whose only job was to
+// stop tsc reporting `void` where a TimerHandler belongs, i.e. to hide the bug from the type checker.
+//
+// The fix is NOT the #71a fix. Making the defer real would regress a visible behaviour: the
+// factory-reset onclick (:885) is `cancelTooltip(); resetAutoTrimps(); settingsProfiles.selectedIndex = 1;`
+// and initializeAllSettings() ends in settingsProfileMakeGUI(), which builds a BRAND-NEW <select>
+// whose initializeSettingsProfiles() sets selectedIndex = 0 (:62). Under today's synchronous order
+// the onclick tail lands on the new select and the dropdown correctly reads "Reset to Default";
+// under a real defer it would land on the doomed old one and the deferred rebuild would snap the new
+// one back to "Current". The legacy author left the fossil of exactly that attempt at :88-89. There
+// is also nothing for the ATrunning window to protect — the body has no await, no yield and no
+// nested timer, and JS is single-threaded, so a mainLoop tick cannot interleave with it either way.
+//
+// So: drop the timer, keep the order. Behaviour is byte-for-byte what shipped, the stray timer is
+// gone, and tsc can see this code again.
 export function resetAutoTrimps(a?: any, b?: any) {
-    ATrunning = !1;
-    setTimeout((function(d: any) {
+    // #210 — the CHOKE POINT. Every path that adopts a settings store funnels through here: the
+    // pasted import, a settings-profile switch, and the factory reset. Validating at loadAutoTrimps
+    // alone would leave the profile path unguarded, and a stored profile is no more trustworthy than
+    // a pasted string — both live in localStorage, which is exactly what a bad import writes to.
+    // Deliberately BEFORE `ATrunning = !1`, and returning rather than throwing, so a corrupt stored
+    // profile cannot strand the latch or kill the click handler it was invoked from.
+    if (a !== undefined && a !== null) {
         try {
-            localStorage.removeItem("autoTrimpSettings");
-            autoTrimpSettings = d ? d : {};
-            var e = document.getElementById("settingsRow")!;
-            e.removeChild(document.getElementById("autoSettings")!);
-            e.removeChild(document.getElementById("autoTrimpsTabBarMenu")!);
-            automationMenuSettingsInit();
-            initializeAllTabs();
-            initializeAllSettings();
-            initializeSettingsProfiles();
-            updateCustomButtons();
-            saveSettings();
-            checkPortalSettings();
-        } finally {
-            ATrunning = !0;
+            validateSettingsBlob(a);
+        } catch (err: any) {
+            debug("Refusing to apply a malformed settings store: " + err.message, "profile");
+            ImportExportTooltip("message", "Those settings could not be applied: " + err.message + " Nothing was changed.");
+            return;
         }
-    } as any)(a), 101);
+    }
+    ATrunning = !1;
+    try {
+        localStorage.removeItem("autoTrimpSettings");
+        autoTrimpSettings = a ? a : {};
+        var e = document.getElementById("settingsRow")!;
+        e.removeChild(document.getElementById("autoSettings")!);
+        e.removeChild(document.getElementById("autoTrimpsTabBarMenu")!);
+        automationMenuSettingsInit();
+        initializeAllTabs();
+        initializeAllSettings();
+        // #241 — the standalone `initializeSettingsProfiles()` that used to sit HERE is gone.
+        // initializeAllSettings() ends in settingsProfileMakeGUI() (settings-defs.ts:3010), which has
+        // called initializeSettingsProfiles() itself since #72 ("whoever renders the control also
+        // fills it"). initializeSettingsProfiles() has no idempotence guard, so the second call
+        // appended every stored profile a SECOND time — every import, profile switch and factory
+        // reset left the dropdown reading [Current, Reset, Save New…, p0…pN, p0…pN]. The duplicates
+        // then desynchronised the delete arithmetic from the store. The boot path
+        // (settings-boot.ts) never had the extra call and has always populated exactly once.
+        updateCustomButtons();
+        saveSettings();
+        checkPortalSettings();
+    } finally {
+        ATrunning = !0;
+    }
     if (a) {
         debug("Successfully imported new AT settings...", "profile");
         if (b) ImportExportTooltip("message", "Successfully Imported Autotrimps Settings File!: " + b);
@@ -947,16 +1078,71 @@ export function resetAutoTrimps(a?: any, b?: any) {
         ImportExportTooltip("message", "Autotrimps has been successfully reset to its defaults!");
     }
 }
+// #210 — the validating seam for an ADOPTED settings store. The sibling paste box in this same file
+// (importModuleVars) has had exactly this treatment since #76B; this one never did, and its gate was
+// close to vacuous: `JSON.parse` then `if (null == b) return`, which rejects literal `null` and
+// nothing else. `42`, `[]`, `"hi"`, `false` and `0` all sailed through — and because resetAutoTrimps
+// ran `localStorage.removeItem("autoTrimpSettings")` BEFORE assigning, a malformed paste destroyed
+// the user's settings file and then threw at the first createSetting (strict mode: you cannot create
+// a property on a number). Silent total settings loss, no undo. Validation now happens with nothing
+// yet destroyed.
+//
+// WHAT THIS DELIBERATELY DOES NOT DO: reject unknown setting ids. parseModuleVars can demand that
+// every key be known because MODULES is this build's own namespace, but a settings blob is a
+// cross-version artifact — and measured against the current build, the two preset strings THIS REPO
+// SHIPS (utils.ts serializeSettings60 / serializeSettings550) carry 80 of 254 and 82 of 256 keys
+// that no longer exist. An unknown-key rejection would make AT refuse its own documented "550+ AT
+// Settings" preset. Stale ids round-trip harmlessly today and cleanupAutoTrimps (#76A) is the
+// purpose-built, confirm-gated tool for purging them.
+//
+// So the contract is SHAPE, not membership, and it is atomic — one bad entry rejects the whole
+// paste rather than half-applying it:
+//   · a plain object (not an array, not a primitive, not null)
+//   · carrying `ATversion`, the key loadPageVariables() gates the saved file on — which is also what
+//     distinguishes an AT settings string from some other JSON the user pasted by mistake
+//   · every value pure JSON data, checked recursively by the existing isJsonLiteral. Records are
+//     allowed, not just flat values: the shipped presets contain three (PrestigeBackup, EnableAFK,
+//     ChangeLog)
+//   · no `__proto__` / `constructor` / `prototype` at ANY depth — isJsonLiteral already enforces
+//     this below the top level, so only the top level needs its own check
+//
+// Note what this does NOT buy on its own: a legitimate textValue setting holds arbitrary text (map
+// names, farm strings), so no validator can reject a payload here without rejecting real values.
+// That half of #210 is closed at the RENDER seam under #235 — persisted values are no longer parsed
+// as markup anywhere. Neither half is sufficient alone.
+export function parseSettingsBlob(text: string): Record<string, any> {
+    var incoming = JSON.parse(String(text).replace(/[\n\r]/gm, ""));  // throws SyntaxError on malformed input
+    return validateSettingsBlob(incoming);
+}
+
+function validateSettingsBlob(incoming: any): Record<string, any> {
+    if (!isPlainObject(incoming))
+        throw new Error('expected a JSON object of settings, got ' + (incoming === null ? 'null' : Array.isArray(incoming) ? 'an array' : typeof incoming) + '.');
+    var keys = Object.keys(incoming);
+    if (keys.length === 0) throw new Error('the settings object is empty.');
+    if (!Object.prototype.hasOwnProperty.call(incoming, 'ATversion'))
+        throw new Error('this is not an AutoTrimps settings string (no ATversion key).');
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        if (PROTO_KEYS.has(key)) throw new Error('illegal setting id: ' + key);
+        if (!isJsonLiteral(incoming[key]))
+            throw new Error('unsupported value for ' + key + ' (settings may only contain JSON data).');
+    }
+    return incoming;
+}
+
 export function loadAutoTrimps() {
+    var parsed: Record<string, any>;
     try {
-        var a = byId("importBox").value.replace(/[\n\r]/gm, "");
-        var b = JSON.parse(a);
-        if (null == b) return void debug("Error importing AT settings, the string is empty.", "profile");
+        parsed = parseSettingsBlob(byId("importBox").value);
     } catch (c: any) {
-        return void debug("Error importing AT settings, the string is bad." + c.message, "profile");
+        debug("Error importing AT settings, the string is bad. " + c.message, "profile");
+        // The old code only debug()'d, so a rejected paste looked exactly like a successful one.
+        ImportExportTooltip("message", "That settings string was not imported: " + c.message + " Your existing settings are untouched.");
+        return;
     }
     debug("Importing new AT settings file...", "profile");
-    resetAutoTrimps(b);
+    resetAutoTrimps(parsed);
 }
 // #76(A) — WAS:
 //     for (var a in autoTrimpSettings) { var b = document.getElementById(autoTrimpSettings[a].id);
