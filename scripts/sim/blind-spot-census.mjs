@@ -32,6 +32,7 @@
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { fileURLToPath } from 'node:url'
 import { buildUserscript } from '../build-userscript.mjs'
 import { runTrace, diffTraces } from './trace.mjs'
 import { CORPUS } from './corpus.mjs'
@@ -93,7 +94,10 @@ function replaceOnce(src, from, to, label) {
 // The mutations. Each one breaks a DECISION, not merely a line — a mutation whose result cannot change
 // an outcome teaches nothing (reach != sensitivity, #98).
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
-const MUTATIONS = [
+// EXPORTED so tests/nets/census-anchors.test.ts can assert every anchor still resolves against a
+// freshly-built bundle, without paying for the full ~20-minute differential. Anchor rot is what
+// silently unhooked five probes for two weeks (#197): cheap to detect, expensive to notice.
+export const MUTATIONS = [
   {
     name: 'canary-buildings-noop',
     area: 'buildings',
@@ -219,17 +223,21 @@ const MUTATIONS = [
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 
+// Run the census only when invoked AS A SCRIPT. Without this, `import { MUTATIONS }` from a test
+// would kick off ~20 minutes of jsdom sims as an import side effect.
+const IS_MAIN = Boolean(process.argv[1]) && resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+
 const only = process.argv.includes('--mutation')
   ? process.argv[process.argv.indexOf('--mutation') + 1]
   : null
 const mutations = only ? MUTATIONS.filter((m) => m.name === only) : MUTATIONS
-if (!mutations.length) throw new Error(`no mutation named "${only}"`)
+if (IS_MAIN && !mutations.length) throw new Error(`no mutation named "${only}"`)
 
 // Each mutation runs 17 full jsdom sims. Doing all of them in ONE process exhausts the V8 heap (the
 // game object graph per boot is enormous and the sims do not release cleanly), so the parent
 // re-executes ITSELF once per mutation and collects JSON. Raising --max-old-space-size would only
 // postpone the OOM; a process boundary removes the leak instead of hiding it.
-if (!only) {
+if (IS_MAIN && !only) {
   const { execFileSync } = await import('node:child_process')
   const collected = []
   for (const m of MUTATIONS) {
@@ -258,63 +266,8 @@ if (!only) {
   process.exit(0)
 }
 
-console.log('building the clean bundle…')
-const clean = await buildUserscript()
-const dir = mkdtempSync(join(tmpdir(), 'at-census-'))
-
-// Every (save, seed) the real gate runs. The census must use the SAME contract as baseline-zero, or a
-// green cell here would not tell us anything about the gate that actually protects production.
-//
-// ⚠️ `settings` IS PART OF THAT CONTRACT (#105). This line used to destructure only {name, seeds, ticks}
-// and call runTrace WITHOUT atSettings — while the committed oracle traces were recorded WITH them. So
-// for any settings-gated fixture EVERY mutant diverged, because the mutant ran a differently-CONFIGURED
-// bot, not a differently-behaving one. It was caught the moment 10-hypo-u2 landed: it reported exactly
-// 13 divergences for `canary-buildings-noop` — a mutation to U1's buyBuildings(), which is provably
-// inert in U2 (04-u2-radon scores it 0). A census that reports a detection it did not make is worse
-// than no census: it certifies coverage that does not exist.
-const RUNS = CORPUS.flatMap(({ name, seeds, ticks, settings }) => seeds.map((seed) => ({ name, seed, ticks, settings })))
-
-const results = []
-for (const m of mutations) {
-  const mutantPath = join(dir, `${m.name}.user.js`)
-  let built = true
-  try {
-    writeFileSync(mutantPath, m.apply(clean), 'utf8')
-  } catch (err) {
-    built = false
-    console.error(`\n!! ${m.name}: ${err.message}`)
-    results.push({ m, total: null, perSave: {}, error: err.message })
-    continue
-  }
-  if (!built) continue
-
-  const perSave = {}
-  let total = 0
-  process.stdout.write(`\n${m.name.padEnd(24)} `)
-  for (const { name, seed, ticks, settings } of RUNS) {
-    const oracle = JSON.parse(readFileSync(resolve(TRACES, `${name}.${seed}.trace.json`), 'utf8'))
-    const saveString = readFileSync(resolve(SAVES, `${name}.txt`), 'utf8')
-    let n
-    try {
-      n = diffTraces(oracle, runTrace({ atBundlePath: mutantPath, saveString, seed, ticks, atSettings: settings })).length
-    } catch {
-      n = -1 // the mutant crashed the sim — that IS a detection, and a loud one
-    }
-    perSave[`${name}.${seed}`] = n
-    if (n > 0 || n === -1) total += n === -1 ? 1 : n
-    process.stdout.write(n === 0 ? '.' : n === -1 ? 'X' : '#')
-  }
-  results.push({ m, total, perSave })
-}
-
-// The child's whole job is to hand one row back to the parent.
-const row = results[0]
-console.log('\n' + JSON.stringify({
-  name: row.m.name, area: row.m.area, why: row.m.why,
-  total: row.total, perSave: row.perSave, error: row.error,
-}))
-
-/** Render the collected rows. Shared by the parent; a child never calls it. */
+// Hoisted to module scope: report() is called from the PARENT path above, so it cannot live
+// inside the script-only guard block below.
 function report(rows) {
   const saveNames = Object.keys(rows.find((r) => r.perSave && Object.keys(r.perSave).length)?.perSave ?? {})
   let out = '# L0 proof-net BLIND-SPOT CENSUS\n\n'
@@ -365,4 +318,67 @@ function report(rows) {
     out += live.length <= 2 ? ` (**only** ${live.join(', ')} — a single point of failure)\n` : '\n'
   }
   return out
+}
+
+// #197 — the child (single-mutation) path is script-only too. Without this guard, importing
+// MUTATIONS for the anchor net would build a bundle and sweep the whole corpus on import.
+if (IS_MAIN) {
+  console.log('building the clean bundle…')
+  const clean = await buildUserscript()
+  const dir = mkdtempSync(join(tmpdir(), 'at-census-'))
+
+  // Every (save, seed) the real gate runs. The census must use the SAME contract as baseline-zero, or a
+  // green cell here would not tell us anything about the gate that actually protects production.
+  //
+  // ⚠️ `settings` IS PART OF THAT CONTRACT (#105). This line used to destructure only {name, seeds, ticks}
+  // and call runTrace WITHOUT atSettings — while the committed oracle traces were recorded WITH them. So
+  // for any settings-gated fixture EVERY mutant diverged, because the mutant ran a differently-CONFIGURED
+  // bot, not a differently-behaving one. It was caught the moment 10-hypo-u2 landed: it reported exactly
+  // 13 divergences for `canary-buildings-noop` — a mutation to U1's buyBuildings(), which is provably
+  // inert in U2 (04-u2-radon scores it 0). A census that reports a detection it did not make is worse
+  // than no census: it certifies coverage that does not exist.
+  const RUNS = CORPUS.flatMap(({ name, seeds, ticks, settings }) => seeds.map((seed) => ({ name, seed, ticks, settings })))
+
+  const results = []
+  for (const m of mutations) {
+    const mutantPath = join(dir, `${m.name}.user.js`)
+    let built = true
+    try {
+      writeFileSync(mutantPath, m.apply(clean), 'utf8')
+    } catch (err) {
+      built = false
+      console.error(`\n!! ${m.name}: ${err.message}`)
+      results.push({ m, total: null, perSave: {}, error: err.message })
+      continue
+    }
+    if (!built) continue
+
+    const perSave = {}
+    let total = 0
+    process.stdout.write(`\n${m.name.padEnd(24)} `)
+    for (const { name, seed, ticks, settings } of RUNS) {
+      const oracle = JSON.parse(readFileSync(resolve(TRACES, `${name}.${seed}.trace.json`), 'utf8'))
+      const saveString = readFileSync(resolve(SAVES, `${name}.txt`), 'utf8')
+      let n
+      try {
+        n = diffTraces(oracle, runTrace({ atBundlePath: mutantPath, saveString, seed, ticks, atSettings: settings })).length
+      } catch {
+        n = -1 // the mutant crashed the sim — that IS a detection, and a loud one
+      }
+      perSave[`${name}.${seed}`] = n
+      if (n > 0 || n === -1) total += n === -1 ? 1 : n
+      process.stdout.write(n === 0 ? '.' : n === -1 ? 'X' : '#')
+    }
+    results.push({ m, total, perSave })
+  }
+
+  // The child's whole job is to hand one row back to the parent.
+  const row = results[0]
+  console.log('\n' + JSON.stringify({
+    name: row.m.name, area: row.m.area, why: row.m.why,
+    total: row.total, perSave: row.perSave, error: row.error,
+  }))
+
+  /** Render the collected rows. Shared by the parent; a child never calls it. */
+
 }
