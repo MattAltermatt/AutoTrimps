@@ -20,7 +20,7 @@ npm run build:watch  # rebuild on change
 npm run serve        # static-serve the local Trimps clone on :8080 with the bundle injected
 npm test             # vitest
 npm run test:ci      # vitest + the zero-skip census — what CI runs
-npm run typecheck    # tsc --noEmit
+npm run typecheck    # BOTH configs: tsc --noEmit (src+tests) && tsc -p tsconfig.scripts.json (the .mjs harness)
 npm run lint         # oxlint src tests scripts --deny-warnings (a real gate; it can fail)
 npm run game:fetch   # re-materialize .trimps-game/ if it goes missing
 ```
@@ -147,6 +147,15 @@ never matched oxlint's format, so lint "passed" for a dozen runs while the deplo
 audit*, 2026-07-13). **`tsc` exits 0 precisely BECAUSE the file is skipped.** So: check **exit codes**, not
 output; **mutation-check every net** (break it on purpose, watch it go red); and when a doc claims a class is
 closed, **probe it** — `npm run typecheck` passing is not evidence that a given file is typechecked.
+A fourth instance closed 2026-07-28 (#257): `allowJs` + `checkJs: false` meant the **entire proof-net
+harness** — `recorder`/`boot`/`driver`/`corpus`/`manifest`/`trace`/`blind-spot-census` — was loaded by
+`tsc` and never checked, so a type error planted in `recorder.mjs` exited **0**. It now has its own
+`tsconfig.scripts.json` (a separate config because `noImplicitAny: false` globally changes inference in
+`src/`), both configs run in `npm run typecheck`, and `ci-gates.test.ts` pins that they keep doing so.
+Two nets were added the same day for the same reason: `no-skipped-test-bodies` (a bare `return` in a
+test body reports as a PASS, so the report-consuming skip census structurally cannot see it — it found
+a live dead test on its first run) and `tripwire-call-sites` (a guarded predicate whose CALL SITE
+nobody asserts is a comment).
 
 **The gate is real — do not re-open the hole (#67).** Three invariants, each enforced by a net that has
 been mutation-tested to prove it can go red. Breaking any of them is how the gate silently dies again:
