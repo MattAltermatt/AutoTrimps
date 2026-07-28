@@ -43,6 +43,37 @@ const TRACES = resolve('tests/fixtures/traces')
  * Splice `injection` into the bundle immediately after `anchor`, and PROVE the splice landed.
  * A no-op patch is the single most dangerous outcome here — see the header.
  */
+/**
+ * #197 — RENAME-TOLERANT FUNCTION ANCHOR.
+ *
+ * esbuild renames the DEFINITION, not the free reference: a module that calls a bare global which a
+ * sibling module also exports keeps the free ref and emits the definition as `X2`. Five census
+ * probes anchored on the un-suffixed `function X() {` and silently stopped matching when that
+ * happened — including the CANARY, whose whole job is to prove the harness works. Two probes
+ * (calcOurDmg2, calcOurHealth2) had the suffix hardcoded, which is why they kept working and why
+ * the rot looked partial rather than systemic.
+ *
+ * Matching `function <name>\d*\s*\(` covers both spellings and any future re-numbering, so a
+ * probe can no longer be unhooked by a bundler decision.
+ *
+ * @returns {number} index just past the opening brace of the function body
+ */
+function fnBodyStart(src, fnName, label) {
+  const re = new RegExp(`function\\s+${fnName}\\d*\\s*\\([^)]*\\)\\s*\\{`, 'g')
+  const hits = [...src.matchAll(re)]
+  if (hits.length === 0) throw new Error(`[${label}] no definition of ${fnName} in the bundle (tried ${fnName} and ${fnName}<digits>)`)
+  if (hits.length > 1) throw new Error(`[${label}] ${fnName} is ambiguous — ${hits.length} definitions match`)
+  return hits[0].index + hits[0][0].length
+}
+
+/** Inject at the top of a function body, resolving the emitted name. */
+function spliceIntoFn(src, fnName, injection, label) {
+  const at = fnBodyStart(src, fnName, label)
+  const out = src.slice(0, at) + injection + src.slice(at)
+  if (out.length <= src.length) throw new Error(`[${label}] splice was a no-op`)
+  return out
+}
+
 function spliceAfter(src, anchor, injection, label) {
   const at = src.indexOf(anchor)
   if (at < 0) throw new Error(`[${label}] anchor not found — the bundle shape changed: ${anchor}`)
@@ -67,7 +98,7 @@ const MUTATIONS = [
     name: 'canary-buildings-noop',
     area: 'buildings',
     why: 'THE CANARY. Makes buyBuildings() a no-op. If this does not go red the census harness itself is broken.',
-    apply: (s) => spliceAfter(s, 'function buyBuildings() {', ' return;', 'canary'),
+    apply: (s) => spliceIntoFn(s, 'buyBuildings', ' return;', 'canary'),
   },
   {
     name: 'damage-1e6',
@@ -95,7 +126,7 @@ const MUTATIONS = [
     name: 'housing-always-hut',
     area: 'buildings (mostEfficientHousing)',
     why: "#93's effect: the scorer always picks the cheapest housing, so a Collector is never bought.",
-    apply: (s) => spliceAfter(s, 'function mostEfficientHousing() {', ' return "Hut";', 'housing'),
+    apply: (s) => spliceIntoFn(s, 'mostEfficientHousing', ' return "Hut";', 'housing'),
   },
   {
     name: 'housing-hut-divisor',
@@ -115,13 +146,13 @@ const MUTATIONS = [
     name: 'equipment-noop',
     area: 'equipment (autoLevelEquipment)',
     why: "#66's blindness verbatim: AT stops buying/levelling gear entirely. The suite was green through this for months.",
-    apply: (s) => spliceAfter(s, 'function autoLevelEquipment() {', ' return;', 'equipment'),
+    apply: (s) => spliceIntoFn(s, 'autoLevelEquipment', ' return;', 'equipment'),
   },
   {
     name: 'jobs-ratio-flip',
     area: 'jobs (workerRatios)',
     why: 'Forces an all-farmer worker ratio, so every hire decision is wrong.',
-    apply: (s) => spliceAfter(s, 'function workerRatios() {', ' return [1, 0, 0, 0];', 'jobs'),
+    apply: (s) => spliceIntoFn(s, 'workerRatios', ' return [1, 0, 0, 0];', 'jobs'),
   },
   {
     name: 'warpstation-noop',
@@ -164,7 +195,7 @@ const MUTATIONS = [
       'executed in a sim run. AutoPortal defaults to Off and no save had portalActive, and in He/Hr mode ' +
       'the portal is SCHEDULED, so the old setTimeout stub swallowed it too. 11-portal-u1 is the fixture ' +
       'that arms it; this mutation makes AT never portal.',
-    apply: (s) => spliceAfter(s, 'function autoPortal() {', ' return;', 'portal'),
+    apply: (s) => spliceIntoFn(s, 'autoPortal', ' return;', 'portal'),
   },
   {
     name: 'gather-always-metal',
@@ -176,7 +207,7 @@ const MUTATIONS = [
       'than per call, since 1500 re-assertions per run carry the same information as the ~10-225 changes ' +
       'between them. This mutation pins the target to one resource, which is exactly the shape a broken ' +
       'priority chain would take: still called every tick, still a valid resource, just never the right one.',
-    apply: (s) => spliceAfter(s, 'function autogather3() {', " setGather('metal'); return;", 'gather'),
+    apply: (s) => spliceIntoFn(s, 'autogather3', " setGather('metal'); return;", 'gather'),
   },
 ]
 
@@ -209,6 +240,15 @@ if (!only) {
   writeFileSync(resolve('tests/sim/blind-spot-census.md'), report(collected), 'utf8')
   console.log('\n' + report(collected))
   console.log('wrote tests/sim/blind-spot-census.md')
+  // #197 — exit NON-ZERO when any probe failed to inject. This used to exit(0) unconditionally, so
+  // the one signal a CI job or a human eye actually consults said "fine" while five probes had not
+  // run. A census that cannot fail is not a census.
+  const broken = collected.filter((r) => r.error)
+  if (broken.length) {
+    console.error(`\n[census] ${broken.length}/${collected.length} probes FAILED TO INJECT — the census is invalid:`)
+    for (const r of broken) console.error(`  ${r.name}: ${r.error}`)
+    process.exit(1)
+  }
   process.exit(0)
 }
 
@@ -291,9 +331,25 @@ function report(rows) {
   }
   out += '```\n'
 
+  // #197 — A PROBE THAT DID NOT RUN IS NOT A PASS. This section used to filter `!r.error`, so failed
+  // probes vanished from the report entirely and a census in which EVERY probe errored still printed
+  // "None — every injected bug produced a divergence." That is exactly the false green this whole
+  // document exists to expose, committed by the document itself: five probes (including the CANARY)
+  // had been silently unhooked by esbuild's X2 rename since ~2026-07-14 and the report said nothing.
+  const failed = rows.filter((r) => r.error)
+  if (failed.length) {
+    out += '\n## ⛔ Probes that DID NOT RUN — this census is INVALID\n\n'
+    out += 'A probe that could not be injected measures nothing. It is not a neutral outcome and it is\n'
+    out += 'not coverage — until every row below runs, no claim on this page is trustworthy.\n\n'
+    for (const r of failed) out += `- **${r.area}** \`${r.name}\` — ${r.error}\n`
+  }
+
   out += '\n## 🔴 Areas the gate CANNOT see\n\n'
   const blind = rows.filter((r) => !r.error && r.total === 0)
-  if (!blind.length) out += 'None — every injected bug produced a divergence.\n'
+  if (!blind.length && !failed.length) out += 'None — every injected bug produced a divergence.\n'
+  if (!blind.length && failed.length) {
+    out += `None **among the ${rows.length - failed.length} probes that ran** — but ${failed.length} did not run at all (see above), so this is not a clean bill of health.\n`
+  }
   for (const r of blind) out += `- **${r.area}** \`${r.name}\` — ${r.why}\n`
 
   out += '\n## ✅ Areas the gate CAN see\n\n'
