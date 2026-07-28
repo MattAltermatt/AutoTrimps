@@ -4,16 +4,27 @@
 > That plan was the **discovery** campaign (Phases 0–3b). This is the **remediation** campaign:
 > how the findings it produced actually get fixed, verified, and merged.
 >
-> **Status: Session 1 SHIPPED 2026-07-28.** Sessions 2–10 pending.
+> **Status: Sessions 1–2 SHIPPED 2026-07-28.** Sessions 3–10 pending.
 >
 > ```text
 > session  state        record
 > -------  -----------  --------------------------------------------------------------
 > 1        ✅ SHIPPED   9 instrument issues closed/refuted · queue labelled + milestoned
-> 2–6      ⬜ Track A   54 issues, oracle-free, independent of every open decision
+> 2        ✅ SHIPPED   Fix S2 closed: #210 #211 #235 #241 #242 #243 #255 · live 6.0.0.139
+> 3–6      ⬜ Track A   47 issues left, oracle-free, independent of every open decision
 > 7–9      ⬜ Track B   39 issues, trace-moving, collect the red
 > 10       ⬜ re-pin     one oracle re-pin, ledgered
 > ```
+>
+> **Session 2 carried one finding the plan did not anticipate.** The plan's fix shape for #210/#235
+> named three sinks; the code review found a **fourth and larger one** — `MAZ.ts` splices 29 stored
+> values across the 14 MAZ preset editors. It matters beyond its size: every attribute there is
+> **single-quoted**, and `escapeHtml` escapes `& < > "` but not `'`, so the fix the plan described
+> ("escape at the seam") would have left it open. Removing the splice — DOM properties, not markup —
+> is the only shape that closes this class. The net was mutation-tested against the escaping patch
+> specifically, not just against the unfixed code. Apply the same rule to any remaining sink in
+> Sessions 3–6: **prefer removing the splice to escaping it**, and check the quote style before
+> believing an escaper is sufficient.
 >
 > **Decision 1 is ANSWERED (2026-07-28): option A — a standing policy that AT's mirrors must match
 > the pinned clone exactly.** All eleven prediction-math findings are approved to fix, each with a
