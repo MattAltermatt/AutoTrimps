@@ -10,6 +10,62 @@
 
 **Design:** [`2026-07-28-exhaustive-logic-review-design.md`](../specs/2026-07-28-exhaustive-logic-review-design.md)
 
+---
+
+## 📍 STATUS — read this first to resume
+
+Last updated 2026-07-28. **Any session can pick this up from here; nothing below depends on a
+particular conversation's context.** All findings live in GitHub Issues, all evidence in committed
+docs.
+
+```text
+phase                                       state         where the record is
+------------------------------------------  ------------  --------------------------------
+0  audit the instruments                    ✅ SHIPPED    merged d5b271f9, deployed live
+1  class nets                               🟡 2 of 4     setting-array-compare, game-api-drift
+2  sim visibility expansion                 🟡 partial    gather.ts unblinded; 4 natives
+                                                           blind by corpus depth (#196)
+3  adversarial review — sim-BLIND modules    ✅ DONE       33 findings, #163-#195
+3b adversarial review — sim-VISIBLE modules 🔄 RUNNING    ~16k lines, see below
+4  strategy A/B (class C)                   ⬜ NOT STARTED
+5  reviewer + honest report + fix batch      ⬜ NOT STARTED
+```
+
+**Issues filed: #162–#197 (36).** None fixed yet — the hybrid landing model batches product changes
+into one reviewed set at the end (Phase 5). Instruments and nets have been landing continuously.
+
+### What Phase 3 covered, and what it did NOT
+
+Phase 3 swept only the modules with **no native-mutator terminus** — the ones the proof net is
+structurally unable to see. Phase 3b covers the remainder:
+
+```text
+SWEPT in Phase 3   perks · ab · other-praiding · MAZ · nature · magmite · scryer
+                   heirlooms · gather · fight-info · native-conflicts · custom-ui
+
+SWEPT in Phase 3b  calc 1752 · mapfunctions 2026 · maps 1615 · settings-visibility 1143
+                   import-export 1195 · equipment 986 · mapfunctions-amp 844 · jobs 834
+                   buildings 789 · other 725 · portal 580 · settings-engine 491
+                   stance 347 · utils 293 · query 282 · breedtimer 278 · upgrades 254
+```
+
+### Load-bearing facts already established — do NOT re-derive these
+
+- The **phantom-setting / `false == 0` class is already closed** by `tests/nets/settings-reverse.test.ts`;
+  the ≤4 survivors are all inert (two `== true`, two bare-truthy). A sentinel net would find nothing.
+- **`eqeqeq` must stay off.** 513 loose comparisons involve `getPageSetting`, and `stance.ts:260`
+  carries a *deliberate* loose `== 0` that catches a boolean-false setting. The rule would introduce
+  bugs, not find them.
+- **Game-API drift is zero** — all 152 symbols in `trimps.d.ts` exist in the pinned clone.
+- `game.talents.nature2` **does exist** (`config.js:608`); it governs level and retain, not convert
+  rate. #168's stated rationale was wrong; the defect is real.
+- The `*farmlevel` settings default to `[0]` (safe with `!= 0`); the `*cell` settings default to
+  `[-1]` (broken). #162 is **5 sites, not 11** — corrected on the issue.
+- Four natives stay blind by corpus depth: **every fixture holds zero heirlooms**, none has
+  AutoBattle unlocked, deepest is z62 while nature/generator unlock at z230+ (#196).
+- **Commit before mutation-testing.** `git checkout -- <file>` reverts to HEAD and silently eats
+  uncommitted edits in that file. This cost rework twice.
+
 ## Global Constraints
 
 - **No test may ever be skipped in CI.** No `.skip` / `.todo` / `.only` / env-guard / conditional-skip mechanism may be introduced, whatever its justification. `scripts/ci/assert-no-skips.mjs` enforces this.
