@@ -368,11 +368,29 @@ REJECTED — do NOT wrap these
   plusMapToRun1/5   AT's own functions, not game natives.
 ```
 
-- [ ] **Step 1: Re-confirm the five Tier-1 names resolve on `window` in the BOOTED clone**
+- [x] **Step 1: Re-confirm the five Tier-1 names resolve on `window` in the BOOTED clone — DONE**
 
 Defined-in-source is necessary but not sufficient — the name must be on `window` at boot.
 `installRecorder` **throws** rather than skipping when a name is not a function; that is correct and
 must not be softened.
+
+Verified against a real `bootGame()`, with the 10 already-wrapped mutators as a positive control
+(all present, so the probe is valid):
+
+```text
+CONTROL   buyJob buyBuilding buyUpgrade buyEquipment buyMap
+          selectMap runMap recycleMap recycleBelow setFormation    all function ✅
+
+TIER 1    setGather · selectHeirloom · equipHeirloom
+          changeGeneratorState · naturePurchase                    all function ✅
+
+TIER 2    typeof window.autoBattle === 'object'
+          .upgrade .equip .buyBonus .loadPreset
+          .resetCombat .toggleAutoLevel                            all function ✅
+
+COLLISION none of the Tier-2 names exists bare on window, so the object path
+          is required and cannot be shortcut by adding names to MUTATORS.
+```
 
 - [ ] **Step 2: Add the five Tier-1 names to `MUTATORS`; add the Tier-2 method path separately**
 
