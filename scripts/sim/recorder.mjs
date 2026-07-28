@@ -13,10 +13,27 @@
 // unfired on any sane corpus. Wrapping the wrong function and then blaming the saves is the exact
 // shape of the #66 mistake: a coverage gap is a HYPOTHESIS until you check that the code path is even
 // being watched.
+// #196 — `setGather` unblinds gather.ts (384 lines), which had NO mutator terminus and therefore no
+// visibility at all. It needed no new fixture: AT already calls it on 100% of the corpus. What it
+// needed was the right RECORDING SEMANTICS — see DEDUPE_ON_CHANGE below.
 export const MUTATORS = [
   'buyJob', 'buyBuilding', 'buyUpgrade', 'buyEquipment',
   'buyMap', 'selectMap', 'runMap', 'recycleMap', 'recycleBelow', 'setFormation',
+  'setGather',
 ]
+
+// Mutators recorded only when their arguments CHANGE from the previous recorded call.
+//
+// AT re-asserts the gather target every single tick, so `setGather` fires exactly `ticks` times per
+// run — measured 1500/1500 on every fixture — while taking only two or three distinct values ever.
+// Recording all of them would add ~31,500 near-identical rows across the corpus and drown the
+// signal in re-assertions; the DECISION AT actually makes is the transition sequence
+// (trimps -> buildings -> metal -> ...), measured at 10-225 per run.
+//
+// This is deliberately a NARROW, DECLARED exception rather than a general "compress the trace"
+// behaviour: everything not named here is still recorded call-for-call, because for the buy/map
+// mutators repetition IS information (buying the same building twice is not the same as once).
+export const DEDUPE_ON_CHANGE = new Set(['setGather'])
 
 // Stable, JSON-comparable arg capture (object args → their JSON form).
 const norm = (args) => args.map((x) => (x && typeof x === 'object') ? JSON.stringify(x) : x)
@@ -30,6 +47,8 @@ const norm = (args) => args.map((x) => (x && typeof x === 'object') ? JSON.strin
  */
 export function installRecorder(window, getTick) {
   const trace = []
+  /** last recorded args per DEDUPE_ON_CHANGE mutator, so a re-assertion is not recorded twice */
+  const lastArgs = new Map()
   for (const fn of MUTATORS) {
     const orig = window[fn]
     // THROW, don't skip. This used to `continue` past any name that wasn't a function — a silent
@@ -44,7 +63,13 @@ export function installRecorder(window, getTick) {
       )
     }
     window[fn] = function (...args) {
-      trace.push({ tick: getTick(), fn, args: norm(args) })
+      const a = norm(args)
+      if (DEDUPE_ON_CHANGE.has(fn)) {
+        const key = JSON.stringify(a)
+        if (lastArgs.get(fn) === key) return orig.apply(this, args)
+        lastArgs.set(fn, key)
+      }
+      trace.push({ tick: getTick(), fn, args: a })
       return orig.apply(this, args)
     }
   }

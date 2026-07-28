@@ -57,52 +57,52 @@ describe('corpus mutator coverage (loud, pinned)', () => {
       // The four shallow saves. All are world=4 / mapsUnlocked=false, so they see the BUY PATH ONLY —
       // which is now a stated property of these four fixtures rather than an unnoticed property of the
       // entire corpus. 05/06/07 are the ones that watch the bot.
-      '01-early-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyUpgrade'],
-      '02-mid-u1': ['buyBuilding', 'buyEquipment', 'buyJob'],
-      '03-challenge-watch': ['buyBuilding', 'buyEquipment', 'buyJob'],
+      '01-early-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyUpgrade', 'setGather'],
+      '02-mid-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'setGather'],
+      '03-challenge-watch': ['buyBuilding', 'buyEquipment', 'buyJob', 'setGather'],
       // #69 ship C: U2 reaches buyBuilding because RBuyBuildingsNew's default was the STRING 'true' and
       // its only gate is `== true`, so RbuyBuildings() had never executed. U2 shows no buyEquipment
       // because `Requipon` defaults false, so RautoEquip never runs in the sim at all (#74).
-      '04-u2-radon': ['buyBuilding', 'buyJob', 'buyUpgrade'],
+      '04-u2-radon': ['buyBuilding', 'buyJob', 'buyUpgrade', 'setGather'],
       // 05 is the honest play-forward to mapsUnlocked. AT is damage-walled inside a map here (measured
       // HD ratio 23x, fragments=1), so it makes no map calls. Its value is not a rich trace — it is that
       // maps.ts:253 EVALUATES calcOurDmg here instead of short-circuiting past it.
       // #122 GREW THIS: buyEquipment + buyUpgrade are new. With the metal economy unfrozen (checkTriggers
       // now fires, so Forge unlocks and metal.max is no longer pinned at 500) AT can finally afford gear
       // here — and the buyUpgrade is COORDINATION, the first one AT has ever bought in the net's history.
-      '05-maps-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyUpgrade'],
+      '05-maps-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyUpgrade', 'setGather'],
       // 06 is the fixture that made the net able to see combat: a post-portal state where AT sets a
       // formation nearly every tick (stance.ts survive() reads calcOurDmg) and buys/selects/runs maps at
       // each zone transition (maps.ts enoughDamage -> shouldDoMaps reads calcOurDmg).
       // #122: buyEquipment is new here for the same reason — a 500-metal cap could not fund a single piece.
-      '06-deep-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyMap', 'buyUpgrade', 'runMap', 'selectMap', 'setFormation'],
+      '06-deep-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyMap', 'buyUpgrade', 'runMap', 'selectMap', 'setFormation', 'setGather'],
       // 07 sits ON the game's 100-map cap — the sole gate behind every recycleBelow/recycleMap callsite
       // in AT (`buyMap() == -2`, main.js:6597). It is the only save that can reach either.
-      '07-map-cap-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyMap', 'buyUpgrade', 'recycleBelow', 'recycleMap', 'runMap', 'selectMap', 'setFormation'],
+      '07-map-cap-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyMap', 'buyUpgrade', 'recycleBelow', 'recycleMap', 'runMap', 'selectMap', 'setFormation', 'setGather'],
       // 08 is the DAMAGE-SENSITIVITY fixture. Its mutator list is unremarkable on purpose — its value is
       // not reach but SATURATION: it is the only save where enoughDamage is false, so calcOurDmg's output
       // can still flip a decision. A 1e6x damage injection produces 1542 divergences here and ZERO on
       // every other save in the corpus. See tests/sim/damage-sensitivity.test.ts.
-      '08-starved-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyUpgrade', 'setFormation'],
+      '08-starved-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyUpgrade', 'setFormation', 'setGather'],
       // 09 and 10 (#105) are the census-driven fixtures, and their mutator lists are deliberately THIN.
       // Their value is not reach — it is SENSITIVITY, and reach is exactly the wrong way to judge them:
       // 04-u2-radon reaches mostEfficientHousing and is still blind to #93's real bug. What makes these
       // two count is that the census rows flipped BLIND -> SEEN (housing 0 -> 27, rhypo 0 -> 13), which
       // tests/sim/blind-spot-sensitivity.test.ts pins as a mutation self-test. Do not "improve" them by
       // chasing more mutator names.
-      '09-housing-u2': ['buyBuilding', 'buyUpgrade'],
-      '10-hypo-u2': ['buyEquipment', 'buyUpgrade'],
+      '09-housing-u2': ['buyBuilding', 'buyUpgrade', 'setGather'],
+      '10-hypo-u2': ['buyEquipment', 'buyUpgrade', 'setGather'],
       // 11 (#127) spans a PORTAL — AT's highest-consequence action, and the one the net had never seen.
       // Its mutator list looks unremarkable and that is expected: what makes it count is that suppressing
       // autoPortal() diverges by 510 (tests/sim/portal.test.ts pins it). A portal resets the run, so the
       // trace is the approach, the portal, and the fresh zone-1 run that follows.
-      '11-portal-u1': ['buyBuilding', 'buyJob', 'setFormation'],
+      '11-portal-u1': ['buyBuilding', 'buyJob', 'setFormation', 'setGather'],
       // 12 (#128) is the DEEP fixture: a world-62 post-portal state, the only save that reaches the
       // late-game metal sinks. Its value is that two census rows flipped BLIND -> SEEN — warpstation-noop
       // (0 -> 1722) and gem-housing-rank (0 -> 1774), both caught ONLY here — pinned as a mutation
       // self-test in tests/sim/blind-spot-sensitivity.test.ts. The rich combat mutator list is incidental
       // to that; do not judge this fixture by reach. Warpstation buys land under buyBuilding.
-      '12-warp-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyMap', 'buyUpgrade', 'runMap', 'selectMap', 'setFormation'],
+      '12-warp-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyMap', 'buyUpgrade', 'runMap', 'selectMap', 'setFormation', 'setGather'],
     })
   })
 

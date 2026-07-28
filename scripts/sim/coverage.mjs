@@ -10,12 +10,14 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-// The full native-mutator seam recorder.mjs fingerprints. Mirror it (kept in sync deliberately —
-// tests/sim/corpus-coverage.test.ts asserts the two lists are equal, so they cannot drift).
-export const ALL_MUTATORS = [
-  'buyJob', 'buyBuilding', 'buyUpgrade', 'buyEquipment',
-  'buyMap', 'selectMap', 'runMap', 'recycleMap', 'recycleBelow', 'setFormation',
-]
+// The full native-mutator seam recorder.mjs fingerprints. DERIVED, not mirrored: this used to be a
+// hand-copied second list kept honest by an equality assertion in corpus-coverage.test.ts. A
+// corrected second copy of a code-owned fact just re-rots — the test only ever caught the drift
+// AFTER someone shipped it, and adding #196's setGather meant editing both. Importing makes the
+// drift impossible rather than merely detectable. The equality test stays; it is now a tautology,
+// which is the point.
+import { MUTATORS } from './recorder.mjs'
+export const ALL_MUTATORS = [...MUTATORS]
 
 /**
  * Read the committed oracle traces and report which mutators each save exercises, how MANY times, the

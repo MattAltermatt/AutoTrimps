@@ -166,6 +166,18 @@ const MUTATIONS = [
       'that arms it; this mutation makes AT never portal.',
     apply: (s) => spliceAfter(s, 'function autoPortal() {', ' return;', 'portal'),
   },
+  {
+    name: 'gather-always-metal',
+    area: 'gather (autogather3)',
+    why:
+      '#196: gather.ts (384 lines) had NO mutator terminus, so nothing in the net could see it — a green ' +
+      'suite was never evidence about the gather decision. It needed no new fixture (AT calls setGather on ' +
+      '100% of the corpus, every tick) — it needed setGather WRAPPED, and recorded on transition rather ' +
+      'than per call, since 1500 re-assertions per run carry the same information as the ~10-225 changes ' +
+      'between them. This mutation pins the target to one resource, which is exactly the shape a broken ' +
+      'priority chain would take: still called every tick, still a valid resource, just never the right one.',
+    apply: (s) => spliceAfter(s, 'function autogather3() {', " setGather('metal'); return;", 'gather'),
+  },
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
