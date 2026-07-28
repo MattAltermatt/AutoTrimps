@@ -208,6 +208,18 @@ that has already cost a session at least once.
   description into a double-quoted JS string inside an `onmouseover` attribute; one quote makes the
   handler fail to compile and nothing throws. Escape at the seam (`tipAttr()`), never in place —
   a multitoggle's `name` is an *array* (#110).
+- **🧨 REMOVE the HTML splice; do not escape it.** An escaper encodes an assumption about its sink's
+  quote style, and that assumption is invisible at the call site and wrong one file over.
+  `utils.escapeHtml` handles `& < > "` but **not `'`** — and `MAZ.ts` builds every attribute with
+  SINGLE quotes, so the obvious "escape at the seam" patch would have left all 29 of its splices
+  exploitable while looking like a fix (#235, found by review after three sibling sinks were already
+  closed). Prefer `el.value = x` after the markup parses, or `textContent` + `createElement`: the
+  value never becomes markup, so no quote of any kind can break out, and it also fixes the
+  entity-decoding data loss escaping leaves behind. Reserve `escapeHtml` for markup that genuinely
+  must be a string, and **check the quote style first**. Corollary for the net: mutation-test against
+  the *near-miss* fix — a net that only reddens on the unfixed code cannot tell you the escaping
+  patch was wrong. Anything persisted is attacker-influenceable: importing another player's settings
+  string is the documented feature, `@grant none` runs in page context, and the game page has no CSP.
 - **👁️ Read `settings-visibility.ts` before judging any setting.** The runtime gate and the render
   gate are frequently one invariant expressed twice; reasoning from the consumer alone was wrong twice
   in one session (#115, #117). A reference count answers "is it read?", never "why does this control
