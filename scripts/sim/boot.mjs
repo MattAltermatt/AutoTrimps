@@ -16,6 +16,33 @@ export const DEFAULT_GAME_DIR =
 const GAME_FILES = ['lz-string.js', 'decimal.min.js', 'config.js', 'updates.js', 'playerSpire.js', 'objects.js', 'main.js']
 
 /**
+ * Anti-false-green tripwire (mirrors tests/harness/gameFixture.ts:44): a hydrated game keeps its
+ * methods. If this throws, the game object was replaced by method-less data and any trace is a lie.
+ *
+ * EXPORTED ON PURPOSE. This used to be an inline `if` inside bootGame, which made it structurally
+ * untestable — there is no hook to hand bootGame a corrupted game before the check runs, so nothing
+ * could assert the throw ever fires. A tripwire no test can trip is decoration, which is the exact
+ * class the 2026-07-28 instrument audit exists to find — and the first version of that audit's own
+ * "repair" fell straight into it: the replacement test re-derived this field-path expression against
+ * a JSON clone and never called into this file at all, so deleting the check would have left every
+ * boot test green. A code review caught that. Extracting it matches the precedent at
+ * tests/harness/gameFixture.ts:44, whose throw IS exercised directly at
+ * tests/calc.getTrimpAttack.test.ts:56.
+ *
+ * ⚠️ Keep this ABOVE bootGame's JSDoc block. A JSDoc comment binds to the declaration that FOLLOWS
+ * it, so inserting a function between that block and bootGame silently orphans it and collapses
+ * bootGame's options type to just its two defaulted fields — which reddens ~50 test files with
+ * "atBundlePath does not exist" errors nowhere near the actual edit.
+ *
+ * @param {unknown} game
+ */
+export function assertGameHydrated(game) {
+  if (typeof (/** @type {any} */ (game)?.buildings?.Shed?.cost?.wood) !== 'function') {
+    throw new Error('boot: game not hydrated — buildings.Shed.cost.wood is not a function')
+  }
+}
+
+/**
  * Boot the Trimps clone (and optionally the AutoTrimps bundle) into jsdom.
  * @param {{ gameDir?: string, withAutoTrimps?: boolean, atBundlePath?: string, saveString?: string, atSettings?: Record<string, unknown>, atSettingsBlob?: string | Record<string, unknown>, fixedNow?: number | 'lastOnline' }} [opts]
  * @returns {{ window: any, game: any, dom: any }}
@@ -166,11 +193,7 @@ export function bootGame({ gameDir = DEFAULT_GAME_DIR, withAutoTrimps = false, a
   const gameNow = () => (window.game?.global?.start || 0) + (window.game?.global?.time || 0)
   window.__simTimers = installVirtualTimers(window, gameNow)
 
-  // Anti-false-green tripwire (mirrors tests/harness/gameFixture.ts:44): a hydrated game keeps its
-  // methods. If this fails, the game object was replaced by method-less data and any trace is a lie.
-  if (typeof window.game?.buildings?.Shed?.cost?.wood !== 'function') {
-    throw new Error('boot: game not hydrated — buildings.Shed.cost.wood is not a function')
-  }
+  assertGameHydrated(window.game)
 
   return { window, game: window.game, dom }
 }

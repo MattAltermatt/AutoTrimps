@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { REGIONS } from '../../src/modules/custom-ui/regions'
+import { RESOURCES, POP } from '../../src/modules/custom-ui/tiles/sampler'
 
 // Phase 1: the whole HUD is adopted as #wrapper, so every game HUD region is covered
 // transitively (the game keeps rendering into its own containers inside our shell). This net
@@ -21,20 +22,35 @@ describe('custom-ui completeness', () => {
     expect(html).toMatch(/id=["']wrapper["']/)
   })
 
-  it('the resource region (at-native) claims all 7 flat resources, all real containers', () => {
+  // ⚠️ DERIVED, NOT RESTATED (2026-07-28 instrument audit). This assertion used to re-type the seven
+  // resource ids as a literal, which made it a THIRD copy of a list that already exists twice:
+  // sampler.ts:1 RESOURCES (what production actually samples and renders) and regions.ts:18
+  // natives (the manifest this net polices). Nothing asserted the copies agreed, so adding a
+  // resource to sampler.ts — a real production change — left REGIONS claiming the old seven and
+  // this net green, because it only ever compared REGIONS against a hand-typed echo of itself.
+  //
+  // Deriving from RESOURCES makes the net catch that drift: the manifest must match what renders.
+  // (See also: a corrected second copy of a code-owned fact just re-rots — BuyJobsNew's seven
+  // hand-copied tiers were all wrong.)
+  it('the resource region manifest MATCHES what the sampler actually renders', () => {
     const region = REGIONS.find((r) => r.id === 'resources')!
     expect(region.status).toBe('at-native')
-    expect(region.natives).toEqual(['food', 'wood', 'metal', 'science', 'fragments', 'gems', 'helium'])
-    const html = readFileSync(resolve(process.cwd(), '.trimps-game/index.html'), 'utf8')
-    for (const id of region.natives!) expect(html).toMatch(new RegExp(`id=["']${id}["']`))
+    expect(region.natives).toEqual([...RESOURCES])
   })
 
-  it('the population region (at-native) claims #trimps, a real container', () => {
+  it('every rendered resource is a real container in the game index.html', () => {
+    const html = readFileSync(resolve(process.cwd(), '.trimps-game/index.html'), 'utf8')
+    // Anti-false-green: an empty RESOURCES would make the loop below vacuous.
+    expect(RESOURCES.length).toBeGreaterThan(0)
+    for (const id of RESOURCES) expect(html).toMatch(new RegExp(`id=["']${id}["']`))
+  })
+
+  it('the population region manifest MATCHES the sampler POP id, a real container', () => {
     const region = REGIONS.find((r) => r.id === 'population')!
     expect(region.status).toBe('at-native')
-    expect(region.natives).toEqual(['trimps'])
+    expect(region.natives).toEqual([POP])
     const html = readFileSync(resolve(process.cwd(), '.trimps-game/index.html'), 'utf8')
-    expect(html).toMatch(/id=["']trimps["']/)
+    expect(html).toMatch(new RegExp(`id=["']${POP}["']`))
   })
 
   it('#149: the Turkimp tile mirrors a real native (#turkimpTime exists in the clone)', () => {
