@@ -199,7 +199,7 @@ const MUTATIONS = [
   },
   {
     name: 'gather-always-metal',
-    area: 'gather (autogather3)',
+    area: 'gather (manualLabor2)',
     why:
       '#196: gather.ts (384 lines) had NO mutator terminus, so nothing in the net could see it — a green ' +
       'suite was never evidence about the gather decision. It needed no new fixture (AT calls setGather on ' +
@@ -207,7 +207,13 @@ const MUTATIONS = [
       'than per call, since 1500 re-assertions per run carry the same information as the ~10-225 changes ' +
       'between them. This mutation pins the target to one resource, which is exactly the shape a broken ' +
       'priority chain would take: still called every tick, still a valid resource, just never the right one.',
-    apply: (s) => spliceIntoFn(s, 'autogather3', " setGather('metal'); return;", 'gather'),
+    // ⚠️ THE FIRST VERSION OF THIS PROBE MUTATED `autogather3` AND CAME BACK BLIND — correctly. That
+    // function only runs when ManualGather2 == 2; its default is 1 (settings-defs.ts:51), so the
+    // corpus runs `manualLabor2` instead and the mutation was injected into code no fixture executes.
+    // Reach is not sensitivity: the probe landed, the bundle changed, and it still measured nothing.
+    // The census caught it on the first valid run after #197 unbroke it, which is the whole point of
+    // having one.
+    apply: (s) => spliceIntoFn(s, 'manualLabor2', " setGather('metal'); return;", 'gather'),
   },
 ]
 
