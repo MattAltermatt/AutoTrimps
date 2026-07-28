@@ -270,3 +270,78 @@ The critic reported `tests/sim/` coverage as 11 of 25 and listed 14 suites as un
 the recipe set at 90,000 characters, so it reasoned from a partial list. Actual coverage is 45 of 45.
 Recorded here because an audit that mis-measures its own coverage is the same class of defect it
 exists to find.
+
+---
+
+## Session 1 of the remediation campaign — closures against this audit's own findings
+
+Recorded 2026-07-28, on `feature/session-1-triage`. Every row below was mutation-proven in both
+directions: the named mutation reddens the named assertion, and named siblings stay green.
+
+```text
+finding  what it said                                verdict now
+-------  ------------------------------------------  ------------------------------------------
+#197     census could not run 5 of 12 probes         ✅ CLOSED — already fixed in 4be220bd +
+                                                        b9e00385; 12/12 anchors inject today
+#257     the harness is loaded but not typechecked   ✅ CLOSED — tsconfig.scripts.json, wired
+                                                        into `npm run typecheck`, pinned by
+                                                        ci-gates
+#258     census is blind to a bare `return`          ✅ CLOSED — static AST net; found a live
+                                                        instance on its first run
+#259     two of driver.test.ts's three claims are    ✅ CLOSED — both strengthened, both now
+         unfalsified                                    have a specific mutation
+#260     economy-alive's probe has near-zero         ✅ CLOSED — narrower one-shot probe:
+         specificity                                    1 assertion red, siblings green
+#261     the tripwire's CALL SITE is unguarded       ✅ CLOSED — AST call-site net
+#262     `mapLevelInput` is a dead ambient           ❌ REFUTED — mapfunctions.ts:2021 uses the
+                                                        bare identifier; deleting it fails tsc
+```
+
+### #257 — what the old gate could not see
+
+```text
+mutation                                        old gate (`tsc --noEmit`)   new gate
+----------------------------------------------  --------------------------  ---------
+a type error planted in scripts/sim/recorder.mjs   EXIT 0  (blind)           EXIT 2
+dropping tsconfig.scripts.json from the script     n/a                       ci-gates RED
+```
+
+### #258 — the boundary, measured from both sides
+
+A bare `return` planted at the top of a `ci-gates.test.ts` body:
+
+```text
+scripts/ci/assert-no-skips.mjs      "OK — 19 tests ran, 0 skipped."   EXIT 0   ← structurally blind
+tests/nets/no-skipped-test-bodies   RED, naming ci-gates.test.ts:58            ← closed
+```
+
+The net's first run found a live instance: `tests/buildings.u2Stacking.test.ts` guarded on
+`if (game.buildings.Tribute.locked) return`, and `04-u2-radon` is a z4 save where Tribute **is**
+locked — so that test had never executed an assertion since it was written. With the fixture
+unlocked it passes, and routing Tribute through the 10/2/1 ladder now reddens it, which is the
+regression its own comment claims to guard.
+
+### #259 — the two claims, and the mutations that now falsify them
+
+```text
+claim                              old form passed under              new assertion
+---------------------------------  ---------------------------------  --------------------------
+runTicks honours `count`           a loop capped at 50 ticks           300 ticks must out-gather 100
+runUntil stops MINIMALLY           a runUntil overshooting by 10       predicate FALSE at ticks-1
+```
+
+### #260 — specificity, old probe vs new
+
+```text
+probe                                       reddens
+------------------------------------------  --------------------------------------------------
+delete window.checkTriggers() (old)         economy-alive + baseline-zero, oracle, oracle.jobs,
+                                            saves, gem-housing, upgrade-reserve, both trace gates
+one-shot flag on the call (new)             economy-alive's cadence assertion ONLY — driver,
+                                            timers and census-anchors all stay green (21/21)
+```
+
+The three behavioural assertions in `economy-alive` stay green under the narrow probe, exactly as
+that suite's own comment predicts: the game calls `checkTriggers` internally from its buy paths, so
+Forge still unlocks inside a 1500-tick budget. That is the difference between "triggers fire at
+least once" and "triggers fire every tick", and it is why the cadence needed its own pin.

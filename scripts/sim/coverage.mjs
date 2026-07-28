@@ -32,8 +32,11 @@ export const ALL_MUTATORS = [...MUTATORS]
  * @returns {{ perSave: Record<string,string[]>, counts: Record<string,Record<string,number>>, union: string[], uncovered: string[] }}
  */
 export function coverageFromTraces(tracesDir = resolve('tests/fixtures/traces')) {
+  /** @type {Record<string, Set<string>>} */
   const perSaveSets = {}
+  /** @type {Record<string, Record<string, number>>} */
   const counts = {}
+  /** @type {Set<string>} */
   const union = new Set()
   for (const f of readdirSync(tracesDir).filter((x) => x.endsWith('.trace.json'))) {
     const save = f.replace(/\.\d+\.trace\.json$/, '')
@@ -46,6 +49,7 @@ export function coverageFromTraces(tracesDir = resolve('tests/fixtures/traces'))
       union.add(e.fn)
     }
   }
+  /** @type {Record<string, string[]>} */
   const perSave = {}
   for (const s of Object.keys(perSaveSets).sort()) perSave[s] = [...perSaveSets[s]].sort()
   return {
@@ -57,7 +61,7 @@ export function coverageFromTraces(tracesDir = resolve('tests/fixtures/traces'))
 }
 
 // CLI: print the report.
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop())) {
+if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop() ?? '')) {
   const { perSave, union, uncovered } = coverageFromTraces()
   console.log('[coverage] per-save mutator reach:')
   for (const [s, fns] of Object.entries(perSave)) console.log(`  ${s.padEnd(20)} ${fns.join(', ')}`)

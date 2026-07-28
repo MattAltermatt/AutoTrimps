@@ -50,7 +50,10 @@ const sameArgs = (declared, actual) => JSON.stringify(declared ?? null) === JSON
 /**
  * @param {{index:number,oracle:any,working:any}[]} diff
  * @param {string} save
- * @param {{ waivers?: {issue:string,save:string,index:number,fn:string,argsBefore:any,argsAfter:any}[] }} manifest
+ * `argsBefore`/`argsAfter` are OPTIONAL in the type precisely because the check below is what makes
+ * them mandatory in practice (#159). Declaring them required narrowed `w` to `never` inside that
+ * guard, which is the type system asserting the very hole the guard exists to close.
+ * @param {{ waivers?: {issue?:string,save?:string,index?:number,fn?:string,argsBefore?:any,argsAfter?:any}[] }} manifest
  * @returns {{ unexplained: any[], unfired: any[] }}
  */
 export function applyManifest(diff, save, manifest) {

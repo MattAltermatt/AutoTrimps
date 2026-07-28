@@ -1,0 +1,29 @@
+{
+  // #257 — the proof-net harness is JavaScript, and the root tsconfig LOADED it with `checkJs: false`.
+  // So `npm run typecheck` passing was never evidence about recorder.mjs / boot.mjs / driver.mjs /
+  // corpus.mjs / manifest.mjs / trace.mjs / blind-spot-census.mjs — the machinery every sim
+  // conclusion rests on, and the files active work modifies most.
+  //
+  // It is a SEPARATE config rather than `checkJs: true` on the root one because TS has no per-file
+  // compiler options: the harness needs `noImplicitAny: false` (92 untyped JS params), and turning
+  // that off globally CHANGES INFERENCE IN src/ — it makes ab.ts, buildings.ts and import-export.ts
+  // fail with `never` errors that do not exist today. Weakening the strict TS config to typecheck
+  // the JS harness would have been a net loss.
+  //
+  // `npm run typecheck` runs BOTH configs; tests/ci-gates.test.ts pins that it keeps doing so.
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "types": ["node"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"]
+  },
+  "include": ["scripts"]
+}

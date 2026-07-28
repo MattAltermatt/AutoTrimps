@@ -11959,6 +11959,7 @@
       // portal path (and, with no mainLoop error boundary (#87), take out every automation after
       // it). Deleting the reader is the only disposition that mints nothing and disarms it.
       // The empty case falls through to "Watch" exactly as before.
+      // falls through
       case "Watch":
       case "Lead":
       case "Corrupted":

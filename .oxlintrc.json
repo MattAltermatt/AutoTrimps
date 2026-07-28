@@ -7,6 +7,8 @@
     "no-unused-vars": ["error", { "caughtErrors": "none", "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
     "no-eval": "error",
     "no-new-func": "error",
-    "no-implied-eval": "error"
+    "no-implied-eval": "error",
+    "no-self-compare": "error",
+    "no-fallthrough": "error"
   }
 }

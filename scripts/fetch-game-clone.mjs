@@ -21,6 +21,7 @@ import { existsSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSyn
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { errMessage } from './lib/err.mjs'
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..')
 const DEST = resolve(ROOT, '.trimps-game')
@@ -73,7 +74,7 @@ try {
 } catch (err) {
   rmSync(tmp, { recursive: true, force: true })
   fail(
-    `${err.message}\n\n` +
+    `${errMessage(err)}\n\n` +
       `The proof net (tests/sim/**) cannot run without the game clone, and it will FAIL rather than\n` +
       `skip — that is deliberate (#67). To repair:  npm run game:fetch\n` +
       `To point at a clone you already have:        export TRIMPS_GAME_DIR=/path/to/trimps-game`,

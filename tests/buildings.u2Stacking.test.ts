@@ -113,7 +113,14 @@ describe('#123: U2 queues stacked build entries, so DecaBuild/DoubleBuild actual
 
   it('Tribute keeps its computed bulk count — the ladder would have capped the one site that already worked', () => {
     const { window, game } = bootU2(ROBO.decaBuild)
-    if (game.buildings.Tribute.locked) return // nothing to prove on a fixture without Tribute
+    // 04-u2-radon is a z4 save, where Tribute is LOCKED — so this test's original
+    // `if (game.buildings.Tribute.locked) return` meant it had never once executed an assertion.
+    // It reported as a pass on every run since it was written, and no report-consuming census could
+    // ever have said otherwise (#258). Unlock it the same way this fixture already pokes universe,
+    // roboTrimpLevel and resources, then ASSERT the precondition took, so the day that stops working
+    // is a red rather than a silent return.
+    game.buildings.Tribute.locked = 0
+    expect(game.buildings.Tribute.locked, 'Tribute must be unlocked or this test proves nothing').toBeFalsy()
     window.setPageSetting('RMaxTribute', -1)
     window.RbuyBuildings()
 

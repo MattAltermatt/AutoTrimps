@@ -36,6 +36,7 @@ import { fileURLToPath } from 'node:url'
 import { buildUserscript } from '../build-userscript.mjs'
 import { runTrace, diffTraces } from './trace.mjs'
 import { CORPUS } from './corpus.mjs'
+import { errMessage } from '../lib/err.mjs'
 
 const SAVES = resolve('tests/fixtures/saves')
 const TRACES = resolve('tests/fixtures/traces')
@@ -248,7 +249,7 @@ if (IS_MAIN && !only) {
       })
       collected.push(JSON.parse(raw.slice(raw.indexOf('{'))))
     } catch (err) {
-      collected.push({ name: m.name, area: m.area, why: m.why, error: String(err.message).slice(0, 120) })
+      collected.push({ name: m.name, area: m.area, why: m.why, error: errMessage(err).slice(0, 120) })
     }
   }
   writeFileSync(resolve('tests/sim/blind-spot-census.md'), report(collected), 'utf8')
@@ -347,8 +348,8 @@ if (IS_MAIN) {
       writeFileSync(mutantPath, m.apply(clean), 'utf8')
     } catch (err) {
       built = false
-      console.error(`\n!! ${m.name}: ${err.message}`)
-      results.push({ m, total: null, perSave: {}, error: err.message })
+      console.error(`\n!! ${m.name}: ${errMessage(err)}`)
+      results.push({ m, total: null, perSave: {}, error: errMessage(err) })
       continue
     }
     if (!built) continue

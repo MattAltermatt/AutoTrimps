@@ -2,7 +2,11 @@ import { bootGame } from './boot.mjs'
 import { installSeededRandom } from './seededRandom.mjs'
 
 // runOne(window, game, value) => metric number. One fresh boot per (value, seed).
-export function sweep({ values, seeds, runOne, bootOpts } = {}) {
+/**
+ * @param {{ values: any[], seeds: number[], runOne: (window:any, game:any, value:any) => number,
+ *           bootOpts?: any }} opts
+ */
+export function sweep({ values, seeds, runOne, bootOpts }) {
   const results = []
   for (const value of values) {
     const samples = []

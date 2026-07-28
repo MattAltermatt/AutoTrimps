@@ -54,10 +54,57 @@ describe.each(WORKFLOWS)('%s is a real gate', (_name, yml) => {
   })
 })
 
+it('the lint gate keeps the rules that were deliberately turned on (#256)', () => {
+  // A rule quietly dropped from .oxlintrc.json is the disabled-gate class again: nothing goes red,
+  // the gate just stops looking. These two were measured before being enabled — no-self-compare has
+  // zero hits, no-fallthrough had exactly one (a documented empty-case group in portal.ts, given the
+  // canonical `// falls through` marker rather than a suppression).
+  //
+  // eqeqeq is deliberately NOT here and must stay out: 513 loose comparisons involve getPageSetting,
+  // and stance.ts:260 carries a deliberate loose `== 0` that catches a boolean-false setting. The
+  // rule would introduce bugs, not find them; setting-array-compare.test.ts is the precise instrument
+  // for that class.
+  const rc = JSON.parse(read('.oxlintrc.json'))
+  expect(Object.keys(rc.rules)).toEqual(expect.arrayContaining(['no-self-compare', 'no-fallthrough']))
+  expect(Object.keys(rc.rules), 'eqeqeq would force a behaviour change at stance.ts:260').not.toContain('eqeqeq')
+})
+
 it('the lint gate is capable of failing (--deny-warnings)', () => {
   // oxlint exits 0 on warnings. Without --deny-warnings, `- run: npm run lint` is a step that CANNOT
   // go red — gate theater, the same disease as describe.skip.
   expect(pkg.scripts.lint).toContain('--deny-warnings')
+})
+
+describe('the typecheck gate actually covers the proof-net harness (#257)', () => {
+  // The harness is JavaScript. The root tsconfig LOADS it (`allowJs`) but does not CHECK it
+  // (`checkJs: false`), so for the whole life of the sim a green `npm run typecheck` was zero
+  // evidence about recorder.mjs / boot.mjs / driver.mjs / manifest.mjs / blind-spot-census.mjs.
+  // Same species as the wrapped `@ts-nocheck` that exempted buildings.ts for months: tsc exits 0
+  // BECAUSE the file is skipped.
+  //
+  // Derived, not restated: this reads both configs and the gate that runs them, so dropping the
+  // second `tsc` invocation, flipping `checkJs`, or narrowing `include` each go red on their own.
+  const scriptsCfg = JSON.parse(read('tsconfig.scripts.json').replace(/^\s*\/\/.*$/gm, ''))
+  const rootCfg = JSON.parse(read('tsconfig.json').replace(/^\s*\/\/.*$/gm, ''))
+
+  it('the scripts config really typechecks JS, and really covers scripts/', () => {
+    expect(scriptsCfg.compilerOptions.allowJs).toBe(true)
+    expect(scriptsCfg.compilerOptions.checkJs).toBe(true)
+    expect(scriptsCfg.include).toContain('scripts')
+  })
+
+  it('the typecheck gate runs BOTH configs', () => {
+    // One `tsc --noEmit` covers src+tests only. If this reference disappears the harness silently
+    // stops being checked and every gate stays green — the failure mode being closed here.
+    expect(pkg.scripts.typecheck).toContain('tsconfig.scripts.json')
+  })
+
+  it('the root config still does not claim to check the harness', () => {
+    // If someone flips checkJs on the ROOT config to "simplify", noImplicitAny applies to the
+    // harness's 92 untyped params AND the two configs start disagreeing about src/. The split is
+    // deliberate; this pins the half that is easy to undo by accident.
+    expect(rootCfg.compilerOptions.checkJs).toBe(false)
+  })
 })
 
 it('the node pin matches the runtime the oracle traces were recorded on', () => {

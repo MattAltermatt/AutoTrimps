@@ -84,7 +84,12 @@ function loadBase() {
 // (Warpstation unlocks at world 60), not by a tick number — and the exact world at a fixed tick drifts
 // run-to-run with RNG, so a fixed count would land at an unpredictable zone. It throws rather than
 // silently committing a too-shallow save if the cap is hit first.
-function playForward(saveString, { ticks, seed = 1, mutate, atSettings, untilWorld } = {}) {
+/**
+ * @param {string} saveString
+ * @param {{ ticks: number, seed?: number, mutate?: (window:any, game:any) => void,
+ *           atSettings?: Record<string, any>, untilWorld?: number }} opts
+ */
+function playForward(saveString, { ticks, seed = 1, mutate, atSettings, untilWorld }) {
   const { window: w, game: g } = bootGame({ withAutoTrimps: true, atBundlePath: ORACLE, saveString, atSettings })
   installSeededRandom(w, seed)
   installFrozenClock(w)

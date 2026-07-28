@@ -16,6 +16,7 @@
 // Wiring (package.json):  "test:ci": "vitest run --reporter=default --reporter=json
 //                                      --outputFile=.vitest-report.json && node scripts/ci/assert-no-skips.mjs"
 import { readFileSync } from 'node:fs'
+import { errMessage } from '../lib/err.mjs'
 
 const REPORT = process.argv[2] ?? '.vitest-report.json'
 
@@ -23,7 +24,7 @@ let report
 try {
   report = JSON.parse(readFileSync(REPORT, 'utf8'))
 } catch (err) {
-  console.error(`[no-skip-census] cannot read ${REPORT}: ${err.message}`)
+  console.error(`[no-skip-census] cannot read ${REPORT}: ${errMessage(err)}`)
   console.error('[no-skip-census] the census could not run — treating as FAILURE (a census that did not run is exactly the bug this net exists to catch).')
   process.exit(1)
 }
