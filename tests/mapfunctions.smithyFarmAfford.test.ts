@@ -152,6 +152,7 @@ describe('#300 — RsmithyCalc returns undefined in the affordable state, and co
   })
 
   it('RselectSmithy still matches a genuinely correct map when the special is real', () => {
+
     arm({ owned: 0, target: 10 })
     affordable = false
     const special = mf.RsmithyCalc(false, false, true, false)
@@ -160,5 +161,40 @@ describe('#300 — RsmithyCalc returns undefined in the affordable state, and co
       { noRecycle: false, level: 200 + (levelzones as number), bonus: special, id: 'map42' },
     ]
     expect(mf.RselectSmithy()).toBe('map42')
+  })
+})
+
+describe('#225 — RmapLevelCalc\'s negative ladder reaches -2 and -3', () => {
+  // The three negative arms are separate `if`s, so ORDER decides the answer: they used to test the
+  // LARGEST threshold first, and any HD past 10000 also passes 5000 and 500, so -1 always won and
+  // -2/-3 were dead stores. The positive ladder below them is ordered loosest-first, which is what
+  // makes the same last-write-wins idiom correct there.
+  //
+  // HD is `RcalcHDratio() / 1.5`, so the stub is the threshold times 1.5.
+  const levelAt = (hd: number) => {
+    G.RcalcHDratio = () => hd * 1.5
+    return mf.RmapLevelCalc()
+  }
+
+  it.each([
+    [20000, -3], [10000, -3],
+    [9999, -2], [5000, -2],
+    [4999, -1], [500, -1],
+    [499, 0], [40, 0],
+    // Positive rows sit just INSIDE each band rather than exactly on the boundary: the stub feeds
+    // `hd * 1.5` and production divides by 1.5 again, so 0.1 round-trips to 0.10000000000000002 and
+    // fails its own `<= 0.1`. That is an artifact of driving the ratio through the stub, not a
+    // production defect — the #225-critical negative rows are integers and land exactly.
+    [0.9, 1], [0.4, 2], [0.09, 3], [0.04, 4], [0.009, 5], [0.004, 6], [0.00009, 7], [0.00004, 8],
+  ])('HD %f -> level %i', (hd, expected) => {
+    expect(levelAt(hd as number)).toBe(expected)
+  })
+
+  it('anti-false-green: the ladder is monotone and actually spans -3..8', () => {
+    // If every row collapsed to one value the table above would be trivially satisfiable.
+    const seen = [20000, 9999, 4999, 499, 0.9, 0.00004].map((hd) => levelAt(hd))
+    expect(new Set(seen).size).toBe(6)
+    expect(Math.min(...seen)).toBe(-3)
+    expect(Math.max(...seen)).toBe(8)
   })
 })
