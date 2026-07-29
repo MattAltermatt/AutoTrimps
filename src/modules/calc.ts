@@ -166,31 +166,67 @@ export function highDamageShield(): void {
     }
 }
 
+/**
+ * The multiplier the game applies for a given crit TIER (.trimps-game/main.js:15849-15851).
+ *
+ *   T <= 0  ->  1                       — no crit fired. NOT getMegaCritDamageMult(0), which is
+ *                                          `base ^ -1` = 0.2 and was the whole of #199.
+ *   T >= 1  ->  critD * megaCrit(T)     — megaCrit(1) is 1, so this one form covers tier 1 too,
+ *                                          which is exactly why the game can guard on `critTier > 1`.
+ */
+function critTierMult(tier: number, critD: number): number {
+    return tier <= 0 ? 1 : critD * getMegaCritDamageMult(tier);
+}
+
+/**
+ * Expected crit multiplier over the game's own tier distribution (main.js:15833-15859).
+ *
+ * The game takes `critTier = floor(critChance)`, promotes it once with probability `critChance % 1`,
+ * and promotes it again with probability `getPlayerDoubleCritChance()` — two independent rolls. This
+ * enumerates all four outcomes rather than approximating the second roll as a flat `base` factor,
+ * which was wrong at tier 0 (where a promotion is worth critD, not base).
+ *
+ * #295 — a NEGATIVE critChance never enters the crit branch at all; main.js:15854 makes it an
+ * "unlucky" penalty that multiplies damage by 0.2 with probability |critChance|. Feeding it to the
+ * tier formula produced `base ^ -2` and understated damage by ~20% on a trimpCritChanceDown Daily.
+ */
+export function expectedCritMulti(critChance: number, critD: number, doubleCritChance: number): number {
+    if (critChance < 0) {
+        const p = Math.min(Math.abs(critChance), 1);
+        return p * 0.2 + (1 - p);
+    }
+    if (critChance === 0) return 1;
+
+    const baseTier = Math.floor(critChance);
+    const f = critChance - baseTier;                              // P(+1 tier, main roll)
+    const d = Math.min(Math.max(doubleCritChance, 0), 1);         // P(+1 tier, double-crit roll)
+
+    return (1 - f) * (1 - d) * critTierMult(baseTier, critD)
+         + f * (1 - d) * critTierMult(baseTier + 1, critD)
+         + (1 - f) * d * critTierMult(baseTier + 1, critD)
+         + f * d * critTierMult(baseTier + 2, critD);
+}
+
 export function getCritMulti(high?: boolean): number {
 
     let critChance = getPlayerCritChance();
     let CritD = getPlayerCritDamageMult();
 
+    // #212 — `high && A || B` parses as `(high && A) || B`, so the Daily arm fired even when the
+    // caller asked for the NON-high multiplier. Both tooltips describe the swap as high-damage-only.
     if (
-        high &&
-        (getPageSetting('AutoStance') == 3 && textSettingIsSet('highdmg') && game.global.challengeActive !== "Daily") ||
-        (getPageSetting('use3daily') == true && textSettingIsSet('dhighdmg') && game.global.challengeActive === "Daily")
+        high && (
+            (getPageSetting('AutoStance') == 3 && textSettingIsSet('highdmg') && game.global.challengeActive !== "Daily") ||
+            (getPageSetting('use3daily') == true && textSettingIsSet('dhighdmg') && game.global.challengeActive === "Daily")
+        )
     ) {
         highDamageShield();
         critChance = critCC;
         CritD = critDD;
     }
 
-    const lowTierMulti = getMegaCritDamageMult(Math.floor(critChance));
-    const highTierMulti = getMegaCritDamageMult(Math.ceil(critChance));
-    const highTierChance = critChance - Math.floor(critChance)
-
-    // Scruffy's doubleCrit ability + Shield doubleCrit mod (5.10.0): a second independent roll adds one
-    // more crit tier with prob doubleCritChance, multiplying the mult by the mega-crit base per tier.
-    const doubleCritChance = (typeof getPlayerDoubleCritChance === 'function') ? Math.min(getPlayerDoubleCritChance(), 1) : 0;
-    const doubleCritFactor = 1 + doubleCritChance * (getMegaCritDamageMult(2) - 1);
-
-    return ((1 - highTierChance) * lowTierMulti + highTierChance * highTierMulti) * doubleCritFactor * CritD
+    const doubleCritChance = (typeof getPlayerDoubleCritChance === 'function') ? getPlayerDoubleCritChance() : 0;
+    return expectedCritMulti(critChance, CritD, doubleCritChance);
 }
 
 export function calcOurBlock(stance?: boolean): number {
@@ -1081,19 +1117,11 @@ export function rCalcMutationHealth(): number | undefined {
 
 export function RgetCritMulti(): number {
 
-    const critChance = getPlayerCritChance();
-    const CritD = getPlayerCritDamageMult();
-
-    const lowTierMulti = getMegaCritDamageMult(Math.floor(critChance));
-    const highTierMulti = getMegaCritDamageMult(Math.ceil(critChance));
-    const highTierChance = critChance - Math.floor(critChance)
-
-    // Scruffy's doubleCrit ability + Shield doubleCrit mod (5.10.0): a second independent roll adds one
-    // more crit tier with prob doubleCritChance, multiplying the mult by the mega-crit base per tier.
-    const doubleCritChance = (typeof getPlayerDoubleCritChance === 'function') ? Math.min(getPlayerDoubleCritChance(), 1) : 0;
-    const doubleCritFactor = 1 + doubleCritChance * (getMegaCritDamageMult(2) - 1);
-
-    return ((1 - highTierChance) * lowTierMulti + highTierChance * highTierMulti) * doubleCritFactor * CritD
+    // #199 — shares getCritMulti's expectation helper rather than keeping a second hand-copy of the
+    // same formula. The U1 twin was corrected once before (#168's convertRate) and the fix landed on
+    // only one of the two copies; one source removes that class here.
+    const doubleCritChance = (typeof getPlayerDoubleCritChance === 'function') ? getPlayerDoubleCritChance() : 0;
+    return expectedCritMulti(getPlayerCritChance(), getPlayerCritDamageMult(), doubleCritChance);
 }
 
 // #99: the `min` / `max` branches and the two *DailyMod accumulators are DELETED, not fixed.
