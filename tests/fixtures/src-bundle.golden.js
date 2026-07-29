@@ -10297,7 +10297,9 @@
     if (amount) return smithyzones;
     if (smithyfarmzone.includes(game.global.world)) {
       if (game.global.lastClearedCell + 2 >= smithyfarmcell && smithyzones > smithys && smithyzones > 0) {
-        Rshouldsmithyfarm = true;
+        const goal = smithyzones - smithys;
+        const afford = goal > 0 ? canAffordBuilding("Smithy", false, false, false, false, goal) : true;
+        if (!afford) Rshouldsmithyfarm = true;
       }
     }
   }
@@ -10359,8 +10361,11 @@
     } else if (levelzones2 < 0) {
       byId2("mapLevelInput").value = game.global.world + levelzones2;
     }
-    biomeAdvMapsSelect.value = RsmithyCalc2(false, true, false, false);
-    byId2("advSpecialSelect").value = String(RsmithyCalc2(false, false, true, false));
+    const smithyBiome = RsmithyCalc2(false, true, false, false);
+    const smithySpecial = RsmithyCalc2(false, false, true, false);
+    if (smithyBiome == null || smithySpecial == null) return;
+    biomeAdvMapsSelect.value = smithyBiome;
+    byId2("advSpecialSelect").value = String(smithySpecial);
     updateMapCost();
     if (updateMapCost(true) > game.resources.fragments.owned) {
       RfragCalc(updateMapCost(true));
@@ -11215,6 +11220,7 @@
     var selectedMap2 = "create";
     var levelzones2 = RsmithyCalc2(true, false, false, false);
     var special = RsmithyCalc2(false, false, true, false);
+    if (special == null) return "create";
     if (levelzones2 != 0) {
       for (var map in game.global.mapsOwnedArray) {
         if (!game.global.mapsOwnedArray[map].noRecycle && game.global.world + levelzones2 == game.global.mapsOwnedArray[map].level && game.global.mapsOwnedArray[map].bonus == special) {

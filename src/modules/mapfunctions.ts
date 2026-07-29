@@ -504,7 +504,19 @@ export function RsmithyFarm(amount: any) {
 
     if (smithyfarmzone.includes(game.global.world)) {
         if (game.global.lastClearedCell + 2 >= smithyfarmcell && smithyzones > smithys && smithyzones > 0) {
-            Rshouldsmithyfarm = true;
+            // #300 — the goal must still be UNAFFORDABLE. Smithy Farming exists to bank the resources
+            // for the remaining Smithies; once they are already affordable there is nothing to farm
+            // for, and RsmithyCalc's four result blocks are all guarded by `!afford` and return
+            // `undefined` in that state. Five call sites then consume that undefined differently,
+            // including RselectSmithy, where `mapsOwnedArray[map].bonus == undefined` matches ANY
+            // bonus-less map AT owns.
+            //
+            // This was not a one-tick race: buildBuilding increments `owned` only when the build
+            // QUEUE completes (.trimps-game/main.js:4951) while `purchased` increments at buy time
+            // (:4858), so `afford && owned < target` held for the entire build duration, every time.
+            const goal = smithyzones - smithys;
+            const afford = goal > 0 ? canAffordBuilding("Smithy", false, false, false, false, goal) : true;
+            if (!afford) Rshouldsmithyfarm = true;
         }
     }
 }
@@ -578,8 +590,17 @@ export function RsmithyFarmMap() {
         byId("mapLevelInput").value = (game.global.world + levelzones);
     }
 
-    biomeAdvMapsSelect.value = RsmithyCalc(false, true, false, false);
-    byId("advSpecialSelect").value = String(RsmithyCalc(false, false, true, false));
+    // #300 — never write `undefined` into these selects. The game reads them RAW: updateMapCost
+    // (.trimps-game/main.js:6542) does `if (biomeAdvMapsSelect.value != "Random") baseCost *= 2`, and
+    // an assigned `undefined` lands as `""`, so the map was priced at DOUBLE; getRandomMapName
+    // (:8114) took the same non-Random path and produced a map named "<prefix> undefined" whose
+    // location fell back to "All". The gate in RsmithyFarm should make this unreachable — leaving the
+    // selects untouched is the safe residue if it ever is not.
+    const smithyBiome = RsmithyCalc(false, true, false, false);
+    const smithySpecial = RsmithyCalc(false, false, true, false);
+    if (smithyBiome == null || smithySpecial == null) return;
+    biomeAdvMapsSelect.value = smithyBiome;
+    byId("advSpecialSelect").value = String(smithySpecial);
     updateMapCost();
     if (updateMapCost(true) > game.resources.fragments.owned) {
         RfragCalc(updateMapCost(true));
@@ -1660,6 +1681,13 @@ export function RselectSmithy() {
     var selectedMap = "create";
     var levelzones: any = RsmithyCalc(true, false, false, false);
     var special = RsmithyCalc(false, false, true, false);
+
+    // #300 — a map created without a special has `bonus === undefined`, so `bonus == special` with an
+    // undefined `special` is `undefined == undefined` — TRUE. That matched any unrelated bonus-less
+    // map AT happened to own, which is the mirror of #204's never-matches. The gate in RsmithyFarm
+    // now stops `special` being undefined at all; this is the second lock, because the failure is
+    // silent and the comparison is repeated in all three loops below.
+    if (special == null) return "create";
 
     if (levelzones != 0) {
         for (var map in game.global.mapsOwnedArray) {
