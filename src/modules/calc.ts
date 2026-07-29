@@ -517,7 +517,6 @@ export function calcEnemyBaseAttack(type?: any, zone?: any, cell?: any, name?: a
     //Before Breaking the Planet
     else if (zone < 60) {
         attack = (0.375 * attack) + (0.7 * attack * (cell / 100));
-        attack *= 0.85;
     }
 
     //After Breaking the Planet
@@ -526,8 +525,16 @@ export function calcEnemyBaseAttack(type?: any, zone?: any, cell?: any, name?: a
         attack *= Math.pow(1.15, zone - 59);
     }
 
-    //Maps
-    if (zone > 5 && type !== "world") attack *= 1.1;
+    // #296 — the game applies this as a STATEMENT after the chain (.trimps-game/config.js:511), so it
+    // covers zones 1 and 2 too. Folded into the `zone < 60` arm it was unreachable for them, and AT
+    // over-estimated enemy attack there by 1/0.85 = ~18%. calcEnemyBaseHealth's 0.75 sibling is already
+    // outside its chain, which is how the two functions came to disagree about the same rule.
+    if (zone < 60) attack *= 0.85;
+
+    // #244 — the game's ATTACK threshold is `world > 6` (config.js:512); only the HEALTH sibling uses
+    // `> 5` (config.js:548). The asymmetry is deliberate and dates to 2015 (c7040ab added both as > 6,
+    // b741709 lowered only health the same day), so this was a cross-copied constant, not a game bug.
+    if (zone > 6 && type !== "world") attack *= 1.1;
 
     //Specific Imp
     if (name) attack *= game.badGuys[name].attack;
@@ -729,10 +736,15 @@ export function calcEnemyBaseHealth(zone: number, level: number, name: string): 
         health = (health * 0.5) + ((health * 0.8) * (level / 100));
         health *= Math.pow(1.1, zone - 59);
     }
-    if (zone < 60) {
-        health *= 0.75;
-        health *= game.badGuys[name].health;
-    }
+    if (zone < 60) health *= 0.75;
+    // #198 — the imp multiplier was INSIDE the `zone < 60` block, so it was silently skipped from
+    // z60 up. The game gates it on a PARAMETER, never on world (.trimps-game/config.js:549,
+    // `if (!ignoreImpStat) amt *= game.badGuys[name].health;`), and the live path passes
+    // ignoreImpStat undefined (main.js:11408), so it applies at every zone. AT's own U2 twin
+    // RcalcEnemyBaseHealth already transcribes it correctly, which is what makes this a slip
+    // rather than a modelling choice: at z62 a Snimp (health 0.8) read 1.25x HIGH and an
+    // Improbability (health 6) read 6x LOW, with a 25% discontinuity at the z59->z60 step.
+    health *= game.badGuys[name].health;
     return health;
 }
 
