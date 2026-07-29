@@ -525,9 +525,18 @@ export function RmapLevelCalc() {
     var HD = (RcalcHDratio() / 1.5);
     var level = 0;
     
-    if (HD >= 10000) level = -3;
-    if (HD >= 5000) level = -2;
+    // #225 — these three were ordered largest-threshold-FIRST, and they are separate `if`s rather than
+    // an else-if chain, so the last assignment always won: any HD past 10000 also passes 5000 and 500,
+    // and `level` could only ever be -1 on this side. -2 and -3 were dead stores, costing two map
+    // levels of relief in exactly the state the ladder exists for (and making RselectSmithy hunt for
+    // an owned map at world-1 while RsmithyFarmMap built one at world-3).
+    //
+    // The positive ladder below is ordered the other way — loosest test first, strictest LAST — which
+    // is what makes the last-write-wins idiom correct there. Mirroring that order here is the minimal
+    // repair; no threshold or level value changed.
     if (HD >= 500) level = -1;
+    if (HD >= 5000) level = -2;
+    if (HD >= 10000) level = -3;
     if (HD <= 40) level = 0;
     if (HD <= 1) level = 1;
     if (HD <= 0.5) level = 2;

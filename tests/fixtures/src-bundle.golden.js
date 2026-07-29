@@ -2010,7 +2010,10 @@
         if (getPageSetting("buywepsvoid") == true && (getPageSetting("VoidMaps") == game.global.world && game.global.challengeActive != "Daily" || getPageSetting("DailyVoidMod") == game.global.world && game.global.challengeActive == "Daily") && game.global.mapsActive && getCurrentMapObject().location == "Void") buyWeps();
       });
       atGuard("armormagic", function() {
-        if (getPageSetting("darmormagic") > 0 && typeof game.global.dailyChallenge.empower == "undefined" && typeof game.global.dailyChallenge.bloodthirst == "undefined" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined") || getPageSetting("carmormagic") > 0 && (challengeActive("Toxicity") || challengeActive("Nom"))) armormagic();
+        const dailyArmorMagic = getPageSetting("darmormagic") > 0 && typeof game.global.dailyChallenge.empower == "undefined" && typeof game.global.dailyChallenge.bloodthirst == "undefined" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined");
+        const c2ArmorMagic = getPageSetting("carmormagic") > 0 && (challengeActive("Toxicity") || challengeActive("Nom"));
+        if (dailyArmorMagic) armormagic(getPageSetting("darmormagic"));
+        else if (c2ArmorMagic) armormagic(getPageSetting("carmormagic"));
       });
       atGuard("stance", function() {
         if (getPageSetting("UseScryerStance") == true || getPageSetting("scryvoidmaps") == true && game.global.challengeActive != "Daily" || getPageSetting("dscryvoidmaps") == true && game.global.challengeActive == "Daily") useScryerStance();
@@ -2167,7 +2170,10 @@
         }
       });
       atGuard("Rarmormagic", function() {
-        if (getPageSetting("Rdarmormagic") > 0 && typeof game.global.dailyChallenge.empower == "undefined" && typeof game.global.dailyChallenge.bloodthirst == "undefined" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined") || getPageSetting("Rcarmormagic") > 0 && (challengeActive("Toxicity") || challengeActive("Nom"))) Rarmormagic();
+        const RdailyArmorMagic = getPageSetting("Rdarmormagic") > 0 && typeof game.global.dailyChallenge.empower == "undefined" && typeof game.global.dailyChallenge.bloodthirst == "undefined" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined");
+        const Rc2ArmorMagic = getPageSetting("Rcarmormagic") > 0 && (challengeActive("Toxicity") || challengeActive("Nom"));
+        if (RdailyArmorMagic) Rarmormagic(getPageSetting("Rdarmormagic"));
+        else if (Rc2ArmorMagic) Rarmormagic(getPageSetting("Rcarmormagic"));
       });
       atGuard("Rmanageequality", function() {
         if (getPageSetting("Rmanageequality") == true && game.global.fighting) Rmanageequality();
@@ -10306,9 +10312,9 @@
   function RmapLevelCalc() {
     var HD = RcalcHDratio() / 1.5;
     var level = 0;
-    if (HD >= 1e4) level = -3;
-    if (HD >= 5e3) level = -2;
     if (HD >= 500) level = -1;
+    if (HD >= 5e3) level = -2;
+    if (HD >= 1e4) level = -3;
     if (HD <= 40) level = 0;
     if (HD <= 1) level = 1;
     if (HD <= 0.5) level = 2;
@@ -14496,9 +14502,10 @@
     if (!game.global.fighting)
       fightManual();
   }
-  function armormagic2() {
+  function armormagic2(mode) {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
-    if ((getPageSetting2("carmormagic") == 1 || getPageSetting2("darmormagic") == 1) && game.global.world >= armormagicworld && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("carmormagic") == 2 || getPageSetting2("darmormagic") == 2) && calcHDratio() >= getPageSetting2("MapDamageCutoff") && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("carmormagic") == 3 || getPageSetting2("darmormagic") == 3) && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)
+    const hurt = game.global.soldierHealth <= game.global.soldierHealthMax * 0.4;
+    if (mode == 1 && game.global.world >= armormagicworld && hurt || mode == 2 && calcHDratio() >= getPageSetting2("MapDamageCutoff") && hurt || mode == 3 && hurt)
       buyArms();
   }
   globalThis.trapIndexs = ["", "Fire", "Frost", "Poison", "Lightning", "Strength", "Condenser", "Knowledge"];
@@ -14547,9 +14554,10 @@
     if (!game.global.fighting)
       fightManual();
   }
-  function Rarmormagic2() {
+  function Rarmormagic2(mode) {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
-    if ((getPageSetting2("Rcarmormagic") == 1 || getPageSetting2("Rdarmormagic") == 1) && game.global.world >= armormagicworld && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("Rcarmormagic") == 2 || getPageSetting2("Rdarmormagic") == 2) && RcalcHDratio() >= getPageSetting2("RMapDamageCutoff") && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4 || (getPageSetting2("Rcarmormagic") == 3 || getPageSetting2("Rdarmormagic") == 3) && game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)
+    const hurt = game.global.soldierHealth <= game.global.soldierHealthMax * 0.4;
+    if (mode == 1 && game.global.world >= armormagicworld && hurt || mode == 2 && RcalcHDratio() >= getPageSetting2("RMapDamageCutoff") && hurt || mode == 3 && hurt)
       RbuyArms();
   }
   function questcheck2() {

@@ -238,9 +238,21 @@ export function fightalways() {
 // threshold, and `calcHDratio() >= MapDamageCutoff` is exactly its complement: "not enough damage ⇒ buy
 // armor", which is the branch's stated intent. The U2 twin below needs no algebra at all — maps.ts:974
 // literally does `RenoughDamage = (RcalcHDratio() <= getPageSetting("RMapDamageCutoff"))` in production.
-export function armormagic() {
+// #234 — the MODE is now passed in by the dispatcher, which is the only thing that knows which
+// context admitted the call. It used to OR the two multitoggles together, so `carmormagic == 3`
+// ("CAM: Always") satisfied the third arm during a BOGGED DAILY and bypassed the "Above 80%" zone
+// gate the user had chosen in `darmormagic` — and symmetrically on a Toxicity/Nom run. Both tooltips
+// promise the opposite: carmormagic's ignoredWhen says it "has no effect anywhere else, including
+// Dailies (use Daily Armor Magic for those)".
+//
+// Deriving the context here instead would mean re-typing the dispatcher's condition, which is how
+// two copies of one fact start drifting. The caller owns it; this function just obeys.
+export function armormagic(mode: number) {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
-    if (((getPageSetting('carmormagic') == 1 || getPageSetting('darmormagic') == 1) && game.global.world >= armormagicworld && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('carmormagic') == 2 || getPageSetting('darmormagic') == 2) && calcHDratio() >= getPageSetting('MapDamageCutoff') && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('carmormagic') == 3 || getPageSetting('darmormagic') == 3) && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)))
+    const hurt = game.global.soldierHealth <= game.global.soldierHealthMax * 0.4;
+    if ((mode == 1 && game.global.world >= armormagicworld && hurt) ||
+        (mode == 2 && calcHDratio() >= getPageSetting('MapDamageCutoff') && hurt) ||
+        (mode == 3 && hurt))
         buyArms();
 }
 
@@ -331,9 +343,14 @@ export function Rfightalways() {
 // arm was dead in both U2 multitoggles too. Repointed at `RMapDamageCutoff`, the U2 H:D threshold the player
 // already configures. maps.ts:974 compares that exact setting to RcalcHDratio() in production, so the
 // units are confirmed by an existing call site — no new number is introduced.
-export function Rarmormagic() {
+// #234 — the U2 twin of armormagic() above, same defect, same repair: the mode is chosen by the
+// dispatcher from the context that admitted the call, never OR'd across the two multitoggles.
+export function Rarmormagic(mode: number) {
     var armormagicworld = Math.floor((game.global.highestLevelCleared + 1) * 0.8);
-    if (((getPageSetting('Rcarmormagic') == 1 || getPageSetting('Rdarmormagic') == 1) && game.global.world >= armormagicworld && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('Rcarmormagic') == 2 || getPageSetting('Rdarmormagic') == 2) && RcalcHDratio() >= getPageSetting('RMapDamageCutoff') && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)) || ((getPageSetting('Rcarmormagic') == 3 || getPageSetting('Rdarmormagic') == 3) && (game.global.soldierHealth <= game.global.soldierHealthMax * 0.4)))
+    const hurt = game.global.soldierHealth <= game.global.soldierHealthMax * 0.4;
+    if ((mode == 1 && game.global.world >= armormagicworld && hurt) ||
+        (mode == 2 && RcalcHDratio() >= getPageSetting('RMapDamageCutoff') && hurt) ||
+        (mode == 3 && hurt))
         RbuyArms();
 }
 
