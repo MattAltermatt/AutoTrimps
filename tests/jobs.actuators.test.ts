@@ -105,10 +105,18 @@ describe('jobs.safeFireJob — L1b actuator spy-log (doubling fire loop)', () =>
   })
 })
 
-// buyJobs orchestrator: the Watch scientist-override (jobs.ts:118) is already L0-covered by the
-// 03-challenge-watch save, so L1 here targets the branches the seeded U1 corpus (world 4+) CANNOT
-// reach — the world==1 opening gate and the realMax<=3e5 breeding-gate sub-branch (spec §8: L1
-// depth covers the cold branches L0 breadth can't).
+// buyJobs orchestrator: L1 here targets the branches the seeded U1 corpus (world 4+) CANNOT reach —
+// the world==1 opening gate and the realMax<=3e5 breeding-gate sub-branch (spec §8: L1 depth covers
+// the cold branches L0 breadth can't).
+//
+// #217 — THIS COMMENT USED TO CLAIM "the Watch scientist-override is already L0-covered by the
+// 03-challenge-watch save". IT IS NOT, and the claim was load-bearing: a finding leaned on it to
+// conclude the Watch arm was PINNED in the oracle and that fixing it would go red. Both are false.
+// The save decodes to trimps.owned 93.19 against realMax 94, so the arm's own gate
+// (`owned < realMax * 0.9`) is FALSE and lines 213-222 never execute; all three recordings carry 18
+// buyJob events each and ZERO of them are Scientist. The region is UNGUARDED by L0, not covered —
+// which is the same "a gate that cannot fail reports success" pattern this repo keeps finding, in
+// prose form. The Watch arm's real net is tests/jobs.nanRatioSeam.test.ts.
 describe('jobs.buyJobs — L1b actuator spy-log (cold-on-corpus branches)', () => {
   beforeEach(() => {
     // ratio settings read at buyJobs top (lines 84-88); the rest of the fixture is per-test.

@@ -2167,7 +2167,7 @@
         }
       });
       atGuard("Rarmormagic", function() {
-        if (getPageSetting("Rdarmormagic") > 0 && typeof game.global.dailyChallenge.empower == "undefined" && typeof game.global.dailyChallenge.bloodthirst == "undefined" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined") || getPageSetting("Rcarmormagic") > 0 && (game.global.challengeActive == "Toxicity" || game.global.challengeActive == "Nom")) Rarmormagic();
+        if (getPageSetting("Rdarmormagic") > 0 && typeof game.global.dailyChallenge.empower == "undefined" && typeof game.global.dailyChallenge.bloodthirst == "undefined" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined") || getPageSetting("Rcarmormagic") > 0 && (challengeActive("Toxicity") || challengeActive("Nom"))) Rarmormagic();
       });
       atGuard("Rmanageequality", function() {
         if (getPageSetting("Rmanageequality") == true && game.global.fighting) Rmanageequality();
@@ -5628,7 +5628,7 @@
       return;
     } else if (game.jobs.Farmer.owned === 0 && game.jobs.Lumberjack.locked && freeWorkers > 0) {
       safeBuyJob("Farmer", 1);
-    } else if (getPageSetting2("MaxScientists") != 0 && getPageSetting2("ScientistPercent") != 0 && game.jobs.Scientist.owned < 10 && scienceNeeded > 100 && freeWorkers > 0 && game.jobs.Farmer.owned >= 10) {
+    } else if (getPageSetting2("MaxScientists") != 0 && getPageSetting2("ScientistPercent") != 0 && !game.jobs.Scientist.locked && game.jobs.Scientist.owned < 10 && scienceNeeded > 100 && freeWorkers > 0 && game.jobs.Farmer.owned >= 10) {
       safeBuyJob("Scientist", 1);
     }
     freeWorkers = freeWorkerSlots();
@@ -5636,12 +5636,11 @@
     if (challengeActive("Watch")) {
       scientistRatio = totalRatio / scientistDivisor(getPageSetting2("ScientistPercent"), MODULES["jobs"].scientistRatio2);
       if (game.resources.trimps.owned < game.resources.trimps.realMax() * 0.9 && !breedFire) {
-        let buyScientists = Math.floor(scientistRatio / totalRatio * totalDistributableWorkers - game.jobs.Scientist.owned);
-        if (game.jobs.Scientist.owned < buyScientists && game.resources.trimps.owned > game.resources.trimps.realMax() * 0.1) {
-          let toBuy = buyScientists - game.jobs.Scientist.owned;
+        let buyScientists = Math.floor(scientistRatio / totalRatio * totalDistributableWorkers) - game.jobs.Scientist.owned;
+        if (buyScientists > 0 && game.resources.trimps.owned > game.resources.trimps.realMax() * 0.1) {
           let canBuy = Math.floor(game.resources.trimps.owned - game.resources.trimps.employed);
-          if (buyScientists > 0 && freeWorkers > 0 && (getPageSetting2("MaxScientists") > game.jobs.Scientist.owned || getPageSetting2("MaxScientists") === -1))
-            safeBuyJob("Scientist", toBuy <= canBuy ? toBuy : canBuy);
+          if (freeWorkers > 0 && !game.jobs.Scientist.locked && (getPageSetting2("MaxScientists") > game.jobs.Scientist.owned || getPageSetting2("MaxScientists") === -1))
+            safeBuyJob("Scientist", Math.min(buyScientists, canBuy));
         } else
           return;
       }
@@ -5651,11 +5650,11 @@
         if (breeding > game.resources.trimps.realMax() * 0.33 && !noJobsC2) {
           freeWorkers = freeWorkerSlots();
           if (freeWorkers > 0 && game.resources.trimps.realMax() <= 3e5) {
-            if (challengeActive("Metal") === false) {
+            if (challengeActive("Metal") === false && !game.jobs.Miner.locked) {
               safeBuyJob("Miner", 1);
             }
-            safeBuyJob("Farmer", 1);
-            safeBuyJob("Lumberjack", 1);
+            if (!game.jobs.Farmer.locked) safeBuyJob("Farmer", 1);
+            if (!game.jobs.Lumberjack.locked) safeBuyJob("Lumberjack", 1);
           }
         }
         return;
@@ -5707,7 +5706,8 @@
         totalDistributableWorkers = freeWorkers + game.jobs.Farmer.owned + game.jobs.Miner.owned + game.jobs.Lumberjack.owned;
         let toBuy = Math.floor(jobratio / totalRatio * totalDistributableWorkers) - game.jobs[job].owned - subtract;
         let canBuy = Math.floor(game.resources.trimps.owned - game.resources.trimps.employed);
-        let amount = toBuy <= canBuy ? toBuy : canBuy;
+        if (!Number.isFinite(toBuy)) return true;
+        let amount = Math.min(toBuy, canBuy);
         if (amount != 0) {
           safeBuyJob(job, amount);
         }
@@ -6112,6 +6112,7 @@
     let totalFraction = desiredRatios.reduce((a, b) => {
       return a + b;
     });
+    if (!Number.isFinite(totalFraction) || totalFraction <= 0) return;
     let desiredWorkers = [0, 0, 0, 0];
     let totalWorkerCost = 0;
     for (let i = 0; i < ratioWorkers.length; i++) {
@@ -6126,6 +6127,7 @@
     } else {
       for (let i = 0; i < desiredWorkers.length; i++) {
         if (desiredWorkers[i] > 0) continue;
+        if (!Number.isFinite(desiredWorkers[i])) continue;
         let buyAmountStore = game.global.buyAmt;
         let fireState = game.global.firing;
         game.global.firing = desiredWorkers[i] < 0;
@@ -6136,6 +6138,7 @@
       }
       for (let i = 0; i < desiredWorkers.length; i++) {
         if (desiredWorkers[i] <= 0) continue;
+        if (!Number.isFinite(desiredWorkers[i])) continue;
         let buyAmountStore = game.global.buyAmt;
         let fireState = game.global.firing;
         game.global.firing = desiredWorkers[i] < 0;
@@ -6229,7 +6232,7 @@
     return true;
   }
   function buyUpgrades2() {
-    if (getPageSetting2("MetalEfficiencyPriority") && game.global.challengeActive === "Metal" && game.global.world < getPageSetting2("MetalEfficiencyZone")) {
+    if (getPageSetting2("MetalEfficiencyPriority") && challengeActive("Metal") && game.global.world < getPageSetting2("MetalEfficiencyZone")) {
       const efficiency = game.upgrades["Efficiency"];
       if (efficiency && efficiency.allowed > efficiency.done && canAffordTwoLevel(efficiency)) {
         buyUpgrade("Efficiency", true, true);
@@ -8776,7 +8779,7 @@
       mapenoughdamagecutoff = getPageSetting2("windcutoffmap");
     if (getEmpowerment() == "Wind" && game.global.challengeActive == "Daily" && !game.global.runningChallengeSquared && (getPageSetting2("AutoStance") == 3 || getPageSetting2("use3daily") == true) && getPageSetting2("dWindStackingMin") > 0 && game.global.world >= getPageSetting2("dWindStackingMin") && getPageSetting2("dwindcutoffmap") > 0)
       mapenoughdamagecutoff = getPageSetting2("dwindcutoffmap");
-    if (getPageSetting2("mapc2hd") > 0 && game.global.challengeActive == "Mapology")
+    if (getPageSetting2("mapc2hd") > 0 && challengeActive("Mapology"))
       mapenoughdamagecutoff = getPageSetting2("mapc2hd");
     const customVars = MODULES["maps"];
     const prestige = autoTrimpSettings.Prestige.selected;
@@ -22395,9 +22398,7 @@
     this.baseIncrease = baseIncrease;
     this.parent = parent;
     this.relativeIncrease = parent.baseIncrease / baseIncrease;
-    this.value = parent.value.map(function(me) {
-      return me * this.relativeIncrease;
-    });
+    this.value = parent.value.map((me) => me * this.relativeIncrease);
     this.updatedValue = null;
     this.efficiency = -1;
     this.max = max || Number.MAX_VALUE;

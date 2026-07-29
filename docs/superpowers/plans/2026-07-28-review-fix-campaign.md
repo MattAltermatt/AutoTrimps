@@ -20,7 +20,9 @@
 > 6        ✅ SHIPPED   Fix S6 closed, 15: #167 #168 #178 #179 #180 #181 #182 #183 #184
 >                       #187 #188 #192 #193 #194 #195 · live 6.0.0.147 · #169/#170
 >                       RE-MILESTONED to S9 (trace-moving) · filed #290
-> 7–9      ⬜ Track B   41 issues, trace-moving, collect the red
+> 7        ✅ SHIPPED   Fix S7 closed, 6: #201 #202 #215 #216 #217 #287 · NO trace moved
+>                       (baseline-zero 21/21 both sides) · filed #291 #292
+> 8–9      ⬜ Track B   35 issues, trace-moving, collect the red
 > 10       ⬜ re-pin     one oracle re-pin, ledgered
 > ```
 >
@@ -464,7 +466,58 @@ have churned it moved to Track B instead.
 
 ---
 
-### Session 7 — Track B prep + jobs · **L** · ⚠️ first trace-moving session
+### Session 7 — Track B prep + jobs · **L** · ✅ SHIPPED 2026-07-29
+
+**"First trace-moving session" was wrong, and that is the first thing Session 8 should not inherit.**
+`baseline-zero` was 21/21 green before any edit and 21/21 green after all six fixes, so S7 contributes
+NOTHING to the Session-10 re-pin. Every one of the five jobs issues had independently claimed its own
+region was sim-blind; the plan's Track B framing overrode five correct claims with one wrong one.
+Check the claim per issue, not per track.
+
+The baseline is a **git tag, not a file copy**: the manifest carries zero waivers, so a green
+`baseline-zero` proves the current build's traces are byte-identical to the committed oracle, making
+`tests/fixtures/traces/` at `baseline/pre-s7` (01836cb7) the archive. It survives the S10 re-pin
+because git does.
+
+**Three censuses, three undercounts — the fourth session running that mechanizing a finding's own
+derivation beat it.** The cap idiom `a <= b ? a : b` was claimed at 1 site and found at 2 — and the
+second is inside the Watch arm, so **#202 and #217 are the same function** and neither issue mentions
+the other. Direct native `buyJob(` calls were claimed at 3 and found at 7 (only 2 reachable with a
+non-finite amount, which is the number that mattered). The `challengeActive` string-compare was
+claimed at 1 and found at **11**, of which two are settings that were dead **100% of the time**:
+`Rcarmormagic` and `mapc2hd` are both categorised C2, documented C²-only, and gated on a child name a
+C² never stores — strictly worse than #216's case, which at least works during the plain challenge.
+Seven `query.ts` prediction sites deferred to **#291** and pinned by a shrinking census net. That
+issue ALSO undercounted itself — filed as six, the net returned seven, and the seventh is a breed
+potency term in a different function; corrected before the boundary hardened.
+
+**Mutation-testing found a bug in the fix, not just in the net.** `Math.min` propagates NaN but NOT
+Infinity, and `Math.min(Infinity, canBuy)` is `canBuy` — the original bug's outcome exactly. Reachable
+without any NaN: ratios of 1 / -1 / 0 sum to zero with a positive numerator, and nothing validates the
+sign of a `value` setting. The `isNaN`-instead-of-`isFinite` near-miss mutant survived, which is how it
+surfaced. 16 mutants across three nets; all now killed.
+
+**#217's "already pinned in the oracle" was false, and so was a comment asserting the coverage.**
+`03-challenge-watch` decodes to `trimps.owned 93.19` against a realMax that makes the arm's own gate
+false; all three recordings carry 18 `buyJob` events and **zero** Scientist. A comment in
+`tests/jobs.actuators.test.ts` had asserted that L0 coverage for years — the same "a gate that cannot
+fail reports success" pattern, in prose.
+
+**#287 was not a build tweak; it flipped the whole bundle from sloppy to strict.** The full suite went
+229 failures / 36 files with the prologue fix alone → **1** with the `ArithmeticPerk` arrow fix as
+well (that 1 being the byte golden, legitimately moved). One root cause, exactly the one #287
+predicted. Crucially the suite is a WEAK instrument here — vitest imports modules as ESM, which is
+already strict — so the evidence is the live A/B: on `main` all five tier-II perk `value` arrays are
+`[NaN, NaN, …]`; on the branch they are real numbers. That had been shipping for years.
+
+**Review caught an overclaiming test name, and the replacement test caught me.** The "steady state"
+test used a below-target fixture (the old dead band). Rewriting it, I asserted the Watch and non-Watch
+arms bail identically — and it FAILED: the general branch trickles F/L/M while breeding and the Watch
+arm does not, so under Watch AT hires nothing at all once scientists reach target. Pre-existing,
+orthogonal to #217, filed as **#292**. The claim would have shipped as a justifying comment had it not
+been written as an executable assertion.
+
+Original plan for this session:
 
 - **Record the pre-fix baseline first.** Run the full corpus and archive the traces before touching
   `src/`. Every later "did this fix move the trace, and how?" question is answered by LCS-diffing

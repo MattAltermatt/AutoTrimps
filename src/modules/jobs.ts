@@ -200,7 +200,11 @@ export function buyJobs() {
     // `ScientistPercent = 0` must switch it off too, or the setting lies: it promises "hire no Scientists"
     // and would still deliver 10. Note `!= 0` is a LOOSE compare on purpose — a blank box parses to NaN,
     // and `NaN != 0` is true, so an unset value correctly leaves the bootstrap running.
-    } else if (getPageSetting('MaxScientists') != 0 && getPageSetting('ScientistPercent') != 0 && game.jobs.Scientist.owned < 10 && scienceNeeded > 100 && freeWorkers > 0 && game.jobs.Farmer.owned >= 10) {
+    // #215 — `!Scientist.locked` added for the same reason as the trickle below and to match the main
+    // arm (line 256). A veteran clears this arm's `Farmer.owned >= 10 && scienceNeeded > 100` gate well
+    // before the Scientist book at world 1 cell 39, so the window where this hired a locked Scientist is
+    // the ordinary post-portal one, not an exotic state.
+    } else if (getPageSetting('MaxScientists') != 0 && getPageSetting('ScientistPercent') != 0 && !game.jobs.Scientist.locked && game.jobs.Scientist.owned < 10 && scienceNeeded > 100 && freeWorkers > 0 && game.jobs.Farmer.owned >= 10) {
         safeBuyJob('Scientist', 1);
     }
     freeWorkers = freeWorkerSlots();
@@ -211,12 +215,28 @@ export function buyJobs() {
         // be the more surprising behaviour. At the default (-1) this is byte-identical to the old line.
         scientistRatio = totalRatio / scientistDivisor(getPageSetting('ScientistPercent'), MODULES["jobs"].scientistRatio2);
         if (game.resources.trimps.owned < game.resources.trimps.realMax() * 0.9 && !breedFire) {
-            let buyScientists = Math.floor((scientistRatio / totalRatio * totalDistributableWorkers) - game.jobs.Scientist.owned);
-            if (game.jobs.Scientist.owned < buyScientists && game.resources.trimps.owned > game.resources.trimps.realMax() * 0.1) {
-                let toBuy = buyScientists - game.jobs.Scientist.owned;
+            // #217 — this arm used to subtract the scientist count TWICE. The old line 214 computed
+            // `floor(target - owned)`, which is already the DELTA, and the two lines under it then
+            // treated that delta as if it were the absolute target: the gate read `owned < delta`
+            // (algebraically `2*owned < target`, so the arm only hired below HALF the target) and the
+            // amount subtracted `owned` a second time. Shaped to match the main scientist arm below
+            // (line 257), which computes `floor(target) - owned` and has always been correct.
+            //
+            // The amount error self-healed — the `if` has no `return`, so a gate-pass tick fell through
+            // to the main arm and got topped up in the same tick. The damage was the `else return`:
+            // because the top-up left the count at exactly the target, the steady state sat inside the
+            // old gate's dead band and buyJobs bailed out of its ENTIRE remainder — Trainers, Explorers,
+            // the F/L/M allocator, AutoMagmamancers, the rounding fix — on essentially every tick after.
+            // Reopening it needed the worker cap to grow ~1.9x.
+            //
+            // `!Scientist.locked` matches the main arm (line 256) and ratiobuy (line 284): neither
+            // native buyJob (main.js:5190) nor canAffordJob (main.js:5396) tests `locked`, so AT is the
+            // only thing standing between this call and hiring a job the player has not unlocked (#215).
+            let buyScientists = Math.floor((scientistRatio / totalRatio) * totalDistributableWorkers) - game.jobs.Scientist.owned;
+            if (buyScientists > 0 && game.resources.trimps.owned > game.resources.trimps.realMax() * 0.1) {
                 let canBuy = Math.floor(game.resources.trimps.owned - game.resources.trimps.employed);
-                if ((buyScientists > 0 && freeWorkers > 0) && (getPageSetting('MaxScientists') > game.jobs.Scientist.owned || getPageSetting('MaxScientists') === -1))
-                    safeBuyJob('Scientist', toBuy <= canBuy ? toBuy : canBuy);
+                if ((freeWorkers > 0 && !game.jobs.Scientist.locked) && (getPageSetting('MaxScientists') > game.jobs.Scientist.owned || getPageSetting('MaxScientists') === -1))
+                    safeBuyJob('Scientist', Math.min(buyScientists, canBuy));
             } else
                 return;
         }
@@ -228,11 +248,26 @@ export function buyJobs() {
             if (breeding > game.resources.trimps.realMax() * 0.33 && !noJobsC2) {
                 freeWorkers = freeWorkerSlots();
                 if (freeWorkers > 0 && game.resources.trimps.realMax() <= 3e5) {
-                    if (challengeActive("Metal") === false) {
+                    // #215 — the `locked` tests. Every OTHER F/L/M hire site in this function already
+                    // carries one (lines 186, 191, 247, 284, and the Watch arm above); this trickle was
+                    // the sixth, and the odd one out. Nobody guards the same purchase five times and
+                    // omits the sixth on purpose — the arm above returns for world 1, so this one was
+                    // written assuming everything downstream is unlocked, and the
+                    // `totalHeliumEarned <= 5000` clause silently routes every veteran's post-portal
+                    // zone 1 into that assumption.
+                    //
+                    // The game does not backstop it: neither buyJob (main.js:5190) nor canAffordJob
+                    // (main.js:5396) tests `locked` — that guard lives only in the UI, which never draws
+                    // a locked row (updates.js:5851). So AT hired Miners before the Miners upgrade was
+                    // researched, and they produced metal (gather()'s loop gates on `owned > 0` alone,
+                    // main.js:4567) while being invisible and unfireable in the UI.
+                    // tests/fixtures/saves/p18-z2-balance-stall.txt is a real save carrying the result:
+                    // Miner.locked = 1 with Miner.owned = 1, and no other code path can produce it.
+                    if (challengeActive("Metal") === false && !game.jobs.Miner.locked) {
                         safeBuyJob('Miner', 1);
                     }
-                    safeBuyJob('Farmer', 1);
-                    safeBuyJob('Lumberjack', 1);
+                    if (!game.jobs.Farmer.locked) safeBuyJob('Farmer', 1);
+                    if (!game.jobs.Lumberjack.locked) safeBuyJob('Lumberjack', 1);
                 }
             }
             return;
@@ -286,7 +321,29 @@ export function buyJobs() {
             totalDistributableWorkers = freeWorkers + game.jobs.Farmer.owned + game.jobs.Miner.owned + game.jobs.Lumberjack.owned;
             let toBuy = Math.floor((jobratio / totalRatio) * totalDistributableWorkers) - game.jobs[job].owned - subtract;
             let canBuy = Math.floor(game.resources.trimps.owned - game.resources.trimps.employed);
-            let amount = toBuy <= canBuy ? toBuy : canBuy;
+            // #202 — this cap used to be `toBuy <= canBuy ? toBuy : canBuy`, which INVERTS under NaN:
+            // `NaN <= canBuy` is false, so the ternary selected the cap and the thing meant to LIMIT the
+            // purchase became the purchase order. One blank ratio box (autoSetValue stores parseNum('')
+            // === NaN with no validation) therefore made totalRatio NaN, and Farmer absorbed every free
+            // workspace in a single tick while Lumberjack and Miner were then declined for want of slots
+            // — permanently, since JSON.stringify writes NaN as null and parseFloat reads it back as NaN.
+            //
+            // Math.min PROPAGATES NaN instead of laundering it into a large finite number, which routes
+            // it to safeBuyJob's existing `!Number.isFinite(amount)` refusal (line 80) — a guard sitting
+            // 200 lines above this one that the ternary was quietly defeating. For finite operands the
+            // two forms are identical, so nothing else moves.
+            //
+            // The explicit bail below is NOT redundant with that, and mutation-testing is what found it:
+            // Math.min only propagates NaN. It does not propagate INFINITY — `Math.min(Infinity, canBuy)`
+            // is canBuy, which is the original bug's outcome exactly. And Infinity is reachable here
+            // without any NaN in sight, because this is the one expression that divides by totalRatio
+            // rather than by a constant: ratios of 1 / -1 / 0 sum to ZERO while leaving jobratio
+            // positive, so `1/0` is Infinity. autoSetValue stores a typed "-1" without complaint (the
+            // setting is `value`, and nothing validates the sign), so that is user input, not a
+            // corrupted save. The scientist arms need no such bail: they divide `totalRatio / D` BY
+            // totalRatio, so a zero total gives 0/0 — NaN, which their `> 0` gates already reject.
+            if (!Number.isFinite(toBuy)) return true;
+            let amount = Math.min(toBuy, canBuy);
             if (amount != 0) {
                 safeBuyJob(job, amount);
             }
@@ -776,6 +833,23 @@ export function RbuyJobs() {
         return a + b;
     });
 
+    // #201 — the U2 allocator called native buyJob() DIRECTLY, bypassing RsafeBuyJob's finiteness
+    // refusal, and a non-finite share defeats BOTH loop filters below: `NaN > 0` and `NaN <= 0` are
+    // each false, so every ratio worker fell through to `buyAmt = Math.abs(NaN)` and a real buyJob
+    // call, eight times per tick. Nothing downstream stops it — canAffordJob's workspace clamp
+    // (`workspaces < toBuy`) and its affordability test are both false for NaN, and checkJobItem's
+    // `owned < price` likewise — so the take pass runs `food.owned -= NaN` and `jobs[x].owned += NaN`.
+    // `employed` is a getter summing the jobs (config.js:8232), so once one is NaN the bail at the top
+    // of this function is defeated too and it repeats forever; JSON.stringify persists NaN as null.
+    // Trigger: "Manual Worker Ratios" (RBuyJobsNew === 2) with any ratio box blank — autoSetValue
+    // stores parseNum('') === NaN with no validation — or all three set to 0 with Scientist locked,
+    // which needs no invalid input at all (0/0).
+    //
+    // Mirrors the guard the GAME uses on the identical `ratio / totalRatio` expression in its own
+    // allocator (main.js:5117, `if (isNumberBad(toBuy)) continue`). Not isNumberBad itself: that also
+    // rejects negatives, and the fire loop below depends on them.
+    if (!Number.isFinite(totalFraction) || totalFraction <= 0) return;
+
     let desiredWorkers = [0, 0, 0, 0];
     let totalWorkerCost = 0;
     for (let i = 0; i < ratioWorkers.length; i++) {
@@ -801,6 +875,12 @@ export function RbuyJobs() {
         for (let i = 0; i < desiredWorkers.length; i++) {
 
             if (desiredWorkers[i] > 0) continue;
+            // #201 — the second half of the guard. The bail above catches a non-finite RATIO; this
+            // catches a non-finite COUNT, which `freeWorkers` can still deliver on a save already
+            // corrupted by this bug (employed is a getter summing the jobs). Both filters in this
+            // function are `>`/`<=` comparisons, and NaN loses both, so without an explicit test a NaN
+            // reaches buyJob through whichever loop it lands in.
+            if (!Number.isFinite(desiredWorkers[i])) continue;
 
             let buyAmountStore = game.global.buyAmt;
             let fireState = game.global.firing;
@@ -818,6 +898,7 @@ export function RbuyJobs() {
         for (let i = 0; i < desiredWorkers.length; i++) {
 
             if (desiredWorkers[i] <= 0) continue;
+            if (!Number.isFinite(desiredWorkers[i])) continue; // #201 — see the fire loop above
 
             let buyAmountStore = game.global.buyAmt;
             let fireState = game.global.firing;

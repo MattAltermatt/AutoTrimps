@@ -769,7 +769,14 @@ AutoPerks.ArithmeticPerk = function(name: any, base: any, increase: any, baseInc
     this.baseIncrease = baseIncrease;
     this.parent = parent;
     this.relativeIncrease = parent.baseIncrease / baseIncrease;
-    this.value = parent.value.map(function(this: any, me: any) { return me * this.relativeIncrease; });
+    // #287 — `Array#map` was called with a plain `function` and NO thisArg, so `this` inside the
+    // callback was never the perk. Under the sloppy mode the bundle was accidentally shipping in, it
+    // was the global object, `this.relativeIncrease` was `undefined`, and every element of `value`
+    // came out NaN — silently, for years. Under the strict mode the build now correctly applies,
+    // `this` is `undefined` and the same line is a TypeError thrown out of initializePerks(), which
+    // is what surfaced it. An arrow closes over the constructor's `this`, which is the object whose
+    // `relativeIncrease` was assigned on the line directly above.
+    this.value = parent.value.map((me: any) => me * this.relativeIncrease);
     // #189: was `-1`, which COLLIDED with a ratio a user can legitimately type. AT uses -1 as its
     // "unset" convention everywhere else, so typing it here is natural — and it silently meant "no
     // ratio set", falling back to `perk.value`, the 11-element preset ARRAY. `null` cannot be typed

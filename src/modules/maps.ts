@@ -284,7 +284,12 @@ export function autoMap() {
         mapenoughdamagecutoff = getPageSetting("windcutoffmap");
     if (getEmpowerment() == 'Wind' && game.global.challengeActive == "Daily" && !game.global.runningChallengeSquared && (getPageSetting("AutoStance") == 3 || getPageSetting("use3daily") == true) && getPageSetting("dWindStackingMin") > 0 && game.global.world >= getPageSetting("dWindStackingMin") && getPageSetting("dwindcutoffmap") > 0)
         mapenoughdamagecutoff = getPageSetting("dwindcutoffmap");
-    if (getPageSetting("mapc2hd") > 0 && game.global.challengeActive == "Mapology")
+    // #216 (same class) — `mapc2hd` is documented "Overrides your map damage cutoff during the
+    // Mapology Challenge²" and lives in the C2 settings category, but the direct compare is NEVER true
+    // during that C²: Topology² sets challengeActive = "Topology" with ["Balance","Mapology"] in
+    // multiChallenge. The setting was dead in exactly and only the situation it exists for. The game
+    // uses the helper for Mapology everywhere it matters (main.js:11030, :13208, :10482).
+    if (getPageSetting("mapc2hd") > 0 && challengeActive("Mapology"))
         mapenoughdamagecutoff = getPageSetting("mapc2hd");
 
     //Vars

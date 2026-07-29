@@ -142,7 +142,15 @@ export function buyUpgrades() {
 
     //#43: Metal challenge — Efficiency doubles player mining, the only metal source during Metal.
     //Rush it above every other upgrade below the configured zone. Opt-in; OFF = unchanged.
-    if (getPageSetting('MetalEfficiencyPriority') && game.global.challengeActive === 'Metal' &&
+    //#216: `challengeActive('Metal')`, NOT `game.global.challengeActive === 'Metal'`. During a
+    //Challenge² the game stores the PARENT name and puts the children in game.global.multiChallenge
+    //(updates.js:4673-4680), so the direct compare is false throughout Nometal² (parent "Nometal",
+    //children ["Nom","Metal"]) while every rule this feature exists for is fully active — metal loot
+    //is voided (main.js:17770) and the Megaminer book is confiscated (config.js:11167). The game's own
+    //predicate (main.js:1753) checks multiChallenge first, and jobs.ts already uses it for this very
+    //challenge in four places, so AT was contradicting itself within a single tick: refusing to buy
+    //Miners because Metal is active, while declining to rush Efficiency because it is not.
+    if (getPageSetting('MetalEfficiencyPriority') && challengeActive('Metal') &&
         game.global.world < getPageSetting('MetalEfficiencyZone')) {
         const efficiency = game.upgrades['Efficiency'];
         if (efficiency && efficiency.allowed > efficiency.done && canAffordTwoLevel(efficiency)) {

@@ -225,6 +225,38 @@ that has already cost a session at least once.
   the *near-miss* fix — a net that only reddens on the unfixed code cannot tell you the escaping
   patch was wrong. Anything persisted is attacker-influenceable: importing another player's settings
   string is the documented feature, `@grant none` runs in page context, and the game page has no CSP.
+- **♾️ A NaN-SAFE CAP IS NOT A NON-FINITE-SAFE CAP — `Math.min` DOES NOT PROPAGATE INFINITY.**
+  `ratiobuy`'s `toBuy <= canBuy ? toBuy : canBuy` inverts under NaN (the comparison is false, so the
+  CAP becomes the ORDER), and `Math.min` is the obvious repair because it propagates NaN into
+  `safeBuyJob`'s existing `Number.isFinite` refusal. But `Math.min(Infinity, canBuy)` is **`canBuy`** —
+  the original bug's outcome, exactly. And Infinity is reachable here with no NaN anywhere: this is the
+  one expression dividing by `totalRatio` rather than by a constant, so ratios of **1 / -1 / 0** sum to
+  zero with a positive numerator and give `1/0`. Nothing validates the sign of a `value` setting, so
+  that is user input, not a corrupted save. Found only because the `isNaN`-instead-of-`Number.isFinite`
+  near-miss mutant SURVIVED — the fix was wrong, not just the net (#202). Sibling arms that divide
+  `totalRatio / D` **by** `totalRatio` give `0/0` = NaN instead, so the hazard is per-expression: ask
+  which operand can be zero, not whether the function "handles NaN".
+- **📛 A TEST NAME IS A CLAIM, AND A FIXTURE THAT DOES NOT REACH THE NAMED STATE IS A FALSE ONE.** A
+  test called "the else-return no longer strands the rest of buyJobs **in the steady state**" used a
+  fixture BELOW target — the old dead band, not the steady state — so it proved the easy half and read
+  as proving the hard one. The steady-state case sat right next to it asserting only that scientists
+  were not over-hired, which is silent about the thing the name promised. Caught by review, not by any
+  gate, because both tests passed. Corollary, and the sharper half: **write the justifying claim as an
+  executable assertion, not as a comment.** Replacing it, the comment "both arms bail identically while
+  breeding" was written as an `expect` and **FAILED** — the general branch trickles F/L/M and the Watch
+  arm does not (#292). Had it been prose it would have shipped as the reasoning that closed #217.
+- **🧪 vitest CANNOT SEE SLOPPY-vs-STRICT — ESM IS ALWAYS STRICT.** `tests/` imports `src/*.ts` as
+  modules, so every unit test runs strict no matter what the shipped bundle does. Only the
+  bundle-booting sim tests exercise the real mode. So a green suite is NOT evidence about #287's class,
+  and the evidence has to be a live A/B on the built artifact: `main` gave `[NaN, NaN, …]` for all five
+  tier-II perk `value` arrays and the branch gave real numbers, which is what actually proved it. The
+  general rule: when a defect lives in how the ARTIFACT is assembled, no test that bypasses the
+  assembler can witness it.
+- **🏷️ A TRACK-LEVEL SIM-VISIBILITY CLAIM CAN OVERRIDE CORRECT ISSUE-LEVEL ONES.** The campaign plan
+  labelled S7 "⚠️ first trace-moving session" and told the session to expect red; all five jobs issues
+  had independently, and correctly, said `baseline-zero` could not reach their region. `baseline-zero`
+  was 21/21 before and after — one wrong grouping outvoted five right analyses. Re-derive the claim per
+  ISSUE; a label inherited from a batch is not evidence about any member of it.
 - **🎯 MUTATION-TEST THE NEAR-MISS FIX, NOT THE REVERT.** Reverting your own change is the weakest
   possible mutant: it proves the net sees the bug you already knew about, and says nothing about the
   repair a reasonable person would have written instead — which is the one that ships, because it looks

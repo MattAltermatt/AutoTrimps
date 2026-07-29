@@ -576,7 +576,13 @@ export function mainLoop() {
             }
         });
         atGuard('Rarmormagic', function () {
-            if ((getPageSetting('Rdarmormagic') > 0 && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) || (getPageSetting('Rcarmormagic') > 0 && (game.global.challengeActive == 'Toxicity' || game.global.challengeActive == 'Nom'))) Rarmormagic();
+            if ((getPageSetting('Rdarmormagic') > 0 && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) || (getPageSetting('Rcarmormagic') > 0 && (challengeActive('Toxicity') || challengeActive('Nom')))) Rarmormagic();
+            // #216 (same class) — Rcarmormagic is the "C2 Armor Magic" setting: its own tooltip says it
+            // applies "while running the Toxicity or Nom Challenge² in Universe 2" and it sits in the C2
+            // category. The direct compares it used can never be true in either C² — Toxad² sets
+            // challengeActive = "Toxad" (children ["Toxicity","Lead"]) and Nometal² sets "Nometal"
+            // (children ["Nom","Metal"]), with the child names in game.global.multiChallenge. So the
+            // setting was dead 100% of the time, not merely dead during C² as #216's upgrades.ts case is.
         });
         atGuard('Rmanageequality', function () {
             if (getPageSetting('Rmanageequality') == true && game.global.fighting) Rmanageequality();

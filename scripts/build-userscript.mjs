@@ -113,7 +113,26 @@ export async function buildUserscript() {
   // it then shows in the on-load message log ("AutoTrimps v<x> Loaded!") and the update-notice title,
   // giving the user a single incrementing on-screen version to confirm they're on the latest.
   const versionGlobal = `var __AT_BUILD_VERSION__ = ${JSON.stringify(version)};\n`
-  return `${header(version)}${versionGlobal}\n;\n/* ===== src/main.ts (bundled — converted modules incl. former AutoTrimps2.js) ===== */\n${srcIife}\n`
+  // #287 — THE DIRECTIVE MUST COME FIRST, AND IT DID NOT.
+  //
+  // esbuild emits its own `"use strict";` at the top level of the IIFE chunk, but this function used
+  // to emit `header + versionGlobal + srcIife` — and `var __AT_BUILD_VERSION__ = "…";` is a real
+  // STATEMENT. A directive prologue ends at the first statement, so esbuild's directive was already
+  // out of position by the time it appeared and degraded to a dead string expression. The IIFE body
+  // carries no directive of its own (it relies on the file-level one), so the entire shipped
+  // userscript — every converted module, all of src/ — executed in SLOPPY mode.
+  //
+  // That matters here more than in most codebases: CLAUDE.md mandates a scope-aware implicit-global
+  // audit precisely because a sloppy-mode `x = …` silently creates a global instead of throwing. The
+  // audit was checking the source for a hazard the runtime was not enforcing.
+  //
+  // Emitting our OWN directive first is the fix, rather than defining the version through esbuild:
+  // `bundleSrc()` output is pinned byte-for-byte by tests/fixtures/src-bundle.golden.js, and a
+  // `define` would churn that golden for a build-wrapper concern. Comments do not end a prologue, so
+  // the userscript header above is fine where it is. tests/nets/strict-mode-prologue.test.ts asserts
+  // POSITION rather than presence — the string is present either way, which is why the obvious grep
+  // net would have passed against the broken build.
+  return `${header(version)}"use strict";\n${versionGlobal}\n;\n/* ===== src/main.ts (bundled — converted modules incl. former AutoTrimps2.js) ===== */\n${srcIife}\n`
 }
 
 async function writeBuild() {
