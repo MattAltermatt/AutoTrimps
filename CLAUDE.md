@@ -345,5 +345,38 @@ that has already cost a session at least once.
 - **🔬 Never measure under CPU contention.** A 6× "hot spot" that recovers on its own is usually a
   competing background job exiting, not a real cost curve — reproduce a perf anomaly before
   explaining it (#129).
+- **🚪 A LOOP BODY CAN TEST THE SAME ITEM TWICE — FIND THE GATE, NOT THE FIRST GUARD.**
+  `buyAutoStructures` opens with `if (!setting[item]) continue` (main.js:18250), which merely skips
+  items the cog has never written; the line that decides a purchase is fourteen lines lower —
+  `if (!game.buildings[item].locked && setting[item].enabled)` (main.js:18264). Reading stopped at the
+  first guard and concluded the game tests PRESENCE, which produced a mirror asserting an asymmetry
+  against jobs that does not exist. The failure was not the wrong line, it was that **the fix, the
+  comment justifying it, and the regression test guarding it were all written from one reading**, so
+  nothing in the change could contradict it — a self-consistent misreading looks exactly like a
+  well-evidenced fix. Caught by review, not by any gate. Read to the END of the loop body, and when
+  mirroring a game predicate, check whether the sibling you are contrasting it with really differs
+  (#187).
+- **📝 A TEXT NET WHOSE CORPUS INCLUDES PROSE HAS A FALSE-POSITIVE SURFACE WHERE THE CODE IS BEST
+  DOCUMENTED.** `native-conflicts-completeness` scans source text for mutation shapes and reddened on
+  a COMMENT citing the game's own `toggleAutoStructure(true)` — the module stayed provably
+  mutation-free. The pressure that creates is to explain LESS, which is backwards. Strip comments and
+  string literals before matching, and pin the stripper with a test proving it still SEES the shapes
+  it must catch — otherwise "comments are stripped" quietly becomes "everything is stripped" and the
+  gate can no longer fail. Same family as the `@vitest-environment` pragma firing from an explanatory
+  note (#187 wave).
+- **🪤 AN ANTI-FALSE-GREEN THAT ASSERTS ON LIVE SOURCE DIES WHEN THE CLASS IS FIXED.**
+  `setting-array-compare` proved it could see reversed-operand sites with `sites.some(s => s.reversed)`
+  over `src/` — so its own health depended on a real defect continuing to exist, and it went red the
+  moment #178's last reversed site was repaired. "The class is now clean" and "the scanner broke" were
+  the same observation. Prove a scanner's CAPABILITY against a synthetic fixture; reserve live-source
+  assertions for the census itself (#178).
+- **🔁 A VALUE MIGRATION KEYED ON THE VALUE CANNOT BE IDEMPOTENT IF THE OLD VALUE IS STILL LEGAL.**
+  A dropdown persists its LABEL. Correcting `raretokeep`'s option list left `"Common"` in the new list
+  meaning rarity 1 where it used to mean 0 — so a from→to rule keyed on the value cannot tell an
+  un-migrated store from a user who deliberately picked it, and rewrites their choice on EVERY boot,
+  permanently (the setting becomes uneditable — the exact hazard `settings-migrations.ts`'s header
+  warns about for copy-without-delete). Ride the id migration instead: `SettingIdMigration.transform`
+  runs while `migrateLegacyId` moves the value, and that mechanism DELETES the old key, so the trigger
+  is a key a migrated store no longer has. Idempotent by construction (#194).
 - **🎚️ Game balance numbers are sacrosanct.** Mirror game constants exactly; mechanism fixes ship
   freely, numeric tuning is always a user decision.

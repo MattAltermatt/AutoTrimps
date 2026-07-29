@@ -4,7 +4,7 @@
 > That plan was the **discovery** campaign (Phases 0–3b). This is the **remediation** campaign:
 > how the findings it produced actually get fixed, verified, and merged.
 >
-> **Status: Sessions 1–5 SHIPPED 2026-07-28.** Sessions 6–10 pending.
+> **Status: Sessions 1–6 SHIPPED.** Sessions 7–10 pending.
 >
 > ```text
 > session  state        record
@@ -17,10 +17,42 @@
 >                       #190 · legacy/ deleted · filed #287 #288
 > 5        ✅ SHIPPED   Fix S5 closed, all 9: #166 #175 #176 #177 #191 #205 #227 #228
 >                       #247 · 6 root causes, 2 new AST censuses · filed #289
-> 6        ⬜ Track A   17 issues left, oracle-free, independent of every open decision
-> 7–9      ⬜ Track B   39 issues, trace-moving, collect the red
+> 6        ✅ SHIPPED   Fix S6 closed, 15: #167 #168 #178 #179 #180 #181 #182 #183 #184
+>                       #187 #188 #192 #193 #194 #195 · live 6.0.0.147 · #169/#170
+>                       RE-MILESTONED to S9 (trace-moving) · filed #290
+> 7–9      ⬜ Track B   41 issues, trace-moving, collect the red
 > 10       ⬜ re-pin     one oracle re-pin, ledgered
 > ```
+>
+> **Session 6 broke Track A's defining property, and that is the finding.** Track A was "47 issues,
+> sim-BLIND — fixing them cannot move a trace". `#169`/`#170` are labelled `sim-blind` and they move
+> THREE oracle fixtures: 719 divergences on `06-deep-u1.2`, 8 on `.3`, and 1,808 on `12-warp-u1`.
+> `gammaBurstPct` lives in `heirlooms.ts`/`main-loop.ts`, neither of which terminates in a recorded
+> mutator — but it is read by `calc.ts`, which feeds `stance.ts`, which calls `setFormation`. **The
+> `sim-blind` label was derived from "does this module terminate in a wrapped mutator", which is the
+> wrong question for a module that only computes an ESTIMATE.** Any remaining Track A issue whose
+> output reaches `calc.ts` deserves the same re-check before it is assumed oracle-free.
+>
+> Waiving was not available and that is by design: `scripts/sim/manifest.mjs` names **12-warp-u1** on
+> its never-waive list (it is `blind-spot-sensitivity.test.ts`'s #128 deep-game witness), so a
+> trace-moving change there is "re-pin-or-park, never waive" — and 1,808 divergences is a behavioural
+> cascade, not a substitution set a waiver could honestly pin. Both issues moved to `Fix S9` with the
+> work preserved and pushed on `feature/s9-gamma-burst`.
+>
+> **#194 is the first migration in this repo that had to move an id in order to change a VALUE.** A
+> dropdown persists its LABEL, and the corrected rarity list still contains `"Common"` — now meaning
+> rarity 1 instead of 0. So a value-keyed migration cannot distinguish an un-migrated store from a user
+> who deliberately picked that option, and would silently overwrite their choice on every boot, forever.
+> (A value-migration table was written first; its own test caught this.) Riding `migrateLegacyId`'s
+> `transform` makes the trigger the retired KEY's presence, which a migrated store no longer has —
+> idempotent by construction. `SettingIdMigration.transform` is the reusable half of that lesson.
+>
+> **The review caught a defect the whole first pass agreed with itself about.** `buyAutoStructures`
+> tests each item TWICE, and only the second is the purchase gate: `main.js:18250`'s
+> `if (!setting[item]) continue` merely skips never-configured items, while `main.js:18264`'s
+> `setting[item].enabled` decides. Reading stopped at :18250, and the fix, the comment explaining it,
+> and the regression test guarding it all encoded that one misreading — which would have told a player
+> who unchecked every building in the cog that "both automations are buying right now".
 >
 > **Session 5's two censuses both found more than the findings that prompted them.** `#177` claimed 9
 > discarded `buyMap()` returns in `other-praiding.ts` and `#205` claimed 12 in `mapfunctions-amp.ts`,
@@ -394,20 +426,41 @@ verbatim and pin it against the clone.
 Filed out of this session: **#289** (`PraidHarder`'s two failure arms leave AT's `AutoMaps` switched off
 for the rest of the run — and the comment on one of them says it turns it back on).
 
-### Session 6 — Track A7+A8: sentinels, heirlooms, MAZ, conflicts · **M**
+### Session 6 — Track A7+A8: sentinels, heirlooms, MAZ, conflicts · **M** · ✅ SHIPPED
 
-`#167` `#168` `#169` `#170` `#178` `#183` `#184` `#194` · `#179` `#180` `#181` `#182` `#187` `#188`
-`#192` `#193` `#195`
+`#167` `#168` `#178` `#183` `#184` `#194` · `#179` `#180` `#181` `#182` `#187` `#188` `#192` `#193`
+`#195` — fifteen shipped. **`#169`/`#170` re-milestoned to S9**; see the status block above for why
+the `sim-blind` label was wrong about them.
 
-`#170` is the sentinel inversion worth reading first: `gammaBurstPct`'s "no Gamma Burst" sentinel is
-**1**, `calc.ts` guards on `> 0`, so every player without a gamma shield gets a 0.4× damage
-estimate — the majority case. `#169` latches it stale after any swap down. Fix them together.
+Two of the fifteen were value-semantics calls rather than mechanism repairs, and both were put to the
+user. `#184`: the code's never-fuel sentinel (`< 1`, which the `-1` default already is) works, and the
+tooltip telling users to type `230` was simply false — so the TOOLTIP changed and `230` stays an
+ordinary zone number a player can still mean. `#194`: the rarity dropdown and `heirlooms.ts`'s
+thirteen-branch mapping were two independent hand-transcriptions of `game.heirlooms.rarityNames`,
+agreeing with each other and disagreeing with the game; both now derive from `heirloom-rarities.ts`,
+pinned against the clone's `config.js`.
 
-`#187`/`#188`/`#195` are the #150 conflict-badge rows inventing conflicts. For any DOM-visibility
-question here read `getComputedStyle`, not `el.style.display`, and put the real class + a `<style>`
-in the jsdom fixture — a fixture without them encodes the same wrong model and cannot catch it.
+`#188` deliberately went **beyond its own scope**, and the extra work was the point. The issue named
+native mode 1's Challenge² bail-out; mirroring `main.js:18576-18592` properly shows mode **3** reaches
+the identical `return` once Void is capped, so scoping the fix to what the finding described would have
+left the same false positive alive from a second direction. Fourth session running that a finding's own
+scoping claim did not survive being mechanized.
 
-**Track A ends here. 54 issues, zero oracle churn, five reviewed merges.**
+Two nets had to be repaired rather than satisfied. `setting-array-compare`'s anti-false-green asserted
+`sites.some(s => s.reversed)` against LIVE src — so its health depended on a real defect continuing to
+exist, and it went red the moment `#178`'s last reversed site was fixed; it now proves the capability
+against a synthetic fixture. And `native-conflicts-completeness`'s advisory-only regex matched a COMMENT
+citing the game's `toggleAutoStructure(true)`, reddening a gate over prose — it now strips comments and
+strings first, with a test proving the stripper has not disarmed it. **A text net whose corpus includes
+prose has a false-positive surface exactly where the code is best documented, and the pressure that
+creates is to explain less.**
+
+34 mutants, every one aimed at the near-miss repair. The one that mattered was not mine: review found
+`buyAutoStructures`'s real purchase gate fourteen lines below the one I had read, and my fix, my comment
+and my regression test all encoded that misreading. Re-mutated after correcting.
+
+**Track A ends here. 52 issues shipped, zero oracle churn, five reviewed merges** — the two that would
+have churned it moved to Track B instead.
 
 ---
 
@@ -438,6 +491,11 @@ Note `#245` overshoots caps by up to 9 — and remember **the housing `Max*` cap
 z62. Fix the overshoot; do not touch the cap semantics.
 
 ### Session 9 — Track B: combat math, maps, portal, gather · **XL**
+
+⚠️ Now also carries `#169`/`#170` (the gammaBurstPct sentinel, re-milestoned out of S6 for moving three
+oracle fixtures — the fix is built and mutation-proven on `feature/s9-gamma-burst`) and `#290` (calc.ts
+ treats W/formation 5 as a halving formation). Both are combat-math, both are trace-moving, and both
+belong to the single Session-10 re-pin.
 
 `#198` `#199` `#212` `#213` `#244` `#229` `#230` `#231` `#248` `#233` `#249` `#250` ·
 `#204` `#221`–`#226` `#234` · `#206` · `#185` · `#162`+`#263`
