@@ -67,7 +67,11 @@ export function getTrimpAttack(): number {
     if (game.portal.Power_II.level > 0) {
         dmg *= (1 + (game.portal.Power_II.modifier * game.portal.Power_II.level));
     }
-    if (game.global.formation !== 0) {
+    // #294 — formation 5 (W) gets NO multiplier. setFormation's apply-switch (.trimps-game/main.js:16855)
+    // has cases 1-4 only, and every stat the game scales guards on `!== 0 && !== 5` (attack main.js:12002,
+    // health :11774/:11925, block :12209). This site MUST move together with calcOurDmg's neutralizer
+    // below — see the comment there.
+    if (game.global.formation !== 0 && game.global.formation !== 5) {
         dmg *= (game.global.formation === 2) ? 4 : 0.5;
     }
     return dmg;
@@ -111,7 +115,9 @@ export function calcOurHealth(stance?: boolean): number {
     if (geneticist.owned > 0) {
         health *= (Math.pow(1.01, game.global.lastLowGen));
     }
-    if (stance && game.global.formation > 0) {
+    // #294 — `> 0` caught formation 5 (W), which the game leaves alone (main.js:11774/:11925 both
+    // guard on `!== 0 && !== 5`), so AT halved health for every uber-Wind player.
+    if (stance && game.global.formation > 0 && game.global.formation !== 5) {
         let formStrength = 0.5;
         if (game.global.formation === 1) formStrength = 4;
         health *= formStrength;
@@ -206,8 +212,12 @@ export function calcOurBlock(stance?: boolean): number {
         block *= (trainerStrength + 1);
     }
     block *= game.resources.trimps.maxSoldiers;
-    if (stance && game.global.formation === 3) {
-        block *= 4;
+    // #294 — this had the `*4` arm but not the `:0.5` catch-all, so AT overstated block 2x in H, D and
+    // S. The game halves block in every formation that is not Barrier (main.js:12209 getBaseBlock and
+    // :12013 the difs twin, both `if (formation !== 0 && formation !== 5) *= formation === 3 ? 4 : 0.5`).
+    // W was already right here by luck, which is why only a mechanical scan finds this one.
+    if (stance && game.global.formation !== 0 && game.global.formation !== 5) {
+        block *= (game.global.formation === 3) ? 4 : 0.5;
     }
     const heirloomBonus = calcHeirloomBonus("Shield", "trimpBlock", 0, true);
     if (heirloomBonus > 0) {
@@ -367,7 +377,14 @@ export function calcOurDmg(minMaxAvg?: string, incStance?: boolean, incFlucts?: 
     }
 
 
-    if (!incStance && game.global.formation !== 0) {
+    // #290/#294 — `number` opened as getTrimpAttack(), which has ALREADY applied the current formation's
+    // factor; this arm divides it back out so the answer is formation-neutral. In W the two used to be
+    // wrong in exactly compensating ways (getTrimpAttack halved, this un-halved), so the NEUTRAL answer
+    // was correct and only the `incStance` path was 2x low. #290 read this line alone and concluded the
+    // opposite — that the neutral answer was 2x HIGH — and its one-line patch here would have removed the
+    // compensating division while leaving the halving in place, regressing the neutral base that #182's
+    // oneShotPower is built on. The pair only stays consistent if BOTH sites exclude formation 5.
+    if (!incStance && game.global.formation !== 0 && game.global.formation !== 5) {
         number /= (game.global.formation === 2) ? 4 : 0.5;
     }
 
