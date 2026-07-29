@@ -220,6 +220,35 @@ that has already cost a session at least once.
   the *near-miss* fix — a net that only reddens on the unfixed code cannot tell you the escaping
   patch was wrong. Anything persisted is attacker-influenceable: importing another player's settings
   string is the documented feature, `@grant none` runs in page context, and the game page has no CSP.
+- **🎯 MUTATION-TEST THE NEAR-MISS FIX, NOT THE REVERT.** Reverting your own change is the weakest
+  possible mutant: it proves the net sees the bug you already knew about, and says nothing about the
+  repair a reasonable person would have written instead — which is the one that ships, because it looks
+  right at the call site. Four instances now, none caught by a revert-mutant: `escapeHtml` misses `'`
+  while `MAZ.ts` uses single quotes (#235); `Number(v)` instead of `parseFloat(v)` leaves a stored `null`
+  storable, because `Number(null)` is **0** (#237); `!isNaN` instead of `Number.isFinite` accepts
+  `±Infinity`, which `JSON.stringify` also writes as `null` (#237); similarity-mapping the dead preset
+  value `"Void 60"` → `"Void"` instead of the declared default (#208); restoring a hidden element with
+  `turnOn`, which writes `inline-block` over a container authored `block` (#238). Aim mutants at the
+  **predicate**, the **fallback target**, and the **written value** — not at the presence of the call.
+- **🔎 A FINDING'S OWN SCOPING CLAIM IS A CLAIM.** "A mechanical scan returns EXACTLY these two lines"
+  reads like a boundary and is really a one-pass reading that nobody re-derives — so a fix scoped to it
+  inherits its blind spot *silently*, and the remaining instances get harder to find because the class
+  now looks handled. Checked twice in one session, wrong both times. #208's own pass noticed
+  `dispatch-holes.test.ts` filters `type === 'multitoggle'`, which is why one 2018 preset shipped **two**
+  instances of one class and only one was caught for seven years — by the very net whose existence made
+  everyone believe the class was closed. And #238 asserted every turnOff-only id was hidden
+  unconditionally; `one-armed-hides.test.ts` found **15** conditional ones. Derive the census from the
+  AST, never from the finding's list, then read what it returns — S3's extra 15 were benign, and a pinned
+  shrinking count beat both fixing them (scope creep into a behaviour commit) and allowlisting them.
+- **👁️ AN UNTOUCHED ELEMENT READS AS VISIBLE.** A fresh DOM node has `style.display === ''`, so
+  `display !== 'none'` returns TRUE for something nothing has touched — and every
+  `expect(visible(x)).toBe(true)` then passes just as well against a build with the show call **deleted
+  outright**. Require a value only production writes (`toggleElem` → `inline-block`, `toggleStatusElem` →
+  `block`); neither is reachable without a real call. Corollary: a shared jsdom harness must NOT pre-seed
+  the parent's display to the showing value "to model the authored state" — that re-opens it from the
+  other side. Found by review on #238/#240 as a *latent* hazard; it was live, and tightening the helper
+  immediately exposed an assertion of mine that ran before the tick meant to touch the row. This is the
+  mirror of the #150 trap below, where a CSS *class* hides what an inline style says nothing about.
 - **👁️ Read `settings-visibility.ts` before judging any setting.** The runtime gate and the render
   gate are frequently one invariant expressed twice; reasoning from the consumer alone was wrong twice
   in one session (#115, #117). A reference count answers "is it read?", never "why does this control
