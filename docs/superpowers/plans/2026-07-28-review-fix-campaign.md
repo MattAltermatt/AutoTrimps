@@ -4,7 +4,7 @@
 > That plan was the **discovery** campaign (Phases 0–3b). This is the **remediation** campaign:
 > how the findings it produced actually get fixed, verified, and merged.
 >
-> **Status: Sessions 1–3 SHIPPED 2026-07-28.** Sessions 4–10 pending.
+> **Status: Sessions 1–4 SHIPPED 2026-07-28.** Sessions 5–10 pending.
 >
 > ```text
 > session  state        record
@@ -13,10 +13,40 @@
 > 2        ✅ SHIPPED   Fix S2 closed: #210 #211 #235 #241 #242 #243 #255 · live 6.0.0.139
 > 3        ✅ SHIPPED   Fix S3 closed, all 12: #208 #236 #237 #252 #253 #186 #251
 >                       #209 #238 #239 #240 #254 · split out #286
-> 4–6      ⬜ Track A   35 issues left, oracle-free, independent of every open decision
+> 4        ✅ SHIPPED   Fix S4 closed, all 9: #163 #164 #165 #171 #172 #173 #174 #189
+>                       #190 · legacy/ deleted · filed #287 #288
+> 5–6      ⬜ Track A   26 issues left, oracle-free, independent of every open decision
 > 7–9      ⬜ Track B   39 issues, trace-moving, collect the red
 > 10       ⬜ re-pin     one oracle re-pin, ledgered
 > ```
+>
+> **Session 4 replaced a dependency rather than patching it, and that was the right call by a
+> falsification, not a preference.** `#171`'s "vendored" `legacy/FastPriorityQueue.js` turned out not
+> to be a vendor drop at all: `git log --follow` shows the fork hand-adapted upstream in 2016 to strip
+> its CommonJS tail and, in the same edit, rewrote `poll()`'s else-branch into
+> `else if (this.size == 0) --this.size` — a construct present in ZERO upstream commits. That is the
+> **fifth** instance of the near-miss-fix trap, and the first where the near-miss fix *was the
+> artifact under review*. Upstream shipped the real repair in Feb 2017; the fork was never on the
+> update path. The premise that pushed toward hand-rolling a replacement (upstream's bare
+> `module.exports` makes a clean drop impossible) was REFUTED — esbuild resolves the CJS interop at
+> build time — so the answer was the maintained package, pinned exact and lockfile-integrity-checked.
+> `legacy/` is now gone entirely, taking the concat step, the ASI guard, the emit-order rule, the
+> vendor guard hook and one bare-name ambient with it.
+>
+> **The parity question was settled by measurement, not argument.** Fixing `poll()` changes perk
+> allocation only in the scenario where AT currently freezes: 240 structured + 4,000 randomized perk
+> configurations showed ZERO differences in final levels or pass-2 spend, with a planted
+> `_percolateDown` mutant reddening 144/240 to prove the harness was not vacuous. So no tuning gate
+> was needed. Note also that fixing the queue ALONE converts the hang into a `TypeError` — the four
+> pass-1 loops needed their own exhaustion exit, which is the half a queue-only fix would have missed.
+>
+> **Five of this session's nets initially passed against a broken build.** Every one was found by
+> mutation-testing the near-miss rather than the revert, and the failure mode was the same each time:
+> the assertion was satisfied by something other than the guard under test. The #164 tests let the
+> sort's stable tie-break hand the buy to an unrelated item (three separate mutants survived); the
+> #190 render test was satisfied by the write-side fix alone; and the #163 end-to-end test never
+> entered the U2 arm at all, because `clearPerks()` branches on the `portalUniverse` global rather
+> than `game.global.universe` — it would have certified a fix that did nothing.
 >
 > **Session 2 carried one finding the plan did not anticipate.** The plan's fix shape for #210/#235
 > named three sinks; the code review found a **fourth and larger one** — `MAZ.ts` splices 29 stored
@@ -260,9 +290,39 @@ Carries the **prose-only** sub-batch (`#186` `#251` `#254`) — but as its **own
 are evidence about the code; fixing the bugs in the same commit as the prose is how the #111–#119
 sweep nearly lost its audit trail.
 
-### Session 4 — Track A4+A5: AutoBattle and perks · **M**
+### Session 4 — Track A4+A5: AutoBattle and perks · **M** · ✅ SHIPPED 2026-07-28
 
-`#164` `#165` `#173` `#174` `#190` · `#163` `#171` `#172` `#189`
+`#164` `#165` `#173` `#174` `#190` · `#163` `#171` `#172` `#189` — all nine closed.
+
+**What actually shipped, and where it differed from this plan.** Three of the AB findings collapsed
+into one root cause: `RABfarmstring` is declared `textValue` and ab.ts stored a nested ARRAY into it,
+which is simultaneously #165 (indexed character-wise), #190 (no `.substring`, so the control rendered
+the "unset" ∞ glyph) and #174 (never flushed). One parser now reads it, and it still accepts the old
+array so an existing user's scoreboard survives the upgrade.
+
+Two findings were larger than reported, both caught by mechanizing the census instead of trusting the
+finding's list — the S3 lesson, holding again. `#173` named two sites; the AST census of `ABsolver`
+found **7 upgrade calls and 13 level reads**, all now routed through `abUpgradeOwned`/`abOwnedLevel`.
+`#164`'s fall-through turned out to be exercisable only via an item the finding never mentioned:
+both Doppelgangers are `noUpgrade`, so they are filtered out *before* the currency comparison, and the
+only candidates that reach it are the 12 upgradable shard items — `Snimp__Fanged_Blade` at 159 is the
+shallowest.
+
+`#171` was not the bug it was filed as. See the status block above: the vendored queue was a
+hand-edited fork, the fix is a pinned npm dependency, and `legacy/` is gone.
+
+Live-verified in Chrome against the dev clone, all nine, driving real state rather than reading
+render output — including the #171 repro itself (an all-maxed Overkill config now terminates in 94
+`calculatePrice` calls instead of freezing the tab). One honest gap: #172's index shift is **not**
+reproducible on a fresh save, because every perk sorting after Overkill is still locked there, so
+that one rests on its unit net.
+
+Filed out of this session: **#287** (the whole shipped bundle runs sloppy — the version global is
+emitted before esbuild's `"use strict"`, so the directive is not in prologue position; it is masking
+a real `NaN` defect in `ArithmeticPerk`) and **#288** (`RAutoPerks.updatePerkRatios` is defined
+twice; the surviving copy drops the tier-II propagation).
+
+Original plan for this session:
 
 Both subsystems are blind by corpus depth, not by harness bug: no fixture has AutoBattle unlocked,
 and `perks.ts` has never been confirmed to execute in a sim run (Task 3.1 of the discovery plan is

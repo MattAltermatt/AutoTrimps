@@ -24,13 +24,14 @@ not a zero-config tool. The distributed artifact is a single built userscript.
 ## How we get there — the strangler
 
 The migration is an **incremental strangler**, not a big-bang rewrite (a prior from-scratch
-rewrite was abandoned — "don't reinvent the wheel"). Legacy `.js` stays untouched in `legacy/` as
-a behavioral oracle; the build assembles one userscript from `legacy concat` +
-`esbuild(src/main.ts)`; modules are ported one at a time behind a stable seam and verified in a
-live local clone of the game before the legacy copy is retired. Faithful port first, refactor
+rewrite was abandoned — "don't reinvent the wheel"). Legacy `.js` stayed untouched in `legacy/` as
+a behavioral oracle; the build assembled one userscript from `legacy concat` +
+`esbuild(src/main.ts)`; modules were ported one at a time behind a stable seam and verified in a
+live local clone of the game before the legacy copy was retired. Faithful port first, refactor
 second — and the strangler is now **complete** (v6.0.0, 2026-07-15): every AutoTrimps-authored
-file is strict TypeScript in `src/modules/` behind the seam, and `legacy/` holds nothing but the
-third-party vendored `FastPriorityQueue.js`. The full architecture and rationale are in the
+file is strict TypeScript in `src/modules/` behind the seam. As of #171 `legacy/` no longer exists
+at all — its last occupant, a hand-edited copy of the third-party `FastPriorityQueue.js`, became a
+pinned npm dependency, which retired the concat step with it. The full architecture and rationale are in the
 [design spec](docs/superpowers/specs/2026-07-08-autotrimps-modernization-design.md).
 
 ## What it deliberately is NOT
@@ -46,7 +47,7 @@ third-party vendored `FastPriorityQueue.js`. The full architecture and rationale
 
 A long-horizon, multi-session side project (started 2026-07-08). The conversion is **complete**
 (the strangler finished at v6.0.0, 2026-07-15): the runtime is TypeScript-first, the automation is
-synced to the current Trimps release, and no first-party code remains in `legacy/`. Work has moved
+synced to the current Trimps release, and `legacy/` is gone entirely. Work has moved
 from *porting* to *correctness* —
 behavioral proof nets that can prove the bot's decisions haven't drifted, and the defects they
 keep surfacing. Live status is always the

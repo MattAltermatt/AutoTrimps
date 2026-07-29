@@ -15,7 +15,7 @@ Pages (`https://mattaltermatt.github.io/AutoTrimps/autotrimps.user.js`) via `act
 
 ```bash
 npm install          # ALSO fetches the SHA-pinned game clone → .trimps-game/ (postinstall)
-npm run build        # → dist/autotrimps.user.js (legacy concat + esbuild(src/main.ts))
+npm run build        # → dist/autotrimps.user.js (esbuild(src/main.ts); no concat step since #171)
 npm run build:watch  # rebuild on change
 npm run serve        # static-serve the local Trimps clone on :8080 with the bundle injected
 npm test             # vitest
@@ -36,11 +36,12 @@ Local verify: `npm run build && npm run serve` → open `http://localhost:8080/`
 
 ## Layout
 
-- `legacy/` — now holds ONLY the third-party vendored `FastPriorityQueue.js`. The strangler is
-  **complete** (#133/#134, v6.0.0, 2026-07-15): `AutoTrimps2.js` → `src/modules/main-loop.ts`,
-  `Graphs.js` → `src/modules/graphs/` (ECharts), and the dead `highcharts.js` + upstream
-  distribution shims were deleted. No first-party legacy `.js` remains — the oracle is now the
-  recorded L0 traces + the last pre-conversion commits on `main`.
+- `legacy/` — **deleted** (#171). The strangler is **complete** (#133/#134, v6.0.0, 2026-07-15):
+  `AutoTrimps2.js` → `src/modules/main-loop.ts`, `Graphs.js` → `src/modules/graphs/` (ECharts), and
+  the dead `highcharts.js` + upstream distribution shims were deleted. The last occupant was a
+  vendored `FastPriorityQueue.js` that turned out to be a hand-edited fork with a browser-freezing
+  bug; it is now the `fastpriorityqueue` npm package, pinned exact and bundled by esbuild. The
+  oracle is the recorded L0 traces + the last pre-conversion commits on `main`.
 - `src/modules/` — the ~40 converted TypeScript modules (+ the `graphs/` directory module),
   including `main-loop.ts` (the ported mainLoop/loader, #133).
 - `src/game/*.d.ts` — ambient types for the game's global API (the seam).
@@ -58,17 +59,20 @@ Local verify: `npm run build && npm run serve` → open `http://localhost:8080/`
 
 ## Conventions
 
-**Per-module conversion recipe** (see `.claude/skills/convert-legacy-module/`): relocate the
-legacy `.js` verbatim → `src/modules/<name>.ts`, faithful port behind the seam, verify live in
-the clone, *then* refactor internals freely. **Copy dense/minified lines verbatim — never retype**
+**Per-module conversion recipe** (see `.claude/skills/convert-legacy-module/`) — ⚠️ **HISTORICAL:
+there is no `legacy/*.js` left to convert** (the directory was deleted in #171). Kept because the
+*discipline* still governs any faithful port, including a re-vendored dependency: relocate verbatim
+→ `src/modules/<name>.ts`, faithful port behind the seam, verify live in the clone, *then* refactor
+internals freely. **Copy dense/minified lines verbatim — never retype**
 (transcription is the dominant risk); exact-string vitest guards the two frozen serializeSettings
 blobs.
 
 **The transition seam** — converted modules `export` normally; `src/legacy-bridge.ts` does
 `Object.assign(globalThis, { ...module })` (wildcard spread — can't forget a name). Since #133 the
-strangler is complete, so the build collapsed to: the `src` IIFE is emitted **first** (after the
-version global), then the only remaining legacy file, vendored `FastPriorityQueue.js` (its `new
-FastPriorityQueue()` sites are all tick-time, so it only needs to exist by first tick). ⚠️ Inside
+strangler is complete and since #171 there is no concat step at all, so the build is just: header +
+version global + the `src` IIFE. (The emit-order rule that used to live here — src IIFE first, then
+the trailing vendored `FastPriorityQueue.js` — is retired with the file; there is nothing left to
+order against, and `build-userscript.test.ts` now pins that NO `/* ===== legacy/` chunk returns.) ⚠️ Inside
 the bridge, `main-loop.ts` (the former `AutoTrimps2.js`) is imported **FIRST** so its base-state
 globals (`MODULES = {}`, `autoTrimpSettings`, …) seed before any converted module's load-time
 `MODULES["x"] = {}` write (breedtimer/buildings/…) — reorder it and those throw. A build test guards
@@ -82,8 +86,9 @@ ambient signature can't drift, per #36).
 
 **Shared top-level vars → `globalThis`** — a converted module's top-level `var X` that
 still-legacy code reads becomes module-scoped and invisible (ReferenceError). Assign
-`globalThis.X = ...` at the write site and drop the module `var`. Scout per module:
-`grep '^var ' legacy/modules/<m>.js` then check each name for readers outside the module.
+`globalThis.X = ...` at the write site and drop the module `var`. (The scout step that used to read
+`grep '^var ' legacy/modules/<m>.js` is retired with `legacy/` — check `src/modules/<m>.ts` for
+top-level `var`s and grep each name for readers outside the module.)
 
 **Implicit-global audit is REQUIRED and must be SCOPE-AWARE per module** — bare `x = ...` writes
 (no var/let) were sloppy-mode implicit globals; strict ESM throws. A file-wide regex gives FALSE

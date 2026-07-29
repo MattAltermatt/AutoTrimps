@@ -19,6 +19,10 @@ import { resolve, join } from 'node:path'
 const ROOT = resolve(__dirname, '..')
 const DEFS = 'src/modules/settings-defs.ts'
 
+// #171: this used to be called as `sourceFiles('src').concat(sourceFiles('legacy'))`. `legacy/` is
+// gone — its last file, the vendored FastPriorityQueue, is an npm dependency now — and readdirSync
+// on a missing directory THROWS, which took this whole suite down at import time rather than failing
+// one assertion. src/ is the entire first-party corpus.
 function sourceFiles(dir: string, acc: string[] = []): string[] {
   for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
     const rel = join(dir, e.name)
@@ -134,7 +138,7 @@ describe('every setting the UI renders is actually wired to code (#65)', () => {
   const defsSrc = readFileSync(join(ROOT, DEFS), 'utf8')
   const ids = [...defsSrc.matchAll(/createSetting\(\s*'([^']+)'/g)].map((m) => m[1])
 
-  const files = sourceFiles('src').concat(sourceFiles('legacy')).filter((f) => f !== DEFS)
+  const files = sourceFiles('src').filter((f) => f !== DEFS)
   const rawCorpus = files.map((f) => readFileSync(join(ROOT, f), 'utf8')).join('\n')
   // #120 — the corpus the read-check runs against, with the two liars removed.
   const corpus = readableCorpus(files, files.map((f) => readFileSync(join(ROOT, f), 'utf8')))
@@ -252,7 +256,7 @@ describe('no numeric setting is compared against a label string (#65)', () => {
 
   it('no getPageSetting(<multitoggle>) is compared to a string literal', () => {
     const offenders: string[] = []
-    for (const rel of sourceFiles('src').concat(sourceFiles('legacy'))) {
+    for (const rel of sourceFiles('src')) {
       if (rel === DEFS) continue
       readFileSync(join(ROOT, rel), 'utf8')
         .split('\n')

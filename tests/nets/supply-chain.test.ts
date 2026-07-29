@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest'
+import { readFileSync, existsSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { buildUserscript } from '../../scripts/build-userscript.mjs'
 
 // #75 — the supply-chain net. NO EXECUTABLE CODE FROM AN ORIGIN WE DO NOT CONTROL.
@@ -68,15 +70,41 @@ describe('supply chain: the shipped userscript executes no third-party code (#75
   })
 
   it('FastPriorityQueue is BUNDLED, not fetched from a third party', () => {
-    // The global must be defined by our own emitted bytes...
-    expect(bundle).toContain('function FastPriorityQueue(')
+    // The class must be defined by our own emitted bytes, and come from the npm package (#171).
+    expect(bundle).toContain('node_modules/fastpriorityqueue/FastPriorityQueue.js')
+    expect(bundle).toMatch(/function FastPriorityQueue\w*\(/)
     // ...and the remote FETCH must be gone. Note this bans the executable URL, not the hostname: the
     // upstream author's README/commits links survive in the update-notice tooltip, and a link you never
     // fetch is not a code-execution grant. Conflating the two would force a wrong fix (scrubbing credit
     // links) while leaving the actual hazard — the `<script src>` — untouched.
     expect(bundle).not.toContain('Zorn192.github.io/AutoTrimps/FastPriorityQueue.js')
-    // The four `new FastPriorityQueue(...)` call sites are still there and now cannot race a network load.
-    expect(bundle.match(/new FastPriorityQueue\(/g)?.length).toBeGreaterThanOrEqual(4)
+
+    // AT's four construction sites are still there and cannot race a network load. Do NOT count
+    // `new FastPriorityQueue*(` here: #171 made this an ESM import of a CJS package, so esbuild emits
+    // AT's call sites as `new import_fastpriorityqueue.default(...)` and the only `new FastPriorityQueue2(`
+    // occurrences left are INTERNAL to the package (clone/kSmallest). That spelling counts 3 — a number
+    // that looks like a lost call site and is really a net measuring the wrong thing. Anchor on AT's own
+    // assignment instead, which is stable across bundler renaming.
+    expect(bundle.match(/effQueue = new /g)?.length).toBe(4)
+  })
+
+  it('the queue is the MAINTAINED upstream, not a hand-edited fork (#171)', () => {
+    // #171: `legacy/FastPriorityQueue.js` was never a clean vendor drop. `git log --follow` shows the
+    // fork hand-adapted upstream in 2016 to strip its CommonJS tail and, in the same edit, rewrote
+    // poll()'s else-branch into `else if (this.size == 0) --this.size` — a construct that appears in
+    // ZERO upstream commits. It inverted both edge cases: at size 1 the queue never drained (the
+    // browser froze mid-portal), and at size 0 `size` went to -1.
+    //
+    // Assert on the DRAIN BRANCH rather than on the absence of the old text: a fork could reintroduce
+    // the bug with different spelling, and "does not contain the 2016 string" would still pass.
+    expect(bundle).toContain('this.size -= 1')
+    expect(bundle).not.toContain('0==this.size&&--this.size')
+    expect(bundle).not.toContain('else if (this.size == 0) --this.size')
+
+    // And it must come from the lockfile, not from a file someone can hand-edit again.
+    const pkg = JSON.parse(readFileSync(resolve(__dirname, '../../package.json'), 'utf8'))
+    expect(pkg.devDependencies.fastpriorityqueue).toBe('0.8.0') // exact pin, no caret
+    expect(existsSync(resolve(__dirname, '../../legacy'))).toBe(false)
   })
 
   it('the remote module loader is gone from source, not stripped by a build transform (#133)', () => {

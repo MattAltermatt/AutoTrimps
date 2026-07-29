@@ -1,10 +1,226 @@
 "use strict";
 (() => {
+  var __create = Object.create;
   var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __getProtoOf = Object.getPrototypeOf;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __commonJS = (cb, mod) => function __require() {
+    try {
+      return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+    } catch (e) {
+      throw mod = 0, e;
+    }
+  };
   var __export = (target, all) => {
     for (var name in all)
       __defProp(target, name, { get: all[name], enumerable: true });
   };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+    // If the importer is in node compatibility mode or this is not an ESM
+    // file that has been converted to a CommonJS file using a Babel-
+    // compatible transform (i.e. "__esModule" has not been set), then set
+    // "default" to the CommonJS "module.exports" for node compatibility.
+    isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+    mod
+  ));
+
+  // node_modules/fastpriorityqueue/FastPriorityQueue.js
+  var require_FastPriorityQueue = __commonJS({
+    "node_modules/fastpriorityqueue/FastPriorityQueue.js"(exports, module) {
+      "use strict";
+      var defaultcomparator = function(a, b) {
+        return a < b;
+      };
+      function FastPriorityQueue2(comparator) {
+        if (!(this instanceof FastPriorityQueue2)) return new FastPriorityQueue2(comparator);
+        this.array = [];
+        this.size = 0;
+        this.compare = comparator || defaultcomparator;
+      }
+      FastPriorityQueue2.prototype.clone = function() {
+        var fpq = new FastPriorityQueue2(this.compare);
+        fpq.size = this.size;
+        fpq.array = this.array.slice(0, this.size);
+        return fpq;
+      };
+      FastPriorityQueue2.prototype.add = function(myval) {
+        var i = this.size;
+        this.array[this.size] = myval;
+        this.size += 1;
+        var p;
+        var ap;
+        while (i > 0) {
+          p = i - 1 >> 1;
+          ap = this.array[p];
+          if (!this.compare(myval, ap)) {
+            break;
+          }
+          this.array[i] = ap;
+          i = p;
+        }
+        this.array[i] = myval;
+      };
+      FastPriorityQueue2.prototype.heapify = function(arr) {
+        this.array = arr;
+        this.size = arr.length;
+        var i;
+        for (i = this.size >> 1; i >= 0; i--) {
+          this._percolateDown(i);
+        }
+      };
+      FastPriorityQueue2.prototype._percolateUp = function(i, force) {
+        var myval = this.array[i];
+        var p;
+        var ap;
+        while (i > 0) {
+          p = i - 1 >> 1;
+          ap = this.array[p];
+          if (!force && !this.compare(myval, ap)) {
+            break;
+          }
+          this.array[i] = ap;
+          i = p;
+        }
+        this.array[i] = myval;
+      };
+      FastPriorityQueue2.prototype._percolateDown = function(i) {
+        var size = this.size;
+        var hsize = this.size >>> 1;
+        var ai = this.array[i];
+        var l;
+        var r;
+        var bestc;
+        while (i < hsize) {
+          l = (i << 1) + 1;
+          r = l + 1;
+          bestc = this.array[l];
+          if (r < size) {
+            if (this.compare(this.array[r], bestc)) {
+              l = r;
+              bestc = this.array[r];
+            }
+          }
+          if (!this.compare(bestc, ai)) {
+            break;
+          }
+          this.array[i] = bestc;
+          i = l;
+        }
+        this.array[i] = ai;
+      };
+      FastPriorityQueue2.prototype._removeAt = function(index) {
+        if (index > this.size - 1 || index < 0) return void 0;
+        this._percolateUp(index, true);
+        return this.poll();
+      };
+      FastPriorityQueue2.prototype.remove = function(myval) {
+        for (var i = 0; i < this.size; i++) {
+          if (!this.compare(this.array[i], myval) && !this.compare(myval, this.array[i])) {
+            this._removeAt(i);
+            return true;
+          }
+        }
+        return false;
+      };
+      FastPriorityQueue2.prototype.removeOne = function(callback) {
+        if (typeof callback !== "function") {
+          return void 0;
+        }
+        for (var i = 0; i < this.size; i++) {
+          if (callback(this.array[i])) {
+            return this._removeAt(i);
+          }
+        }
+      };
+      FastPriorityQueue2.prototype.removeMany = function(callback, limit) {
+        if (typeof callback !== "function" || this.size < 1) {
+          return [];
+        }
+        limit = limit ? Math.min(limit, this.size) : this.size;
+        var resultSize = 0;
+        var result = new Array(limit);
+        var tmpSize = 0;
+        var tmp = new Array(this.size);
+        while (resultSize < limit && !this.isEmpty()) {
+          var item = this.poll();
+          if (callback(item)) {
+            result[resultSize++] = item;
+          } else {
+            tmp[tmpSize++] = item;
+          }
+        }
+        result.length = resultSize;
+        var i = 0;
+        while (i < tmpSize) {
+          this.add(tmp[i++]);
+        }
+        return result;
+      };
+      FastPriorityQueue2.prototype.peek = function() {
+        if (this.size == 0) return void 0;
+        return this.array[0];
+      };
+      FastPriorityQueue2.prototype.poll = function() {
+        if (this.size == 0) return void 0;
+        var ans = this.array[0];
+        if (this.size > 1) {
+          this.array[0] = this.array[--this.size];
+          this._percolateDown(0);
+        } else {
+          this.size -= 1;
+        }
+        return ans;
+      };
+      FastPriorityQueue2.prototype.replaceTop = function(myval) {
+        if (this.size == 0) return void 0;
+        var ans = this.array[0];
+        this.array[0] = myval;
+        this._percolateDown(0);
+        return ans;
+      };
+      FastPriorityQueue2.prototype.trim = function() {
+        this.array = this.array.slice(0, this.size);
+      };
+      FastPriorityQueue2.prototype.isEmpty = function() {
+        return this.size === 0;
+      };
+      FastPriorityQueue2.prototype.forEach = function(callback) {
+        if (this.isEmpty() || typeof callback != "function") return;
+        var i = 0;
+        var fpq = this.clone();
+        while (!fpq.isEmpty()) {
+          callback(fpq.poll(), i++);
+        }
+      };
+      FastPriorityQueue2.prototype.kSmallest = function(k) {
+        if (this.size == 0 || k <= 0) return [];
+        k = Math.min(this.size, k);
+        const newSize = Math.min(this.size, 2 ** (k - 1) + 1);
+        if (newSize < 2) {
+          return [this.peek()];
+        }
+        const fpq = new FastPriorityQueue2(this.compare);
+        fpq.size = newSize;
+        fpq.array = this.array.slice(0, newSize);
+        const smallest = new Array(k);
+        for (let i = 0; i < k; i++) {
+          smallest[i] = fpq.poll();
+        }
+        return smallest;
+      };
+      module.exports = FastPriorityQueue2;
+    }
+  });
 
   // src/modules/main-loop.ts
   var main_loop_exports = {};
@@ -6888,7 +7104,8 @@
     ABsolver: () => ABsolver2,
     ABswitch: () => ABswitch2,
     checkPreset: () => checkPreset,
-    getCurrentAB: () => getCurrentAB
+    getCurrentAB: () => getCurrentAB,
+    parseABfarmstring: () => parseABfarmstring
   });
   function getCurrentAB(effect) {
     if (effect == false) {
@@ -6953,31 +7170,72 @@
       else if (ABcheck() == 3) autoBattle.loadPreset("p3");
     }
   }
+  function abUpgradeCurrency(item) {
+    return autoBattle.items[item].dustType == "shards" ? autoBattle.shards : autoBattle.dust;
+  }
+  function abUpgradeCheapestAffordable(names) {
+    var candidates = [];
+    for (var i = 0; i < names.length; i++) {
+      if (autoBattle.items[names[i]].noUpgrade) continue;
+      candidates.push([names[i], autoBattle.upgradeCost(names[i])]);
+    }
+    candidates.sort(function(a, b) {
+      return a[1] - b[1];
+    });
+    for (var c = 0; c < candidates.length; c++) {
+      if (abUpgradeCurrency(candidates[c][0]) >= candidates[c][1]) {
+        autoBattle.upgrade(candidates[c][0]);
+        return;
+      }
+    }
+  }
   function ABdustsimple2() {
     var equips = [];
     for (var item in autoBattle.items) {
       if (autoBattle.items[item].equipped) {
-        equips.push([item, autoBattle.upgradeCost(item)]);
+        equips.push(item);
       }
     }
-    equips.sort(function(a, b) {
-      return a[1] - b[1];
-    });
     if (equips.length === 0) return;
-    if (autoBattle.dust >= equips[0][1]) autoBattle.upgrade(equips[0][0]);
+    abUpgradeCheapestAffordable(equips);
   }
   function ABdustsimplenonhid2() {
     var equips = [];
     for (var item in autoBattle.items) {
-      if (!autoBattle.items[item].equipped && !autoBattle.items[item].hidden) {
-        equips.push([item, autoBattle.upgradeCost(item)]);
+      if (autoBattle.items[item].owned && !autoBattle.items[item].equipped && !autoBattle.items[item].hidden) {
+        equips.push(item);
       }
     }
-    equips.sort(function(a, b) {
-      return a[1] - b[1];
-    });
     if (equips.length === 0) return;
-    if (autoBattle.dust >= equips[0][1]) autoBattle.upgrade(equips[0][0]);
+    abUpgradeCheapestAffordable(equips);
+  }
+  function parseABfarmstring(raw) {
+    var head;
+    var tail;
+    if (Array.isArray(raw)) {
+      head = [raw[0], raw[1]];
+      tail = [];
+      for (var r = 2; r < raw.length; r++) {
+        if (Array.isArray(raw[r])) tail = tail.concat(raw[r]);
+        else tail.push(raw[r]);
+      }
+    } else if (typeof raw === "string") {
+      var parts = raw.split(",");
+      head = [parts[0], parts[1]];
+      tail = parts.slice(2);
+    } else {
+      return null;
+    }
+    var level = Number(head[0]);
+    if (!Number.isFinite(level) || level < 1) return null;
+    var dust = Number(head[1]);
+    if (!Number.isFinite(dust) || dust < 0) dust = 0;
+    var items = [];
+    for (var i = 0; i < tail.length; i++) {
+      var name = String(tail[i]).trim();
+      if (name !== "") items.push(name);
+    }
+    return { level, dust, items };
   }
   function ABfarmsave2() {
     var equips = [];
@@ -6989,27 +7247,32 @@
     var dustps = parseInt(autoBattle.getDustPs());
     var bestdust = 0;
     if (autoBattle.sessionEnemiesKilled > 2 && autoBattle.sessionEnemiesKilled > autoBattle.sessionTrimpsKilled) bestdust = dustps;
-    var string = [autoBattle.enemyLevel, bestdust, equips];
-    if (getPageSetting2("RABfarmstring") == "-1") {
+    var string = [autoBattle.enemyLevel, bestdust].concat(equips).join(",");
+    if (parseABfarmstring(string) === null) return;
+    var current = parseABfarmstring(getPageSetting2("RABfarmstring"));
+    if (current === null) {
       setPageSetting2("RABfarmstring", string);
-    } else if (autoBattle.sessionEnemiesKilled > 8 && autoBattle.sessionEnemiesKilled > autoBattle.sessionTrimpsKilled && bestdust > 0 && getPageSettingAt("RABfarmstring", 1) < bestdust) {
+      saveSettings2();
+    } else if (autoBattle.sessionEnemiesKilled > 8 && autoBattle.sessionEnemiesKilled > autoBattle.sessionTrimpsKilled && bestdust > 0 && current.dust < bestdust) {
       setPageSetting2("RABfarmstring", string);
+      saveSettings2();
     }
   }
   function ABfarmswitch2() {
-    if (getPageSetting2("RABfarmstring") == "-1") return;
-    if (autoBattle.enemyLevel != getPageSetting2("RABfarmstring")[0]) {
-      autoBattle.enemyLevel = getPageSetting2("RABfarmstring")[0];
+    var target = parseABfarmstring(getPageSetting2("RABfarmstring"));
+    if (target === null) return;
+    if (autoBattle.enemyLevel != target.level) {
+      autoBattle.enemyLevel = target.level;
       autoBattle.resetCombat(true);
     }
     var match = false;
     for (var item in autoBattle.items) {
-      if (autoBattle.items[item].equipped && getPageSetting2("RABfarmstring")[2].indexOf(item) == -1) {
+      if (autoBattle.items[item].equipped && target.items.indexOf(item) == -1) {
         match = true;
       }
     }
     if (match) {
-      var preset = getPageSetting2("RABfarmstring")[2];
+      var preset = target.items;
       var plength = preset.length;
       if (plength > autoBattle.getMaxItems()) plength = autoBattle.getMaxItems();
       for (var item in autoBattle.items) {
@@ -7029,6 +7292,13 @@
       autoBattle.enemyLevel = level;
       autoBattle.resetCombat(true);
     }
+  }
+  function abOwnedLevel(item) {
+    return autoBattle.items[item].owned ? autoBattle.items[item].level : 0;
+  }
+  function abUpgradeOwned(item) {
+    if (!autoBattle.items[item].owned) return;
+    autoBattle.upgrade(item);
   }
   function ABsolver2() {
     if (autoBattle.autoLevel) autoBattle.toggleAutoLevel();
@@ -7052,10 +7322,10 @@
           items = ["Sword", "Armor", "Fists_of_Goo", "Battery_Stick"];
           level = [4, 2, 2, 2];
           for (var equip in autoBattle.items) {
-            if (autoBattle.items[equip].level < level[items.indexOf(equip)]) {
+            if (abOwnedLevel(equip) < level[items.indexOf(equip)]) {
               ABlevelswitch(2);
             }
-            if (autoBattle.items[equip].level >= level[items.indexOf(equip)]) {
+            if (abOwnedLevel(equip) >= level[items.indexOf(equip)]) {
               if (autoBattle.bonuses.Extra_Limbs.level < 1) {
                 autoBattle.buyBonus("Extra_Limbs");
               }
@@ -7067,7 +7337,7 @@
           level = [4, 3, 2, 2, 4];
           var proceed = true;
           for (var equip in autoBattle.items) {
-            if (autoBattle.items[equip].level < level[items.indexOf(equip)]) {
+            if (abOwnedLevel(equip) < level[items.indexOf(equip)]) {
               proceed = false;
             }
           }
@@ -7101,7 +7371,7 @@
           level = [3, 3, 3, 4, 3];
           var proceed = true;
           for (var equip in autoBattle.items) {
-            if (autoBattle.items[equip].level < level[items.indexOf(equip)]) {
+            if (abOwnedLevel(equip) < level[items.indexOf(equip)]) {
               proceed = false;
             }
           }
@@ -7116,7 +7386,7 @@
           level = [3, 3, 3, 3, 3];
           var proceed2 = true;
           for (var equip in autoBattle.items) {
-            if (autoBattle.items[equip].level < level[items.indexOf(equip)]) {
+            if (abOwnedLevel(equip) < level[items.indexOf(equip)]) {
               proceed2 = false;
             }
           }
@@ -7138,7 +7408,7 @@
           level = [4, 3, 3, 3, 2];
           var proceed = true;
           for (var equip in autoBattle.items) {
-            if (autoBattle.items[equip].level < level[items.indexOf(equip)]) {
+            if (abOwnedLevel(equip) < level[items.indexOf(equip)]) {
               proceed = false;
             }
           }
@@ -7165,7 +7435,7 @@
           level = [4, 5, 3, 4, 2];
           var proceed = true;
           for (var equip in autoBattle.items) {
-            if (autoBattle.items[equip].level < level[items.indexOf(equip)]) {
+            if (abOwnedLevel(equip) < level[items.indexOf(equip)]) {
               proceed = false;
             }
           }
@@ -7178,8 +7448,8 @@
         if (autoBattle.items.Comfy_Boots.owned) {
           items = ["Fists_of_Goo", "Battery_Stick", "Putrid_Pouch", "Chemistry_Set", "Labcoat"];
           level = [4, 5, 3, 4, 2];
-          if (autoBattle.items.Comfy_Boots.level < 3) {
-            autoBattle.upgrade("Comfy_Boots");
+          if (abOwnedLevel("Comfy_Boots") < 3) {
+            abUpgradeOwned("Comfy_Boots");
           }
         }
         break;
@@ -7187,21 +7457,21 @@
         if (!autoBattle.items.Comfy_Boots.owned) {
           contract = "Comfy_Boots";
         }
-        if (autoBattle.items.Comfy_Boots.level < 3) {
-          autoBattle.upgrade("Comfy_Boots");
+        if (abOwnedLevel("Comfy_Boots") < 3) {
+          abUpgradeOwned("Comfy_Boots");
         }
-        if (autoBattle.items.Comfy_Boots.level >= 3 && autoBattle.bonuses.Extra_Limbs.level < 2) {
+        if (abOwnedLevel("Comfy_Boots") >= 3 && autoBattle.bonuses.Extra_Limbs.level < 2) {
           ABlevelswitch(8);
           items = ["Fists_of_Goo", "Battery_Stick", "Putrid_Pouch", "Chemistry_Set", "Labcoat"];
           level = [4, 5, 3, 4, 2];
           autoBattle.buyBonus("Extra_Limbs");
         }
-        if (autoBattle.bonuses.Extra_Limbs.level >= 2 && autoBattle.items.Rusty_Dagger.level < 5) {
+        if (autoBattle.bonuses.Extra_Limbs.level >= 2 && abOwnedLevel("Rusty_Dagger") < 5) {
           ABlevelswitch(8);
           items = ["Rusty_Dagger", "Fists_of_Goo", "Battery_Stick", "Putrid_Pouch", "Chemistry_Set", "Labcoat"];
           level = [5, 4, 4, 3, 4, 2];
         }
-        if (autoBattle.items.Rusty_Dagger.level >= 5) {
+        if (abOwnedLevel("Rusty_Dagger") >= 5) {
           ABlevelswitch(9);
           items = ["Rusty_Dagger", "Fists_of_Goo", "Raincoat", "Putrid_Pouch", "Chemistry_Set", "Labcoat"];
           level = [5, 4, 4, 3, 4, 2];
@@ -7226,25 +7496,25 @@
           level = [5, 4, 4, 4, 4, 2];
           ABlevelswitch(10);
         }
-        if (autoBattle.items.Hungering_Mold.owned && autoBattle.items.Hungering_Mold.level < 2) {
+        if (autoBattle.items.Hungering_Mold.owned && abOwnedLevel("Hungering_Mold") < 2) {
           items = ["Rusty_Dagger", "Fists_of_Goo", "Raincoat", "Putrid_Pouch", "Chemistry_Set", "Labcoat"];
           level = [5, 4, 4, 4, 4, 2];
           ABlevelswitch(10);
-          if (autoBattle.items.Putrid_Pouch.level < 4) {
-            autoBattle.upgrade("Putrid_Pouch");
-          } else if (autoBattle.items.Mood_Bracelet.level < 3) {
-            autoBattle.upgrade("Mood_Bracelet");
-          } else if (autoBattle.items.Hungering_Mold.level < 2) {
-            autoBattle.upgrade("Hungering_Mold");
+          if (abOwnedLevel("Putrid_Pouch") < 4) {
+            abUpgradeOwned("Putrid_Pouch");
+          } else if (abOwnedLevel("Mood_Bracelet") < 3) {
+            abUpgradeOwned("Mood_Bracelet");
+          } else if (abOwnedLevel("Hungering_Mold") < 2) {
+            abUpgradeOwned("Hungering_Mold");
           }
         }
-        if (autoBattle.items.Hungering_Mold.level >= 2 && autoBattle.items.Mood_Bracelet.level >= 3 && autoBattle.items.Putrid_Pouch.level >= 4) {
+        if (abOwnedLevel("Hungering_Mold") >= 2 && abOwnedLevel("Mood_Bracelet") >= 3 && abOwnedLevel("Putrid_Pouch") >= 4) {
           contract = "Bad_Medkit";
           items = ["Fists_of_Goo", "Putrid_Pouch", "Chemistry_Set", "Labcoat", "Mood_Bracelet", "Hungering_Mold"];
           level = [4, 4, 4, 2, 3, 2];
           ABlevelswitch(10);
-          if (autoBattle.items.Bad_Medkit.level < 3) {
-            autoBattle.upgrade("Bad_Medkit");
+          if (abOwnedLevel("Bad_Medkit") < 3) {
+            abUpgradeOwned("Bad_Medkit");
           }
         }
         break;
@@ -7273,8 +7543,8 @@
       }
     }
     for (var equip in autoBattle.items) {
-      if (autoBattle.items[equip].level < level[items.indexOf(equip)]) {
-        autoBattle.upgrade(equip);
+      if (abOwnedLevel(equip) < level[items.indexOf(equip)]) {
+        abUpgradeOwned(equip);
       }
     }
     if (contract != "" && !autoBattle.items[contract].owned) {
@@ -17158,11 +17428,12 @@
               elem.textContent = item.name + ": " + item.value[0] + "+";
             else
               elem.textContent = item.name + ": " + item.value.toString();
-          } else if (item.type == "textValue" && item.value.substring !== void 0) {
-            if (item.value.length > 18)
-              elem.textContent = item.name + ": " + item.value.substring(0, 21) + "...";
+          } else if (item.type == "textValue") {
+            var text = item.value === null || item.value === void 0 ? "" : String(item.value);
+            if (text.length > 18)
+              elem.textContent = item.name + ": " + text.substring(0, 21) + "...";
             else
-              elem.textContent = item.name + ": " + item.value.substring(0, 21);
+              elem.textContent = item.name + ": " + text.substring(0, 21);
           } else if (item.value > -1 || item.type == "valueNegative")
             elem.textContent = item.name + ": " + prettify(item.value) + jobRatioSuffix(item.id);
           else
@@ -21392,6 +21663,7 @@
   Object.assign(globalThis, { ...main_loop_exports, ...utils_exports, ...guard_exports, ...time_exports, ...buystate_exports, ...dynprestige_exports, ...breedtimer_exports, ...nature_exports, ...magmite_exports, ...calc_exports, ...equipment_exports, ...buildings_exports, ...jobs_exports, ...upgrades_exports, ...gather_exports, ...heirlooms_exports, ...fight_exports, ...scryer_exports, ...ab_exports, ...MAZ_exports, ...stance_exports, ...maps_exports, ...mapfunctions_exports, ...mapfunctions_amp_exports, ...portal_exports, ...save_backup_exports, ...import_export_exports, ...query_exports, ...other_exports, ...other_praiding_exports, ...settings_engine_exports, ...settings_menu_exports, ...settings_visibility_exports, ...settings_defs_exports, ...settings_boot_exports, ...graphs_exports });
 
   // src/modules/perks.ts
+  var import_fastpriorityqueue = __toESM(require_FastPriorityQueue(), 1);
   globalThis.AutoPerks = {};
   MODULES["perks"] = {};
   MODULES["perks"].showDetails = true;
@@ -21501,6 +21773,20 @@
     AutoPerks.initializePerks();
     AutoPerks.populateDumpPerkList();
   };
+  function restoreDumpSelection($dropdown, idKey, nameKey) {
+    var lastName = localStorage.getItem(nameKey);
+    var lastIndex = localStorage.getItem(idKey);
+    if (lastName != null) {
+      for (var o = 0; o < $dropdown.options.length; o++) {
+        if ($dropdown.options[o].value === lastName) {
+          $dropdown.selectedIndex = o;
+          return;
+        }
+      }
+    }
+    if (lastIndex != null) $dropdown.selectedIndex = Number(lastIndex);
+    else $dropdown.selectedIndex = $dropdown.length - 2;
+  }
   AutoPerks.populateDumpPerkList = function() {
     var $dumpDropdown = byId("dumpPerk");
     if ($dumpDropdown == null) return;
@@ -21510,11 +21796,7 @@
       html += "<option id='" + dumpperks[i].name + "Dump'>" + AutoPerks.capitaliseFirstLetter(dumpperks[i].name) + "</option>";
     html += "<option id='none'>None</option></select>";
     $dumpDropdown.innerHTML = html;
-    var loadLastDump = localStorage.getItem("AutoperkSelectedDumpPresetID");
-    if (loadLastDump != null)
-      $dumpDropdown.selectedIndex = Number(loadLastDump);
-    else
-      $dumpDropdown.selectedIndex = $dumpDropdown.length - 2;
+    restoreDumpSelection($dumpDropdown, "AutoperkSelectedDumpPresetID", "AutoperkSelectedDumpPresetName");
   };
   AutoPerks.saveDumpPerk = function() {
     var $dump = byId("dumpPerk");
@@ -21657,7 +21939,7 @@
   AutoPerks.calculateIncrease = function(perk, level) {
     var increase = 0;
     var value;
-    if (perk.updatedValue != -1) value = perk.updatedValue;
+    if (perk.updatedValue !== null && perk.updatedValue !== void 0) value = perk.updatedValue;
     else value = perk.value;
     if (perk.compounding) increase = perk.baseIncrease;
     else increase = (1 + (level + 1) * perk.baseIncrease) / (1 + level * perk.baseIncrease) - 1;
@@ -21674,7 +21956,7 @@
       return false;
     }
     var perks = AutoPerks.getVariablePerks();
-    var effQueue = new FastPriorityQueue(function(a, b) {
+    var effQueue = new import_fastpriorityqueue.default(function(a, b) {
       return a.efficiency > b.efficiency;
     });
     var mostEff, price, inc;
@@ -21682,7 +21964,7 @@
       price = AutoPerks.calculatePrice(perks[i], 0);
       inc = AutoPerks.calculateIncrease(perks[i], 0);
       perks[i].efficiency = inc / price;
-      if (perks[i].efficiency < 0) {
+      if (!Number.isFinite(perks[i].efficiency) || perks[i].efficiency < 0) {
         debug2("Perk ratios must be positive values.", "perks");
         return false;
       }
@@ -21696,12 +21978,13 @@
     var i = 0;
     function iterateQueue() {
       mostEff = effQueue.poll();
+      if (mostEff === void 0) return;
       price = AutoPerks.calculatePrice(mostEff, mostEff.level);
       inc = AutoPerks.calculateIncrease(mostEff, mostEff.level);
       mostEff.efficiency = inc / price;
       i++;
     }
-    for (iterateQueue(); price <= helium; iterateQueue()) {
+    for (iterateQueue(); mostEff !== void 0 && price <= helium; iterateQueue()) {
       if (mostEff.level < mostEff.max) {
         helium -= price;
         mostEff.level++;
@@ -21756,14 +22039,14 @@
       return false;
     }
     var perks = AutoPerks.getVariablePerks();
-    var effQueue = new FastPriorityQueue(function(a, b) {
+    var effQueue = new import_fastpriorityqueue.default(function(a, b) {
       return a.efficiency > b.efficiency;
     });
     for (var i in perks) {
       var price = AutoPerks.calculatePrice(perks[i], 0);
       var inc = AutoPerks.calculateIncrease(perks[i], 0);
       perks[i].efficiency = inc / price;
-      if (perks[i].efficiency < 0) {
+      if (!Number.isFinite(perks[i].efficiency) || perks[i].efficiency < 0) {
         debug2("Perk ratios must be positive values.", "perks");
         return false;
       }
@@ -21779,12 +22062,13 @@
     var i = 0;
     function iterateQueue() {
       mostEff = effQueue.poll();
+      if (mostEff === void 0) return;
       price = AutoPerks.calculatePrice(mostEff, mostEff.level);
       inc = AutoPerks.calculateIncrease(mostEff, mostEff.level);
       mostEff.efficiency = inc / price;
       i++;
     }
-    for (iterateQueue(); price <= helium; iterateQueue()) {
+    for (iterateQueue(); mostEff !== void 0 && price <= helium; iterateQueue()) {
       if (mostEff.level < mostEff.max) {
         var t2 = mostEff.name.endsWith("_II");
         if (t2) {
@@ -21939,7 +22223,7 @@
     this.exprate = 1.3;
     this.fixed = false;
     this.compounding = compounding;
-    this.updatedValue = -1;
+    this.updatedValue = null;
     this.baseIncrease = baseIncrease;
     this.efficiency = -1;
     this.max = max || Number.MAX_VALUE;
@@ -21968,7 +22252,7 @@
     this.value = parent.value.map(function(me) {
       return me * this.relativeIncrease;
     });
-    this.updatedValue = -1;
+    this.updatedValue = null;
     this.efficiency = -1;
     this.max = max || Number.MAX_VALUE;
     this.level = level || 0;
@@ -22171,11 +22455,7 @@
       html += "<option id='" + dumpperks[i].name + "Dump'>" + RAutoPerks.capitaliseFirstLetter(dumpperks[i].name) + "</option>";
     html += "<option id='none'>None</option></select>";
     $dumpDropdown.innerHTML = html;
-    var loadLastDump = localStorage.getItem("RAutoperkSelectedDumpPresetID");
-    if (loadLastDump != null)
-      $dumpDropdown.selectedIndex = Number(loadLastDump);
-    else
-      $dumpDropdown.selectedIndex = $dumpDropdown.length - 2;
+    restoreDumpSelection($dumpDropdown, "RAutoperkSelectedDumpPresetID", "RAutoperkSelectedDumpPresetName");
   };
   RAutoPerks.saveDumpPerk = function() {
     var $dump = byId("RdumpPerk");
@@ -22293,6 +22573,7 @@
       if (game.portal[item].radLocked) continue;
       var portUpgrade = game.portal[item];
       if (typeof portUpgrade.radLevel === "undefined") continue;
+      if (typeof RAutoPerks.getPerkByName(item) === "undefined") continue;
       respecMax += portUpgrade.radSpent;
     }
     return respecMax;
@@ -22317,7 +22598,7 @@
   RAutoPerks.calculateIncrease = function(perk, level) {
     var increase = 0;
     var value;
-    if (perk.updatedValue != -1) value = perk.updatedValue;
+    if (perk.updatedValue !== null && perk.updatedValue !== void 0) value = perk.updatedValue;
     else value = perk.value;
     if (perk.compounding) increase = perk.baseIncrease;
     else increase = (1 + (level + 1) * perk.baseIncrease) / (1 + level * perk.baseIncrease) - 1;
@@ -22334,7 +22615,7 @@
       return false;
     }
     var perks = RAutoPerks.getVariablePerks();
-    var effQueue = new FastPriorityQueue(function(a, b) {
+    var effQueue = new import_fastpriorityqueue.default(function(a, b) {
       return a.efficiency > b.efficiency;
     });
     var mostEff, price, inc;
@@ -22342,7 +22623,7 @@
       price = RAutoPerks.calculatePrice(perks[i], 0);
       inc = RAutoPerks.calculateIncrease(perks[i], 0);
       perks[i].efficiency = inc / price;
-      if (perks[i].efficiency < 0) {
+      if (!Number.isFinite(perks[i].efficiency) || perks[i].efficiency < 0) {
         debug2("Perk ratios must be positive values.", "perks");
         return false;
       }
@@ -22356,12 +22637,13 @@
     var i = 0;
     function iterateQueue() {
       mostEff = effQueue.poll();
+      if (mostEff === void 0) return;
       price = RAutoPerks.calculatePrice(mostEff, mostEff.radLevel);
       inc = RAutoPerks.calculateIncrease(mostEff, mostEff.radLevel);
       mostEff.efficiency = inc / price;
       i++;
     }
-    for (iterateQueue(); price <= radon; iterateQueue()) {
+    for (iterateQueue(); mostEff !== void 0 && price <= radon; iterateQueue()) {
       if (mostEff.radLevel < mostEff.max) {
         radon -= price;
         mostEff.radLevel++;
@@ -22416,14 +22698,14 @@
       return false;
     }
     var perks = RAutoPerks.getVariablePerks();
-    var effQueue = new FastPriorityQueue(function(a, b) {
+    var effQueue = new import_fastpriorityqueue.default(function(a, b) {
       return a.efficiency > b.efficiency;
     });
     for (var i in perks) {
       var price = RAutoPerks.calculatePrice(perks[i], 0);
       var inc = RAutoPerks.calculateIncrease(perks[i], 0);
       perks[i].efficiency = inc / price;
-      if (perks[i].efficiency < 0) {
+      if (!Number.isFinite(perks[i].efficiency) || perks[i].efficiency < 0) {
         debug2("Perk ratios must be positive values.", "perks");
         return false;
       }
@@ -22439,12 +22721,13 @@
     var i = 0;
     function iterateQueue() {
       mostEff = effQueue.poll();
+      if (mostEff === void 0) return;
       price = RAutoPerks.calculatePrice(mostEff, mostEff.radLevel);
       inc = RAutoPerks.calculateIncrease(mostEff, mostEff.radLevel);
       mostEff.efficiency = inc / price;
       i++;
     }
-    for (iterateQueue(); price <= radon; iterateQueue()) {
+    for (iterateQueue(); mostEff !== void 0 && price <= radon; iterateQueue()) {
       if (mostEff.radLevel < mostEff.max) {
         var t2 = mostEff.name.endsWith("_II");
         if (t2) {
@@ -22504,8 +22787,15 @@
       respecPerks();
     }
     if (game.global.respecActive) {
+      var unmodelled = RAutoPerks.getUnmodelledPerks();
       clearPerks();
       var preBuyAmt3 = game.global.buyAmt;
+      for (var u in unmodelled) {
+        game.global.buyAmt = unmodelled[u].radLevel;
+        if (MODULES["perks"].RshowDetails)
+          debug2("RAutoPerks-Respec Restoring unmanaged perk: " + unmodelled[u].name + " " + unmodelled[u].radLevel, "perks");
+        buyPortalUpgrade(unmodelled[u].name);
+      }
       for (var i in perks) {
         var capitalized = RAutoPerks.capitaliseFirstLetter(perks[i].name);
         game.global.buyAmt = perks[i].radLevel;
@@ -22599,7 +22889,7 @@
     this.exprate = 1.3;
     this.fixed = false;
     this.compounding = compounding;
-    this.updatedValue = -1;
+    this.updatedValue = null;
     this.baseIncrease = baseIncrease;
     this.efficiency = -1;
     this.max = max || Number.MAX_VALUE;
@@ -22715,6 +23005,17 @@
       perks.push(ownedPerk);
     }
     return perks;
+  };
+  RAutoPerks.getUnmodelledPerks = function() {
+    var unmodelled = [];
+    for (var name in game.portal) {
+      var perk = game.portal[name];
+      if (perk.radLocked || typeof perk.radLevel === "undefined") continue;
+      if (typeof RAutoPerks.getPerkByName(name) !== "undefined") continue;
+      if (!perk.radLevel) continue;
+      unmodelled.push({ name, radLevel: perk.radLevel });
+    }
+    return unmodelled;
   };
   if (game.global.universe == 2) {
     RAutoPerks.ensureGUI();

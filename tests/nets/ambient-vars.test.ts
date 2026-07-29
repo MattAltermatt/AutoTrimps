@@ -255,11 +255,17 @@ describe('at-legacy.d.ts — every ambient var must have a writer in the shipped
     // #133 — AutoTrimps2.js is now src/modules/main-loop.ts (a normal src module in the corpus). It still
     // donates the base-state writers (globalThis.MODULES = {}, MODULESdefault, autoTrimpSettings, …).
     expect(CORPUS).toContain(join('src', 'modules', 'main-loop.ts'))
-    // FastPriorityQueue.js IS bundled as of #75 (it was a third-party <script> fetch before), so it now
-    // legitimately donates a writer. The corpus is derived from the build MANIFEST rather than hardcoded
-    // precisely so this kind of change lands in ONE place — the previous hardcoded list asserted the
-    // opposite and went stale the moment the file was vendored.
-    expect(CORPUS).toContain(join('legacy', 'FastPriorityQueue.js'))
+    // #75 bundled FastPriorityQueue.js, so it joined the corpus and donated a writer for the ambient
+    // `FastPriorityQueue`. #171 then removed it entirely: it is an npm dependency imported by perks.ts,
+    // so the name is a module binding rather than a bare-name global, and its ambient decl is deleted
+    // from at-legacy.d.ts. The corpus is derived from the build MANIFEST rather than hardcoded exactly
+    // so both of those transitions land in ONE place.
+    //
+    // The load-bearing assertion is now the NEGATIVE one: `FastPriorityQueue` must no longer be a
+    // declared ambient at all. If someone re-adds the decl without a writer, the #71 net below catches
+    // it; if they re-add both, this fails first and says why.
+    expect(CORPUS.filter((f) => f.startsWith('legacy'))).toEqual([])
+    expect(declared).not.toContain('FastPriorityQueue')
 
     // Pin one writer of each mechanism, so a regression in any single writer-detection arm shows up
     // HERE (as a precise failure) instead of downstream (as a flood of phantom "bugs").

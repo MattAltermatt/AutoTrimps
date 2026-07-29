@@ -1149,11 +1149,23 @@ export function updateCustomButtons() {
                         elem.textContent = item.name + ': ' + item.value[0] + '+';
                     else
                         elem.textContent = item.name + ': ' + item.value.toString();
-                } else if (item.type == 'textValue' && item.value.substring !== undefined) {
-                    if (item.value.length > 18)
-                        elem.textContent = item.name + ': ' + item.value.substring(0, 21) + '...';
+                } else if (item.type == 'textValue') {
+                    // #190 — this used to require `item.value.substring !== undefined`, i.e. it
+                    // rendered a textValue only when the stored value was really a string. ab.ts
+                    // stored a nested ARRAY into RABfarmstring, which has no `.substring`, so the
+                    // branch was skipped; the next test coerced the array to a string, `> -1` gave
+                    // NaN, and execution fell through to the infinity face — which in every other
+                    // AT control means "no limit / unset" (the multiValue branch just above uses
+                    // that same glyph for the -1 sentinel). The value the RABfarmstring tooltip
+                    // tells the player to share was invisible, and the control actively claimed it
+                    // was unset. ab.ts stores a string now, but a veteran's localStorage still
+                    // holds the old array, so render whatever is there rather than trusting the
+                    // type tag to have been honoured.
+                    var text = (item.value === null || item.value === undefined) ? '' : String(item.value);
+                    if (text.length > 18)
+                        elem.textContent = item.name + ': ' + text.substring(0, 21) + '...';
                     else
-                        elem.textContent = item.name + ': ' + item.value.substring(0, 21);
+                        elem.textContent = item.name + ': ' + text.substring(0, 21);
                 } else if (item.value > -1 || item.type == 'valueNegative')
                     elem.textContent = item.name + ': ' + prettify(item.value) + jobRatioSuffix(item.id);
                 else

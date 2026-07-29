@@ -37,9 +37,11 @@ not a gate.
 
 The port is **complete** as of **v6.0.0** (2026-07-15): every AutoTrimps-authored file is strict
 TypeScript in `src/modules/`, including the mainLoop/loader (`src/modules/main-loop.ts`) and the
-Graphs dashboard (`src/modules/graphs/`, now Apache ECharts). The only file left in `legacy/` is
-the third-party vendored `FastPriorityQueue.js`, which the build concatenates after the TypeScript
-bundle. Every change is still diffed against the recorded behavioral oracle.
+Graphs dashboard (`src/modules/graphs/`, now Apache ECharts). As of #171 `legacy/` is **gone**: its
+last occupant, a hand-edited copy of the third-party `FastPriorityQueue.js`, is now the maintained
+`fastpriorityqueue` npm package, pinned exact and bundled by esbuild — so the build is a single
+TypeScript bundle with no concat step. Every change is still diffed against the recorded behavioral
+oracle.
 
 
 

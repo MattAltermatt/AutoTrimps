@@ -126,9 +126,9 @@ declare global {
   // numbers (.selectedIndex/ratioSet) at 4 sites — runtime-benign localStorage coercion,
   // type-dishonest. Latent bug tracked in #32; kept loose here so callers still compile.
   function safeSetItems(...args: any[]): any
-  // Remote-injected priority queue (legacy/FastPriorityQueue.js, loaded via script tag) —
-  // `new FastPriorityQueue(cmp)` in perks.ts; `any` covers construct + poll/add/size.
-  var FastPriorityQueue: any
+  // #171: `var FastPriorityQueue: any` used to sit here. perks.ts imports the npm package directly
+  // now, so it is an ordinary module binding with the package's own types — not a bare-name seam.
+  // (The comment it carried was also stale: it claimed a remote <script> tag, which #75 removed.)
 
   // Shared combat-base globals (AutoTrimps2 vars). stance.ts writes them; calc.ts reads.
   var baseDamage: number

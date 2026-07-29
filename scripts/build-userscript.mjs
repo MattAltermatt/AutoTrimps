@@ -5,24 +5,24 @@ import { dirname, resolve } from 'node:path'
 import { build as esbuild } from 'esbuild'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const LEGACY = resolve(ROOT, 'legacy')
 
-// Concat manifest — the legacy files still bundled, in load order. As of #133 this is a SINGLE
-// third-party file: AutoTrimps2.js (the last own-code legacy file) is now src/modules/main-loop.ts,
-// published via the bridge like every other converted module. legacy/ holds no AutoTrimps-authored
-// JavaScript any more — the strangler is complete.
+// Concat manifest — the legacy files still bundled, in load order. It is EMPTY, and `legacy/` no
+// longer exists. The build is now exactly: header + version global + the esbuild IIFE of src/main.ts.
+//
 // ✅ ALL legacy/modules/*.js → src/modules/*.ts (Phase 2); SettingsGUI.js → settings-{engine,menu,
 //    visibility,defs,boot}.ts (#20); Graphs.js → src/modules/graphs/* (#131, CDN-injects ECharts from
 //    render.ts, not bundled). legacy/highcharts.js is dead (never loaded) — deleted in #134.
-// #75 SECURITY: FastPriorityQueue.js is vendored. perks.ts used to inject it from
-// `https://Zorn192.github.io/AutoTrimps/FastPriorityQueue.js` — executable third-party JS from an
-// unpinned origin, no integrity hash, in every user's game. The file was already sitting in legacy/;
-// it just was never bundled. Emitted AFTER the src IIFE: all four `new FastPriorityQueue(...)` sites are
-// inside functions called from mainLoop, so the global only has to exist by first TICK, not by
-// module-eval. tests/nets/supply-chain.test.ts guards the class.
-export const MANIFEST = [
-  'FastPriorityQueue.js',
-]
+//    AutoTrimps2.js → src/modules/main-loop.ts (#133).
+// #75/#171 SECURITY: the last entry was the vendored FastPriorityQueue.js. #75 stopped perks.ts
+//    injecting it from `https://Zorn192.github.io/AutoTrimps/FastPriorityQueue.js` — executable
+//    third-party JS from an unpinned origin, no integrity hash, in every user's game — by bundling
+//    the copy already sitting in legacy/. #171 then found that copy was never a clean vendor drop:
+//    the fork hand-edited upstream in 2016 and broke poll(), which froze the browser mid-portal.
+//    It is now the maintained `fastpriorityqueue` package, pinned exact in package.json and
+//    integrity-locked in package-lock.json, imported by perks.ts and bundled by esbuild — so it
+//    lands INSIDE the src IIFE and needs no concat entry, no load-order rule, and no ASI guard.
+//    tests/nets/supply-chain.test.ts still fails on any new executable remote origin.
+export const MANIFEST = []
 
 // Monotonic version: base package.json version locally, `<version>.<run>` in CI so
 // Tampermonkey detects updates (higher run number = higher version, comparable per segment).
@@ -90,15 +90,6 @@ export function landingHtml() {
 `
 }
 
-async function readModule(rel) {
-  const src = await readFile(resolve(LEGACY, rel), 'utf8')
-  // Leading `;` terminates any dangling expression from the previous chunk so a
-  // file that doesn't end in a semicolon can't ASI-merge with the next one's
-  // leading `(`/`[` (the original loaded each as a separate <script>, which
-  // isolated this; concatenation into one file does not).
-  return `\n;\n/* ===== legacy/${rel} ===== */\n${src}\n`
-}
-
 export async function bundleSrc() {
   const res = await esbuild({
     entryPoints: [resolve(ROOT, 'src/main.ts')],
@@ -112,20 +103,17 @@ export async function bundleSrc() {
 
 export async function buildUserscript() {
   const pkg = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8'))
-  // #133 — the src IIFE is now emitted FIRST (after the version global), then the remaining legacy
-  // (FastPriorityQueue.js only). AutoTrimps2.js used to be emitted before the src bundle because it
-  // "defined the base globals" that still-legacy modules read at load time. That file is now
-  // src/modules/main-loop.ts, imported first in legacy-bridge.ts, so those globals are seeded inside
-  // the IIFE before any consumer. Nothing bundled after the IIFE calls a converted fn at load time
-  // (FastPriorityQueue is a bare class; its `new` sites are all inside tick-time functions).
-  const legacyJs = (await Promise.all(MANIFEST.map(readModule))).join('')
+  // #133/#171 — there is no legacy chunk left to order against. The src IIFE used to be emitted
+  // first (after the version global) and the remaining legacy concat second; with FastPriorityQueue
+  // now imported as an npm package and bundled INTO the IIFE, the emit is just header + version
+  // global + IIFE. tests/build-userscript.test.ts pins that no `/* ===== legacy/` chunk returns.
   const srcIife = await bundleSrc()
   const version = resolveVersion(pkg.version, process.env.GITHUB_RUN_NUMBER)
   // Expose the monotonic build version to the bundle so main-loop.ts stamps it into ATversion —
   // it then shows in the on-load message log ("AutoTrimps v<x> Loaded!") and the update-notice title,
   // giving the user a single incrementing on-screen version to confirm they're on the latest.
   const versionGlobal = `var __AT_BUILD_VERSION__ = ${JSON.stringify(version)};\n`
-  return `${header(version)}${versionGlobal}\n;\n/* ===== src/main.ts (bundled — converted modules incl. former AutoTrimps2.js) ===== */\n${srcIife}\n;\n${legacyJs}\n`
+  return `${header(version)}${versionGlobal}\n;\n/* ===== src/main.ts (bundled — converted modules incl. former AutoTrimps2.js) ===== */\n${srcIife}\n`
 }
 
 async function writeBuild() {
@@ -141,10 +129,11 @@ async function writeBuild() {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   await writeBuild()
   if (process.argv.includes('--watch')) {
-    console.log('[build] watching legacy/ and src/ ...')
+    console.log('[build] watching src/ ...')
     let t
     const rebuild = () => { clearTimeout(t); t = setTimeout(() => writeBuild().catch(console.error), 150) }
-    watch(LEGACY, { recursive: true }, rebuild)
+    // #171: legacy/ was watched here too. It no longer exists, and `watch()` on a missing directory
+    // THROWS — so leaving this line would have broken `npm run build:watch` outright.
     watch(resolve(ROOT, 'src'), { recursive: true }, rebuild)
   }
 }

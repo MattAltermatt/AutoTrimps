@@ -10,6 +10,24 @@
 // pre-existing legacy bug is preserved verbatim: the U2 section declares Rhead/Rqueuescript but
 // then appends via head/queuescript (the U1 globals) — unchanged, not a regression.
 import { getPageSetting, debug } from './utils'
+// #171: was a bare global supplied by the concatenated `legacy/FastPriorityQueue.js`. That file was
+// NOT a clean vendor drop — `git log --follow` shows the fork hand-adapted upstream in 2016 to strip
+// its CommonJS tail, and in the same edit "hardened" poll()'s else-branch into
+// `else if (this.size == 0) --this.size`, a construct that appears in ZERO upstream commits. The
+// result inverted both edge cases: at size 1 it returned the top element WITHOUT decrementing, so
+// the queue never drained and `isEmpty()` was permanently false; at size 0 it returned a stale
+// element and drove `size` to -1, after which `add` writes to `array[-1]` and silently drops it.
+//
+// Upstream shipped the real fix (an early `if (this.size == 0) return undefined;`) in Feb 2017 and
+// the fork was never on the update path. So this is now the maintained package, pinned exact and
+// integrity-locked, bundled by esbuild — which also resolves its CJS export at build time, so
+// nothing needs wrapping and no byte of it is fork-local any more.
+//
+// Importing it for its TYPE matters as much as for its code: the package declares
+// `poll: () => T | undefined`, and this module is strict with no @ts-nocheck, so every poll site
+// must handle exhaustion or fail to compile. Under the old ambient `var FastPriorityQueue: any`
+// that hazard was invisible — see the four `iterateQueue()` guards below.
+import FastPriorityQueue from 'fastpriorityqueue'
 
 globalThis.AutoPerks = {};
 MODULES["perks"] = {};
@@ -162,6 +180,43 @@ AutoPerks.displayGUI = function() {
     AutoPerks.populateDumpPerkList();
 }
 
+/**
+ * #172 — restore the dump-perk selection by NAME, not by position.
+ *
+ * The option list is built from `getVariablePerks()`, which filters on `game.portal[X].locked`, so
+ * its LENGTH AND ORDER change as perks unlock. Restoring a bare `selectedIndex` therefore silently
+ * re-points at a different perk the moment anything unlocks earlier in `perkHolder`. Worked example
+ * from the finding, U1 order [looting … resourceful, overkill, cunning, curious, classy, toughness_II,
+ * power_II, motivation_II, carpentry_II, looting_II]: with Overkill locked, `looting_II` sits at index
+ * 14 and that is what gets saved. Once Overkill unlocks it is inserted at position 10, everything
+ * after shifts by one, and index 14 now resolves to `carpentry_II` — so `spendHelium` pours ALL
+ * leftover helium into the wrong perk. `populateDumpPerkList` runs exactly once per page load (from
+ * displayGUI), so nothing re-derives it afterwards and the user gets no signal at all.
+ *
+ * `saveDumpPerk` was ALREADY writing the name alongside the index; it was simply never read back.
+ * The index survives only as a fallback for a store that predates the name being written.
+ */
+function restoreDumpSelection($dropdown: HTMLSelectElement, idKey: string, nameKey: string): void {
+    var lastName = localStorage.getItem(nameKey);
+    var lastIndex = localStorage.getItem(idKey);
+
+    if (lastName != null) {
+        for (var o = 0; o < $dropdown.options.length; o++) {
+            // The options carry no `value` attribute, so `.value` is the option's TEXT — which is
+            // exactly what saveDumpPerk persisted from `$dump.value`.
+            if ($dropdown.options[o]!.value === lastName) {
+                $dropdown.selectedIndex = o;
+                return;
+            }
+        }
+    }
+    // Name absent or no longer in the list (the perk re-locked, e.g. a universe switch). The index is
+    // a guess either way at this point, but it is the pre-existing behaviour and the only information
+    // left, so prefer it over silently resetting the user's choice.
+    if (lastIndex != null) $dropdown.selectedIndex = Number(lastIndex);
+    else $dropdown.selectedIndex = $dropdown.length - 2;
+}
+
 AutoPerks.populateDumpPerkList = function() {
     var $dumpDropdown = byId<HTMLSelectElement>('dumpPerk');
     if ($dumpDropdown == null) return;
@@ -171,11 +226,7 @@ AutoPerks.populateDumpPerkList = function() {
         html += "<option id='"+dumpperks[i].name+"Dump'>"+AutoPerks.capitaliseFirstLetter(dumpperks[i].name)+"</option>"
     html += "<option id='none'>None</option></select>";
     $dumpDropdown.innerHTML = html;
-    var loadLastDump = localStorage.getItem('AutoperkSelectedDumpPresetID');
-    if (loadLastDump != null)
-        $dumpDropdown.selectedIndex = Number(loadLastDump);
-    else
-        $dumpDropdown.selectedIndex = $dumpDropdown.length - 2;
+    restoreDumpSelection($dumpDropdown, 'AutoperkSelectedDumpPresetID', 'AutoperkSelectedDumpPresetName');
 }
 
 AutoPerks.saveDumpPerk = function() {
@@ -349,7 +400,14 @@ AutoPerks.calculateIncrease = function(perk: any, level: any) {
     var increase = 0;
     var value;
 
-    if(perk.updatedValue != -1) value = perk.updatedValue;
+    // #189: was `!= -1`. A user-typed -1 matched the "never set" sentinel and fell through to
+    // `perk.value` — the preset ARRAY for a VariablePerk — so `increase / baseIncrease * <array>`
+    // coerced to NaN. The validation below could not catch it either: `NaN < 0` is false, while
+    // `NaN != 0` is true, so the perk was enqueued with a NaN priority and the heap comparator
+    // (`a.efficiency > b.efficiency`) is false in BOTH directions for NaN — its position, and so
+    // whether it received any helium at all, was undefined. Now -1 is just a negative ratio and is
+    // rejected by the same guard that rejects -2.
+    if(perk.updatedValue !== null && perk.updatedValue !== undefined) value = perk.updatedValue;
     else value = perk.value;
 
     if(perk.compounding) increase = perk.baseIncrease;
@@ -377,7 +435,11 @@ AutoPerks.spendHelium = function(helium: any) {
         price = AutoPerks.calculatePrice(perks[i], 0);
         inc = AutoPerks.calculateIncrease(perks[i], 0);
         perks[i].efficiency = inc/price;
-        if(perks[i].efficiency < 0) {
+        // #189: `< 0` alone let NaN and ±Infinity through — `NaN < 0` is false, and the very next
+        // test (`efficiency != 0`) is TRUE for NaN, so an unparseable or blank ratio box enqueued a
+        // perk whose heap position was undefined. A ratio that is not a finite, non-negative number
+        // is not a ratio; it takes the same path as -2 and says so.
+        if(!Number.isFinite(perks[i].efficiency) || perks[i].efficiency < 0) {
             debug("Perk ratios must be positive values.","perks");
             return false;
         }
@@ -393,13 +455,19 @@ AutoPerks.spendHelium = function(helium: any) {
     var i: any=0;
     function iterateQueue() {
         mostEff = effQueue.poll();
+        // #171: the queue can genuinely DRAIN now — the old vendored poll() handed back the same
+        // maxed perk forever instead, so this loop, which drops a perk only by NOT re-adding it,
+        // spun on a no-op body and froze the tab mid-portal. An exhausted queue means "no next
+        // purchase"; leave mostEff undefined and let the loop condition end the pass. Without this
+        // the fix merely converts the hang into a TypeError on mostEff.level.
+        if (mostEff === undefined) return;
         price = AutoPerks.calculatePrice(mostEff, mostEff.level); // Price of *next* purchase.
         inc = AutoPerks.calculateIncrease(mostEff, mostEff.level);
         mostEff.efficiency = inc / price;
         // @ts-ignore
         i++;
     }
-    for (iterateQueue() ; price <= helium ; iterateQueue() ) {
+    for (iterateQueue() ; mostEff !== undefined && price <= helium ; iterateQueue() ) {
         if(mostEff.level < mostEff.max) {
             helium -= price;
             mostEff.level++;
@@ -464,7 +532,11 @@ AutoPerks.spendHelium2 = function(helium: any) {
         var price = AutoPerks.calculatePrice(perks[i], 0);
         var inc = AutoPerks.calculateIncrease(perks[i], 0);
         perks[i].efficiency = inc/price;
-        if(perks[i].efficiency < 0) {
+        // #189: `< 0` alone let NaN and ±Infinity through — `NaN < 0` is false, and the very next
+        // test (`efficiency != 0`) is TRUE for NaN, so an unparseable or blank ratio box enqueued a
+        // perk whose heap position was undefined. A ratio that is not a finite, non-negative number
+        // is not a ratio; it takes the same path as -2 and says so.
+        if(!Number.isFinite(perks[i].efficiency) || perks[i].efficiency < 0) {
             debug("Perk ratios must be positive values.","perks");
             return false;
         }
@@ -482,13 +554,19 @@ AutoPerks.spendHelium2 = function(helium: any) {
     var i: any=0;
     function iterateQueue() {
         mostEff = effQueue.poll();
+        // #171: the queue can genuinely DRAIN now — the old vendored poll() handed back the same
+        // maxed perk forever instead, so this loop, which drops a perk only by NOT re-adding it,
+        // spun on a no-op body and froze the tab mid-portal. An exhausted queue means "no next
+        // purchase"; leave mostEff undefined and let the loop condition end the pass. Without this
+        // the fix merely converts the hang into a TypeError on mostEff.level.
+        if (mostEff === undefined) return;
         price = AutoPerks.calculatePrice(mostEff, mostEff.level);
         inc = AutoPerks.calculateIncrease(mostEff, mostEff.level);
         mostEff.efficiency = inc / price;
         // @ts-ignore
         i++;
     }
-    for (iterateQueue() ; price <= helium ; iterateQueue() ) {
+    for (iterateQueue() ; mostEff !== undefined && price <= helium ; iterateQueue() ) {
         if(mostEff.level < mostEff.max) {
             var t2 = mostEff.name.endsWith("_II");
             if (t2) {
@@ -660,7 +738,11 @@ AutoPerks.VariablePerk = function(name: any, base: any, compounding: any, value:
     this.exprate = 1.3;
     this.fixed = false;
     this.compounding = compounding;
-    this.updatedValue = -1;
+    // #189: was `-1`, which COLLIDED with a ratio a user can legitimately type. AT uses -1 as its
+    // "unset" convention everywhere else, so typing it here is natural — and it silently meant "no
+    // ratio set", falling back to `perk.value`, the 11-element preset ARRAY. `null` cannot be typed
+    // into a number box, so the sentinel and the value space no longer overlap.
+    this.updatedValue = null;
     this.baseIncrease = baseIncrease;
     this.efficiency = -1;
     this.max = max || Number.MAX_VALUE;
@@ -688,7 +770,11 @@ AutoPerks.ArithmeticPerk = function(name: any, base: any, increase: any, baseInc
     this.parent = parent;
     this.relativeIncrease = parent.baseIncrease / baseIncrease;
     this.value = parent.value.map(function(this: any, me: any) { return me * this.relativeIncrease; });
-    this.updatedValue = -1;
+    // #189: was `-1`, which COLLIDED with a ratio a user can legitimately type. AT uses -1 as its
+    // "unset" convention everywhere else, so typing it here is natural — and it silently meant "no
+    // ratio set", falling back to `perk.value`, the 11-element preset ARRAY. `null` cannot be typed
+    // into a number box, so the sentinel and the value space no longer overlap.
+    this.updatedValue = null;
     this.efficiency = -1;
     this.max = max || Number.MAX_VALUE;
     this.level = level || 0;
@@ -928,11 +1014,8 @@ RAutoPerks.populateDumpPerkList = function() {
         html += "<option id='"+dumpperks[i].name+"Dump'>"+RAutoPerks.capitaliseFirstLetter(dumpperks[i].name)+"</option>"
     html += "<option id='none'>None</option></select>";
     $dumpDropdown.innerHTML = html;
-    var loadLastDump = localStorage.getItem('RAutoperkSelectedDumpPresetID');
-    if (loadLastDump != null)
-        $dumpDropdown.selectedIndex = Number(loadLastDump);
-    else
-        $dumpDropdown.selectedIndex = $dumpDropdown.length - 2;
+    // #172: same positional-index defect as the U1 twin above — see restoreDumpSelection.
+    restoreDumpSelection($dumpDropdown, 'RAutoperkSelectedDumpPresetID', 'RAutoperkSelectedDumpPresetName');
 };
 
 RAutoPerks.saveDumpPerk = function() {
@@ -1066,6 +1149,13 @@ RAutoPerks.getRadon = function() {
         if (game.portal[item].radLocked) continue;
         var portUpgrade = game.portal[item];
         if (typeof portUpgrade.radLevel === 'undefined') continue;
+        // #163: only radon AT will actually re-spend belongs in the budget. This used to add the
+        // radSpent of EVERY unlocked perk, including the ones RAutoPerks has no model for
+        // (Masterfulness, Smithology, Expansion) — so even without a respec AT over-planned by
+        // exactly that amount and the tail purchases failed silently inside buyPortalUpgrade's
+        // `canSpend >= price` check. Those perks are now restored to their prior level after a
+        // respec, so their radon is committed, not available.
+        if (typeof RAutoPerks.getPerkByName(item) === 'undefined') continue;
         respecMax += portUpgrade.radSpent;
     }
     return respecMax;
@@ -1092,7 +1182,14 @@ RAutoPerks.calculateIncrease = function(perk: any, level: any) {
     var increase = 0;
     var value;
 
-    if(perk.updatedValue != -1) value = perk.updatedValue;
+    // #189: was `!= -1`. A user-typed -1 matched the "never set" sentinel and fell through to
+    // `perk.value` — the preset ARRAY for a VariablePerk — so `increase / baseIncrease * <array>`
+    // coerced to NaN. The validation below could not catch it either: `NaN < 0` is false, while
+    // `NaN != 0` is true, so the perk was enqueued with a NaN priority and the heap comparator
+    // (`a.efficiency > b.efficiency`) is false in BOTH directions for NaN — its position, and so
+    // whether it received any helium at all, was undefined. Now -1 is just a negative ratio and is
+    // rejected by the same guard that rejects -2.
+    if(perk.updatedValue !== null && perk.updatedValue !== undefined) value = perk.updatedValue;
     else value = perk.value;
 
     if(perk.compounding) increase = perk.baseIncrease;
@@ -1120,7 +1217,11 @@ RAutoPerks.spendRadon = function(radon: any) {
         price = RAutoPerks.calculatePrice(perks[i], 0);
         inc = RAutoPerks.calculateIncrease(perks[i], 0);
         perks[i].efficiency = inc/price;
-        if(perks[i].efficiency < 0) {
+        // #189: `< 0` alone let NaN and ±Infinity through — `NaN < 0` is false, and the very next
+        // test (`efficiency != 0`) is TRUE for NaN, so an unparseable or blank ratio box enqueued a
+        // perk whose heap position was undefined. A ratio that is not a finite, non-negative number
+        // is not a ratio; it takes the same path as -2 and says so.
+        if(!Number.isFinite(perks[i].efficiency) || perks[i].efficiency < 0) {
             debug("Perk ratios must be positive values.","perks");
             return false;
         }
@@ -1136,13 +1237,19 @@ RAutoPerks.spendRadon = function(radon: any) {
     var i: any=0;
     function iterateQueue() {
         mostEff = effQueue.poll();
+        // #171: the queue can genuinely DRAIN now — the old vendored poll() handed back the same
+        // maxed perk forever instead, so this loop, which drops a perk only by NOT re-adding it,
+        // spun on a no-op body and froze the tab mid-portal. An exhausted queue means "no next
+        // purchase"; leave mostEff undefined and let the loop condition end the pass. Without this
+        // the fix merely converts the hang into a TypeError on mostEff.level.
+        if (mostEff === undefined) return;
         price = RAutoPerks.calculatePrice(mostEff, mostEff.radLevel);
         inc = RAutoPerks.calculateIncrease(mostEff, mostEff.radLevel);
         mostEff.efficiency = inc / price;
         // @ts-ignore
         i++;
     }
-    for (iterateQueue() ; price <= radon ; iterateQueue() ) {
+    for (iterateQueue() ; mostEff !== undefined && price <= radon ; iterateQueue() ) {
         if(mostEff.radLevel < mostEff.max) {
             radon -= price;
             mostEff.radLevel++;
@@ -1207,7 +1314,11 @@ RAutoPerks.spendRadon2 = function(radon: any) {
         var price = RAutoPerks.calculatePrice(perks[i], 0);
         var inc = RAutoPerks.calculateIncrease(perks[i], 0);
         perks[i].efficiency = inc/price;
-        if(perks[i].efficiency < 0) {
+        // #189: `< 0` alone let NaN and ±Infinity through — `NaN < 0` is false, and the very next
+        // test (`efficiency != 0`) is TRUE for NaN, so an unparseable or blank ratio box enqueued a
+        // perk whose heap position was undefined. A ratio that is not a finite, non-negative number
+        // is not a ratio; it takes the same path as -2 and says so.
+        if(!Number.isFinite(perks[i].efficiency) || perks[i].efficiency < 0) {
             debug("Perk ratios must be positive values.","perks");
             return false;
         }
@@ -1225,13 +1336,19 @@ RAutoPerks.spendRadon2 = function(radon: any) {
     var i: any=0;
     function iterateQueue() {
         mostEff = effQueue.poll();
+        // #171: the queue can genuinely DRAIN now — the old vendored poll() handed back the same
+        // maxed perk forever instead, so this loop, which drops a perk only by NOT re-adding it,
+        // spun on a no-op body and froze the tab mid-portal. An exhausted queue means "no next
+        // purchase"; leave mostEff undefined and let the loop condition end the pass. Without this
+        // the fix merely converts the hang into a TypeError on mostEff.level.
+        if (mostEff === undefined) return;
         price = RAutoPerks.calculatePrice(mostEff, mostEff.radLevel);
         inc = RAutoPerks.calculateIncrease(mostEff, mostEff.radLevel);
         mostEff.efficiency = inc / price;
         // @ts-ignore
         i++;
     }
-    for (iterateQueue() ; price <= radon ; iterateQueue() ) {
+    for (iterateQueue() ; mostEff !== undefined && price <= radon ; iterateQueue() ) {
         if(mostEff.radLevel < mostEff.max) {
             var t2 = mostEff.name.endsWith("_II");
             if (t2) {
@@ -1296,8 +1413,24 @@ RAutoPerks.applyCalculationsRespec = function(perks: any,remainingRadon: any){
         respecPerks();
     }
     if (game.global.respecActive) {
+        // #163: snapshot BEFORE clearPerks(), which zeroes the levelTemp of every unlocked U2 perk —
+        // including the ones AT does not model. Whatever is not re-bought below is committed to 0 by
+        // commitPortalUpgrades(), irreversibly.
+        var unmodelled = RAutoPerks.getUnmodelledPerks();
+
         clearPerks();
         var preBuyAmt = game.global.buyAmt;
+
+        // Restore the unmodelled perks FIRST, before any optional reallocation can spend the radon
+        // they need. Their radon is excluded from getRadon()'s budget (see there), so this is not
+        // competing with the planned purchases — it is putting back what was never AT's to spend.
+        // `game.portal` keys are already capitalised, unlike AT's internal lowercase perk names.
+        for (var u in unmodelled) {
+            game.global.buyAmt = unmodelled[u].radLevel;
+            if (MODULES["perks"].RshowDetails)
+                debug("RAutoPerks-Respec Restoring unmanaged perk: " + unmodelled[u].name + " " + unmodelled[u].radLevel, "perks");
+            buyPortalUpgrade(unmodelled[u].name);
+        }
 
         for(var i in perks) {
             var capitalized = RAutoPerks.capitaliseFirstLetter(perks[i].name);
@@ -1403,7 +1536,11 @@ RAutoPerks.VariablePerk = function(name: any, base: any, compounding: any, value
     this.exprate = 1.3;
     this.fixed = false;
     this.compounding = compounding;
-    this.updatedValue = -1;
+    // #189: was `-1`, which COLLIDED with a ratio a user can legitimately type. AT uses -1 as its
+    // "unset" convention everywhere else, so typing it here is natural — and it silently meant "no
+    // ratio set", falling back to `perk.value`, the 11-element preset ARRAY. `null` cannot be typed
+    // into a number box, so the sentinel and the value space no longer overlap.
+    this.updatedValue = null;
     this.baseIncrease = baseIncrease;
     this.efficiency = -1;
     this.max = max || Number.MAX_VALUE;
@@ -1509,6 +1646,36 @@ RAutoPerks.getOwnedPerks = function() {
         perks.push(ownedPerk);
     }
     return perks;
+};
+
+/**
+ * #163 — every UNLOCKED U2 perk that RAutoPerks does NOT model.
+ *
+ * `RAutoPerks.perkHolder` names 22 perks; the pinned clone's `game.portal` carries 26 entries with a
+ * `radLevel`. Overkill is force-`radLocked` by the 5.4.0 migration so it filters out correctly, but
+ * Masterfulness, Smithology and Expansion are unlockable U2 perks AT has no model for — so
+ * `getOwnedPerks` resolves them to `undefined` and drops them, and they never reach the re-buy loop
+ * in `applyCalculationsRespec`.
+ *
+ * That is a data-loss bug rather than a missed optimisation. `clearPerks()` sets
+ * `levelTemp = -getPerkLevel(item)` for EVERY unlocked U2 perk, and `activatePortal()` ->
+ * `commitPortalUpgrades(true)` then does `radLevel += levelTemp` — so any perk AT does not re-buy is
+ * committed to ZERO. The respec is one per run and cannot be undone.
+ *
+ * Derived from `game.portal` rather than from a hardcoded list of the three known names: the set is a
+ * function of which perks the player has unlocked and of what the game ships, and a literal list would
+ * silently miss the next perk upstream adds — which is exactly how these three came to be missed.
+ */
+RAutoPerks.getUnmodelledPerks = function() {
+    var unmodelled = [];
+    for (var name in game.portal){
+        var perk = game.portal[name];
+        if(perk.radLocked || (typeof perk.radLevel === 'undefined')) continue;
+        if (typeof RAutoPerks.getPerkByName(name) !== 'undefined') continue;
+        if (!perk.radLevel) continue; // nothing invested, nothing to lose
+        unmodelled.push({ name: name, radLevel: perk.radLevel });
+    }
+    return unmodelled;
 };
 
 if (game.global.universe == 2) {

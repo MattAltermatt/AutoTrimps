@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import ts from 'typescript'
 import { MANIFEST } from '../../scripts/build-userscript.mjs'
@@ -314,7 +314,15 @@ describe('#85 — call-graph reachability over the shipped bundle', () => {
   // vacuously while measuring nothing. Every assertion below exists to make that failure LOUD.
 
   it('the corpus is the shipped bundle: the build MANIFEST, not a hardcoded list', () => {
-    expect(MANIFEST).toContain('FastPriorityQueue.js') // the legacy half of the corpus derives from the real MANIFEST
+    // #171: this used to assert `MANIFEST` contains 'FastPriorityQueue.js' — the last legacy file,
+    // now an npm dependency bundled into the src IIFE. The MANIFEST is empty and `legacy/` is gone,
+    // so the legacy half of the corpus is legitimately empty too. Asserting `toEqual([])` on its own
+    // would be the weaker claim (an empty list satisfies it however it got that way), so pin the
+    // reason as well: the directory must not exist, which is what makes the emptiness structural
+    // rather than a MANIFEST someone quietly blanked.
+    expect(MANIFEST).toEqual([])
+    expect(LEGACY_MANIFEST).toEqual([])
+    expect(existsSync(join(ROOT, 'legacy'))).toBe(false)
     expect(CORPUS).toContain(MAINLOOP) // the mainLoop dispatch table (former AutoTrimps2.js, now a src module)
     expect(CORPUS).not.toContain(join('src', 'legacy-bridge.ts')) // the publisher is not a caller
     expect(CORPUS.filter((f) => f.startsWith(join('src', 'modules'))).length).toBeGreaterThan(30)

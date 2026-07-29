@@ -17,30 +17,17 @@ import { readFileSync } from 'node:fs'
 import { bootGame } from '../scripts/sim/boot.mjs'
 import { TEST_BUNDLE } from './sim/bundle'
 
-// perks.ts injects FastPriorityQueue via a remote <script> tag (perks.ts:18-22). A real browser
-// executes it; jsdom (runScripts: 'outside-only') does not fetch it, so the global would be missing
-// and clickAllocate would ReferenceError for reasons that have nothing to do with #82. Supply the
-// structure the allocator actually uses — only add/poll/size are called (grep effQueue). The
-// comparator returns true when `a` outranks `b`, matching FastPriorityQueue's contract.
-class TestPriorityQueue<T> {
-  private items: T[] = []
-  size = 0
-  constructor(private readonly outranks: (a: T, b: T) => boolean) {}
-  add(x: T): void {
-    this.items.push(x)
-    this.size = this.items.length
-  }
-  poll(): T | undefined {
-    if (this.items.length === 0) return undefined
-    let best = 0
-    for (let i = 1; i < this.items.length; i++) {
-      if (this.outranks(this.items[i]!, this.items[best]!)) best = i
-    }
-    const [out] = this.items.splice(best, 1)
-    this.size = this.items.length
-    return out
-  }
-}
+// #171 — a `TestPriorityQueue` stub used to be injected here, on the belief (stated in the comment it
+// carried) that "perks.ts injects FastPriorityQueue via a remote <script> tag". That stopped being
+// true in #75, which bundled the queue, and the stub was DEAD long before it was removed: the bundle
+// declared `function FastPriorityQueue(...)` at global scope, and a global function declaration
+// overwrites a property assigned onto the same global object, so `window.eval(bundle)` clobbered it.
+//
+// Which means this suite was silently running against the real, BROKEN vendored queue — while the
+// stub, whose `splice` always removes, was exactly the correct implementation that would have hidden
+// #171 had it actually been in play. A mock that cannot take effect is worse than no mock: it reads
+// as coverage. Since #171 the queue is an npm dependency bundled into the IIFE, so there is nothing
+// to supply and nothing to shadow — these tests exercise the shipped queue, which is the point.
 
 /** Boot the clone with `universe` already set, THEN load AT — i.e. AT starts up in that universe. */
 function bootInUniverse(universe: 1 | 2): Record<string, any> {
@@ -51,7 +38,6 @@ function bootInUniverse(universe: 1 | 2): Record<string, any> {
     GM_setValue: () => {},
     GM_xmlhttpRequest: () => {},
     unsafeWindow: window,
-    FastPriorityQueue: TestPriorityQueue,
   })
   window.eval(readFileSync(TEST_BUNDLE, 'utf8'))
   window.loadPageVariables?.()

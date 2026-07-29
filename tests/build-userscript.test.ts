@@ -79,16 +79,21 @@ describe('buildUserscript', () => {
     expect(out).not.toContain("modulename + '.js'") // ATscriptLoad remote-URL body gone
     expect(out).not.toContain('modulename + ".js"') // (esbuild-normalized double-quote form too)
 
-    // Seam ordering (#133): AutoTrimps2.js — the last first-party legacy file — is now
+    // Seam ordering (#133/#171): AutoTrimps2.js — the last first-party legacy file — is now
     // src/modules/main-loop.ts, imported FIRST in legacy-bridge.ts, so the base globals it seeds
     // (MODULES = {}, autoTrimpSettings, …) exist before any converted module's load-time MODULES[…] write.
-    // The whole src IIFE is now emitted FIRST (after the version global), then the only remaining legacy
-    // concat chunk, the vendored FastPriorityQueue.js. So: src bundle BEFORE the trailing legacy chunk.
-    expect(out).not.toContain('/* ===== legacy/AutoTrimps2.js') // that file no longer exists
+    //
+    // There is no longer any concat chunk to order the src IIFE against: #171 replaced the vendored
+    // FastPriorityQueue with an npm dependency that esbuild bundles INTO the IIFE. So the ordering
+    // assertion is replaced by the stronger structural claim it was approximating — the emit contains
+    // NO legacy chunk at all, of any name. That cannot be satisfied by a stale anchor returning -1.
+    expect(out).not.toContain('/* ===== legacy/')
     const bridgeIdx = out.indexOf('Object.assign(globalThis') // the seam publish (src bundle)
-    const trailingIdx = out.indexOf('/* ===== legacy/FastPriorityQueue.js') // last legacy chunk, after src
     expect(bridgeIdx).toBeGreaterThanOrEqual(0)
-    expect(trailingIdx).toBeGreaterThan(bridgeIdx) // the src bundle is emitted before the remaining legacy files
+    // The queue must still be present — bundled, not merely deleted. Upstream's drain branch is the
+    // sentinel: the fork's broken copy never decremented at size 1, so this string proves both that
+    // the dependency shipped AND that it is the fixed implementation (#171).
+    expect(out).toContain('this.size -= 1')
   })
 
   it('SettingsGUI.js is decomposed out of the legacy concat and boot is bundled (#20)', async () => {
@@ -98,16 +103,20 @@ describe('buildUserscript', () => {
     // ...its boot code now lives in the src bundle (esbuild strips comments, so use a code
     // sentinel: the tabs.css <link> injection, which is unique to settings-boot.ts).
     expect(out).toContain('basepath + "tabs.css"')
-    // The boot code must be bundled in the src IIFE region — before the trailing FastPriorityQueue.js
-    // legacy chunk — and NOT as a trailing legacy concat file. (It's now a lazy bootSettingsUI() function
-    // definition invoked from initializeAutoTrimps() rather than a bundle-eval self-invocation, so its
-    // position relative to the Object.assign publish is no longer fixed; esbuild may hoist the definition
-    // ahead of it. The load-order guarantee is covered by the '#22 save-reload' test below.)
+    // The boot code must be bundled in the src IIFE region and NOT as a trailing legacy concat file.
+    // (It's now a lazy bootSettingsUI() function definition invoked from initializeAutoTrimps() rather
+    // than a bundle-eval self-invocation, so its position relative to the Object.assign publish is no
+    // longer fixed; esbuild may hoist the definition ahead of it. The load-order guarantee is covered
+    // by the '#22 save-reload' test below.)
+    //
+    // #171: the upper bound used to be the trailing FastPriorityQueue.js chunk, which no longer
+    // exists — `indexOf` would return -1 and `toBeLessThan(-1)` fails. The src region now runs to the
+    // end of the emit, so the honest bound is the emit length.
     const srcIdx = out.indexOf('/* ===== src/main.ts')
     const bootIdx = out.indexOf('basepath + "tabs.css"')
-    const trailingIdx = out.indexOf('/* ===== legacy/FastPriorityQueue.js')
+    expect(srcIdx).toBeGreaterThanOrEqual(0)
     expect(bootIdx).toBeGreaterThan(srcIdx)
-    expect(bootIdx).toBeLessThan(trailingIdx)
+    expect(bootIdx).toBeLessThan(out.length)
   })
 
   it('bridge imports maps before mapfunctions (R-map-state top-level inits must eval after maps placeholders)', () => {
