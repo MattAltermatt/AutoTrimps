@@ -617,6 +617,54 @@ The largest session and the one most dependent on Decision 1. Split it if the de
 **every C2 Runner portal starts a plain challenge.** `#204` makes Ship Farming re-buy a map every
 tick forever.
 
+#### S9 combat-math wave — attribution for the S10 ledger
+
+Measured, not asserted: each commit was checked out on its own and `baseline-zero` re-run, so every
+red below is attributed to the change that causes it rather than to the wave as a whole.
+
+```text
+build                              red   new fixtures (divergence count)
+---------------------------------  ----  ----------------------------------------------------------
+baseline/pre-s9 (= main @ S8)       1/21  10-hypo-u2 (152)            <- S8 carry-in, already ledgered
++ #169/#170  gammaBurstPct          4/21  06-deep-u1.2 (719), .3 (8), 12-warp-u1 (1808)
++ #290/#294  formation-5 mirror     6/21  06-deep-u1.1 (747), 07-map-cap-u1 (747)
+                                          [.2 719->864, .3 8->722; 12-warp UNCHANGED at 1808]
++ #199/#212/#295  crit pricing     14/21  01-early-u1 x3 (8/10/12), 03-challenge-watch x3 (16/15/16),
+                                          08-starved-u1 x2 (1742/1603)
+                                          [06-deep .3 722->724; 12-warp 1808->1991]
+```
+
+**The gamma-burst row reproduces S6's own measurement byte-for-byte** — 719 / 8 / 1808, the three
+numbers the status block above recorded when `#169`/`#170` were re-milestoned out of `Fix S6`. The
+commit was cherry-picked onto post-S7/S8 `main`, so an unchanged count is independent evidence that
+the rebase preserved its effect and that nothing in S7 or S8 interacts with it.
+
+**The crit fix moves the SHALLOW fixtures, and that is the tell.** `01-early-u1`, `03-challenge-watch`
+and `08-starved-u1` were untouched by everything else in this wave and go red only here, because their
+whole corpus decodes to a player with `getPlayerCritChance() === 0` — precisely the regime where the
+old code priced a non-crit at `getMegaCritDamageMult(0)` = 1/base. Measured on the booted save:
+`critD` is 2, so AT's damage estimate was **2.5x low** and every gear/stance/farm decision downstream
+of `calcHDratio()` inherited it. `08-starved-u1` is the clearest single reading — `setFormation("0")`
+and `setFormation(3)` become `setFormation(2)` from tick 71 onward: AT stops cowering in X/Barrier and
+takes Dominance, because it has stopped believing it is 2.5x weaker than it is.
+
+**`12-warp-u1` is the control for the formation change.** It stays at exactly 1808 across the
+formation commit and only moves (1808 -> 1991) once crit pricing lands. Formation 5 is uber-Wind, which
+that fixture never reaches, so a formation-5 mirror correction *should* be invisible there — and is.
+
+Two findings were filed from inside this wave, both by running the mechanical scan a finding asked for
+instead of trusting its scoping claim: **#294** (three more formation sites, and #290's own suggested
+one-line patch is a regression on its own — see the issue) and **#295** (no negative-crit-chance arm).
+`#290`'s "check the U2 twins around :1283" pointed at code that correctly has no formation logic at all.
+
+⚠️ **One net was passing because of a bug under test.** `settings-unset-encodings`' #100
+anti-false-green asserted "a SET highdmg that is not equipped DOES still take the branch" and measured
+a 2.5x ratio change to prove it. That 2.5x **was #199** — divide out 0.4, multiply back 1. With the
+pricing corrected, both crit terms are exactly 1 on a zero-crit save, the branch runs and correctly
+predicts nothing, and the old assertion could no longer see it. It now drives a player who actually
+crits. This is the `#178` shape again (a net whose health depended on a defect persisting), found this
+time not by the net breaking on its own but by a fix in a *different* file making it unprovable.
+
 ### Session 10 — Oracle re-pin, campaign review, merge · **XL** · 🪨 the load-bearing session
 
 1. **Re-pin the oracle once**, to a new tag cut at the post-fix commit. Write the manifest entry the
