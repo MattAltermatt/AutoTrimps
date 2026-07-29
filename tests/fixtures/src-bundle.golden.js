@@ -8294,10 +8294,7 @@
     let power = 2;
     if (considerEdges && !getCurrentEnemy()) return 0;
     if (game.portal.Overkill.level === 0) return 1;
-    if (game.talents.overkill.purchased) power++;
-    if (game.global.uberNature === "Ice") power += 2;
-    if (getEmpowerment() === "Ice" && game.empowerments.Ice.getLevel() >= 50) power++;
-    if (getEmpowerment() === "Ice" && game.empowerments.Ice.getLevel() >= 100) power++;
+    power = 2 + getOverkillerCount();
     if (considerEdges) for (let i = power; i > 1 && !getCurrentEnemy(i); i--) ;
     return power;
   }
@@ -8323,7 +8320,7 @@
     if (!maxHealth) maxHealth = calcOurHealth();
     if (!minDamage) minDamage = calcOurDmg("min", false, true) + addPoison(true);
     if (!maxDamage) maxDamage = calcOurDmg("max", false, true) + addPoison(true);
-    if (!missingHealth) missingHealth = game.global.soldierHealthMax - game.global.soldierHealth;
+    if (missingHealth === void 0) missingHealth = game.global.soldierHealthMax - game.global.soldierHealth;
     if (!pierce) pierce = game.global.brokenPlanet && !game.global.mapsActive ? getPierceAmt() : 0;
     if (!block) block = calcOurBlock(false);
     const enemy = getCurrentEnemy();
@@ -8415,6 +8412,7 @@
     maxDamage += addPoison(true);
     let pierce = game.global.brokenPlanet && !game.global.mapsActive ? getPierceAmt() : 0;
     if (formation !== "B" && game.global.formation === 3) pierce *= 2;
+    if (formation === "B" && game.global.formation !== 3) pierce *= 0.5;
     const notSpire = game.global.mapsActive || !game.global.spireActive;
     const harm = directDamage(block, pierce, health - missingHealth, minDamage, critPower) + challengeDamage(maxHealth, minDamage, maxDamage, missingHealth, block, pierce, critPower);
     const blockier = calcOurBlock(false);

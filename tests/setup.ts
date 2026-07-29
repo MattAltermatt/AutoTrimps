@@ -36,3 +36,36 @@ if (typeof document !== 'undefined' && document.body) {
   const universe = usePortalUniverse ? (globalThis as any).portalUniverse : g?.global?.universe
   return (universe === 2 ? perk.radLevel : perk.level) ?? 0
 }
+
+// #231 — getUberEmpowerment / getOverkillerCount, transcribed from .trimps-game/main.js:8193 and
+// :12029. maxOneShotPower() now DELEGATES to getOverkillerCount() instead of hand-copying its body,
+// so harnesses that armed the underlying fixture fields (talents.overkill, empowerments.Ice,
+// uberNature) need the accessor to exist. Transcribing it — rather than returning a constant — keeps
+// those fixtures meaningful: they still drive the answer through the same inputs the game uses.
+//
+// Note getUberEmpowerment returns "" below getNatureStartZone(); with no natureStartZone in a fixture
+// it degrades to game.global.uberNature, which is what the pre-#231 code did unconditionally.
+;(globalThis as any).getUberEmpowerment = () => {
+  const g = (globalThis as any).game
+  const start = typeof (globalThis as any).getNatureStartZone === 'function' ? (globalThis as any).getNatureStartZone() : undefined
+  if (start !== undefined && g?.global?.world < start) return ''
+  return g?.global?.uberNature ?? ''
+}
+;(globalThis as any).getOverkillerCount = (getNumber?: boolean) => {
+  const g = (globalThis as any).game
+  const F = (globalThis as any).Fluffy
+  if (g?.global?.universe === 2) {
+    const canU2 = typeof (globalThis as any).canU2Overkill === 'function' ? (globalThis as any).canU2Overkill() : false
+    if (!canU2 && !getNumber) return 0
+    return (globalThis as any).u2Mutations?.tree?.MaxOverkill?.purchased ? 1 : 0
+  }
+  let n = Number(F?.isRewardActive?.('overkiller') ?? 0)
+  if (g?.talents?.overkill?.purchased) n++
+  const ice = g?.empowerments?.Ice
+  if ((globalThis as any).getEmpowerment?.() === 'Ice' && ice) {
+    if (ice.getLevel() >= 50) n++
+    if (ice.getLevel() >= 100) n++
+  }
+  if ((globalThis as any).getUberEmpowerment() === 'Ice') n += 2
+  return n
+}
