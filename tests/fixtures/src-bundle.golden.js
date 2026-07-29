@@ -8421,6 +8421,7 @@
     RautoMap: () => RautoMap2,
     RupdateAutoMapsStatus: () => RupdateAutoMapsStatus2,
     autoMap: () => autoMap2,
+    resetPerfectSlidersToPreset: () => resetPerfectSlidersToPreset,
     selectUniqueMap: () => selectUniqueMap,
     testMapSpecialModController: () => testMapSpecialModController,
     updateAutoMapsStatus: () => updateAutoMapsStatus2
@@ -8537,6 +8538,9 @@
   }
   MODULES["maps"].advSpecialMapMod_numZones = 3;
   globalThis.advExtraMapLevels = 0;
+  function resetPerfectSlidersToPreset() {
+    swapNiceCheckbox(byId("advPerfectCheckbox"), !!getMapPreset().perf);
+  }
   function testMapSpecialModController() {
     const a = [];
     Object.keys(mapSpecialModifierConfig).forEach(function(o) {
@@ -9023,6 +9027,7 @@
         mapsClicked();
       } else if (selectedMap2 == "create") {
         if (game.global.selectedMapPreset > 1) selectAdvMapsPreset(1);
+        resetPerfectSlidersToPreset();
         const $mapLevelInput = byId("mapLevelInput");
         $mapLevelInput.value = needPrestige ? game.global.world : siphlvl;
         if (preSpireFarming && MODULES["maps"].SpireFarm199Maps)
@@ -9631,6 +9636,7 @@
         dRAMP();
       } else if (selectedMap2 == "create") {
         if (game.global.selectedMapPreset > 1) selectAdvMapsPreset(1);
+        resetPerfectSlidersToPreset();
         byId("mapLevelInput").value = game.global.world;
         let decrement;
         let tier;
@@ -9990,7 +9996,7 @@
     byId2("lootAdvMapsRange").value = "9";
     byId2("difficultyAdvMapsRange").value = "9";
     byId2("sizeAdvMapsRange").value = "9";
-    byId2("advPerfectCheckbox").checked = true;
+    swapNiceCheckbox(byId2("advPerfectCheckbox"), true);
     byId2("mapLevelInput").value = String(game.global.world - 1);
     updateMapCost();
     if (updateMapCost(true) > game.resources.fragments.owned) {
@@ -9998,7 +10004,7 @@
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      byId2("advPerfectCheckbox").checked = false;
+      swapNiceCheckbox(byId2("advPerfectCheckbox"), false);
       updateMapCost();
     }
     var fragsOwned = game.resources.fragments.owned;
@@ -10040,14 +10046,14 @@
     byId2("lootAdvMapsRange").value = "9";
     byId2("difficultyAdvMapsRange").value = "9";
     byId2("sizeAdvMapsRange").value = "9";
-    byId2("advPerfectCheckbox").checked = true;
+    swapNiceCheckbox(byId2("advPerfectCheckbox"), true);
     byId2("mapLevelInput").value = game.global.world;
     updateMapCost();
     if (updateMapCost(true) <= game.resources.fragments.owned) {
       return updateMapCost(true);
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-      byId2("advPerfectCheckbox").checked = false;
+      swapNiceCheckbox(byId2("advPerfectCheckbox"), false);
       updateMapCost();
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         return updateMapCost(true);
@@ -10455,8 +10461,7 @@
           debug2("Check complete for insanity frag map");
           RfragMap2();
           if (updateMapCost(true) <= game.resources.fragments.owned) {
-            buyMap();
-            insanityfragmappybought = true;
+            insanityfragmappybought = buyMap() === 1;
             if (insanityfragmappybought) {
               insanityfragmappy = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
               debug2("insanity frag map bought");
@@ -10613,8 +10618,7 @@
           debug2("Check complete for ship frag map");
           RfragMap2();
           if (updateMapCost(true) <= game.resources.fragments.owned) {
-            buyMap();
-            shipfragmappybought = true;
+            shipfragmappybought = buyMap() === 1;
             if (shipfragmappybought) {
               shipfragmappy = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
               debug2("ship frag map bought");
@@ -10729,8 +10733,7 @@
           debug2("Check complete for alch frag map");
           RfragMap2();
           if (updateMapCost(true) <= game.resources.fragments.owned) {
-            buyMap();
-            alchfragmappybought = true;
+            alchfragmappybought = buyMap() === 1;
             if (alchfragmappybought) {
               alchfragmappy = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
               debug2("alch frag map bought");
@@ -10837,8 +10840,7 @@
           debug2("Check complete for hypo frag map");
           RfragMap2();
           if (updateMapCost(true) <= game.resources.fragments.owned) {
-            buyMap();
-            hypofragmappybought = true;
+            hypofragmappybought = buyMap() === 1;
             if (hypofragmappybought) {
               hypofragmappy = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
               debug2("hypo frag map bought");
@@ -11377,6 +11379,7 @@
   var mapfunctions_amp_exports = {};
   __export(mapfunctions_amp_exports, {
     RAMP: () => RAMP2,
+    RAMPextraReachable: () => RAMPextraReachable,
     RAMPfrag: () => RAMPfrag2,
     RAMPplusMapToRun: () => RAMPplusMapToRun,
     RAMPplusPres: () => RAMPplusPres,
@@ -11435,6 +11438,20 @@
     map = raidzones - game.global.world - number;
     return map;
   }
+  function RAMPextraReachable(daily, number) {
+    var extra = daily ? RAMPplusMapToRun(true, number) : RAMPplusMapToRun(false, number);
+    return extra >= 0 && extra <= 10;
+  }
+  var extraWarnedZone = { daily: -1, normal: -1 };
+  function warnUnreachableExtra(daily, number) {
+    var key = daily ? "daily" : "normal";
+    if (extraWarnedZone[key] === game.global.world) return;
+    extraWarnedZone[key] = game.global.world;
+    var praidzone = daily ? getPageSetting2("RdAMPraidzone") : getPageSetting2("RAMPraidzone");
+    var raidzone = daily ? getPageSetting2("RdAMPraidraid") : getPageSetting2("RAMPraidraid");
+    var raidzones = raidzone[praidzone.indexOf(game.global.world)];
+    debug2("Prestige Raiding: zone " + game.global.world + " paired with raid target " + raidzones + " needs +" + (raidzones - game.global.world - number) + " extra map zones, and the game only offers +0 to +10. Skipping the raid maps it cannot build - set PR: Raid between " + (game.global.world + 4) + " and " + (game.global.world + 10) + ".", "maps");
+  }
   function RAMPshouldrunmap(daily, number) {
     var go = false;
     var praidzone = daily ? getPageSetting2("RdAMPraidzone") : getPageSetting2("RAMPraidzone");
@@ -11445,6 +11462,10 @@
     if (Rgetequips(actualraidzone, false) > 0) {
       go = true;
     }
+    if (go && !RAMPextraReachable(daily, number)) {
+      warnUnreachableExtra(daily, number);
+      go = false;
+    }
     return go;
   }
   function RAMPplusPres(daily, number) {
@@ -11454,7 +11475,6 @@
     byId2("lootAdvMapsRange").value = "0";
     byId2("difficultyAdvMapsRange").value = "9";
     byId2("sizeAdvMapsRange").value = "9";
-    byId2("advPerfectCheckbox").checked = false;
     byId2("mapLevelInput").value = game.global.world;
     updateMapCost();
     if (updateMapCost(true) > game.resources.fragments.owned) {
@@ -11549,7 +11569,6 @@
     byId2("lootAdvMapsRange").value = "0";
     byId2("difficultyAdvMapsRange").value = "9";
     byId2("sizeAdvMapsRange").value = "9";
-    byId2("advPerfectCheckbox").checked = false;
     byId2("mapLevelInput").value = game.global.world;
     updateMapCost();
     return updateMapCost(true);
@@ -11561,7 +11580,6 @@
     byId2("lootAdvMapsRange").value = "0";
     byId2("difficultyAdvMapsRange").value = "9";
     byId2("sizeAdvMapsRange").value = "9";
-    byId2("advPerfectCheckbox").checked = false;
     byId2("mapLevelInput").value = game.global.world;
     updateMapCost();
     if (updateMapCost(true) <= game.resources.fragments.owned) {
@@ -11722,23 +11740,23 @@
     var frag = daily ? getPageSetting2("RdAMPraidfrag") : getPageSetting2("RAMPraidfrag");
     var praidindex = praidzone.indexOf(game.global.world);
     var raidzones = raidzone[praidindex];
-    if (Rgetequips(raidzones, false)) {
+    if (Rgetequips(raidzones, false) && RAMPextraReachable(daily, 0)) {
       if (frag == 1) cost += daily ? RAMPplusPresfragmin(true, 0) : RAMPplusPresfragmin(false, 0);
       else if (frag == 2) cost += daily ? RAMPplusPresfragmax(true, 0) : RAMPplusPresfragmax(false, 0);
     }
-    if (Rgetequips(raidzones - 1, false)) {
+    if (Rgetequips(raidzones - 1, false) && RAMPextraReachable(daily, 1)) {
       if (frag == 1) cost += daily ? RAMPplusPresfragmin(true, 1) : RAMPplusPresfragmin(false, 1);
       else if (frag == 2) cost += daily ? RAMPplusPresfragmax(true, 1) : RAMPplusPresfragmax(false, 1);
     }
-    if (Rgetequips(raidzones - 2, false)) {
+    if (Rgetequips(raidzones - 2, false) && RAMPextraReachable(daily, 2)) {
       if (frag == 1) cost += daily ? RAMPplusPresfragmin(true, 2) : RAMPplusPresfragmin(false, 2);
       else if (frag == 2) cost += daily ? RAMPplusPresfragmax(true, 2) : RAMPplusPresfragmax(false, 2);
     }
-    if (Rgetequips(raidzones - 3, false)) {
+    if (Rgetequips(raidzones - 3, false) && RAMPextraReachable(daily, 3)) {
       if (frag == 1) cost += daily ? RAMPplusPresfragmin(true, 3) : RAMPplusPresfragmin(false, 3);
       else if (frag == 2) cost += daily ? RAMPplusPresfragmax(true, 3) : RAMPplusPresfragmax(false, 3);
     }
-    if (Rgetequips(raidzones - 4, false)) {
+    if (Rgetequips(raidzones - 4, false) && RAMPextraReachable(daily, 4)) {
       if (frag == 1) cost += daily ? RAMPplusPresfragmin(true, 4) : RAMPplusPresfragmin(false, 4);
       else if (frag == 2) cost += daily ? RAMPplusPresfragmax(true, 4) : RAMPplusPresfragmax(false, 4);
     }
@@ -11854,8 +11872,7 @@
           debug2("Check complete for frag map");
           RfragMap();
           if (updateMapCost(true) <= game.resources.fragments.owned) {
-            buyMap();
-            RAMPfragmappybought = true;
+            RAMPfragmappybought = buyMap() === 1;
             if (RAMPfragmappybought) {
               RAMPfragmappy = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
               debug2("frag map bought");
@@ -11901,8 +11918,7 @@
       debug2("Check complete for 5th map");
       RAMPplusPres(false, 0);
       if (updateMapCost(true) <= game.resources.fragments.owned) {
-        buyMap();
-        RAMPmapbought5 = true;
+        RAMPmapbought5 = buyMap() === 1;
         if (RAMPmapbought5) {
           RAMPpMap5 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
           debug2("5th map bought");
@@ -11913,8 +11929,7 @@
       debug2("Check complete for 4th map");
       RAMPplusPres(false, 1);
       if (updateMapCost(true) <= game.resources.fragments.owned) {
-        buyMap();
-        RAMPmapbought4 = true;
+        RAMPmapbought4 = buyMap() === 1;
         if (RAMPmapbought4) {
           RAMPpMap4 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
           debug2("4th map bought");
@@ -11925,8 +11940,7 @@
       debug2("Check complete for 3rd map");
       RAMPplusPres(false, 2);
       if (updateMapCost(true) <= game.resources.fragments.owned) {
-        buyMap();
-        RAMPmapbought3 = true;
+        RAMPmapbought3 = buyMap() === 1;
         if (RAMPmapbought3) {
           RAMPpMap3 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
           debug2("3rd map bought");
@@ -11937,8 +11951,7 @@
       debug2("Check complete for 2nd map");
       RAMPplusPres(false, 3);
       if (updateMapCost(true) <= game.resources.fragments.owned) {
-        buyMap();
-        RAMPmapbought2 = true;
+        RAMPmapbought2 = buyMap() === 1;
         if (RAMPmapbought2) {
           RAMPpMap2 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
           debug2("2nd map bought");
@@ -11949,8 +11962,7 @@
       debug2("Check complete for 1st map");
       RAMPplusPres(false, 4);
       if (updateMapCost(true) <= game.resources.fragments.owned) {
-        buyMap();
-        RAMPmapbought1 = true;
+        RAMPmapbought1 = buyMap() === 1;
         if (RAMPmapbought1) {
           RAMPpMap1 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
           debug2("1st map bought");
@@ -12028,8 +12040,7 @@
           debug2("Check complete for frag map");
           RfragMap();
           if (updateMapCost(true) <= game.resources.fragments.owned) {
-            buyMap();
-            RdAMPfragmappybought = true;
+            RdAMPfragmappybought = buyMap() === 1;
             if (RdAMPfragmappybought) {
               RdAMPfragmappy = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
               debug2("frag map bought");
@@ -12075,8 +12086,7 @@
       debug2("Check complete for 5th map");
       RAMPplusPres(true, 0);
       if (updateMapCost(true) <= game.resources.fragments.owned) {
-        buyMap();
-        RdAMPmapbought5 = true;
+        RdAMPmapbought5 = buyMap() === 1;
         if (RdAMPmapbought5) {
           RdAMPpMap5 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
           debug2("5th map bought");
@@ -12087,8 +12097,7 @@
       debug2("Check complete for 4th map");
       RAMPplusPres(true, 1);
       if (updateMapCost(true) <= game.resources.fragments.owned) {
-        buyMap();
-        RdAMPmapbought4 = true;
+        RdAMPmapbought4 = buyMap() === 1;
         if (RdAMPmapbought4) {
           RdAMPpMap4 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
           debug2("4th map bought");
@@ -12099,8 +12108,7 @@
       debug2("Check complete for 3rd map");
       RAMPplusPres(true, 2);
       if (updateMapCost(true) <= game.resources.fragments.owned) {
-        buyMap();
-        RdAMPmapbought3 = true;
+        RdAMPmapbought3 = buyMap() === 1;
         if (RdAMPmapbought3) {
           RdAMPpMap3 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
           debug2("3rd map bought");
@@ -12111,8 +12119,7 @@
       debug2("Check complete for 2nd map");
       RAMPplusPres(true, 3);
       if (updateMapCost(true) <= game.resources.fragments.owned) {
-        buyMap();
-        RdAMPmapbought2 = true;
+        RdAMPmapbought2 = buyMap() === 1;
         if (RdAMPmapbought2) {
           RdAMPpMap2 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
           debug2("2nd map bought");
@@ -12123,8 +12130,7 @@
       debug2("Check complete for 1st map");
       RAMPplusPres(true, 4);
       if (updateMapCost(true) <= game.resources.fragments.owned) {
-        buyMap();
-        RdAMPmapbought1 = true;
+        RdAMPmapbought1 = buyMap() === 1;
         if (RdAMPmapbought1) {
           RdAMPpMap1 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
           debug2("1st map bought");
@@ -14773,7 +14779,6 @@
     byId2("lootAdvMapsRange").value = "0";
     byId2("difficultyAdvMapsRange").value = "9";
     byId2("sizeAdvMapsRange").value = "9";
-    byId2("advPerfectCheckbox").checked = false;
     byId2("mapLevelInput").value = String(game.global.world);
     updateMapCost();
   }
@@ -14881,15 +14886,10 @@
     byId2("lootAdvMapsRange").value = "0";
     byId2("difficultyAdvMapsRange").value = "9";
     byId2("sizeAdvMapsRange").value = "9";
-    byId2("advPerfectCheckbox").checked = true;
     byId2("mapLevelInput").value = String(game.global.world);
     updateMapCost();
     if (updateMapCost(true) > game.resources.fragments.owned) {
       byId2("biomeAdvMapsSelect").value = "Random";
-      updateMapCost();
-    }
-    if (updateMapCost(true) > game.resources.fragments.owned) {
-      byId2("advPerfectCheckbox").checked = false;
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
@@ -14980,15 +14980,10 @@
     byId2("lootAdvMapsRange").value = "0";
     byId2("difficultyAdvMapsRange").value = "9";
     byId2("sizeAdvMapsRange").value = "9";
-    byId2("advPerfectCheckbox").checked = true;
     byId2("mapLevelInput").value = String(game.global.world);
     updateMapCost();
     if (updateMapCost(true) > game.resources.fragments.owned) {
       byId2("biomeAdvMapsSelect").value = "Random";
-      updateMapCost();
-    }
-    if (updateMapCost(true) > game.resources.fragments.owned) {
-      byId2("advPerfectCheckbox").checked = false;
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
@@ -15079,15 +15074,10 @@
     byId2("lootAdvMapsRange").value = "0";
     byId2("difficultyAdvMapsRange").value = "9";
     byId2("sizeAdvMapsRange").value = "9";
-    byId2("advPerfectCheckbox").checked = true;
     byId2("mapLevelInput").value = String(game.global.world);
     updateMapCost();
     if (updateMapCost(true) > game.resources.fragments.owned) {
       byId2("biomeAdvMapsSelect").value = "Random";
-      updateMapCost();
-    }
-    if (updateMapCost(true) > game.resources.fragments.owned) {
-      byId2("advPerfectCheckbox").checked = false;
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
@@ -15178,15 +15168,10 @@
     byId2("lootAdvMapsRange").value = "0";
     byId2("difficultyAdvMapsRange").value = "9";
     byId2("sizeAdvMapsRange").value = "9";
-    byId2("advPerfectCheckbox").checked = true;
     byId2("mapLevelInput").value = String(game.global.world);
     updateMapCost();
     if (updateMapCost(true) > game.resources.fragments.owned) {
       byId2("biomeAdvMapsSelect").value = "Random";
-      updateMapCost();
-    }
-    if (updateMapCost(true) > game.resources.fragments.owned) {
-      byId2("advPerfectCheckbox").checked = false;
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
@@ -15277,15 +15262,10 @@
     byId2("lootAdvMapsRange").value = "0";
     byId2("difficultyAdvMapsRange").value = "9";
     byId2("sizeAdvMapsRange").value = "9";
-    byId2("advPerfectCheckbox").checked = true;
     byId2("mapLevelInput").value = String(game.global.world);
     updateMapCost();
     if (updateMapCost(true) > game.resources.fragments.owned) {
       byId2("biomeAdvMapsSelect").value = "Random";
-      updateMapCost();
-    }
-    if (updateMapCost(true) > game.resources.fragments.owned) {
-      byId2("advPerfectCheckbox").checked = false;
       updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
@@ -15719,8 +15699,7 @@
             debug2("Check complete for 5th map");
             plusPres5();
             if (updateMapCost(true) <= game.resources.fragments.owned) {
-              buyMap();
-              mapbought5 = true;
+              mapbought5 = buyMap() === 1;
               if (mapbought5) {
                 pMap5 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug2("5th map bought");
@@ -15731,8 +15710,7 @@
             debug2("Check complete for 4th map");
             plusPres4();
             if (updateMapCost(true) <= game.resources.fragments.owned) {
-              buyMap();
-              mapbought4 = true;
+              mapbought4 = buyMap() === 1;
               if (mapbought4) {
                 pMap4 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug2("4th map bought");
@@ -15743,8 +15721,7 @@
             debug2("Check complete for 3rd map");
             plusPres3();
             if (updateMapCost(true) <= game.resources.fragments.owned) {
-              buyMap();
-              mapbought3 = true;
+              mapbought3 = buyMap() === 1;
               if (mapbought3) {
                 pMap3 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug2("3rd map bought");
@@ -15755,8 +15732,7 @@
             debug2("Check complete for 2nd map");
             plusPres2();
             if (updateMapCost(true) <= game.resources.fragments.owned) {
-              buyMap();
-              mapbought2 = true;
+              mapbought2 = buyMap() === 1;
               if (mapbought2) {
                 pMap2 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug2("2nd map bought");
@@ -15767,8 +15743,7 @@
             debug2("Check complete for 1st map");
             plusPres1();
             if (updateMapCost(true) <= game.resources.fragments.owned) {
-              buyMap();
-              mapbought1 = true;
+              mapbought1 = buyMap() === 1;
               if (mapbought1) {
                 pMap1 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug2("1st map bought");
@@ -15961,8 +15936,10 @@
           else if (farmFragments) mapModifiers = ["0"];
         }
         if (maxPlusZones > curPlusZones) shouldFarmFrags = true;
-        if (curPlusZones >= 0 && (praidBeforeFarm || shouldFarmFrags == false)) {
-          buyMap();
+        var willFarmFrags = farmFragments && shouldFarmFrags && !praidBeforeFarm;
+        var praidMapFound = curPlusZones >= 0 && !willFarmFrags;
+        var praidMapBought = praidMapFound && buyMap() === 1;
+        if (praidMapBought) {
           pMap = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
           selectMap(pMap);
           prestraid = true;
@@ -15970,6 +15947,11 @@
           game.global.repeatMap = true;
           runMap();
           repeatClicked(true);
+        } else if (praidMapFound) {
+          failpraid = true;
+          prestraidon = false;
+          praidDone = true;
+          debug2("Failed to prestige raid. The game refused the map purchase - you may be at its 100 map cap.");
         } else if (!farmFragments) {
           failpraid = true;
           prestraidon = false;
@@ -15992,28 +15974,30 @@
       byId2("lootAdvMapsRange").value = "9";
       byId2("difficultyAdvMapsRange").value = "9";
       byId2("sizeAdvMapsRange").value = "9";
-      byId2("advPerfectCheckbox").checked = true;
+      swapNiceCheckbox(byId2("advPerfectCheckbox"), true);
       byId2("mapLevelInput").value = String(game.global.world - 1);
       game.options.menu.repeatUntil.enabled = 0;
       toggleSetting("repeatUntil", null, false, true);
       if (updateMapCost(true) <= game.resources.fragments.owned) {
         debug2("Buying perfect sliders fragment farming map");
-        buyMap();
-        fMap = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
-        selectMap(fMap);
-        game.global.repeatMap = true;
-        runMap();
-        repeatClicked(true);
-      } else {
-        byId2("advPerfectCheckbox").checked = false;
-        if (updateMapCost(true) <= game.resources.fragments.owned) {
-          debug2("Buying imperfect sliders fragment farming map");
-          buyMap();
+        if (buyMap() === 1) {
           fMap = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
           selectMap(fMap);
           game.global.repeatMap = true;
           runMap();
           repeatClicked(true);
+        } else debug2("Could not buy the fragment farming map - you may be at the game's 100 map cap.");
+      } else {
+        swapNiceCheckbox(byId2("advPerfectCheckbox"), false);
+        if (updateMapCost(true) <= game.resources.fragments.owned) {
+          debug2("Buying imperfect sliders fragment farming map");
+          if (buyMap() === 1) {
+            fMap = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
+            selectMap(fMap);
+            game.global.repeatMap = true;
+            runMap();
+            repeatClicked(true);
+          } else debug2("Could not buy the fragment farming map - you may be at the game's 100 map cap.");
         } else debug2("Can't afford fragment farming map yet");
       }
     }
@@ -16062,6 +16046,23 @@
     }
     return false;
   }
+  var savedClimbBw = null;
+  var bwUnsetWarnedZone = { daily: -1, normal: -1 };
+  function suspendClimbBw() {
+    if (savedClimbBw === null) savedClimbBw = game.options.menu.climbBw.enabled;
+    if (game.options.menu.climbBw.enabled !== 0) {
+      game.options.menu.climbBw.enabled = 0;
+      toggleSetting("climbBw", null, false, true);
+    }
+  }
+  function restoreClimbBw() {
+    if (savedClimbBw === null) return;
+    if (game.options.menu.climbBw.enabled !== savedClimbBw) {
+      game.options.menu.climbBw.enabled = savedClimbBw;
+      toggleSetting("climbBw", null, false, true);
+    }
+    savedClimbBw = null;
+  }
   function BWraiding2() {
     var bwraidZ;
     var bwraidSetting;
@@ -16083,13 +16084,21 @@
     }
     isBWRaidZ = getPageSetting2(bwraidZ).includes(game.global.world) && game.global.lastClearedCell + 1 >= cell;
     bwIndex = getPageSetting2(bwraidZ).indexOf(game.global.world);
-    if (bwIndex == -1 || typeof getPageSetting2(bwraidMax)[bwIndex] === "undefined") targetBW = -1;
-    else targetBW = getPageSetting2(bwraidMax)[bwIndex];
+    targetBW = bwIndex == -1 ? void 0 : getPageSetting2(bwraidMax)[bwIndex];
+    var bwTargetSet = typeof targetBW === "number" && targetBW >= 0;
+    if (isBWRaidZ && !bwTargetSet && getPageSetting2(bwraidSetting)) {
+      var bwWarnKey = game.global.challengeActive == "Daily" ? "daily" : "normal";
+      if (bwUnsetWarnedZone[bwWarnKey] !== game.global.world) {
+        bwUnsetWarnedZone[bwWarnKey] = game.global.world;
+        debug2("BW Raiding is on for zone " + game.global.world + " but no Max BW to raid is set for it - skipping. Set a Max BW (the highest Bionic Wonderland level to raid up to) to enable it.", "maps");
+      }
+      return;
+    }
     if (isBWRaidZ && !bwraided && !failbwraid && getPageSetting2(bwraidSetting)) {
       if (getPageSetting2("AutoMaps") == 1 && !bwraided && !failbwraid) {
         autoTrimpSettings["AutoMaps"].value = 0;
       }
-      game.options.menu.climbBw.enabled = 0;
+      suspendClimbBw();
       while (!game.global.preMapsActive && !bwraidon) mapsClicked();
       if (game.options.menu.repeatUntil.enabled != 2 && !bwraided && !failbwraid) {
         game.options.menu.repeatUntil.enabled = 2;
@@ -16102,6 +16111,7 @@
         if (getPageSetting2("AutoMaps") == 0 && isBWRaidZ && !bwraided) {
           autoTrimpSettings["AutoMaps"].value = 1;
           failbwraid = true;
+          restoreClimbBw();
           debug2("Failed to BW raid. Looks like you don't have a BW to raid...");
         }
       }
@@ -16116,6 +16126,7 @@
         bwraided = true;
         failbwraid = false;
         bwraidon = false;
+        restoreClimbBw();
         debug2("...Successfully BW raided!");
       }
     }
@@ -16124,6 +16135,7 @@
       debug2("Turning AutoMaps back on");
     }
     if (!isBWRaidZ) {
+      restoreClimbBw();
       bwraided = false;
       failbwraid = false;
       bwraidon = false;
@@ -16170,8 +16182,7 @@
             debug2("Check complete for 5th map");
             plusPres5();
             if (updateMapCost(true) <= game.resources.fragments.owned) {
-              buyMap();
-              dmapbought5 = true;
+              dmapbought5 = buyMap() === 1;
               if (dmapbought5) {
                 dpMap5 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug2("5th map bought");
@@ -16182,8 +16193,7 @@
             debug2("Check complete for 4th map");
             plusPres4();
             if (updateMapCost(true) <= game.resources.fragments.owned) {
-              buyMap();
-              dmapbought4 = true;
+              dmapbought4 = buyMap() === 1;
               if (dmapbought4) {
                 dpMap4 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug2("4th map bought");
@@ -16194,8 +16204,7 @@
             debug2("Check complete for 3rd map");
             plusPres3();
             if (updateMapCost(true) <= game.resources.fragments.owned) {
-              buyMap();
-              dmapbought3 = true;
+              dmapbought3 = buyMap() === 1;
               if (dmapbought3) {
                 dpMap3 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug2("3rd map bought");
@@ -16206,8 +16215,7 @@
             debug2("Check complete for 2nd map");
             plusPres2();
             if (updateMapCost(true) <= game.resources.fragments.owned) {
-              buyMap();
-              dmapbought2 = true;
+              dmapbought2 = buyMap() === 1;
               if (dmapbought2) {
                 dpMap2 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug2("2nd map bought");
@@ -16218,8 +16226,7 @@
             debug2("Check complete for 1st map");
             plusPres1();
             if (updateMapCost(true) <= game.resources.fragments.owned) {
-              buyMap();
-              dmapbought1 = true;
+              dmapbought1 = buyMap() === 1;
               if (dmapbought1) {
                 dpMap1 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug2("1st map bought");

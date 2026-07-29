@@ -4,7 +4,7 @@
 > That plan was the **discovery** campaign (Phases 0–3b). This is the **remediation** campaign:
 > how the findings it produced actually get fixed, verified, and merged.
 >
-> **Status: Sessions 1–4 SHIPPED 2026-07-28.** Sessions 5–10 pending.
+> **Status: Sessions 1–5 SHIPPED 2026-07-28.** Sessions 6–10 pending.
 >
 > ```text
 > session  state        record
@@ -15,10 +15,38 @@
 >                       #209 #238 #239 #240 #254 · split out #286
 > 4        ✅ SHIPPED   Fix S4 closed, all 9: #163 #164 #165 #171 #172 #173 #174 #189
 >                       #190 · legacy/ deleted · filed #287 #288
-> 5–6      ⬜ Track A   26 issues left, oracle-free, independent of every open decision
+> 5        ✅ SHIPPED   Fix S5 closed, all 9: #166 #175 #176 #177 #191 #205 #227 #228
+>                       #247 · 6 root causes, 2 new AST censuses · filed #289
+> 6        ⬜ Track A   17 issues left, oracle-free, independent of every open decision
 > 7–9      ⬜ Track B   39 issues, trace-moving, collect the red
 > 10       ⬜ re-pin     one oracle re-pin, ledgered
 > ```
+>
+> **Session 5's two censuses both found more than the findings that prompted them.** `#177` claimed 9
+> discarded `buyMap()` returns in `other-praiding.ts` and `#205` claimed 12 in `mapfunctions-amp.ts`,
+> each explicitly scoping the other file out. The AST census found **29** — four more in
+> `mapfunctions.ts` (the U2 insanity / ship / alch / hypo frag-map buys), carrying the same vestigial
+> `if (bought)` on the line after the unconditional `bought = true` that is the author's own fingerprint
+> of the lost `bought = (buyMap() == 1)`. The niceCheckbox census settled a similar disagreement
+> (`#175` said 2 sites and mentioned 7 more; `#247` said 4 and called itself a duplicate): 20, of which
+> only 6 are live. **Third session running that mechanizing the finding's own derivation beat it.**
+>
+> **Fourteen of those 20 were DELETED rather than repaired, and that distinction is the fix.** Their
+> designs pin `lootAdvMapsRange` to 0, so the slider sum can never be 27 and `checkMaxSliders` forces
+> Perfect off regardless — repairing them would change nothing locally while leaking a real
+> `data-checked` write into every map designed later in the same Map-Chamber session. The same repair
+> forced a second, unfiled change: `maps.ts`'s two `create` designers open at 9/9/9, so once
+> `RfragMap` could actually leave Perfect ON they would have inherited it and paid the 2.34×
+> surcharge (measured live against the game's own `updateMapCost`) on ordinary farming maps. They now
+> re-assert the preset.
+>
+> **`#176` is the first sentinel question this campaign answered by refuting the finding's own
+> proposal.** `#176` asked for `-1` to mean "no ceiling", matching AT's multiValue dialog ("Put -1 for
+> Infinite"). It cannot: the raid ends on `findLastBionic().level > targetBW`, and clearing a BW is
+> what creates the next tier — so once the chain stops at `getObsidianStart() + 100` the top level
+> stops climbing and an infinite ceiling never terminates. The suggested fix converts a silent no-op
+> into a hang. An unset max now skips the zone with a message (user decision), and the Infinity
+> variant is one of the five mutants the net kills.
 >
 > **Session 4 replaced a dependency rather than patching it, and that was the right call by a
 > falsification, not a preference.** `#171`'s "vendored" `legacy/FastPriorityQueue.js` turned out not
@@ -334,13 +362,37 @@ route through `window`, and that produces a confident *0 calls* while the code d
 highest-consequence finding in the whole set that is not a security issue — a user loses perk
 levels irreversibly. `#171` hangs the browser forever.
 
-### Session 5 — Track A6: praiding and prestige raids · **M**
+### Session 5 — Track A6: praiding and prestige raids · **M** · ✅ SHIPPED
 
 `#166` `#175`+`#228`+`#247` `#176` `#177`+`#205` `#191` `#227`
 
-Nine issues, seven root causes — one session because four of them collapse into two. `#166` means PraidHarder buys **nothing**
-at every praid zone in the shipped default configuration and logs "can't afford to" — a whole
-advertised feature that has never worked at defaults.
+Nine issues, **six** root causes (the plan said seven; `#175`/`#228`/`#247` turned out to be one class,
+not two). Every one carries its own regression test — the corpus never enters a praid path, so all 12
+L0 fixtures reproduce the oracle byte-for-byte and `baseline-zero` is not evidence about any of this.
+
+Two of the six needed the game clone to settle, not argument. `#227`'s premise — that an out-of-range
+extra-zone value *deselects* the `<select>` rather than failing — was reproduced against a select built
+exactly as `setAdvExtraZoneText` builds it; the fix SKIPS unbuildable slots rather than clamping them,
+because a clamped +10 still misses the target and a clamped +0 duplicates the slot above it. And `#176`
+went the other way: see the status block above.
+
+Mutation-tested 26 mutants across the six fixes, every one aimed at the near-miss rather than the
+revert. Four initially survived and each named a missing assertion: `swapNiceCheckbox(el)` with no force
+argument TOGGLES and lands on the right answer from the game's default state; a repair that gates the
+bought FLAG but still captures the map id parks the slot forever (visible only in the 96-99 band, since
+the all-refused path blanks the slots anyway); `buyMap() !== -2` misses `-1`/`-3`/`undefined`; and a
+restore that skips `toggleSetting` leaves the in-game toggle rendering the old state.
+
+Live-verified in Chrome against the dev clone by driving real state: the Perfect surcharge measured
+**2.3447×** through the game's own `updateMapCost`, the `#227` reachability table came back exactly as
+designed for gaps of 3/10/11/20, and an unset Max BW skipped its zone without claiming success or
+taking AutoMaps and Climb BW hostage. Two honest gaps, both save-depth: Perfect unlocks at zone 109 and
+extra map zones at 209, so on a z62 save `checkPerfectChecked()` is gated off and the extra-zone select
+is empty — the cost delta and the DOM coercion rest on the unit nets, which mirror the game's arithmetic
+verbatim and pin it against the clone.
+
+Filed out of this session: **#289** (`PraidHarder`'s two failure arms leave AT's `AutoMaps` switched off
+for the rest of the run — and the comment on one of them says it turns it back on).
 
 ### Session 6 — Track A7+A8: sentinels, heirlooms, MAZ, conflicts · **M**
 

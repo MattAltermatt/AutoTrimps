@@ -312,7 +312,7 @@ describe('DOM-id lookups must resolve to an element that exists (#73)', () => {
     // survives the #73 fix, so fixing #73 edits exactly one place (KNOWN_DEAD). That the scan sees the
     // buggy maps.ts:144 lookup is already proven — the KNOWN_DEAD guard below asserts every baselined
     // id is still looked up somewhere, and goes red the moment it is not.
-    expect(LOOKUPS).toContainEqual({ id: 'advExtraLevelSelect', file: 'src/modules/mapfunctions.ts', line: 271 })
+    expect(LOOKUPS).toContainEqual({ id: 'advExtraLevelSelect', file: 'src/modules/mapfunctions.ts', line: 280 })
     expect(LOOKUPS.some((l) => l.file === 'src/modules/graphs/render.ts')).toBe(true) // the graphs shell is scanned
   })
 

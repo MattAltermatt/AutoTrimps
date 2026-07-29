@@ -63,6 +63,60 @@ export function RAMPplusMapToRun(daily: any, number: any) {
     return map;
 }
 
+/**
+ * #227 — can the game actually MAKE the map this slot is asking for?
+ *
+ * `RAMPplusMapToRun` returns `PR: Raid - world - number`, and the three writers below put it straight
+ * into `#advExtraLevelSelect`. The game builds that select with EXACTLY the options 0..10
+ * (setAdvExtraZoneText, main.js:6236-6248) — and setting a `<select>`'s `.value` to a string no
+ * `<option>` carries does not fail: it DESELECTS. `.value` becomes `""`, `getExtraMapLevels()` hits
+ * `if (!value) return 0` (main.js:6312), and `createMap` adds nothing (main.js:5994). So an
+ * out-of-range target silently produces a map at the CURRENT world zone.
+ *
+ * The failure is success-shaped, which is why it survived: `updateMapCost` reads the same coerced
+ * select, so it also drops the `10 * extraLevels` surcharge (main.js:6529) and quotes the price of the
+ * collapsed map — AT's affordability check agrees, the buy succeeds, the "Failed to Prestige Raid"
+ * bail never fires, and (with PR: Recycle on) the evidence is recycled away. Worked at PR: Zone 95 /
+ * PR: Raid 115: five maps intended for 111-115, five level-95 maps actually created.
+ *
+ * Nothing upstream bounds the pair — `MAZ.ts` renders PR: Raid as a bare `<input type='number'>` and
+ * its save path bound-checks `zone`, `cell` and `level` but not this field — and the `RAMPraidraid`
+ * tooltip ("raids every prestige between zone 95 and 105") actively invites a wider span. The two
+ * nearest siblings in this repo clamp the identical `target - world` computation
+ * (`other-praiding.ts:1223`, `MAZ.ts:481`); this path had neither.
+ *
+ * SKIP rather than clamp. Clamping to 10 would buy a map that still does not reach the target — and
+ * for a gap under 4 it would duplicate the slot above it. A slot whose map cannot be built is a slot
+ * with nothing to do.
+ */
+export function RAMPextraReachable(daily: any, number: any) {
+    var extra = daily ? RAMPplusMapToRun(true, number) : RAMPplusMapToRun(false, number);
+    // NaN — a `RAMPraidraid` list shorter than `RAMPraidzone` makes `raidzone[praidindex]` undefined —
+    // is rejected by the comparisons themselves (`NaN >= 0` is false), so there is no separate guard
+    // for it. An explicit `Number.isInteger` term was dropped rather than kept: `getPageSetting` maps
+    // every multiValue entry through `parseInt` (utils.ts:64), so no reachable input is fractional,
+    // and a term no input can exercise is a comment wearing the costume of a check.
+    return extra >= 0 && extra <= 10;
+}
+
+// One warning per praid zone per direction, not one per slot per tick (RAMPshouldrunmap runs at 10Hz
+// across five slots). Keyed by zone so moving to the next praid zone re-arms it.
+// Module-local on purpose: nothing outside this file reads it, so it stays off the globalThis seam.
+const extraWarnedZone: Record<string, number> = { daily: -1, normal: -1 };
+
+function warnUnreachableExtra(daily: any, number: any) {
+    var key = daily ? 'daily' : 'normal';
+    if (extraWarnedZone[key] === game.global.world) return;
+    extraWarnedZone[key] = game.global.world;
+    var praidzone = daily ? getPageSetting('RdAMPraidzone') : getPageSetting('RAMPraidzone');
+    var raidzone = daily ? getPageSetting('RdAMPraidraid') : getPageSetting('RAMPraidraid');
+    var raidzones = raidzone[praidzone.indexOf(game.global.world)];
+    debug("Prestige Raiding: zone " + game.global.world + " paired with raid target " + raidzones +
+        " needs +" + (raidzones - game.global.world - number) + " extra map zones, and the game only offers +0 to +10. " +
+        "Skipping the raid maps it cannot build - set PR: Raid between " + (game.global.world + 4) +
+        " and " + (game.global.world + 10) + ".", "maps");
+}
+
 export function RAMPshouldrunmap(daily: any, number: any) {
     var go = false;
     var praidzone = daily ? getPageSetting('RdAMPraidzone') : getPageSetting('RAMPraidzone');
@@ -76,9 +130,20 @@ export function RAMPshouldrunmap(daily: any, number: any) {
     if (Rgetequips(actualraidzone, false) > 0) {
         go = true;
     }
+    // #227 — a slot whose extra-zone value the game cannot represent would buy a map at the CURRENT
+    // world zone instead, and report it as the raid map it is not.
+    if (go && !RAMPextraReachable(daily, number)) {
+        warnUnreachableExtra(daily, number);
+        go = false;
+    }
     return go;
 }
 
+// #228 — the three `advPerfectCheckbox.checked = false` writes that used to sit in this function and
+// its two frag siblings are DELETED rather than repaired, for the reason spelled out over
+// `plusPres()` in other-praiding.ts: `lootAdvMapsRange = "0"` below pins the slider sum at 18, so
+// checkMaxSliders() (main.js:6549) already forces Perfect off and the write could never matter here.
+// The live instances of this class are in mapfunctions.ts (RfragMap / RminFragMap, 9/9/9).
 export function RAMPplusPres(daily: any, number: any) {
     byId("biomeAdvMapsSelect").value = "Plentiful";
     byId("advExtraLevelSelect").value = String(daily ? RAMPplusMapToRun(true, number) : RAMPplusMapToRun(false, number));
@@ -86,7 +151,6 @@ export function RAMPplusPres(daily: any, number: any) {
     byId("lootAdvMapsRange").value = "0";
     byId("difficultyAdvMapsRange").value = "9";
     byId("sizeAdvMapsRange").value = "9";
-    byId("advPerfectCheckbox").checked = false;
     byId("mapLevelInput").value = game.global.world;
     updateMapCost();
 
@@ -183,7 +247,6 @@ export function RAMPplusPresfragmax(daily: any, number: any) {
     byId("lootAdvMapsRange").value = "0";
     byId("difficultyAdvMapsRange").value = "9";
     byId("sizeAdvMapsRange").value = "9";
-    byId("advPerfectCheckbox").checked = false;
     byId("mapLevelInput").value = game.global.world;
     updateMapCost();
     return updateMapCost(true);
@@ -196,7 +259,6 @@ export function RAMPplusPresfragmin(daily: any, number: any) {
     byId("lootAdvMapsRange").value = "0";
     byId("difficultyAdvMapsRange").value = "9";
     byId("sizeAdvMapsRange").value = "9";
-    byId("advPerfectCheckbox").checked = false;
     byId("mapLevelInput").value = game.global.world;
     updateMapCost();
     if (updateMapCost(true) <= game.resources.fragments.owned) {
@@ -360,23 +422,23 @@ export function RAMPfrag(daily: any) {
     var praidindex = praidzone.indexOf(game.global.world);
     var raidzones = raidzone[praidindex];
 
-    if (Rgetequips(raidzones, false)) {
+    if (Rgetequips(raidzones, false) && RAMPextraReachable(daily, 0)) {
         if (frag == 1) cost += (daily ? RAMPplusPresfragmin(true, 0) : RAMPplusPresfragmin(false, 0));
         else if (frag == 2) cost += (daily ? RAMPplusPresfragmax(true, 0) : RAMPplusPresfragmax(false, 0));
     }
-    if (Rgetequips((raidzones - 1), false)) {
+    if (Rgetequips((raidzones - 1), false) && RAMPextraReachable(daily, 1)) {
         if (frag == 1) cost += (daily ? RAMPplusPresfragmin(true, 1) : RAMPplusPresfragmin(false, 1));
         else if (frag == 2) cost += (daily ? RAMPplusPresfragmax(true, 1) : RAMPplusPresfragmax(false, 1));
     }
-    if (Rgetequips((raidzones - 2), false)) {
+    if (Rgetequips((raidzones - 2), false) && RAMPextraReachable(daily, 2)) {
         if (frag == 1) cost += (daily ? RAMPplusPresfragmin(true, 2) : RAMPplusPresfragmin(false, 2));
         else if (frag == 2) cost += (daily ? RAMPplusPresfragmax(true, 2) : RAMPplusPresfragmax(false, 2));
     }
-    if (Rgetequips((raidzones - 3), false)) {
+    if (Rgetequips((raidzones - 3), false) && RAMPextraReachable(daily, 3)) {
         if (frag == 1) cost += (daily ? RAMPplusPresfragmin(true, 3) : RAMPplusPresfragmin(false, 3));
         else if (frag == 2) cost += (daily ? RAMPplusPresfragmax(true, 3) : RAMPplusPresfragmax(false, 3));
     }
-    if (Rgetequips((raidzones - 4), false)) {
+    if (Rgetequips((raidzones - 4), false) && RAMPextraReachable(daily, 4)) {
         if (frag == 1) cost += (daily ? RAMPplusPresfragmin(true, 4) : RAMPplusPresfragmin(false, 4));
         else if (frag == 2) cost += (daily ? RAMPplusPresfragmax(true, 4) : RAMPplusPresfragmax(false, 4));
     }
@@ -505,8 +567,7 @@ export function RAMP() {
                 debug("Check complete for frag map");
                 RfragMap();
                 if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-                    buyMap();
-                    RAMPfragmappybought = true;
+                    RAMPfragmappybought = buyMap() === 1;
                     if (RAMPfragmappybought) {
                         RAMPfragmappy = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                         debug("frag map bought");
@@ -552,8 +613,7 @@ export function RAMP() {
         debug("Check complete for 5th map");
         RAMPplusPres(false, 0);
         if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-            buyMap();
-            RAMPmapbought5 = true;
+            RAMPmapbought5 = buyMap() === 1;
             if (RAMPmapbought5) {
                 RAMPpMap5 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug("5th map bought");
@@ -564,8 +624,7 @@ export function RAMP() {
         debug("Check complete for 4th map");
         RAMPplusPres(false, 1);
         if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-            buyMap();
-            RAMPmapbought4 = true;
+            RAMPmapbought4 = buyMap() === 1;
             if (RAMPmapbought4) {
                 RAMPpMap4 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug("4th map bought");
@@ -576,8 +635,7 @@ export function RAMP() {
         debug("Check complete for 3rd map");
         RAMPplusPres(false, 2);
         if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-            buyMap();
-            RAMPmapbought3 = true;
+            RAMPmapbought3 = buyMap() === 1;
             if (RAMPmapbought3) {
                 RAMPpMap3 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug("3rd map bought");
@@ -588,8 +646,7 @@ export function RAMP() {
         debug("Check complete for 2nd map");
         RAMPplusPres(false, 3);
         if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-            buyMap();
-            RAMPmapbought2 = true;
+            RAMPmapbought2 = buyMap() === 1;
             if (RAMPmapbought2) {
                 RAMPpMap2 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug("2nd map bought");
@@ -600,8 +657,7 @@ export function RAMP() {
         debug("Check complete for 1st map");
         RAMPplusPres(false, 4);
         if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-            buyMap();
-            RAMPmapbought1 = true;
+            RAMPmapbought1 = buyMap() === 1;
             if (RAMPmapbought1) {
                 RAMPpMap1 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug("1st map bought");
@@ -680,8 +736,7 @@ export function dRAMP() {
                 debug("Check complete for frag map");
                 RfragMap();
                 if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-                    buyMap();
-                    RdAMPfragmappybought = true;
+                    RdAMPfragmappybought = buyMap() === 1;
                     if (RdAMPfragmappybought) {
                         RdAMPfragmappy = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                         debug("frag map bought");
@@ -727,8 +782,7 @@ export function dRAMP() {
         debug("Check complete for 5th map");
         RAMPplusPres(true, 0);
         if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-            buyMap();
-            RdAMPmapbought5 = true;
+            RdAMPmapbought5 = buyMap() === 1;
             if (RdAMPmapbought5) {
                 RdAMPpMap5 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug("5th map bought");
@@ -739,8 +793,7 @@ export function dRAMP() {
         debug("Check complete for 4th map");
         RAMPplusPres(true, 1);
         if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-            buyMap();
-            RdAMPmapbought4 = true;
+            RdAMPmapbought4 = buyMap() === 1;
             if (RdAMPmapbought4) {
                 RdAMPpMap4 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug("4th map bought");
@@ -751,8 +804,7 @@ export function dRAMP() {
         debug("Check complete for 3rd map");
         RAMPplusPres(true, 2);
         if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-            buyMap();
-            RdAMPmapbought3 = true;
+            RdAMPmapbought3 = buyMap() === 1;
             if (RdAMPmapbought3) {
                 RdAMPpMap3 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug("3rd map bought");
@@ -763,8 +815,7 @@ export function dRAMP() {
         debug("Check complete for 2nd map");
         RAMPplusPres(true, 3);
         if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-            buyMap();
-            RdAMPmapbought2 = true;
+            RdAMPmapbought2 = buyMap() === 1;
             if (RdAMPmapbought2) {
                 RdAMPpMap2 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug("2nd map bought");
@@ -775,8 +826,7 @@ export function dRAMP() {
         debug("Check complete for 1st map");
         RAMPplusPres(true, 4);
         if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-            buyMap();
-            RdAMPmapbought1 = true;
+            RdAMPmapbought1 = buyMap() === 1;
             if (RdAMPmapbought1) {
                 RdAMPpMap1 = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                 debug("1st map bought");

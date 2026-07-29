@@ -101,6 +101,31 @@ export function updateAutoMapsStatus(get?: any) {
 MODULES["maps"].advSpecialMapMod_numZones = 3;
 globalThis.advExtraMapLevels = 0;
 
+/**
+ * Re-assert the Perfect-Sliders checkbox from the active map preset, exactly as the game's own
+ * `resetAdvMaps()` does (main.js:6134).
+ *
+ * This exists because of the #175/#228/#247 repair, and it is the half of that repair that is easy
+ * to miss. Before it, `advPerfectCheckbox.checked = …` was an inert expando everywhere, so NOTHING
+ * in the fork could change the state the game reads — the two `create` designers below inherited the
+ * preset's `perf` and that was that. Now that `RfragMap`/`RminFragMap`/`PraidHarder` drive the real
+ * `data-checked` through `swapNiceCheckbox`, they LEAVE it on whenever their map was affordable, and
+ * these designers open at 9/9/9 (`*MapTier*Sliders`) — slider sum 27, so `checkMaxSliders`
+ * (main.js:6549) makes Perfect eligible and `updateMapCost` would silently add +6 to baseCost, i.e.
+ * ~2.19× the fragments, on ordinary farming maps nobody asked to be perfect.
+ *
+ * The game resets this on every Map-Chamber entry (main.js:10872), so the leak is bounded to one
+ * chamber session — but a frag-farm design followed by a `create` design inside one session is an
+ * ordinary sequence, not a corner case. Note `selectAdvMapsPreset(1)` above already closes it for
+ * users on preset 2+ (it calls `resetAdvMaps`); this makes it unconditional.
+ *
+ * `!!` is load-bearing: `swapNiceCheckbox(elem, undefined)` TOGGLES (updates.js:1934), so a preset
+ * object from an old save with no `perf` key would flip the state on every call.
+ */
+export function resetPerfectSlidersToPreset() {
+    swapNiceCheckbox(byId("advPerfectCheckbox"), !!getMapPreset().perf);
+}
+
 export function testMapSpecialModController() {
     const a: any[] = [];
     Object.keys(mapSpecialModifierConfig).forEach(function(o) {
@@ -737,6 +762,7 @@ export function autoMap() {
             mapsClicked();
         } else if (selectedMap == "create") {
             if (game.global.selectedMapPreset > 1) selectAdvMapsPreset(1);
+            resetPerfectSlidersToPreset();
             const $mapLevelInput = byId("mapLevelInput");
             $mapLevelInput.value = needPrestige ? game.global.world : siphlvl;
             if (preSpireFarming && MODULES["maps"].SpireFarm199Maps)
@@ -1496,6 +1522,7 @@ export function RautoMap() {
         //Everything else
         else if (selectedMap == "create") {
             if (game.global.selectedMapPreset > 1) selectAdvMapsPreset(1);
+            resetPerfectSlidersToPreset();
             byId("mapLevelInput").value = game.global.world;
             let decrement: any;
             let tier;

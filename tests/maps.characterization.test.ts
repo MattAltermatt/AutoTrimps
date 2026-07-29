@@ -54,6 +54,15 @@ function installCollaboratorStubs() {
   g.getCurrentTime = () => ''
   g.updatePortalTimer = () => ''
   g.byId = (id: string) => document.getElementById(id)
+  // #175/#228/#247 — the `create` arm now re-asserts Perfect Sliders from the active preset
+  // (resetPerfectSlidersToPreset). Stubbed with the game's REAL semantics rather than spied, because
+  // it is a DOM setter like the slider `.value` writes, not one of the game-state mutators the
+  // ordered log below characterizes.
+  g.swapNiceCheckbox = (elem: HTMLElement, force?: boolean) => {
+    const checked = typeof force === 'undefined' ? elem.dataset.checked !== 'true' : force == true
+    elem.setAttribute('data-checked', String(checked))
+  }
+  g.getMapPreset = () => ({ perf: false }) // config.js:333 — mapPresets.p1 default
   g.challengeActive = (c: string) => g.game.global.challengeActive === c
   g.getCurrentMapObject = () => ({ level: 0, location: 'Plentiful', noRecycle: false, name: 'x' })
   g.getMapIndex = () => 0

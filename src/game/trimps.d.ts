@@ -161,7 +161,12 @@ declare global {
   function updateMapCost(...args: any[]): any
   function repeatClicked(...args: any[]): void
   function selectAdvMapsPreset(...args: any[]): void
+  function getMapPreset(...args: any[]): any
   function checkPerfectChecked(...args: any[]): boolean
+  // updates.js:1932/1958 — the game's niceCheckbox contract. `advPerfectCheckbox` is a <span>,
+  // so `.checked = x` is an inert expando; data-checked is the state the game reads (#175/#228/#247).
+  function swapNiceCheckbox(elem: any, forceSetting?: boolean): void
+  function readNiceCheckbox(elem: any): boolean
   function getSpecialModifierSetting(...args: any[]): any
   function getExtraMapLevels(...args: any[]): number
   function getTotalPortals(...args: any[]): number

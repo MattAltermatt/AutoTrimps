@@ -266,6 +266,15 @@ export function RresetVars() {
 
 //###Other Functions - were in other.js but moved over
 
+// #228/#247 — the two LIVE sites of the inert-checkbox class, and the ladder is written around them:
+// "start Perfect, degrade only if forced". `advPerfectCheckbox` stopped being an <input type=checkbox>
+// in Trimps 4.9 (2018-09-04, clone commit b43ef65) and is now a <span class="niceCheckbox"
+// data-checked> whose only reader is readNiceCheckbox (updates.js:1958) via checkPerfectChecked
+// (main.js:6303). `.checked = x` on a span is an expando, so for ~8 years BOTH writes did nothing:
+// AT never got the Perfect map it asks for (its `fa` loot rolled randomly instead of max), and the
+// imperfect fallback below re-priced an unchanged map, making its `if` a provable no-op. The sliders
+// here are 9/9/9, so checkMaxSliders()==27 and the game genuinely consults the checkbox — unlike the
+// plusPres*/RAMPplusPres designs, which pin loot to 0 and had their dead writes deleted instead.
 export function RfragMap() {
     byId("biomeAdvMapsSelect").value = "Plentiful";
     byId("advExtraLevelSelect").value = "0";
@@ -273,7 +282,7 @@ export function RfragMap() {
     byId("lootAdvMapsRange").value = "9";
     byId("difficultyAdvMapsRange").value = "9";
     byId("sizeAdvMapsRange").value = "9";
-    byId("advPerfectCheckbox").checked = true;
+    swapNiceCheckbox(byId("advPerfectCheckbox"), true);
     byId("mapLevelInput").value = String(game.global.world - 1);
     updateMapCost();
 
@@ -282,7 +291,7 @@ export function RfragMap() {
         updateMapCost();
     }
     if (updateMapCost(true) > game.resources.fragments.owned) {
-        byId("advPerfectCheckbox").checked = false;
+        swapNiceCheckbox(byId("advPerfectCheckbox"), false);
         updateMapCost();
     }
     var fragsOwned = game.resources.fragments.owned;
@@ -328,7 +337,7 @@ export function RminFragMap(selection: any, number: any, special: any) {
     byId("lootAdvMapsRange").value = "9";
     byId("difficultyAdvMapsRange").value = "9";
     byId("sizeAdvMapsRange").value = "9";
-    byId("advPerfectCheckbox").checked = true;
+    swapNiceCheckbox(byId("advPerfectCheckbox"), true);
     byId("mapLevelInput").value = game.global.world;
     updateMapCost();
 
@@ -338,7 +347,7 @@ export function RminFragMap(selection: any, number: any, special: any) {
 
     //Nobodys perfect
     if (updateMapCost(true) > game.resources.fragments.owned) {
-        byId("advPerfectCheckbox").checked = false;
+        swapNiceCheckbox(byId("advPerfectCheckbox"), false);
         updateMapCost();
         if (updateMapCost(true) <= game.resources.fragments.owned) {
             return updateMapCost(true);
@@ -865,8 +874,7 @@ export function RinsanityMap() {
                 debug("Check complete for insanity frag map");
                 RfragMap();
                 if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-                    buyMap();
-                    insanityfragmappybought = true;
+                    insanityfragmappybought = buyMap() === 1;
                     if (insanityfragmappybought) {
                         insanityfragmappy = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                         debug("insanity frag map bought");
@@ -1058,8 +1066,7 @@ export function RshipMap() {
                 debug("Check complete for ship frag map");
                 RfragMap();
                 if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-                    buyMap();
-                    shipfragmappybought = true;
+                    shipfragmappybought = buyMap() === 1;
                     if (shipfragmappybought) {
                         shipfragmappy = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                         debug("ship frag map bought");
@@ -1187,8 +1194,7 @@ export function RalchMap() {
                 debug("Check complete for alch frag map");
                 RfragMap();
                 if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-                    buyMap();
-                    alchfragmappybought = true;
+                    alchfragmappybought = buyMap() === 1;
                     if (alchfragmappybought) {
                         alchfragmappy = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                         debug("alch frag map bought");
@@ -1347,8 +1353,7 @@ export function RhypoMap() {
                 debug("Check complete for hypo frag map");
                 RfragMap();
                 if ((updateMapCost(true) <= game.resources.fragments.owned)) {
-                    buyMap();
-                    hypofragmappybought = true;
+                    hypofragmappybought = buyMap() === 1;
                     if (hypofragmappybought) {
                         hypofragmappy = game.global.mapsOwnedArray[game.global.mapsOwnedArray.length - 1].id;
                         debug("hypo frag map bought");
