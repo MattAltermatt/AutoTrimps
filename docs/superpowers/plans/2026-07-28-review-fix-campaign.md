@@ -547,6 +547,25 @@ Note `#245` overshoots caps by up to 9 — and remember **the housing `Max*` cap
 (#140 WONTFIX): uncapping the "inert" ones steers AT into Collectors and is ~4× worse population by
 z62. Fix the overshoot; do not touch the cap semantics.
 
+**⚠️ THE COLLECTED RED STOPS THE DEPLOY, AND THAT IS NOW AN ACCEPTED TRADE (user decision, 2026-07-29).**
+`deploy.yml:40` runs `npm run test:ci` and the deploy job is `needs: build`, so a red `baseline-zero`
+fails the whole workflow — the hosted userscript at
+`mattaltermatt.github.io/AutoTrimps/autotrimps.user.js` **stops updating from S8 until the S10 re-pin
+lands.** Anyone installing from Pages in that window keeps the pre-S8 build, including #203's U2
+AutoEquip deadlock (zero gear levels for an entire run). This plan asserted "RED, collected · 8 merges"
+without noting that merges 8 and 9 do not publish.
+
+A waiver is not an escape hatch here, and the asymmetry matters: `baseline-zero` DOES consult the sim
+manifest (its failure reads `[manifest] N UNEXPLAINED divergence(s)`), so a waiver could silence it —
+but `blind-spot-sensitivity` asserts `diffTraces(oracle, clean) === []` with **no manifest consulted**,
+and `10-hypo-u2` is one of its three sensitivity fixtures. There is no waiver path to a green deploy.
+Re-pin or stay red, exactly as §"re-pin-or-park, never waive" says.
+
+Chosen: **stay red.** The campaign deliberately traded shipping cadence for one honest re-pin, and
+clearing the red any other way is the "never re-record to make a red go away" rule. S9 will keep it red;
+S10 restores the deploy. **Flag this before the first Track B merge of any future campaign** — it should
+be a stated decision up front, not something discovered when the live script looks stale.
+
 **S8's red is ONE substitution, and the oracle is the evidence.** `10-hypo-u2` — the only fixture with
 `Requipon: true` — diverges at 152 events, and the first three name the cause outright:
 
