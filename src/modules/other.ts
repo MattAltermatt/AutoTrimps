@@ -60,28 +60,37 @@ export function autoRoboTrimp() {
 
 export function buyWeps() {
     if (!((getPageSetting('BuyWeaponsNew') == 1) || (getPageSetting('BuyWeaponsNew') == 3))) return;
+    // #207 — CapEquip2's own tooltip says "Disable with -1 or 0", and the raw setting was spliced
+    // straight into `level < cap`. `level < -1` and `level < 0` are both FALSE for every slot, so the
+    // documented disable value turned this function into a total no-op — the exact opposite of "no
+    // cap". The U2 sibling RbuyArms (this file, ~:301) and the equipment.ts wall (`cap > 0 && …`,
+    // :219-224) already normalise <= 0 to "uncapped"; the U1 twins never got that #68-era fix.
+    const weaponCap = (getPageSetting('CapEquip2') <= 0) ? Infinity : getPageSetting('CapEquip2');
     preBuy();
     game.global.buyAmt = getPageSetting('gearamounttobuy');
-    if (game.equipment.Dagger.level < getPageSetting('CapEquip2') && canAffordBuilding('Dagger', null, null, !0)) buyEquipment('Dagger', !0, !0);
-    if (game.equipment.Mace.level < getPageSetting('CapEquip2') && canAffordBuilding('Mace', null, null, !0)) buyEquipment('Mace', !0, !0);
-    if (game.equipment.Polearm.level < getPageSetting('CapEquip2') && canAffordBuilding('Polearm', null, null, !0)) buyEquipment('Polearm', !0, !0);
-    if (game.equipment.Battleaxe.level < getPageSetting('CapEquip2') && canAffordBuilding('Battleaxe', null, null, !0)) buyEquipment('Battleaxe', !0, !0);
-    if (game.equipment.Greatsword.level < getPageSetting('CapEquip2') && canAffordBuilding('Greatsword', null, null, !0)) buyEquipment('Greatsword', !0, !0);
-    if (!game.equipment.Arbalest.locked && game.equipment.Arbalest.level < getPageSetting('CapEquip2') && canAffordBuilding('Arbalest', null, null, !0)) buyEquipment('Arbalest', !0, !0);
+    if (game.equipment.Dagger.level < weaponCap && canAffordBuilding('Dagger', null, null, !0)) buyEquipment('Dagger', !0, !0);
+    if (game.equipment.Mace.level < weaponCap && canAffordBuilding('Mace', null, null, !0)) buyEquipment('Mace', !0, !0);
+    if (game.equipment.Polearm.level < weaponCap && canAffordBuilding('Polearm', null, null, !0)) buyEquipment('Polearm', !0, !0);
+    if (game.equipment.Battleaxe.level < weaponCap && canAffordBuilding('Battleaxe', null, null, !0)) buyEquipment('Battleaxe', !0, !0);
+    if (game.equipment.Greatsword.level < weaponCap && canAffordBuilding('Greatsword', null, null, !0)) buyEquipment('Greatsword', !0, !0);
+    if (!game.equipment.Arbalest.locked && game.equipment.Arbalest.level < weaponCap && canAffordBuilding('Arbalest', null, null, !0)) buyEquipment('Arbalest', !0, !0);
     postBuy();
 }
 
 export function buyArms() {
     if (!((getPageSetting('BuyArmorNew') == 1) || (getPageSetting('BuyArmorNew') == 3))) return;
+    // #207 — see buyWeps above. CapEquiparm's tooltip likewise documents "Disable with -1 or 0", and
+    // `level < -1` is false for every slot, so disabling the cap disabled the whole buyer instead.
+    const armourCapU1 = (getPageSetting('CapEquiparm') <= 0) ? Infinity : getPageSetting('CapEquiparm');
     preBuy();
     game.global.buyAmt = 10;
-    if (game.equipment.Shield.level < getPageSetting('CapEquiparm') && canAffordBuilding('Shield', null, null, !0)) buyEquipment('Shield', !0, !0);
-    if (game.equipment.Boots.level < getPageSetting('CapEquiparm') && canAffordBuilding('Boots', null, null, !0)) buyEquipment('Boots', !0, !0);
-    if (game.equipment.Helmet.level < getPageSetting('CapEquiparm') && canAffordBuilding('Helmet', null, null, !0)) buyEquipment('Helmet', !0, !0);
-    if (game.equipment.Pants.level < getPageSetting('CapEquiparm') && canAffordBuilding('Pants', null, null, !0)) buyEquipment('Pants', !0, !0);
-    if (game.equipment.Shoulderguards.level < getPageSetting('CapEquiparm') && canAffordBuilding('Shoulderguards', null, null, !0)) buyEquipment('Shoulderguards', !0, !0);
-    if (game.equipment.Breastplate.level < getPageSetting('CapEquiparm') && canAffordBuilding('Breastplate', null, null, !0)) buyEquipment('Breastplate', !0, !0);
-    if (!game.equipment.Gambeson.locked && game.equipment.Gambeson.level < getPageSetting('CapEquiparm') && canAffordBuilding('Gambeson', null, null, !0)) buyEquipment('Gambeson', !0, !0);
+    if (game.equipment.Shield.level < armourCapU1 && canAffordBuilding('Shield', null, null, !0)) buyEquipment('Shield', !0, !0);
+    if (game.equipment.Boots.level < armourCapU1 && canAffordBuilding('Boots', null, null, !0)) buyEquipment('Boots', !0, !0);
+    if (game.equipment.Helmet.level < armourCapU1 && canAffordBuilding('Helmet', null, null, !0)) buyEquipment('Helmet', !0, !0);
+    if (game.equipment.Pants.level < armourCapU1 && canAffordBuilding('Pants', null, null, !0)) buyEquipment('Pants', !0, !0);
+    if (game.equipment.Shoulderguards.level < armourCapU1 && canAffordBuilding('Shoulderguards', null, null, !0)) buyEquipment('Shoulderguards', !0, !0);
+    if (game.equipment.Breastplate.level < armourCapU1 && canAffordBuilding('Breastplate', null, null, !0)) buyEquipment('Breastplate', !0, !0);
+    if (!game.equipment.Gambeson.locked && game.equipment.Gambeson.level < armourCapU1 && canAffordBuilding('Gambeson', null, null, !0)) buyEquipment('Gambeson', !0, !0);
     postBuy();
 }
 
@@ -375,7 +384,17 @@ export function Rgetequipcost(equip: any, resource: any, amt: any) {
 }
 
 //smithylogic('Shield', 'wood', true)
-export function smithylogic(name: any, resource: any, equip: any) {
+// #232 — the `: boolean` annotation is LOAD-BEARING, not decoration. Without it tsc accepts an
+// if/else-if chain that falls off the end, and this function did exactly that: for an equipment
+// call only ONE of itemwood/itemmetal/itemgems is non-null, and each branch below pairs a
+// `smithyclose*` flag with a name-list the item is absent from for the other two resources — so a
+// Smithy being close on a resource the item does NOT cost matched no branch at all and returned
+// `undefined`. equipment.ts's sole call site tests `if (smithylogic(...))`, so that read as "do not
+// buy", `keepBuying` stayed false, and the do/while exited: 4 of the 6 resource-close configurations
+// stopped U2 gear buying entirely, and being a pure function of state it repeated every tick.
+// With the annotation a future fallthrough is a compile error (TS2366), not a silent deadlock.
+// (`noImplicitReturns` would catch the whole class; 20 more sites exist repo-wide — filed separately.)
+export function smithylogic(name: any, resource: any, equip: any): boolean {
 
     var go = true;
 
@@ -473,6 +492,14 @@ export function smithylogic(name: any, resource: any, equip: any) {
         go = true;
         return go;
     }
+
+    // #232 — the chain above is a set of INDEPENDENT guards, not an exhaustive dispatch: each arm
+    // asks "is a Smithy nearly affordable in a resource this item competes for, and does this item
+    // cost more than `percent` of that Smithy?". Reaching here means no arm matched, which means no
+    // resource this item actually costs is contested — so there is no reason to withhold the buy.
+    // `go` is still true (every falsifying arm returns immediately), so this is `return true` by
+    // construction; returning `false` here would invert the guard and block every unmatched case.
+    return go;
 }
 
 export function archstring() {

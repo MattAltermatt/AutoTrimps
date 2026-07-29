@@ -346,8 +346,18 @@ export function buyBuildings() {
         buyFoodEfficientHousing();
         buyGemEfficientHousing();
     }
-    if (!hidebuild && getPageSetting('MaxWormhole') > 0 && game.buildings.Wormhole.owned < getPageSetting('MaxWormhole') && !game.buildings.Wormhole.locked) {
-        safeBuyBuilding('Wormhole');
+    // #245 — the cap was tested on `owned` and then safeBuyBuilding's un-clamped 10 → 2 → 1 ladder was
+    // free to buy a full stack, so the last purchase under a cap could overshoot it by up to 9. #123
+    // added exactly this clamp to the U2 siblings (RbuyBuildings housing at ~:770 and Laboratory at
+    // ~:798) and left the U1 buyers on the bare ladder. Wormhole is the one that stings: it is priced in
+    // HELIUM, so an overshoot is helium not spent on perks at the next portal, and MaxWormhole is by its
+    // own tooltip the only brake on it.
+    // `purchased`, not `owned`, for the same reason the U2 clamp gives: units already sitting in the
+    // craft queue count against the cap, and reading `owned` would re-authorise them every tick.
+    const wormholeCap = getPageSetting('MaxWormhole');
+    if (!hidebuild && wormholeCap > 0 && game.buildings.Wormhole.purchased < wormholeCap && !game.buildings.Wormhole.locked) {
+        const wormholeRoom = wormholeCap - game.buildings.Wormhole.purchased;
+        safeBuyBuilding('Wormhole', Math.min(bulkBuyAmount(), wormholeRoom));
     }
 
     //Gyms:
@@ -500,7 +510,25 @@ export function mostEfficientHousing() {
             // RbuyGemEfficientHousing already divides by the EVALUATED building's `increase.by`, and the
             // `+500` Hub term below only makes sense against the evaluated building's gain.
             let housingBonus = game.buildings[housing].increase.by;
-            if (!game.buildings.Hub.locked) { housingBonus += 500; }
+            // #200 — this was `+= 500`, a 50x understatement of what the game actually grants. Every
+            // hubbable purchase calls buildBuilding('Hub', hubAmt * amt) (.trimps-game/main.js:4990-4998),
+            // and each Hub is worth Hub.increase.by = 25000 population (config.js). The error does NOT
+            // cancel out of the argmin: the ranking is price / (avgProduction * housingBonus), and
+            // housingBonus is per-CANDIDATE, so understating the shared Hub term compresses the spread
+            // between a Hut (+3 own gain) and a Collector (+5000) into near-parity and picks wrong.
+            // Read from the building rather than retyped as a literal — a hand-copied second copy of a
+            // code-owned constant just re-rots the next time upstream moves it.
+            // The game's `hubbable` list is exactly HousingTypes above, so no membership test is needed
+            // here; Warpstation (the one non-hubbable member of the SIBLING gem buyer's list) never
+            // reaches this function.
+            if (!game.buildings.Hub.locked) {
+                // Collectology makes a Collector grant MULTIPLE Hubs — the one case where the bonus is
+                // not uniform across candidates, and therefore the one that most moves the argmin.
+                const hubAmt = (housing === 'Collector' && autoBattle?.oneTimers?.Collectology?.owned)
+                    ? autoBattle.oneTimers.Collectology.getHubs()
+                    : 1;
+                housingBonus += game.buildings.Hub.increase.by * hubAmt;
+            }
 
             // ⚠️ #158 — THIS PRICE IS NOT THE PRICE THE GAME CHARGES, AND THAT IS DELIBERATE-FOR-NOW.
             // The game charges `floor(base * scaling^purchased)` (getBuildingItemPrice,

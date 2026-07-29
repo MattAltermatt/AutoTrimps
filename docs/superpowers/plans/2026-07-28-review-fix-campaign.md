@@ -22,7 +22,11 @@
 >                       RE-MILESTONED to S9 (trace-moving) · filed #290
 > 7        ✅ SHIPPED   Fix S7 closed, 6: #201 #202 #215 #216 #217 #287 · NO trace moved
 >                       (baseline-zero 21/21 both sides) · filed #291 #292
-> 8–9      ⬜ Track B   35 issues, trace-moving, collect the red
+> 8        ✅ SHIPPED   Fix S8 closed, 9: #200 #203 #207 #218 #219 #220 #232 #245
+>                       #246 · #214 SPLIT OUT to its own branch (needs a settings
+>                       migration) · filed #293 · baseline-zero 20/21, RED on
+>                       10-hypo-u2 with 152 divergences, ALL attributed (below)
+> 9        ⬜ Track B   25 issues, trace-moving, collect the red
 > 10       ⬜ re-pin     one oracle re-pin, ledgered
 > ```
 >
@@ -542,6 +546,42 @@ purchase) are the same user-visible symptom from two directions.
 Note `#245` overshoots caps by up to 9 — and remember **the housing `Max*` caps are load-bearing**
 (#140 WONTFIX): uncapping the "inert" ones steers AT into Collectors and is ~4× worse population by
 z62. Fix the overshoot; do not touch the cap semantics.
+
+**S8's red is ONE substitution, and the oracle is the evidence.** `10-hypo-u2` — the only fixture with
+`Requipon: true` — diverges at 152 events, and the first three name the cause outright:
+
+```text
+idx  oracle (pinned as "correct")           working (fixed)
+---  -------------------------------------  ------------------------------
+  8  buyEquipment("Arbalest", …)   ← LOCKED  buyEquipment("Dagger", …)
+  9  buyEquipment("Gambeson", …)   ← LOCKED  buyEquipment("Boots", …)
+ 12  buyUpgrade("Coordination")    ← stalled buyEquipment("Dagger", …)
+```
+
+Attribution for the S10 ledger: **#220** removed the always-level-2 block's unguarded buys of LOCKED
+gear (indices 8–9), and **#203** stopped `mostEfficientEquipment` ranking locked slots, so the
+efficiency loop now returns real winners and keeps buying instead of stalling at tick 2 (index 12 and
+everything after). The remaining 149 are the downstream cascade of buying gear where the oracle bought
+none. `[runtime] MATCH` — the harness confirms the runtime equals the oracle's, so this is a src change,
+which is what we wanted. **The oracle recorded AT buying equipment the game refuses to sell; that trace
+was always wrong, and re-pinning it at S10 is the correction, not a laundering.**
+
+**#214 was SPLIT OUT of S8** after an adversarial panel. Decision recorded in full on the issue: `-1`
+becomes the single uncap sentinel and `0` means "build none" (16 of 17 consumer sites and 14–18 tooltips
+already agree; `< 1` can never generalize because `MaxWormhole` and `RMaxLabs` both ship `'0'` defaults
+that depend on 0 meaning "never build"). It needs a value migration riding an id move — and both
+consumers resolve their id by *string concatenation* (`'Max' + name`), so the rename silently breaks the
+lookup, and a missed lookup returns `false`, which the gem buyer's rescue converts to **uncapped**: the
+exact failure being fixed, reintroduced by its own fix. That is `settings-migrations.ts` territory, whose
+header opens with "the failure mode is silent data loss for real users" — it gets its own review cycle.
+Note the plan's own S8 entry says "do not touch the cap semantics", which this honours.
+
+**The panel also overturned the lead's reasoning, which is worth recording.** The lead was about to fix
+#214 justified by "#140 proved uncapping housing is ~4× worse". #140's uncapped arm was `Max = -1` — the
+one value both consumers already agree on — and its mechanism needs a *fallback candidate* (capped
+housing drops out, AT is forced into Collectors), but the food-efficiency list has **no Collector** in
+it. The conclusion was imported onto a question #140 never measured. Second session running that a
+batch-level label outvoted the per-case analysis.
 
 ### Session 9 — Track B: combat math, maps, portal, gather · **XL**
 

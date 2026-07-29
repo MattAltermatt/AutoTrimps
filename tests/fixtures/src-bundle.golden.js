@@ -4453,9 +4453,10 @@
       Wall = true;
     }
     const isLiquified = game.options.menu.liquification.enabled && game.talents.liquification.purchased && !game.global.mapsActive && game.global.gridArray && game.global.gridArray[0] && game.global.gridArray[0].name === "Liquimp";
-    let cap = 100;
-    if (equipmentList[equipName].Stat === "health") cap = getPageSetting2("CapEquiparm");
-    if (equipmentList[equipName].Stat === "attack") cap = getPageSetting2("CapEquip2");
+    let cap = Infinity;
+    const capStat = equipmentList[equipName].Stat;
+    if (capStat === "health" || capStat === "block") cap = getPageSetting2("CapEquiparm");
+    if (capStat === "attack") cap = getPageSetting2("CapEquip2");
     if (isLiquified && cap > 0 && gameResource.level >= cap / MODULES["equipment"].capDivisor) {
       Factor = 0;
       Wall = true;
@@ -4859,6 +4860,9 @@
     artBoost *= autoBattle.oneTimers.Artisan.owned ? autoBattle.oneTimers.Artisan.getMult() : 1;
     if (game.global.challengeActive === "Pandemonium") artBoost *= game.challenges.Pandemonium.getEnemyMult();
     for (const i in RequipmentList) {
+      if (game.equipment[i].locked) {
+        continue;
+      }
       const nextLevelCost = game.equipment[i].cost[RequipmentList[i].Resource][0] * Math.pow(game.equipment[i].cost[RequipmentList[i].Resource][1], game.equipment[i].level + fakeLevels[i]) * artBoost;
       if (game.global.challengeActive === "Pandemonium" && game.challenges.Pandemonium.isEquipBlocked(i)) {
         continue;
@@ -4933,10 +4937,13 @@
     const alwaysLvl2 = getPageSetting2("Requip2");
     const attackEquipCap = getPageSetting2("Requipcapattack") <= 0 ? Infinity : getPageSetting2("Requipcapattack");
     const healthEquipCap = getPageSetting2("Requipcaphealth") <= 0 ? Infinity : getPageSetting2("Requipcaphealth");
-    const zoneGo = game.global.world >= getPageSetting2("Requipzone");
+    const equipZone = getPageSetting2("Requipzone");
+    const zoneGo = equipZone > 0 && game.global.world >= equipZone;
     const resourceMaxPercent = getPageSetting2("Requippercent") / 100;
     if (alwaysLvl2 && game.global.challengeActive !== "Pandemonium") {
       for (const equip in game.equipment) {
+        if (game.equipment[equip].locked) continue;
+        if (game.global.challengeActive === "Hypothermia" && equip === "Shield" && !Rhyposhouldwood) continue;
         if (game.equipment[equip].level < 2) {
           buyEquipment(equip, null, true, 1);
         }
@@ -5046,11 +5053,16 @@
       }
     }
     let totalCost = 0;
+    let totalWoodCost = 0;
     for (const equip in bonusLevels) {
-      const equipCost2 = game.equipment[equip].cost[RequipmentList[equip].Resource];
-      totalCost += getTotalMultiCost(equipCost2[0], bonusLevels[equip], equipCost2[1], true) * artBoost;
+      const resource = RequipmentList[equip].Resource;
+      const equipCost2 = game.equipment[equip].cost[resource];
+      const levelOffset = Math.pow(equipCost2[1], game.equipment[equip].level);
+      const cost = getTotalMultiCost(equipCost2[0], bonusLevels[equip], equipCost2[1], true) * levelOffset * artBoost;
+      if (resource === "wood") totalWoodCost += cost;
+      else totalCost += cost;
     }
-    return [totalCost, bonusLevels, tempEqualityUse];
+    return [totalCost, bonusLevels, tempEqualityUse, totalWoodCost];
   }
 
   // src/modules/buildings.ts
@@ -5242,8 +5254,10 @@
       buyFoodEfficientHousing();
       buyGemEfficientHousing();
     }
-    if (!hidebuild && getPageSetting2("MaxWormhole") > 0 && game.buildings.Wormhole.owned < getPageSetting2("MaxWormhole") && !game.buildings.Wormhole.locked) {
-      safeBuyBuilding2("Wormhole");
+    const wormholeCap = getPageSetting2("MaxWormhole");
+    if (!hidebuild && wormholeCap > 0 && game.buildings.Wormhole.purchased < wormholeCap && !game.buildings.Wormhole.locked) {
+      const wormholeRoom = wormholeCap - game.buildings.Wormhole.purchased;
+      safeBuyBuilding2("Wormhole", Math.min(bulkBuyAmount(), wormholeRoom));
     }
     if (!game.buildings.Gym.locked && (getPageSetting2("MaxGym") > game.buildings.Gym.owned || getPageSetting2("MaxGym") == -1)) {
       let skipGym = false;
@@ -5347,7 +5361,8 @@
         if (avgProduction <= 0) avgProduction = 1;
         let housingBonus = game.buildings[housing].increase.by;
         if (!game.buildings.Hub.locked) {
-          housingBonus += 500;
+          const hubAmt = housing === "Collector" && autoBattle?.oneTimers?.Collectology?.owned ? autoBattle.oneTimers.Collectology.getHubs() : 1;
+          housingBonus += game.buildings.Hub.increase.by * hubAmt;
         }
         worstTime = Math.max(baseCost * Math.pow(costScaling, currentOwned - 1) / (avgProduction * housingBonus), worstTime);
         if (resource === "wood" && !Rhyposhouldwood) worstTime = Infinity;
@@ -14361,27 +14376,29 @@
   }
   function buyWeps2() {
     if (!(getPageSetting2("BuyWeaponsNew") == 1 || getPageSetting2("BuyWeaponsNew") == 3)) return;
+    const weaponCap = getPageSetting2("CapEquip2") <= 0 ? Infinity : getPageSetting2("CapEquip2");
     preBuy();
     game.global.buyAmt = getPageSetting2("gearamounttobuy");
-    if (game.equipment.Dagger.level < getPageSetting2("CapEquip2") && canAffordBuilding("Dagger", null, null, true)) buyEquipment("Dagger", true, true);
-    if (game.equipment.Mace.level < getPageSetting2("CapEquip2") && canAffordBuilding("Mace", null, null, true)) buyEquipment("Mace", true, true);
-    if (game.equipment.Polearm.level < getPageSetting2("CapEquip2") && canAffordBuilding("Polearm", null, null, true)) buyEquipment("Polearm", true, true);
-    if (game.equipment.Battleaxe.level < getPageSetting2("CapEquip2") && canAffordBuilding("Battleaxe", null, null, true)) buyEquipment("Battleaxe", true, true);
-    if (game.equipment.Greatsword.level < getPageSetting2("CapEquip2") && canAffordBuilding("Greatsword", null, null, true)) buyEquipment("Greatsword", true, true);
-    if (!game.equipment.Arbalest.locked && game.equipment.Arbalest.level < getPageSetting2("CapEquip2") && canAffordBuilding("Arbalest", null, null, true)) buyEquipment("Arbalest", true, true);
+    if (game.equipment.Dagger.level < weaponCap && canAffordBuilding("Dagger", null, null, true)) buyEquipment("Dagger", true, true);
+    if (game.equipment.Mace.level < weaponCap && canAffordBuilding("Mace", null, null, true)) buyEquipment("Mace", true, true);
+    if (game.equipment.Polearm.level < weaponCap && canAffordBuilding("Polearm", null, null, true)) buyEquipment("Polearm", true, true);
+    if (game.equipment.Battleaxe.level < weaponCap && canAffordBuilding("Battleaxe", null, null, true)) buyEquipment("Battleaxe", true, true);
+    if (game.equipment.Greatsword.level < weaponCap && canAffordBuilding("Greatsword", null, null, true)) buyEquipment("Greatsword", true, true);
+    if (!game.equipment.Arbalest.locked && game.equipment.Arbalest.level < weaponCap && canAffordBuilding("Arbalest", null, null, true)) buyEquipment("Arbalest", true, true);
     postBuy();
   }
   function buyArms() {
     if (!(getPageSetting2("BuyArmorNew") == 1 || getPageSetting2("BuyArmorNew") == 3)) return;
+    const armourCapU1 = getPageSetting2("CapEquiparm") <= 0 ? Infinity : getPageSetting2("CapEquiparm");
     preBuy();
     game.global.buyAmt = 10;
-    if (game.equipment.Shield.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Shield", null, null, true)) buyEquipment("Shield", true, true);
-    if (game.equipment.Boots.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Boots", null, null, true)) buyEquipment("Boots", true, true);
-    if (game.equipment.Helmet.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Helmet", null, null, true)) buyEquipment("Helmet", true, true);
-    if (game.equipment.Pants.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Pants", null, null, true)) buyEquipment("Pants", true, true);
-    if (game.equipment.Shoulderguards.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Shoulderguards", null, null, true)) buyEquipment("Shoulderguards", true, true);
-    if (game.equipment.Breastplate.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Breastplate", null, null, true)) buyEquipment("Breastplate", true, true);
-    if (!game.equipment.Gambeson.locked && game.equipment.Gambeson.level < getPageSetting2("CapEquiparm") && canAffordBuilding("Gambeson", null, null, true)) buyEquipment("Gambeson", true, true);
+    if (game.equipment.Shield.level < armourCapU1 && canAffordBuilding("Shield", null, null, true)) buyEquipment("Shield", true, true);
+    if (game.equipment.Boots.level < armourCapU1 && canAffordBuilding("Boots", null, null, true)) buyEquipment("Boots", true, true);
+    if (game.equipment.Helmet.level < armourCapU1 && canAffordBuilding("Helmet", null, null, true)) buyEquipment("Helmet", true, true);
+    if (game.equipment.Pants.level < armourCapU1 && canAffordBuilding("Pants", null, null, true)) buyEquipment("Pants", true, true);
+    if (game.equipment.Shoulderguards.level < armourCapU1 && canAffordBuilding("Shoulderguards", null, null, true)) buyEquipment("Shoulderguards", true, true);
+    if (game.equipment.Breastplate.level < armourCapU1 && canAffordBuilding("Breastplate", null, null, true)) buyEquipment("Breastplate", true, true);
+    if (!game.equipment.Gambeson.locked && game.equipment.Gambeson.level < armourCapU1 && canAffordBuilding("Gambeson", null, null, true)) buyEquipment("Gambeson", true, true);
     postBuy();
   }
   function isActiveSpireAT2() {
@@ -14657,6 +14674,7 @@
       go = true;
       return go;
     }
+    return go;
   }
   function archstring2() {
     if (getPageSetting2("Rarchon") == false) return;

@@ -214,9 +214,25 @@ export function evaluateEquipmentEfficiency(equipName: string) {
     }
 
     const isLiquified = (game.options.menu.liquification.enabled && game.talents.liquification.purchased && !game.global.mapsActive && game.global.gridArray && game.global.gridArray[0] && game.global.gridArray[0].name === "Liquimp");
-    let cap = 100;
-    if (equipmentList[equipName].Stat === 'health') cap = getPageSetting('CapEquiparm');
-    if (equipmentList[equipName].Stat === 'attack') cap = getPageSetting('CapEquip2');
+    // #246 — a Shield with `blockNow` has its Stat rewritten to 'block' at :162, and neither arm
+    // below matched it, so the user's Armor Level Cap was silently replaced by the hardcoded
+    // initializer 100 for exactly the equipment the cap is most likely to be tuned for. 'block' is
+    // armour everywhere else in this file (see the BuyArmorLevels dispatch at ~:486, which already
+    // pairs 'health' with 'block'), so it takes the armour cap.
+    // The initializer is Infinity rather than 100 because it is now UNREACHABLE — attack/health/block
+    // is the complete Stat domain — and an unreachable fallback that silently walls gear at level 100
+    // is the failure this issue was. `cap > 0` below is true for Infinity and `level >= Infinity`
+    // never fires, so an unmatched Stat degrades to "no cap" instead of a phantom wall.
+    // NOTE the 'block' arm also sweeps in 'Gym' (equipmentList:120-125, Stat 'block', Equip false),
+    // which is a BUILDING, not equipment. That is inert and verified, not assumed: the game's
+    // game.buildings.Gym (config.js:11682) has locked/owned/purchased and NO `level` field — only the
+    // unrelated game.upgrades.Gym unlock carries `level: 4` — so `gameResource.level` is undefined for
+    // it and `undefined >= cap` is false for every cap, old 100 or new. If Gym ever gains a `level`,
+    // this arm starts walling it at the armour cap; gate on `equip.Equip` at that point.
+    let cap: number = Infinity;
+    const capStat = equipmentList[equipName].Stat;
+    if (capStat === 'health' || capStat === 'block') cap = getPageSetting('CapEquiparm');
+    if (capStat === 'attack') cap = getPageSetting('CapEquip2');
     if ((isLiquified) && cap > 0 && gameResource.level >= (cap / MODULES["equipment"].capDivisor)) {
         Factor = 0;
         Wall = true;
@@ -713,6 +729,18 @@ export function mostEfficientEquipment(fakeLevels: Record<string, any> = {}) {
     if (game.global.challengeActive === "Pandemonium") artBoost *= game.challenges.Pandemonium.getEnemyMult();
 
     for (const i in RequipmentList) {
+        // #203 — the ranking never excluded LOCKED slots, and it is an argmax over stat-per-resource,
+        // so a locked slot can WIN. Arbalest and Gambeson are the two U2 slots that start locked, and
+        // they are precisely the ones that win: at level 0 their cost is lowest, so the log-ratio is
+        // highest. The caller commits to the returned name and calls buyEquipment on it, the game
+        // refuses because it is locked, `keepBuying` never flips, and the do/while exits — so U2
+        // AutoEquip bought ZERO levels for the whole run while believing it had a best buy each tick.
+        // A deadlock, not a slowdown, and stable enough that the oracle recorded it as correct.
+        // The U1 siblings already carry this guard per-slot (other.ts buyWeps' `!Arbalest.locked`,
+        // RbuyArms' `!Gambeson.locked`); this is the same rule applied at the ranking instead.
+        if (game.equipment[i].locked) {
+            continue;
+        }
         const nextLevelCost = game.equipment[i].cost[RequipmentList[i].Resource][0] * Math.pow(game.equipment[i].cost[RequipmentList[i].Resource][1], game.equipment[i].level + fakeLevels[i]) * artBoost;
         if (game.global.challengeActive === "Pandemonium" && game.challenges.Pandemonium.isEquipBlocked(i)) {
             continue;
@@ -817,12 +845,33 @@ export function RautoEquip() {
     const alwaysLvl2 = getPageSetting('Requip2');
     const attackEquipCap = ((getPageSetting('Requipcapattack') <= 0) ? Infinity : getPageSetting('Requipcapattack'));
     const healthEquipCap = ((getPageSetting('Requipcaphealth') <= 0) ? Infinity : getPageSetting('Requipcaphealth'));
-    const zoneGo = game.global.world >= getPageSetting('Requipzone');
+    // #219 — `-1` is this panel's off sentinel (Requipfarmzone, ForcePresZ, DynamicPrestige2, wsmax,
+    // windcutoff all use it), not a low zone. Unguarded, `world >= -1` made zoneGo a CONSTANT TRUE,
+    // and zoneGo is the first disjunct of the only override gate below — so REquipDamageCutoff and
+    // Requippercent, the two settings that gate a purchase before AE: Zone, could never be read by
+    // anyone on defaults. Normalised the way :818-819 already normalise their own <= 0.
+    // Intent is not inferred: the pre-rewrite tooltips (git show 8d3915d8^:src/modules/settings-defs.ts
+    // :368/:372/:373) describe the gated regime in three mutually-consistent sentences — "If zone is
+    // below the zone you have defined in AE: Zone then it will only buy equips when needed" — a regime
+    // the -1 default made unreachable. `-1`-as-infinite does not apply here: nothing in this function
+    // is a loop bound, so "never opens" cannot hang. Kept `>` loose: getPageSetting is polymorphic.
+    const equipZone = getPageSetting('Requipzone');
+    const zoneGo = equipZone > 0 && game.global.world >= equipZone;
     const resourceMaxPercent = getPageSetting('Requippercent') / 100;
 
     // Always 2 — challengeActive is a string → strict; equipName from bestBuys is a string → strict.
+    // #220 — this block used to buy every slot below level 2 with NO guards at all, while the main
+    // efficiency loop 30 lines below enforces two on the very same purchases. Both were bypassed:
+    //   1. `locked` — U2 opens with Arbalest/Gambeson locked, and the game refuses the buy, so the
+    //      calls were wasted work that also mis-reported what AT had "bought".
+    //   2. the Hypothermia wood guard — Shield is the one wood-priced slot, and spending wood during
+    //      Hypothermia is exactly what Rhyposhouldwood exists to arbitrate.
+    // `continue`, not `return`: the guard's job is to skip SHIELD, not to abandon the other slots'
+    // level-2 floor. (The main loop's `return` is correct there because it bails a single-item pass.)
     if (alwaysLvl2 && game.global.challengeActive !== 'Pandemonium') {
         for (const equip in game.equipment) {
+            if (game.equipment[equip].locked) continue;
+            if (game.global.challengeActive === 'Hypothermia' && equip === 'Shield' && !Rhyposhouldwood) continue;
             if (game.equipment[equip].level < 2) {
                 buyEquipment(equip, null, true, 1);
             }
@@ -975,12 +1024,29 @@ export function estimateEquipsForZone() {
         }
     }
 
+    // #218 — two independent errors, both of which UNDERSTATE the farm target, so AT stopped farming
+    // early and went back to a zone it still could not afford the gear for.
+    //   1. getTotalMultiCost's closed form prices n levels starting from level ZERO. The equipment is
+    //      already at game.equipment[equip].level, and the game's price is base * scaling^level, so the
+    //      whole sum has to be scaled by scaling^level — a factor of 1.2^level, i.e. ~38x at level 20.
+    //      This file's own mostEfficientEquipment already applies exactly that factor one screen up
+    //      (`Math.pow(cost[1], level + fakeLevels[i])`); the two were simply inconsistent.
+    //   2. Shield is priced in WOOD and every other slot in METAL, and both were summed into one
+    //      number. The sole numeric consumer (maps.ts:1352) compares it against
+    //      game.resources.metal.owned, so folding wood in makes AT farm metal to cover a wood bill.
+    // The return shape is APPENDED to, never reordered: maps.ts:971 reads index [2].
     let totalCost = 0;
+    let totalWoodCost = 0;
     for (const equip in bonusLevels) {
-        const equipCost = game.equipment[equip].cost[RequipmentList[equip].Resource];
-        totalCost += getTotalMultiCost(equipCost[0],bonusLevels[equip],equipCost[1],true) * artBoost;
+        const resource = RequipmentList[equip].Resource;
+        const equipCost = game.equipment[equip].cost[resource];
+        // Price the run of levels from where the slot ACTUALLY sits, not from zero.
+        const levelOffset = Math.pow(equipCost[1], game.equipment[equip].level);
+        const cost = getTotalMultiCost(equipCost[0], bonusLevels[equip], equipCost[1], true) * levelOffset * artBoost;
+        if (resource === 'wood') totalWoodCost += cost;
+        else totalCost += cost;
     }
 
-    return [totalCost, bonusLevels, tempEqualityUse];
+    return [totalCost, bonusLevels, tempEqualityUse, totalWoodCost];
     
 }
