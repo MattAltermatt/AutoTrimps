@@ -221,9 +221,20 @@ export function selectUniqueMap(): string | undefined {
             return theMap.id;
         }
         const treasure = getPageSetting('TrimpleZ');
-        if (theMap.name == 'Trimple Of Doom' && (!runningC2 && game.mapUnlocks.AncientTreasure.canRunOnce && game.global.world >= treasure)) {
+        // #222 — the TrimpleZ range test moved from this branch's BODY into its entry condition. As a
+        // `continue` it skipped the whole loop iteration, so the AMUtrimple `else if` below was
+        // unreachable in any non-C2 run — and the range covers TrimpleZ's own default of 0, so
+        // "AMU: Trimple" worked ONLY during a Challenge², the inverse of its tooltip, which says it
+        // "is independent of the Trimple Z setting elsewhere on this panel".
+        //
+        // The natural branch's own outcome is unchanged: it never returned the map while in range.
+        // Falling through rather than `continue`-ing is also unchanged — everything after this point
+        // in the loop body is gated on a different map NAME (The Prison, Bionic Wonderland, Imploding
+        // Star), so 'Trimple Of Doom' cannot match any of it.
+        const trimpleZinRange = treasure > -33 && treasure < 33;
+        if (theMap.name == 'Trimple Of Doom' && !trimpleZinRange && (!runningC2 && game.mapUnlocks.AncientTreasure.canRunOnce && game.global.world >= treasure)) {
             const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-            if ((game.global.world < 33 + theMapDifficulty) || treasure > -33 && treasure < 33) continue;
+            if (game.global.world < 33 + theMapDifficulty) continue;
             if (treasure < 0)
                 setPageSetting('TrimpleZ', 0);
             return theMap.id;

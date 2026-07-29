@@ -8737,9 +8737,10 @@
         return theMap.id;
       }
       const treasure = getPageSetting2("TrimpleZ");
-      if (theMap.name == "Trimple Of Doom" && (!runningC2 && game.mapUnlocks.AncientTreasure.canRunOnce && game.global.world >= treasure)) {
+      const trimpleZinRange = treasure > -33 && treasure < 33;
+      if (theMap.name == "Trimple Of Doom" && !trimpleZinRange && (!runningC2 && game.mapUnlocks.AncientTreasure.canRunOnce && game.global.world >= treasure)) {
         const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-        if (game.global.world < 33 + theMapDifficulty || treasure > -33 && treasure < 33) continue;
+        if (game.global.world < 33 + theMapDifficulty) continue;
         if (treasure < 0)
           setPageSetting2("TrimpleZ", 0);
         return theMap.id;
