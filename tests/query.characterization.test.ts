@@ -410,14 +410,23 @@ describe('query getPotencyMod (per-multiplier arming)', () => {
   // base potency = 10; Pheromones level 0 → its always-applied (1+level·mod) term is ×1.
   function baseGame(over: Record<string, any> = {}) {
     const g: Record<string, any> = {
-      global: { challengeActive: '', brokenPlanet: false, voidBuff: '' },
+      global: { challengeActive: '', brokenPlanet: false, voidBuff: '', universe: 1 },
       resources: { trimps: { potency: 10 } },
       upgrades: { Potency: { done: 0 } },
       buildings: { Nursery: { owned: 0 } },
+      // #233 — `unlocks.quickTrimps` is the field the game DELETED in 4.8; the live flag is
+      // singleRunBonuses.quickTrimps.owned. Both are present here on purpose, so the test below can
+      // assert that only the live one moves the answer.
       unlocks: { impCount: { Venimp: 0 }, quickTrimps: false },
-      portal: { Pheromones: { level: 0, modifier: 0.1 } },
+      singleRunBonuses: { quickTrimps: { owned: false } },
+      // #250 — both allocations, so getPerkLevel (seeded in tests/setup.ts) has something to pick from.
+      portal: { Pheromones: { level: 0, radLevel: 0, modifier: 0.1 } },
       jobs: { Geneticist: { owned: 0 } },
-      challenges: { Toxicity: { stacks: 0, stackMult: 1.05 } },
+      challenges: {
+        Toxicity: { stacks: 0, stackMult: 1.05 },
+        Archaeology: { getStatMult: () => 1 },
+        Quagmire: { getExhaustMult: () => 1 },
+      },
     }
     for (const k of Object.keys(over)) g[k] = { ...g[k], ...over[k] }
     return g
@@ -428,6 +437,12 @@ describe('query getPotencyMod (per-multiplier arming)', () => {
       dysfunctional: { getMult: () => 1.5 },
       toxic: { getMult: () => 1.3 },
     }
+    // #250's Archaeology/Quagmire arms use the game's own predicate rather than comparing
+    // game.global.challengeActive directly — during a Challenge² the game stores the PARENT name and
+    // puts the children in multiChallenge, so the direct compare is false throughout (#216).
+    // breedtimer's two copies already spell it this way.
+    ;(globalThis as any).challengeActive = (c: string) =>
+      (globalThis as any).game?.global?.challengeActive === c
   })
   afterEach(() => {
     delete (globalThis as any).calcHeirloomBonus
@@ -463,9 +478,15 @@ describe('query getPotencyMod (per-multiplier arming)', () => {
     expect(getPotencyMod()).toBeCloseTo(10 * Math.pow(0.98, 4), 6)
     expect(getPotencyMod(2)).toBeCloseTo(10 * Math.pow(0.98, 6), 6) // +howManyMoreGenes
   })
-  it('quickTrimps doubles', () => {
-    setGame(baseGame({ unlocks: { impCount: { Venimp: 0 }, quickTrimps: true } }))
+  it('quickTrimps doubles — from singleRunBonuses, the field the game still has (#233)', () => {
+    setGame(baseGame({ singleRunBonuses: { quickTrimps: { owned: true } } }))
     expect(getPotencyMod()).toBeCloseTo(20, 6)
+  })
+  it('the 4.8-deleted unlocks.quickTrimps no longer does anything (#233)', () => {
+    // This test used to BE the one above. It passed against a branch that had been dead since
+    // Trimps 4.8 — the assertion was satisfied by the fixture agreeing with the bug.
+    setGame(baseGame({ unlocks: { impCount: { Venimp: 0 }, quickTrimps: true } }))
+    expect(getPotencyMod()).toBeCloseTo(10, 6)
   })
   it('Daily dysfunctional and toxic each multiply by their getMult', () => {
     setGame(
@@ -507,7 +528,8 @@ describe('query getArmyTime', () => {
       upgrades: { Potency: { done: 0 } },
       buildings: { Nursery: { owned: 0 } },
       unlocks: { impCount: { Venimp: 0 }, quickTrimps: false },
-      portal: { Pheromones: { level: 0, modifier: 0.1 }, Coordinated: { level: 0 } },
+      singleRunBonuses: { quickTrimps: { owned: false } },
+      portal: { Pheromones: { level: 0, radLevel: 0, modifier: 0.1 }, Coordinated: { level: 0 } },
       jobs: { Geneticist: { owned: 0 } },
       challenges: { Toxicity: { stacks: 0, stackMult: 1 } },
     })
@@ -524,7 +546,8 @@ describe('query getArmyTime', () => {
       upgrades: { Potency: { done: 0 } },
       buildings: { Nursery: { owned: 0 } },
       unlocks: { impCount: { Venimp: 0 }, quickTrimps: false },
-      portal: { Pheromones: { level: 0, modifier: 0.1 }, Coordinated: { level: 5, currentSend: 40 } },
+      singleRunBonuses: { quickTrimps: { owned: false } },
+      portal: { Pheromones: { level: 0, radLevel: 0, modifier: 0.1 }, Coordinated: { level: 5, currentSend: 40 } },
       jobs: { Geneticist: { owned: 0 } },
       challenges: { Toxicity: { stacks: 0, stackMult: 1 } },
     })
