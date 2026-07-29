@@ -3324,12 +3324,12 @@
       attack = 0.32 * attack + 0.68 * attack * (cell / 100);
     } else if (zone < 60) {
       attack = 0.375 * attack + 0.7 * attack * (cell / 100);
-      attack *= 0.85;
     } else {
       attack = 0.4 * attack + 0.9 * attack * (cell / 100);
       attack *= Math.pow(1.15, zone - 59);
     }
-    if (zone > 5 && type !== "world") attack *= 1.1;
+    if (zone < 60) attack *= 0.85;
+    if (zone > 6 && type !== "world") attack *= 1.1;
     if (name) attack *= game.badGuys[name].attack;
     return Math.floor(attack);
   }
@@ -3477,10 +3477,8 @@
       health = health * 0.5 + health * 0.8 * (level / 100);
       health *= Math.pow(1.1, zone - 59);
     }
-    if (zone < 60) {
-      health *= 0.75;
-      health *= game.badGuys[name].health;
-    }
+    if (zone < 60) health *= 0.75;
+    health *= game.badGuys[name].health;
     return health;
   }
   function calcEnemyHealth2(world, map) {

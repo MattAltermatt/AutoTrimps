@@ -101,15 +101,26 @@ beforeEach(() => {
 })
 
 describe('calcEnemyBaseHealth matches the clone across the whole grid (#198)', () => {
+  it('anti-false-green: the grid is non-empty and spans the z60 boundary', () => {
+    // `bad.toEqual([])` is satisfied just as well by a grid that never ran. Pin the shape.
+    expect(ZONES.length * LEVELS.length * IMPS.length).toBe(204)
+    expect(ZONES.filter((z) => z < 60).length).toBeGreaterThan(0)
+    expect(ZONES.filter((z) => z >= 60).length).toBeGreaterThan(0)
+    expect(new Set(IMPS.map((n) => BAD_GUYS[n].health)).size).toBe(3) // three DISTINCT imp stats
+  })
+
   it('every zone x level x imp agrees exactly', () => {
     const bad: string[] = []
+    let compared = 0
     for (const z of ZONES)
       for (const l of LEVELS)
         for (const n of IMPS) {
           const got = calcEnemyBaseHealth(z, l, n)
           const want = gameHealth(z, l, n)
+          compared++
           if (Math.abs(got / want - 1) > 1e-12) bad.push(`z${z} l${l} ${n}: AT=${got} game=${want} ratio=${(got / want).toFixed(6)}`)
         }
+    expect(compared).toBe(204)
     expect(bad).toEqual([])
   })
 
@@ -133,14 +144,17 @@ describe('calcEnemyBaseHealth matches the clone across the whole grid (#198)', (
 describe('calcEnemyBaseAttack matches the clone across the whole grid (#244, #296)', () => {
   it('every zone x level x imp agrees exactly, in world and in maps', () => {
     const bad: string[] = []
+    let compared = 0
     for (const z of ZONES)
       for (const l of LEVELS)
         for (const n of IMPS)
           for (const isMap of [false, true]) {
             const got = calcEnemyBaseAttack(isMap ? 'map' : 'world', z, l, n)
             const want = gameAttack(z, l, n, isMap)
+            compared++
             if (got !== want) bad.push(`z${z} l${l} ${n} ${isMap ? 'map' : 'world'}: AT=${got} game=${want}`)
           }
+    expect(compared).toBe(408)
     expect(bad).toEqual([])
   })
 
