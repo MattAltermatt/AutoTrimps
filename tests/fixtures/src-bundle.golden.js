@@ -2533,7 +2533,7 @@
     if (!game.global.mapsUnlocked) return;
     if (game.global.mapsActive && getCurrentMapObject().location == "Void") return;
     if (game.global.preMapsActive) return;
-    if (isActiveSpireAT() && disActiveSpireAT() && !game.global.mapsActive) return;
+    if ((isActiveSpireAT() || disActiveSpireAT()) && !game.global.mapsActive) return;
     if (getPageSetting2("AutoMaps")) {
       mapsClicked();
       if (game.global.switchToMaps || game.global.switchToWorld)
@@ -8475,10 +8475,6 @@
     if (game.global.world <= 70) return;
     let stancey = 2;
     if (game.global.challengeActive !== "Daily") {
-      if (calcCurrentStance() === 5) {
-        stancey = 5;
-        lowHeirloom();
-      }
       if (calcCurrentStance() === 2) {
         stancey = 2;
         lowHeirloom();
@@ -8509,10 +8505,6 @@
       }
     }
     if (game.global.challengeActive === "Daily") {
-      if (calcCurrentStance() === 5) {
-        stancey = 5;
-        dlowHeirloom();
-      }
       if (calcCurrentStance() === 2) {
         stancey = 2;
         dlowHeirloom();

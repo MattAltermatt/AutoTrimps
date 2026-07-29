@@ -260,7 +260,14 @@ export function forceAbandonTrimps() {
     if (!game.global.mapsUnlocked) return;
     if (game.global.mapsActive && getCurrentMapObject().location == "Void") return;
     if (game.global.preMapsActive) return;
-    if (isActiveSpireAT() && disActiveSpireAT() && !game.global.mapsActive) return;
+    // #249 — this was `&&`, and the two predicates are mutually exclusive by construction:
+    // isActiveSpireAT() requires challengeActive != 'Daily' and disActiveSpireAT() requires == 'Daily'
+    // (other.ts:88/92). So the conjunction was unsatisfiable and this function had no Spire exclusion
+    // of its own — the Trimpicide tooltip's "Never fires in the Spire" was carried entirely by
+    // trimpcide()'s separate `&& !game.global.spireActive` (other.ts:154), which happens to be the
+    // only caller. Masked, not live, but one call site away from being live. Every sibling that means
+    // "in either kind of Spire" spells it with OR; this was the repo's only `&&` of the pair.
+    if ((isActiveSpireAT() || disActiveSpireAT()) && !game.global.mapsActive) return;
     if (getPageSetting('AutoMaps')) {
         mapsClicked();
         if (game.global.switchToMaps || game.global.switchToWorld)

@@ -326,10 +326,14 @@ export function windStance() {
     if (game.global.world <= 70) return;
     let stancey = 2;
     if (game.global.challengeActive !== "Daily") {
-        if (calcCurrentStance() === 5) {
-            stancey = 5;
-            lowHeirloom();
-        }
+        // #248 — the `calcCurrentStance() === 5` arm that stood here (and its dlowHeirloom twin below)
+        // was unreachable. calcCurrentStance returns exactly {15, 2, 0, 1, 12, 10, 11} or undefined;
+        // 5 is not among them. The 10+n encoding suggests a low/high pair for every stance, but the
+        // `return 15` is an EARLY return taken before the usehigh decision is made at all (calc.ts),
+        // so W is not "W with the high heirloom" — it is just W, and it always pairs with
+        // highHeirloom(). Whether a low-heirloom W should exist is a gameplay question, filed
+        // separately; the dead arms are removed so the encoding stops implying a state the producer
+        // cannot emit.
         if (calcCurrentStance() === 2) {
             stancey = 2;
             lowHeirloom();
@@ -360,10 +364,6 @@ export function windStance() {
         }
     }
     if (game.global.challengeActive === "Daily") {
-        if (calcCurrentStance() === 5) {
-            stancey = 5;
-            dlowHeirloom();
-        }
         if (calcCurrentStance() === 2) {
             stancey = 2;
             dlowHeirloom();

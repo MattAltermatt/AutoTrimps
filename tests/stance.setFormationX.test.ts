@@ -76,12 +76,15 @@ describe('#83 §3: windStance() can enter X formation', () => {
   })
 
   it('still reaches the truthy formations (no regression from stringifying)', () => {
-    for (const stance of [1, 2, 5]) {
+    // #248 — stance 5 used to be in this list. calcCurrentStance cannot return it (its returns are
+    // exactly {15, 2, 0, 1, 12, 10, 11}), so that row drove a dead arm; W is reached through 15.
+    for (const [stance, formation] of [[1, 1], [2, 2], [15, 5]]) {
       const { window, game } = bootFighting()
       window.calcCurrentStance = () => stance
       window.lowHeirloom = () => {}
+      window.highHeirloom = () => {}
       window.windStance()
-      expect(game.global.formation).toBe(stance)
+      expect(game.global.formation, `stance ${stance}`).toBe(formation)
     }
   })
 })
