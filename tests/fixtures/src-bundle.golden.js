@@ -1857,8 +1857,8 @@
   globalThis.magmiteSpenderChanged = false;
   globalThis.lastHeliumZone = 0;
   globalThis.lastRadonZone = 0;
-  globalThis.gammaBurstPct = getHeirloomBonus("Shield", "gammaBurst") / 100 > 0 ? getHeirloomBonus("Shield", "gammaBurst") / 100 : 1;
-  globalThis.shieldEquipped = game.global.ShieldEquipped.id;
+  globalThis.gammaBurstPct = 0;
+  globalThis.shieldEquipped = null;
   function mainLoop() {
     if (ATrunning == false) return;
     if (getPageSetting("PauseScript") || game.options.menu.pauseGame.enabled || game.global.viewingUpgrades) return;
@@ -2931,6 +2931,7 @@
     calcSpecificEnemyHealth: () => calcSpecificEnemyHealth2,
     calcSpire: () => calcSpire2,
     desodynamicHD: () => desodynamicHD2,
+    expectedCritMulti: () => expectedCritMulti,
     getCritMulti: () => getCritMulti,
     getTotalHealthMod: () => getTotalHealthMod2,
     getTrimpAttack: () => getTrimpAttack,
@@ -2976,7 +2977,7 @@
     if (game.portal.Power_II.level > 0) {
       dmg *= 1 + game.portal.Power_II.modifier * game.portal.Power_II.level;
     }
-    if (game.global.formation !== 0) {
+    if (game.global.formation !== 0 && game.global.formation !== 5) {
       dmg *= game.global.formation === 2 ? 4 : 0.5;
     }
     return dmg;
@@ -3013,7 +3014,7 @@
     if (geneticist.owned > 0) {
       health *= Math.pow(1.01, game.global.lastLowGen);
     }
-    if (stance && game.global.formation > 0) {
+    if (stance && game.global.formation > 0 && game.global.formation !== 5) {
       let formStrength = 0.5;
       if (game.global.formation === 1) formStrength = 4;
       health *= formStrength;
@@ -3060,20 +3061,30 @@
       globalThis.trimpAA = calcHeirloomBonus("Shield", "trimpAttack", 1, true) / 100;
     }
   }
+  function critTierMult(tier, critD) {
+    return tier <= 0 ? 1 : critD * getMegaCritDamageMult(tier);
+  }
+  function expectedCritMulti(critChance, critD, doubleCritChance) {
+    if (critChance < 0) {
+      const p = Math.min(Math.abs(critChance), 1);
+      return p * 0.2 + (1 - p);
+    }
+    if (critChance === 0) return 1;
+    const baseTier = Math.floor(critChance);
+    const f = critChance - baseTier;
+    const d = Math.min(Math.max(doubleCritChance, 0), 1);
+    return (1 - f) * (1 - d) * critTierMult(baseTier, critD) + f * (1 - d) * critTierMult(baseTier + 1, critD) + (1 - f) * d * critTierMult(baseTier + 1, critD) + f * d * critTierMult(baseTier + 2, critD);
+  }
   function getCritMulti(high) {
     let critChance = getPlayerCritChance();
     let CritD = getPlayerCritDamageMult();
-    if (high && (getPageSetting2("AutoStance") == 3 && textSettingIsSet("highdmg") && game.global.challengeActive !== "Daily") || getPageSetting2("use3daily") == true && textSettingIsSet("dhighdmg") && game.global.challengeActive === "Daily") {
+    if (high && (getPageSetting2("AutoStance") == 3 && textSettingIsSet("highdmg") && game.global.challengeActive !== "Daily" || getPageSetting2("use3daily") == true && textSettingIsSet("dhighdmg") && game.global.challengeActive === "Daily")) {
       highDamageShield2();
       critChance = critCC;
       CritD = critDD;
     }
-    const lowTierMulti = getMegaCritDamageMult(Math.floor(critChance));
-    const highTierMulti = getMegaCritDamageMult(Math.ceil(critChance));
-    const highTierChance = critChance - Math.floor(critChance);
-    const doubleCritChance = typeof getPlayerDoubleCritChance === "function" ? Math.min(getPlayerDoubleCritChance(), 1) : 0;
-    const doubleCritFactor = 1 + doubleCritChance * (getMegaCritDamageMult(2) - 1);
-    return ((1 - highTierChance) * lowTierMulti + highTierChance * highTierMulti) * doubleCritFactor * CritD;
+    const doubleCritChance = typeof getPlayerDoubleCritChance === "function" ? getPlayerDoubleCritChance() : 0;
+    return expectedCritMulti(critChance, CritD, doubleCritChance);
   }
   function calcOurBlock2(stance) {
     let block = 0;
@@ -3094,8 +3105,8 @@
       block *= trainerStrength + 1;
     }
     block *= game.resources.trimps.maxSoldiers;
-    if (stance && game.global.formation === 3) {
-      block *= 4;
+    if (stance && game.global.formation !== 0 && game.global.formation !== 5) {
+      block *= game.global.formation === 3 ? 4 : 0.5;
     }
     const heirloomBonus = calcHeirloomBonus("Shield", "trimpBlock", 0, true);
     if (heirloomBonus > 0) {
@@ -3246,7 +3257,7 @@
         number *= (gammaBurstPct + 1) / 4;
       }
     }
-    if (!incStance && game.global.formation !== 0) {
+    if (!incStance && game.global.formation !== 0 && game.global.formation !== 5) {
       number /= game.global.formation === 2 ? 4 : 0.5;
     }
     let min = number;
@@ -3745,14 +3756,8 @@
     return health;
   }
   function RgetCritMulti() {
-    const critChance = getPlayerCritChance();
-    const CritD = getPlayerCritDamageMult();
-    const lowTierMulti = getMegaCritDamageMult(Math.floor(critChance));
-    const highTierMulti = getMegaCritDamageMult(Math.ceil(critChance));
-    const highTierChance = critChance - Math.floor(critChance);
-    const doubleCritChance = typeof getPlayerDoubleCritChance === "function" ? Math.min(getPlayerDoubleCritChance(), 1) : 0;
-    const doubleCritFactor = 1 + doubleCritChance * (getMegaCritDamageMult(2) - 1);
-    return ((1 - highTierChance) * lowTierMulti + highTierChance * highTierMulti) * doubleCritFactor * CritD;
+    const doubleCritChance = typeof getPlayerDoubleCritChance === "function" ? getPlayerDoubleCritChance() : 0;
+    return expectedCritMulti(getPlayerCritChance(), getPlayerCritDamageMult(), doubleCritChance);
   }
   function RcalcOurDmg2(minMaxAvg, equality, _unusedIncFlucts) {
     let number = 6;
@@ -7056,8 +7061,8 @@
     }
   }
   function HeirloomShieldSwapped2() {
-    if (game.global.ShieldEquipped.rarity < 10) return;
-    gammaBurstPct = getHeirloomBonus("Shield", "gammaBurst") / 100 > 0 ? getHeirloomBonus("Shield", "gammaBurst") / 100 : 1;
+    const pct = getHeirloomBonus("Shield", "gammaBurst") / 100;
+    gammaBurstPct = pct > 0 ? pct : 0;
     shieldEquipped = game.global.ShieldEquipped.id;
   }
 

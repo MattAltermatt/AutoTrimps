@@ -118,7 +118,9 @@ const unguarded = calls.filter((c) => !c.guarded)
 // boundary without changing what `return` means. Pinned by name AND by count, so this is a two-entry
 // list rather than a category anyone can grow.
 const SKELETON: Record<string, string> = {
-  'mainLoop:getPageSetting@177':
+  // Moved 177 -> 187 in Fix S9 by #170's gammaBurstPct seed comment, which is a net +10 lines earlier
+  // in this file. Re-read and confirmed still the same PauseScript early-return, not a new call.
+  'mainLoop:getPageSetting@187':
     "the PauseScript early-return. A `return` cannot be lifted into a closure, and getPageSetting() is " +
     'the loop\'s own gate rather than an automation. If getPageSetting itself throws, AT is over anyway.',
 }
