@@ -381,10 +381,31 @@ export function autoMap() {
     let enemyDamage = calcBadGuyDmg(null, getEnemyMaxAttack(game.global.world + 1, 50, 'Snimp', 1.0), true, true);
     const enemyHealth = calcEnemyHealth();
 
+    // #209 — the `else` is new, and it is where the DisableFarm <= 0 reset BELONGS. autoMap owns
+    // `shouldFarm`; it used to be zeroed from updateCustomButtons instead, i.e. by a RENDER function
+    // dispatched from guiLoop at 1 Hz while this loop runs at 10 Hz. Nothing about that is
+    // deterministic: the reset landed between two autoMap ticks, so one call in ten read `false` at
+    // the shouldDoMaps/shouldFarmLowerZone tests below and then wrote `true` in the Nom block — the
+    // same invocation disagreeing with itself, flipping siphlvl between world-10 and
+    // world-Siphonology.level and toggling the game's repeatClicked() roughly once per second.
+    //
+    // Assigning here instead makes the branch symmetric with the `> 0` arm: exactly one writer,
+    // before any reader, every tick. The steady state is unchanged — with no per-tick writer the old
+    // 1 Hz clobber was already permanent — and the botched sibling this replaces (a self-assigning
+    // no-op, deleted further down) is direct evidence the original author meant to reset it here.
+    //
+    // What this deliberately does NOT do is widen the Nom carve-out. FarmWhenNomStacks7's description
+    // promises farming "at 30 stacks, exiting once the ratio drops back under 10x", but the trigger
+    // below is `== 30`, so it holds for exactly one stack value. Widening it to `>= 30` is a strategy
+    // change that first needs calcEnemyHealth to model Nom's 1.25^stacks healing — without that,
+    // calcHDratio() sits UNDER the cutoff in precisely the scenario the setting exists for. Filed
+    // separately; this change is the ownership fix only.
     if (getPageSetting('DisableFarm') > 0) {
         shouldFarm = (calcHDratio() >= getPageSetting('DisableFarm'));
         if (game.options.menu.repeatUntil.enabled == 1 && shouldFarm)
             toggleSetting('repeatUntil');
+    } else {
+        shouldFarm = false;
     }
     if (game.global.spireActive) {
         enemyDamage = calcSpire(99, game.global.gridArray[99].name, 'attack');
@@ -601,8 +622,10 @@ export function autoMap() {
             if (challengeActive("Toxicity")) {
                 eAttack *= 5;
             }
-            if (getPageSetting('DisableFarm') <= 0)
-                shouldFarm = shouldFarm || false;
+            // #209 — a self-assigning no-op was here (`x || false` is `x` for every boolean), so it
+            // never reset anything. It matters because it is the shape that let the defect survive
+            // review: it LOOKS like the reset, so a reader asking "does autoMap reset shouldFarm?"
+            // found one and moved on. The real reset is now at the top of this function.
             if (!restartVoidMap)
                 selectedMap = theMap.id;
             if (game.global.mapsActive && getCurrentMapObject().location == "Void" && challengeActive("Nom") && getPageSetting('FarmWhenNomStacks7')) {
@@ -974,10 +997,16 @@ export function RautoMap() {
     const enemyDamage = RcalcBadGuyDmg(null, RgetEnemyMaxAttack(game.global.world, 50, 'Snimp', 1.0));
     const mapenoughdamagecutoff = getPageSetting("RMapDamageCutoff");
 
+    // #209 — the U2 twin of the ownership fix at autoMap's DisableFarm branch; see the long note
+    // there. U2 has no Nom carve-out at all, so this arm has no other writer between here and the
+    // RshouldDoMaps reads below: the reset was already permanent once guiLoop's 1 Hz write landed,
+    // and hoisting it here changes the steady state not at all — it only makes it deterministic.
     if (getPageSetting('RDisableFarm') > 0) {
         RshouldFarm = (RcalcHDratio() >= getPageSetting('RDisableFarm'));
         if (game.options.menu.repeatUntil.enabled == 1 && RshouldFarm)
             toggleSetting('repeatUntil');
+    } else {
+        RshouldFarm = false;
     }
     let hitsSurvived = 10;
     if (getPageSetting("Rhitssurvived") > 0) hitsSurvived = getPageSetting("Rhitssurvived");
@@ -1406,8 +1435,7 @@ export function RautoMap() {
         for (const map in voidArraySorted) {
             const theMap = voidArraySorted[map];
             RdoVoids = true;
-            if (getPageSetting('RDisableFarm') <= 0)
-                RshouldFarm = RshouldFarm || false;
+            // #209 — the U2 copy of the same self-assigning no-op; see RautoMap's DisableFarm arm.
             if (!restartVoidMap)
                 selectedMap = theMap.id;
             break;

@@ -275,20 +275,43 @@ export function autoPlusSettingsMenu() {
     toggleSettingsMenu();
 }
 
+// #253 — the mode this button was showing before it was switched off, so switching it back on
+// restores it rather than assuming 1.
+//
+// AutoMaps is a THREE-state multitoggle (Off / On / Unique) driven here by a two-state button. The
+// old code wrote a hard-coded 1 on the off→on transition, and getPageSetting returns parseInt, so 2
+// is truthy: one off/on cycle silently demoted "Unique" to "On" with no message. That is not
+// cosmetic — five behaviours are gated on exactly `== 2` (maps.ts:166-170: AMUblock, AMUtrimple,
+// AMUprison, AMUbw, AMUstar) and the U2 twin INVERTS the sense (`runUniques = RAutoMaps == 1`), so
+// the same two clicks turn uniques ON for a U2 player who had deliberately turned them off.
+//
+// Module-scoped rather than persisted, deliberately. Persisting it would mean a sibling record in
+// the settings store, and the one existing instance of that pattern — `PrestigeBackup` — is WRITTEN
+// by settingChanged and read by nothing anywhere in src/, so it is a dead key rather than a
+// precedent. A remembered value covers the whole reported defect (off, then on, in one session) and
+// adds no key to anyone's save; across a page reload it degrades to the old hard-coded 1, which is
+// exactly today's behaviour and so cannot regress anyone.
+let lastAutoMapsMode = 1;
+let lastRAutoMapsMode = 1;
+
 export function toggleAutoMaps() {
     if (game.global.universe == 1) {
-        if (getPageSetting('AutoMaps')) {
+        const current = getPageSetting('AutoMaps');
+        if (current) {
+            lastAutoMapsMode = current as number;
             setPageSetting('AutoMaps', 0);
         } else {
-            setPageSetting('AutoMaps', 1);
+            setPageSetting('AutoMaps', lastAutoMapsMode);
         }
         document.getElementById('autoMapBtn')!.setAttribute('class', 'noselect settingsBtn settingBtn' + autoTrimpSettings.AutoMaps.value);
     }
     if (game.global.universe == 2) {
-        if (getPageSetting('RAutoMaps')) {
+        const current = getPageSetting('RAutoMaps');
+        if (current) {
+            lastRAutoMapsMode = current as number;
             setPageSetting('RAutoMaps', 0);
         } else {
-            setPageSetting('RAutoMaps', 1);
+            setPageSetting('RAutoMaps', lastRAutoMapsMode);
         }
         document.getElementById('autoMapBtn')!.setAttribute('class', 'noselect settingsBtn settingBtn' + autoTrimpSettings.RAutoMaps.value);
     }

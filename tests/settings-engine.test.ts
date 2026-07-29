@@ -23,13 +23,30 @@ import {
 // autoSetValue lowercases input before calling parseNum, so the K/M/B suffix table is matched
 // case-insensitively only for already-lowercased strings — characterize with lowercase inputs.
 describe('settings-engine · parseNum (pure)', () => {
-  it('parses e-notation via floor(mantissa * 10^exp)', () => {
+  it('parses e-notation', () => {
     expect(parseNum('2e5')).toBe(200000)
     expect(parseNum('1.5e3')).toBe(1500)
   })
 
   it("takes the e-branch even when the exponent string is '0' (non-empty string is truthy)", () => {
     expect(parseNum('1e0')).toBe(1)
+  })
+
+  // #236 — the e-branch used to be floor(mantissa * 10^exp). The floor only ever made sense for the
+  // large-integer shorthand the input hint advertises, but it applied to every exponent, so the
+  // advertised form destroyed any value below 1. `amalcoordhd` ships with default 0.0000025.
+  it('e-notation round-trips values below 1 (does not floor a fractional result)', () => {
+    expect(parseNum('2.5e-6')).toBe(2.5e-6)
+    expect(parseNum('1e-7')).toBe(1e-7)
+    expect(parseNum('5e-1')).toBe(0.5)
+    expect(parseNum('2.5e0')).toBe(2.5)
+  })
+
+  // The old multiply carried float error in the positive direction too, which the floor then turned
+  // into a whole-unit loss: parseFloat('1.23') * Math.pow(10, 2) === 122.99999999999999 → 122.
+  it('e-notation is exact for positive exponents that the old multiply-then-floor truncated', () => {
+    expect(parseNum('1.23e2')).toBe(123)
+    expect(parseNum('8.03e2')).toBe(803)
   })
 
   it('parses K/M/B suffixes via round(mantissa * 1000^base)', () => {
@@ -191,11 +208,132 @@ describe('settings-engine · autoSetValue (value-apply formatting)', () => {
     expect(document.getElementById('V')!.textContent!.endsWith('P(-3)')).toBe(true)
   })
 
+  // #236 case B — autoSetValueToolTip seeds the box with `String(value)` (settings-engine.ts:409),
+  // and JS renders anything strictly below 1e-6 in exponential form. So re-opening a box that holds
+  // 1e-7 and pressing Apply without editing has to be a no-op. It used to store 0, which disarms
+  // upgrades.ts's `getPageSetting('amalcoordhd') > 0` gate — the feature goes inert by itself.
+  it('the value box can re-read the string its own prefill emits (< 1e-6 round trip)', () => {
+    const stored = 1e-7
+    const prefill = `${stored}`
+    expect(prefill).toBe('1e-7') // guards the premise, not the fix
+    mount('V', prefill)
+    ;(globalThis as any).autoTrimpSettings['V'].value = stored
+    autoSetValue('V', false, false)
+    expect((globalThis as any).autoTrimpSettings['V'].value).toBe(stored)
+  })
+
   it('multi: parses a comma list to an array and labels with "first+"', () => {
     mount('V', '5,10')
     autoSetValue('V', false, true)
     expect((globalThis as any).autoTrimpSettings['V'].value).toEqual([5, 10])
     expect(document.getElementById('V')!.textContent!.endsWith('5+')).toBe(true)
+  })
+
+  // ─── #237: unparseable input must never reach the store ───────────────────────────────────────
+  // NaN is not a value the store can hold. serializeSettings → JSON.stringify writes `null` for it,
+  // and on the next boot createSetting's `loaded === undefined ? defaultValue : loaded` keeps that
+  // null (null !== undefined), so getPageSetting returns parseFloat(null) = NaN forever. The face
+  // meanwhile renders ∞ (because `NaN > -1` is false), i.e. it reads as "no cap" while consumers
+  // like buildings.ts:162 (`owned < cap || cap < 1`) have BOTH disjuncts false — "never build".
+  it('an empty box keeps the previous value: no NaN in the store, no ∞ on the face', () => {
+    mount('V', '')
+    ;(globalThis as any).autoTrimpSettings['V'].value = 100
+
+    autoSetValue('V', false, false)
+
+    const stored = (globalThis as any).autoTrimpSettings['V'].value
+    expect(stored).toBe(100)
+    expect(JSON.parse(JSON.stringify({ V: stored })).V).not.toBeNull()
+    expect(document.getElementById('V')!.innerHTML).not.toContain('icon-infinity')
+  })
+
+  it('a non-numeric word keeps the previous value', () => {
+    mount('V', 'infinite') // takes parseNum's e-branch: parseFloat('infinit') is NaN
+    ;(globalThis as any).autoTrimpSettings['V'].value = -1
+    autoSetValue('V', false, false)
+    expect((globalThis as any).autoTrimpSettings['V'].value).toBe(-1)
+  })
+
+  // ±Infinity serializes to `null` exactly like NaN does, so it is the same hole by another door.
+  it('an overflowing exponent keeps the previous value', () => {
+    mount('V', '1e999')
+    ;(globalThis as any).autoTrimpSettings['V'].value = 7
+    autoSetValue('V', false, false)
+    expect((globalThis as any).autoTrimpSettings['V'].value).toBe(7)
+  })
+
+  it('multi: one unparseable entry rejects the whole list, keeping the previous array', () => {
+    mount('V', '5,,10')
+    ;(globalThis as any).autoTrimpSettings['V'].value = [1, 2]
+    autoSetValue('V', false, true)
+    const stored = (globalThis as any).autoTrimpSettings['V'].value
+    expect((stored as number[]).some(Number.isNaN)).toBe(false)
+    expect(stored).toEqual([1, 2])
+  })
+
+  // Anti-over-clamp: -1 is the legitimate "Infinite" sentinel and must still store and render.
+  it('still stores -1 and still renders the infinity glyph for it', () => {
+    mount('V', '-1')
+    ;(globalThis as any).autoTrimpSettings['V'].value = 100
+    autoSetValue('V', false, false)
+    expect((globalThis as any).autoTrimpSettings['V'].value).toBe(-1)
+    expect(document.getElementById('V')!.innerHTML).toContain('icon-infinity')
+  })
+})
+
+// ─── #237: the load-side repair — a store already holding null must not stay poisoned ────────────
+// Closing only the write path leaves every user who already tripped this broken forever, because
+// their localStorage holds `null` and `null === undefined` is false. The repair lives at the same
+// createSetting chokepoint clampMultitoggle uses, so it covers boot, pasted import, profile switch
+// and factory reset by construction.
+describe('settings-engine · createSetting value clamp (#237)', () => {
+  beforeEach(() => {
+    ;(globalThis as any).ATversion = 'test-version'
+    ;(globalThis as any).game = { options: { menu: { darkTheme: { enabled: 0 } } } }
+    document.body.innerHTML = '<div id="autoSettings"></div>'
+  })
+
+  // loadPageVariables drops the parsed localStorage blob straight onto autoTrimpSettings, so what
+  // createSetting sees for a poisoned key is the bare scalar `null` — not a record.
+  function seedStore(blob: Record<string, unknown>) {
+    ;(globalThis as any).autoTrimpSettings = JSON.parse(JSON.stringify(blob))
+  }
+
+  it('value: a stored null (what NaN serializes to) falls back to the declared default', () => {
+    seedStore({ V1: NaN }) // JSON.stringify turns this into null, exactly as saveSettings does
+    expect((globalThis as any).autoTrimpSettings.V1).toBeNull() // guards the premise, not the fix
+    createSetting('V1', 'Amount', 'desc', 'value', 42, undefined, undefined)
+    expect((globalThis as any).autoTrimpSettings['V1'].value).toBe(42)
+  })
+
+  it('multiValue: a stored [null] falls back to the declared default', () => {
+    seedStore({ MV1: [NaN] })
+    expect((globalThis as any).autoTrimpSettings.MV1).toEqual([null])
+    createSetting('MV1', 'Zones', 'desc', 'multiValue', [-1], undefined, undefined)
+    expect((globalThis as any).autoTrimpSettings['MV1'].value).toEqual([-1])
+  })
+
+  // Anti-over-clamp, and the reason the predicate is parseFloat-based rather than typeof-based: 18 of
+  // the declared `value` defaults are STRINGS ('-1', '0', '1e33', …) and getPageSetting parseFloats
+  // them. A stored string is a good value, not damage — clamping it would silently reset real users.
+  it('leaves a stored numeric STRING untouched', () => {
+    seedStore({ V2: '-1' })
+    createSetting('V2', 'Amount', 'desc', 'value', 42, undefined, undefined)
+    expect((globalThis as any).autoTrimpSettings['V2'].value).toBe('-1')
+  })
+
+  it('leaves a stored 0 untouched (falsy, but perfectly storable)', () => {
+    seedStore({ V3: 0 })
+    createSetting('V3', 'Amount', 'desc', 'value', 42, undefined, undefined)
+    expect((globalThis as any).autoTrimpSettings['V3'].value).toBe(0)
+  })
+
+  // A multiValue holding a bare scalar is the separate #162/#201 array-vs-scalar family. This clamp
+  // must not annex it — repairing it here would rewrite stored values this defect never touched.
+  it('leaves a scalar-valued multiValue alone (that is the #162 family, not this one)', () => {
+    seedStore({ MV2: 5 })
+    createSetting('MV2', 'Zones', 'desc', 'multiValue', [-1], undefined, undefined)
+    expect((globalThis as any).autoTrimpSettings['MV2'].value).toBe(5)
   })
 })
 

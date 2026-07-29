@@ -16,11 +16,47 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import vm from 'node:vm'
+import ts from 'typescript'
 import { createSetting, settingChanged } from '../src/modules/settings-engine'
 import { getPageSetting, serializeSettings550 } from '../src/modules/utils'
 import { atGuard } from '../src/modules/guard'
 
 const ROOT = resolve(__dirname, '..')
+
+/**
+ * The real `createSetting(id, …, 'dropdown', default, [options], …)` arguments, READ OUT OF
+ * settings-defs.ts. Retyping them would give a test that passes forever no matter what the shipped
+ * defs say — the same reason the BuyBuildingsNew block above is extracted rather than transcribed.
+ */
+function dropdownDef(id: string): { defaultValue: string; options: string[] } {
+  const sf = ts.createSourceFile(
+    'settings-defs.ts',
+    readFileSync(resolve(ROOT, 'src/modules/settings-defs.ts'), 'utf8'),
+    ts.ScriptTarget.Latest,
+    true,
+  )
+  let found: { defaultValue: string; options: string[] } | null = null
+  const visit = (n: ts.Node): void => {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'createSetting') {
+      const [idArg, , , typeArg, defArg, listArg] = n.arguments
+      if (
+        idArg && ts.isStringLiteralLike(idArg) && idArg.text === id &&
+        typeArg && ts.isStringLiteralLike(typeArg) && typeArg.text === 'dropdown' &&
+        defArg && ts.isStringLiteralLike(defArg) &&
+        listArg && ts.isArrayLiteralExpression(listArg)
+      ) {
+        found = {
+          defaultValue: defArg.text,
+          options: listArg.elements.map((e) => (ts.isStringLiteralLike(e) ? e.text : '<non-literal>')),
+        }
+      }
+    }
+    ts.forEachChild(n, visit)
+  }
+  visit(sf)
+  if (!found) throw new Error(`no dropdown createSetting for '${id}' in settings-defs.ts`)
+  return found
+}
 
 // ─── #81 flagship: BuyBuildingsNew == 3 ("Buy Storage") ──────────────────────────────────────────
 //
@@ -170,5 +206,98 @@ describe('#81/#61 — createSetting clamps an out-of-range multitoggle index', (
     expect(getPageSetting('BetterAutoFight')).toBe(2)
     settingChanged('BetterAutoFight') // 2 → wraps to 0
     expect(getPageSetting('BetterAutoFight')).toBe(0)
+  })
+})
+
+// ─── #208: an out-of-LIST dropdown value smuggled in by the same shipped preset ──────────────────
+//
+// The multitoggle clamp above has existed since #81, and the net that found BetterAutoFight was
+// multitoggle-only — so this second instance of the identical class, in the identical blob, went
+// unnoticed for seven more years. "Void 60" was a legal AutoGoldenUpgrades option until commit
+// f7927b4c (2018-12-10) collapsed the seven-option list to today's five.
+//
+// Unlike BetterAutoFight (which merely did nothing), this one reaches the GAME: every arm of
+// other.ts's dispatch misses, so `setting2` stays undefined, `buyGoldenUpgrade(undefined)` takes the
+// game's `if (!upgrade) { setAutoGoldenSetting(0); … }` branch, and the player's own NATIVE AutoGolden
+// is switched off — at AT's 10 Hz against the native loop's 2 Hz, every tick a golden is waiting.
+
+describe('#208 — createSetting clamps an out-of-list dropdown value', () => {
+  // Read from settings-defs.ts, not transcribed. If the option list is ever edited, this test moves
+  // with it instead of quietly asserting against a stale copy.
+  const AGU = dropdownDef('AutoGoldenUpgrades')
+
+  beforeEach(() => {
+    ;(globalThis as any).autoTrimpSettings = {}
+    ;(globalThis as any).ATversion = 'test-version'
+    ;(globalThis as any).game = { options: { menu: { darkTheme: { enabled: 0 } } } }
+    ;(globalThis as any).saveSettings = vi.fn()
+    ;(globalThis as any).updateCustomButtons = vi.fn()
+    ;(globalThis as any).checkPortalSettings = vi.fn()
+    // settingChanged's dropdown arm reads the <select> back through byId (utils.ts) — stub it to the
+    // real lookup so the onchange test below drives the production writer, not a paraphrase of it.
+    ;(globalThis as any).byId = (elId: string) => document.getElementById(elId)
+    document.body.innerHTML = '<div id="autoSettings"></div>'
+  })
+
+  const mount = (stored: unknown) => {
+    ;(globalThis as any).autoTrimpSettings = { AutoGoldenUpgrades: stored }
+    document.body.innerHTML = '<div id="autoSettings"></div>'
+    createSetting('AutoGoldenUpgrades', 'AutoGoldenUpgrades', 'desc', 'dropdown', AGU.defaultValue, AGU.options, undefined)
+  }
+
+  it('TRIPWIRE: the shipped 550+ preset really does carry AutoGoldenUpgrades = "Void 60"', () => {
+    // The fixture is the real production blob. If this stops being true, the scenario below no longer
+    // exists and the test must be re-derived rather than left passing vacuously.
+    const preset = JSON.parse(serializeSettings550())
+    expect(preset.AutoGoldenUpgrades).toBe('Void 60')
+    expect(preset.dAutoGoldenUpgrades).toBe('Void 60')
+    expect(AGU.options).not.toContain('Void 60') // …and it is genuinely not an option any more
+    expect(AGU.options).toContain('Void') // the near-miss that makes it look plausible
+  })
+
+  it('POSITIVE CONTROL: every in-list stored value survives untouched', () => {
+    // Without this, a clamp that reset every dropdown to its default would pass the test below.
+    for (const stored of AGU.options) {
+      mount(stored)
+      expect(getPageSetting('AutoGoldenUpgrades')).toBe(stored)
+    }
+  })
+
+  it('the real 550+ preset import path yields a value the dispatch actually handles', () => {
+    const preset = JSON.parse(serializeSettings550())
+    mount(preset.AutoGoldenUpgrades)
+
+    const value = getPageSetting('AutoGoldenUpgrades')
+    expect(value).toBe(AGU.defaultValue) // the setting's own declared default — nothing invented
+    expect(AGU.options).toContain(value)
+    // The consequence that actually mattered: main-loop.ts gates on `agu && agu != 'Off'`, so
+    // "Void 60" passed the gate and drove buyGoldenUpgrade(undefined) into the native clobber.
+    // 'Off' does not pass it, so AT never reaches the game with an unresolvable request.
+    expect(value === 'Off' || AGU.options.includes(value as string)).toBe(true)
+  })
+
+  it('the <select> is no longer left blank at selectedIndex -1', () => {
+    // The render half. `s.value = 'Void 60'` against the five real <option>s gives value="" and
+    // selectedIndex -1, which reads to the user as "nothing picked yet" rather than "this is broken".
+    mount('Void 60')
+    const sel = document.getElementById('AutoGoldenUpgrades') as HTMLSelectElement
+    expect(sel.selectedIndex).toBeGreaterThanOrEqual(0)
+    expect(sel.value).toBe(AGU.defaultValue)
+  })
+
+  it('clamps any out-of-list or junk stored value, not just this one preset', () => {
+    // The class, not the instance — a hand-edited save or one written before an option was removed.
+    for (const junk of ['Void 56', 'Void 60 + Battle', 'banana', '', 0, null, ['Void']]) {
+      mount(junk)
+      expect(AGU.options, `stored ${JSON.stringify(junk)}`).toContain(getPageSetting('AutoGoldenUpgrades'))
+    }
+  })
+
+  it('a clamped dropdown still responds to a real onchange (not left in a bad state)', () => {
+    mount('Void 60')
+    const sel = document.getElementById('AutoGoldenUpgrades') as HTMLSelectElement
+    sel.value = 'Battle'
+    settingChanged('AutoGoldenUpgrades')
+    expect(getPageSetting('AutoGoldenUpgrades')).toBe('Battle')
   })
 })

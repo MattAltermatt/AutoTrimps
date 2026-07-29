@@ -39,8 +39,8 @@ export function initializeAllSettings() {
     // cannot see this code path, not because it checked one. The real evidence is the advisory-only net
     // (tests/nets/native-conflicts-completeness.test.ts) plus the jsdom suites and live Chrome verify.
     createSetting('WarnNativeAutomationConflicts', 'Warn: Auto Conflicts', tip({
-        what: "Shows a yellow warning beside the game's own AutoPrestige / AutoUpgrade / AutoStructure / AutoJobs / AutoStorage buttons when their setting fights AutoTrimps' automation.",
-        how: 'Hover the warning to read what AT does instead, why, and the one setting to change. It also warns in the other direction: AutoStorage off once you own Auspicious Presence Part II (overflow is being wasted), and Hide Buildings / Hide Jobs left on while the mastery they hand off to is off (nothing is buying at all).',
+        what: "Shows a yellow warning beside the game's own AutoPrestige / AutoUpgrade / AutoStructure / AutoJobs / AutoStorage / AutoGolden / AutoEquip buttons \u2014 and on the Buildings and Jobs panel headers \u2014 when a setting there fights AutoTrimps' automation.",
+        how: 'Hover the warning to read what AT does instead, why, and the one setting to change. It also warns in the other direction: AutoStorage off once you own Auspicious Presence Part II (overflow is being wasted), and AT handing a job off to a game automation that is itself switched off \u2014 <b>Buy Buildings</b> on &quot;Buy Neither&quot; with the game\'s AutoStructure off, or <b>Buy Jobs</b> on &quot;Don\'t Buy Jobs&quot; with AutoJobs off. Those two key on the Buy setting alone; Hide Buildings / Hide Jobs are not read, and with Hide Buildings on AT does still buy Gyms.',
         cannot: 'Cannot change anything on its own — it never touches a game toggle or one of your AT settings. Every fix is yours to make.'
     }), 'boolean', true, null, "Core");
 
@@ -672,12 +672,12 @@ export function initializeAllSettings() {
     }), 'boolean', false, null, 'C2');
     createSetting('carmormagic', ['C2 Armor Magic Off', 'CAM: Above 80%', 'CAM: H:D', 'CAM: Always'],tip({
         what: 'Buys emergency Armor to avoid dying while running the Toxicity or Nom Challenge², once your health drops to 40% of max.',
-        how: '<b>Above 80%:</b> only once your world zone has reached 80% of your highest zone cleared.<br><b>H:D:</b> only once your H:D ratio (enemy health ÷ your damage) is at or above the cutoff you set in <b>Mapology H:D</b> — i.e. once you genuinely don\'t have enough damage.<br><b>Always:</b> active for the whole run.<br>All three still wait for the 40% health trigger before buying.',
+        how: '<b>Above 80%:</b> only once your world zone has reached 80% of your highest zone cleared.<br><b>H:D:</b> only once your H:D ratio (enemy health ÷ your damage) is at or above the cutoff you set in <b>Map Cut Off</b> — i.e. once you genuinely don\'t have enough damage.<br><b>Always:</b> active for the whole run.<br>All three still wait for the 40% health trigger before buying.',
         ignoredWhen: 'You are not running the Toxicity or Nom Challenge² — it has no effect anywhere else, including Dailies (use <b>Daily Armor Magic</b> for those).',
     }), 'multitoggle', 0, null, "C2");
     createSetting('Rcarmormagic', ['C2 Armor Magic Off', 'CAM: Above 80%', 'CAM: H:D', 'CAM: Always'],tip({
         what: 'Buys emergency Armor to avoid dying while running the Toxicity or Nom Challenge² in Universe 2, once your health drops to 40% of max.',
-        how: '<b>Above 80%:</b> only once your world zone has reached 80% of your highest zone cleared.<br><b>H:D:</b> only once your H:D ratio (enemy health ÷ your damage) is at or above the cutoff you set in <b>Mapology H:D</b> — i.e. once you genuinely don\'t have enough damage.<br><b>Always:</b> active for the whole run.<br>All three still wait for the 40% health trigger before buying.',
+        how: '<b>Above 80%:</b> only once your world zone has reached 80% of your highest zone cleared.<br><b>H:D:</b> only once your H:D ratio (enemy health ÷ your damage) is at or above the cutoff you set in <b>Map Cut Off</b> — i.e. once you genuinely don\'t have enough damage.<br><b>Always:</b> active for the whole run.<br>All three still wait for the 40% health trigger before buying.',
         ignoredWhen: 'You are not running the Toxicity or Nom Challenge² in Universe 2 — it has no effect anywhere else, including Dailies (use <b>Daily Armor Magic</b> for those).',
     }), 'multitoggle', 0, null, "C2");
     createSetting('mapc2hd', 'Mapology H:D',tip({
@@ -1871,47 +1871,47 @@ export function initializeAllSettings() {
     }), 'boolean', false, null, 'Challenges');
     createSetting('Rchallengehidequag', 'Quag',tip({
         what: 'Hides the Quagmire (Black Bog) settings from the Challenges tab.',
-        ignoredWhen: 'Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then).',
+        ignoredWhen: 'Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it.',
     }), 'boolean', false, null, 'Challenges');
     createSetting('Rchallengehidearch', 'Arch',tip({
         what: 'Hides the Archaeology settings from the Challenges tab.',
-        ignoredWhen: 'Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then).',
+        ignoredWhen: 'Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it.',
     }), 'boolean', false, null, 'Challenges');
     createSetting('Rchallengehidemayhem', 'Mayhem',tip({
         what: 'Hides the Mayhem settings from the Challenges tab.',
-        ignoredWhen: 'Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then).',
+        ignoredWhen: 'Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it.',
     }), 'boolean', false, null, 'Challenges');
     createSetting('Rchallengehidestorm', 'Storm',tip({
         what: 'Hides the Storm settings from the Challenges tab.',
-        ignoredWhen: 'Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then).',
+        ignoredWhen: 'Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it.',
     }), 'boolean', false, null, 'Challenges');
     createSetting('Rchallengehideinsanity', 'Insanity',tip({
         what: 'Hides the Insanity settings from the Challenges tab.',
-        ignoredWhen: 'Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then).',
+        ignoredWhen: 'Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it.',
     }), 'boolean', false, null, 'Challenges');
     createSetting('Rchallengehideexterminate', 'Exterminate',tip({
         what: 'Hides the Exterminate settings from the Challenges tab.',
-        ignoredWhen: 'Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then).',
+        ignoredWhen: 'Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it.',
     }), 'boolean', false, null, 'Challenges');
     createSetting('Rchallengehidenurture', 'Nurture',tip({
         what: 'Hides the Nurture setting from the Challenges tab.',
-        ignoredWhen: 'Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then).',
+        ignoredWhen: 'Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it.',
     }), 'boolean', false, null, 'Challenges');
     createSetting('Rchallengehidepanda', 'Pandemonium',tip({
         what: 'Hides the Pandemonium settings from the Challenges tab.',
-        ignoredWhen: 'Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then).',
+        ignoredWhen: 'Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it.',
     }), 'boolean', false, null, 'Challenges');
     createSetting('Rchallengehidealchemy', 'Alchemy',tip({
         what: 'Hides the Alchemy settings from the Challenges tab.',
-        ignoredWhen: 'Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then).',
+        ignoredWhen: 'Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it.',
     }), 'boolean', false, null, 'Challenges');
     createSetting('Rchallengehidehypothermia', 'Hypothermia',tip({
         what: 'Hides the Hypothermia settings from the Challenges tab.',
-        ignoredWhen: 'Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then).',
+        ignoredWhen: 'Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it.',
     }), 'boolean', false, null, 'Challenges');
     createSetting('Rchallengehidedeso', 'Desolation',tip({
         what: 'Hides the Desolation settings from the Challenges tab.',
-        ignoredWhen: 'Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then).',
+        ignoredWhen: 'Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it.',
     }), 'boolean', false, null, 'Challenges');
 
     //Quagmire
@@ -2214,7 +2214,7 @@ export function initializeAllSettings() {
     }), 'multitoggle', 1, null, "Combat");
     createSetting('IgnoreCrits', ['Safety First', 'Ignore Void Strength', 'Ignore All Crits'],tip({
         what: 'Controls which crit multipliers AT\'s survival math accounts for when picking a stance.',
-        ignoredWhen: 'Ignored in Universe 2, and hidden whenever AutoStance is set to Windstacking (option 3) &mdash; windstacking does not run this calc.',
+        ignoredWhen: 'Ignored in Universe 2. Under Windstacking (AutoStance option 3) it no longer affects stance choice &mdash; windstacking does not run that calc &mdash; but it is still read by <b>Dynamic Gyms</b>, so the control stays visible while that is on.',
         cannot: 'This only changes what AT plans for, not what the game actually rolls &mdash; a more aggressive option does not stop real crits from landing.',
         how: '<b>Safety First</b> counts every crit source: corrupted-enemy crits, Corrupted Precision / void-strength crits, and challenge crits. <b>Ignore Void Strength</b> drops only the void-strength crit multiplier from the calc; mutation and challenge crits are still counted. <b>Ignore All Crits</b> drops every crit multiplier, treating every hit as non-crit.',
     }), 'multitoggle', 0, null, 'Combat');

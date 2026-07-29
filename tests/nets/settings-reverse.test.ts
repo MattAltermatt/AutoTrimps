@@ -505,10 +505,14 @@ describe('a test may only seed setting ids that production defines (#74)', () =>
   const PURGE_FIXTURE_FILE = join('tests', 'import-export.security.test.ts')
   const SYNTHETIC_FILES = [ENGINE_FIXTURE_FILE, PURGE_FIXTURE_FILE]
   const ALLOWED_SYNTHETIC: Record<string, string> = {
-    [`${ENGINE_FIXTURE_FILE}:71`]: "engine unit test — synthetic 'Foo' (boolean branch)",
-    [`${ENGINE_FIXTURE_FILE}:94`]: "engine unit test — synthetic 'Bar' (multitoggle branch)",
-    [`${ENGINE_FIXTURE_FILE}:122`]: "engine unit test — synthetic 'Drop' (dropdown branch)",
-    [`${ENGINE_FIXTURE_FILE}:146`]: "engine unit test — synthetic 'Foo' (downstream-trio branch)",
+    // Keyed by LINE on purpose: that is the narrowest exemption available (an id-keyed waiver would
+    // exempt 'Foo' anywhere in the file, forever). The cost is that inserting a test above these
+    // re-keys all four — #236 added parseNum cases at the top of the file and moved 71/94/122/146
+    // down by 17. Re-key them; do not widen the key to make the churn go away.
+    [`${ENGINE_FIXTURE_FILE}:88`]: "engine unit test — synthetic 'Foo' (boolean branch)",
+    [`${ENGINE_FIXTURE_FILE}:111`]: "engine unit test — synthetic 'Bar' (multitoggle branch)",
+    [`${ENGINE_FIXTURE_FILE}:139`]: "engine unit test — synthetic 'Drop' (dropdown branch)",
+    [`${ENGINE_FIXTURE_FILE}:163`]: "engine unit test — synthetic 'Foo' (downstream-trio branch)",
     [`${PURGE_FIXTURE_FILE}:184`]: "#76 purge test — seeds stale 'Ronlystackedvoids' so cleanup can reap it",
     [`${PURGE_FIXTURE_FILE}:196`]: "#76 purge test — seeds stale 'Ronlystackedvoids' for the tooltip preview",
   }

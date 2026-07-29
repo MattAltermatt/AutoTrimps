@@ -1049,7 +1049,7 @@
         cnt.className = "settingCount";
         el.appendChild(cnt);
       }
-      cnt.textContent = "(" + (rec.value + 1) + "/" + rec.name.length + ")";
+      cnt.textContent = "(" + (Number(rec.value) + 1) + "/" + rec.name.length + ")";
     } else if (rec.type == "action") {
       glyph.className = "settingGlyph icomoon icon-play3";
       label.textContent = " " + rec.name;
@@ -1063,6 +1063,19 @@
     if (Number.isInteger(stored) && stored >= 0 && stored < name.length) return;
     var fallback = parseInt(defaultValue);
     autoTrimpSettings[id].value = Number.isInteger(fallback) && fallback >= 0 && fallback < name.length ? fallback : 0;
+  }
+  var isStorableNumber = (v) => Number.isFinite(typeof v === "number" ? v : parseFloat(v));
+  function clampValue(id, defaultValue, multi) {
+    const rec = autoTrimpSettings[id];
+    if (multi) {
+      if (!Array.isArray(rec.value) || rec.value.every(isStorableNumber)) return;
+    } else if (isStorableNumber(rec.value)) return;
+    rec.value = defaultValue;
+  }
+  function clampDropdown(id, defaultValue, list) {
+    if (!Array.isArray(list) || !list.length) return;
+    if (list.includes(autoTrimpSettings[id].selected)) return;
+    autoTrimpSettings[id].selected = list.includes(defaultValue) ? defaultValue : list[0];
   }
   var definedSettingIds2 = /* @__PURE__ */ new Set();
   var defaultFacet = (type, defaultValue, name) => {
@@ -1117,6 +1130,7 @@
           type,
           value: loaded === void 0 ? defaultValue : loaded
         };
+      clampValue(id, defaultValue, false);
       btn.setAttribute("style", "font-size: 1.1vw;");
       btn.setAttribute("class", "noselect settingsBtn btn-info settingKind-input");
       btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == "valueNegative"}, ${type == "multiValue"})`);
@@ -1135,6 +1149,7 @@
           type,
           value: loaded === void 0 ? defaultValue : loaded
         };
+      clampValue(id, defaultValue, true);
       btn.setAttribute("style", "font-size: 1.1vw;");
       btn.setAttribute("class", "noselect settingsBtn btn-info settingKind-input");
       btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == "valueNegative"}, ${type == "multiValue"})`);
@@ -1172,6 +1187,7 @@
           selected: loaded === void 0 ? defaultValue : loaded,
           list
         };
+      clampDropdown(id, defaultValue, list);
       var btn = document.createElement("select");
       btn.id = id;
       if (game.options.menu.darkTheme.enabled == 2) btn.setAttribute("style", "color: #C8C8C8; font-size: 1.0vw;");
@@ -1333,8 +1349,7 @@
   }
   function parseNum(num) {
     if (num.split("e")[1]) {
-      num = num.split("e");
-      num = Math.floor(parseFloat(num[0]) * Math.pow(10, parseInt(num[1])));
+      num = parseFloat(num);
     } else {
       var letters = num.replace(/[^a-z]/gi, "");
       var base = 0;
@@ -1365,13 +1380,20 @@
         num = parseNum(num);
       }
     } else return;
+    if (Array.isArray(num) ? !num.every(isStorableNumber) : !isStorableNumber(num))
+      num = autoTrimpSettings[id].value;
     autoTrimpSettings[id].value = num;
     if (Array.isArray(num)) {
       document.getElementById(id).textContent = ranstring + ": " + num[0] + "+";
     } else if (num > -1 || negative)
       document.getElementById(id).textContent = ranstring + ": " + prettify(num);
-    else
-      document.getElementById(id).innerHTML = ranstring + ": <span class='icomoon icon-infinity'></span>";
+    else {
+      const el = document.getElementById(id);
+      el.textContent = ranstring + ": ";
+      const infinity = document.createElement("span");
+      infinity.className = "icomoon icon-infinity";
+      el.appendChild(infinity);
+    }
     saveSettings();
     checkPortalSettings();
   }
@@ -8448,6 +8470,8 @@
       shouldFarm = calcHDratio() >= getPageSetting2("DisableFarm");
       if (game.options.menu.repeatUntil.enabled == 1 && shouldFarm)
         toggleSetting("repeatUntil");
+    } else {
+      shouldFarm = false;
     }
     if (game.global.spireActive) {
       enemyDamage = calcSpire(99, game.global.gridArray[99].name, "attack");
@@ -8643,8 +8667,6 @@
         if (challengeActive("Toxicity")) {
           eAttack *= 5;
         }
-        if (getPageSetting2("DisableFarm") <= 0)
-          shouldFarm = shouldFarm || false;
         if (!restartVoidMap)
           selectedMap2 = theMap.id;
         if (game.global.mapsActive && getCurrentMapObject().location == "Void" && challengeActive("Nom") && getPageSetting2("FarmWhenNomStacks7")) {
@@ -8958,6 +8980,8 @@
       RshouldFarm = RcalcHDratio() >= getPageSetting2("RDisableFarm");
       if (game.options.menu.repeatUntil.enabled == 1 && RshouldFarm)
         toggleSetting("repeatUntil");
+    } else {
+      RshouldFarm = false;
     }
     let hitsSurvived = 10;
     if (getPageSetting2("Rhitssurvived") > 0) hitsSurvived = getPageSetting2("Rhitssurvived");
@@ -9304,8 +9328,6 @@
       for (const map in voidArraySorted) {
         const theMap = voidArraySorted[map];
         RdoVoids = true;
-        if (getPageSetting2("RDisableFarm") <= 0)
-          RshouldFarm = RshouldFarm || false;
         if (!restartVoidMap)
           selectedMap2 = theMap.id;
         break;
@@ -16313,20 +16335,26 @@
       $item.style.display = "none";
     toggleSettingsMenu();
   }
+  var lastAutoMapsMode = 1;
+  var lastRAutoMapsMode = 1;
   function toggleAutoMaps() {
     if (game.global.universe == 1) {
-      if (getPageSetting("AutoMaps")) {
+      const current = getPageSetting("AutoMaps");
+      if (current) {
+        lastAutoMapsMode = current;
         setPageSetting("AutoMaps", 0);
       } else {
-        setPageSetting("AutoMaps", 1);
+        setPageSetting("AutoMaps", lastAutoMapsMode);
       }
       document.getElementById("autoMapBtn").setAttribute("class", "noselect settingsBtn settingBtn" + autoTrimpSettings.AutoMaps.value);
     }
     if (game.global.universe == 2) {
-      if (getPageSetting("RAutoMaps")) {
+      const current = getPageSetting("RAutoMaps");
+      if (current) {
+        lastRAutoMapsMode = current;
         setPageSetting("RAutoMaps", 0);
       } else {
-        setPageSetting("RAutoMaps", 1);
+        setPageSetting("RAutoMaps", lastRAutoMapsMode);
       }
       document.getElementById("autoMapBtn").setAttribute("class", "noselect settingsBtn settingBtn" + autoTrimpSettings.RAutoMaps.value);
     }
@@ -16393,6 +16421,12 @@
     }
     function turnOn(elem2) {
       toggleElem(elem2, true);
+    }
+    function toggleStatusElem(elem2, showHide) {
+      var $item = document.getElementById(elem2);
+      if ($item == null) return;
+      $item.style.display = showHide ? "" : "none";
+      $item.parentNode.style.display = showHide ? "block" : "none";
     }
     var radonon = getPageSetting("radonsettings") == 1;
     var boneShrinePurchased = game.permaBoneBonuses.boosts.owned > 0 ? true : false;
@@ -16789,7 +16823,7 @@
     !radonon ? turnOn("fullice") : turnOff("fullice");
     !radonon ? turnOn("45stacks") : turnOff("45stacks");
     !radonon ? turnOn("ForceAbandon") : turnOff("ForceAbandon");
-    !radonon && getPageSetting("AutoStance") != 3 ? turnOn("IgnoreCrits") : turnOff("IgnoreCrits");
+    !radonon && (getPageSetting("AutoStance") != 3 || getPageSetting("DynamicGyms")) ? turnOn("IgnoreCrits") : turnOff("IgnoreCrits");
     radonon ? turnOn("Rfightforever") : turnOff("Rfightforever");
     radonon ? turnOn("Rcalcmaxequality") : turnOff("Rcalcmaxequality");
     radonon ? turnOn("Rmanageequality") : turnOff("Rmanageequality");
@@ -17018,8 +17052,9 @@
     !radonon && getPageSetting("autoenlight") == true ? turnOn("ic2enlightthresh") : turnOff("ic2enlightthresh");
     game.worldUnlocks.easterEgg.locked == false ? turnOn("AutoEggs") : turnOff("AutoEggs");
     turnOff("zonetracker");
-    if (getPageSetting("showbreedtimer") == false) turnOff("hiddenBreedTimer");
-    if (getPageSetting("showautomapstatus") == false) turnOff("autoMapStatus");
+    toggleStatusElem("hiddenBreedTimer", !(getPageSetting("showbreedtimer") == false));
+    const statusKey = game.global.universe == 2 ? "Rshowautomapstatus" : "showautomapstatus";
+    toggleStatusElem("autoMapStatus", !(getPageSetting(statusKey) == false));
     !radonon ? turnOn("showautomapstatus") : turnOff("showautomapstatus");
     radonon ? turnOn("Rshowautomapstatus") : turnOff("Rshowautomapstatus");
     radonon ? turnOn("Rhs") : turnOff("Rhs");
@@ -17103,10 +17138,6 @@
       document.getElementById("autoMapBtn").setAttribute("class", "noselect settingsBtn settingBtn" + autoTrimpSettings.AutoMaps.value);
     if (game.global.universe == 2)
       document.getElementById("autoMapBtn").setAttribute("class", "noselect settingsBtn settingBtn" + autoTrimpSettings.RAutoMaps.value);
-    if (game.global.universe == 1 && getPageSetting("DisableFarm") <= 0)
-      shouldFarm = false;
-    if (game.global.universe == 2 && getPageSetting("RDisableFarm") <= 0)
-      RshouldFarm = false;
     MODULES["maps"] && (MODULES["maps"].preferGardens = !getPageSetting("PreferMetal"));
     if (byId("Prestige").selectedIndex > 11 && game.global.slowDone == false) {
       byId("Prestige").selectedIndex = 11;
@@ -17204,8 +17235,8 @@
       how: "Off, the stock game UI is unchanged. On, a marked shell adopts the game's own panels intact \u2014 nothing is missing \u2014 as the base for the streamlined AutoTrimps layout."
     }), "boolean", false, null, "Core");
     createSetting("WarnNativeAutomationConflicts", "Warn: Auto Conflicts", tip({
-      what: "Shows a yellow warning beside the game's own AutoPrestige / AutoUpgrade / AutoStructure / AutoJobs / AutoStorage buttons when their setting fights AutoTrimps' automation.",
-      how: "Hover the warning to read what AT does instead, why, and the one setting to change. It also warns in the other direction: AutoStorage off once you own Auspicious Presence Part II (overflow is being wasted), and Hide Buildings / Hide Jobs left on while the mastery they hand off to is off (nothing is buying at all).",
+      what: "Shows a yellow warning beside the game's own AutoPrestige / AutoUpgrade / AutoStructure / AutoJobs / AutoStorage / AutoGolden / AutoEquip buttons \u2014 and on the Buildings and Jobs panel headers \u2014 when a setting there fights AutoTrimps' automation.",
+      how: "Hover the warning to read what AT does instead, why, and the one setting to change. It also warns in the other direction: AutoStorage off once you own Auspicious Presence Part II (overflow is being wasted), and AT handing a job off to a game automation that is itself switched off \u2014 <b>Buy Buildings</b> on &quot;Buy Neither&quot; with the game's AutoStructure off, or <b>Buy Jobs</b> on &quot;Don't Buy Jobs&quot; with AutoJobs off. Those two key on the Buy setting alone; Hide Buildings / Hide Jobs are not read, and with Hide Buildings on AT does still buy Gyms.",
       cannot: "Cannot change anything on its own \u2014 it never touches a game toggle or one of your AT settings. Every fix is yours to make."
     }), "boolean", true, null, "Core");
     createSetting("ManualGather2", ["Manual Gather/Build", "Auto Gather/Build", "Mining/Building Only", "Science Research OFF"], tip({
@@ -17777,12 +17808,12 @@
     }), "boolean", false, null, "C2");
     createSetting("carmormagic", ["C2 Armor Magic Off", "CAM: Above 80%", "CAM: H:D", "CAM: Always"], tip({
       what: "Buys emergency Armor to avoid dying while running the Toxicity or Nom Challenge\xB2, once your health drops to 40% of max.",
-      how: "<b>Above 80%:</b> only once your world zone has reached 80% of your highest zone cleared.<br><b>H:D:</b> only once your H:D ratio (enemy health \xF7 your damage) is at or above the cutoff you set in <b>Mapology H:D</b> \u2014 i.e. once you genuinely don't have enough damage.<br><b>Always:</b> active for the whole run.<br>All three still wait for the 40% health trigger before buying.",
+      how: "<b>Above 80%:</b> only once your world zone has reached 80% of your highest zone cleared.<br><b>H:D:</b> only once your H:D ratio (enemy health \xF7 your damage) is at or above the cutoff you set in <b>Map Cut Off</b> \u2014 i.e. once you genuinely don't have enough damage.<br><b>Always:</b> active for the whole run.<br>All three still wait for the 40% health trigger before buying.",
       ignoredWhen: "You are not running the Toxicity or Nom Challenge\xB2 \u2014 it has no effect anywhere else, including Dailies (use <b>Daily Armor Magic</b> for those)."
     }), "multitoggle", 0, null, "C2");
     createSetting("Rcarmormagic", ["C2 Armor Magic Off", "CAM: Above 80%", "CAM: H:D", "CAM: Always"], tip({
       what: "Buys emergency Armor to avoid dying while running the Toxicity or Nom Challenge\xB2 in Universe 2, once your health drops to 40% of max.",
-      how: "<b>Above 80%:</b> only once your world zone has reached 80% of your highest zone cleared.<br><b>H:D:</b> only once your H:D ratio (enemy health \xF7 your damage) is at or above the cutoff you set in <b>Mapology H:D</b> \u2014 i.e. once you genuinely don't have enough damage.<br><b>Always:</b> active for the whole run.<br>All three still wait for the 40% health trigger before buying.",
+      how: "<b>Above 80%:</b> only once your world zone has reached 80% of your highest zone cleared.<br><b>H:D:</b> only once your H:D ratio (enemy health \xF7 your damage) is at or above the cutoff you set in <b>Map Cut Off</b> \u2014 i.e. once you genuinely don't have enough damage.<br><b>Always:</b> active for the whole run.<br>All three still wait for the 40% health trigger before buying.",
       ignoredWhen: "You are not running the Toxicity or Nom Challenge\xB2 in Universe 2 \u2014 it has no effect anywhere else, including Dailies (use <b>Daily Armor Magic</b> for those)."
     }), "multitoggle", 0, null, "C2");
     createSetting("mapc2hd", "Mapology H:D", tip({
@@ -18817,47 +18848,47 @@
     }), "boolean", false, null, "Challenges");
     createSetting("Rchallengehidequag", "Quag", tip({
       what: "Hides the Quagmire (Black Bog) settings from the Challenges tab.",
-      ignoredWhen: "Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then)."
+      ignoredWhen: "Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it."
     }), "boolean", false, null, "Challenges");
     createSetting("Rchallengehidearch", "Arch", tip({
       what: "Hides the Archaeology settings from the Challenges tab.",
-      ignoredWhen: "Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then)."
+      ignoredWhen: "Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it."
     }), "boolean", false, null, "Challenges");
     createSetting("Rchallengehidemayhem", "Mayhem", tip({
       what: "Hides the Mayhem settings from the Challenges tab.",
-      ignoredWhen: "Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then)."
+      ignoredWhen: "Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it."
     }), "boolean", false, null, "Challenges");
     createSetting("Rchallengehidestorm", "Storm", tip({
       what: "Hides the Storm settings from the Challenges tab.",
-      ignoredWhen: "Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then)."
+      ignoredWhen: "Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it."
     }), "boolean", false, null, "Challenges");
     createSetting("Rchallengehideinsanity", "Insanity", tip({
       what: "Hides the Insanity settings from the Challenges tab.",
-      ignoredWhen: "Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then)."
+      ignoredWhen: "Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it."
     }), "boolean", false, null, "Challenges");
     createSetting("Rchallengehideexterminate", "Exterminate", tip({
       what: "Hides the Exterminate settings from the Challenges tab.",
-      ignoredWhen: "Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then)."
+      ignoredWhen: "Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it."
     }), "boolean", false, null, "Challenges");
     createSetting("Rchallengehidenurture", "Nurture", tip({
       what: "Hides the Nurture setting from the Challenges tab.",
-      ignoredWhen: "Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then)."
+      ignoredWhen: "Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it."
     }), "boolean", false, null, "Challenges");
     createSetting("Rchallengehidepanda", "Pandemonium", tip({
       what: "Hides the Pandemonium settings from the Challenges tab.",
-      ignoredWhen: "Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then)."
+      ignoredWhen: "Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it."
     }), "boolean", false, null, "Challenges");
     createSetting("Rchallengehidealchemy", "Alchemy", tip({
       what: "Hides the Alchemy settings from the Challenges tab.",
-      ignoredWhen: "Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then)."
+      ignoredWhen: "Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it."
     }), "boolean", false, null, "Challenges");
     createSetting("Rchallengehidehypothermia", "Hypothermia", tip({
       what: "Hides the Hypothermia settings from the Challenges tab.",
-      ignoredWhen: "Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then)."
+      ignoredWhen: "Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it."
     }), "boolean", false, null, "Challenges");
     createSetting("Rchallengehidedeso", "Desolation", tip({
       what: "Hides the Desolation settings from the Challenges tab.",
-      ignoredWhen: "Universe 1, or while Hide Stuff above is off (this toggle is itself hidden then)."
+      ignoredWhen: "Universe 1 \u2014 the Challenges tab is Universe 2 only. NOT ignored while <b>Hide Stuff</b> is off: this toggle stays in effect, and Hide Stuff only controls whether you can see the toggle itself. Turn Hide Stuff back on to untick it."
     }), "boolean", false, null, "Challenges");
     document.getElementById("Rchallengehidedeso").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("Rblackbog", "Quagmire", tip({
@@ -19126,7 +19157,7 @@
     }), "multitoggle", 1, null, "Combat");
     createSetting("IgnoreCrits", ["Safety First", "Ignore Void Strength", "Ignore All Crits"], tip({
       what: "Controls which crit multipliers AT's survival math accounts for when picking a stance.",
-      ignoredWhen: "Ignored in Universe 2, and hidden whenever AutoStance is set to Windstacking (option 3) &mdash; windstacking does not run this calc.",
+      ignoredWhen: "Ignored in Universe 2. Under Windstacking (AutoStance option 3) it no longer affects stance choice &mdash; windstacking does not run that calc &mdash; but it is still read by <b>Dynamic Gyms</b>, so the control stays visible while that is on.",
       cannot: "This only changes what AT plans for, not what the game actually rolls &mdash; a more aggressive option does not stop real crits from landing.",
       how: "<b>Safety First</b> counts every crit source: corrupted-enemy crits, Corrupted Precision / void-strength crits, and challenge crits. <b>Ignore Void Strength</b> drops only the void-strength crit multiplier from the calc; mutation and challenge crits are still counted. <b>Ignore All Crits</b> drops every crit multiplier, treating every hit as non-crit."
     }), "multitoggle", 0, null, "Combat");

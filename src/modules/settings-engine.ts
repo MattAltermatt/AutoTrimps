@@ -47,7 +47,15 @@ export function renderControlFace(el: any, rec: any) {
             cnt.className = 'settingCount';
             el.appendChild(cnt);
         }
-        cnt.textContent = '(' + (rec.value + 1) + '/' + rec.name.length + ')';
+        // #252 — `Number(...)` is load-bearing. Four multitoggles are declared with the STRING '0'
+        // (dfightforever, Rdfightforever, AutoPortalDaily, RAutoPortalDaily — the #69 family),
+        // createSetting stores that default verbatim, and clampMultitoggle deliberately leaves an
+        // in-range value byte-identical. So `rec.value + 1` was string concatenation: the badge read
+        // "(01/3)" on every fresh install, self-correcting only after the first click, because
+        // settingChanged's `btn.value++` coerces. Fixed at the render, not at the declaration —
+        // normalizing the four defaults changes what serializeSettings() writes for every existing
+        // user, which is a separate decision (see the pin in tests/nets/dispatch-holes.test.ts).
+        cnt.textContent = '(' + (Number(rec.value) + 1) + '/' + rec.name.length + ')';
     } else if (rec.type == 'action') {
         glyph.className = 'settingGlyph icomoon icon-play3';
         label.textContent = ' ' + rec.name;
@@ -82,6 +90,65 @@ function clampMultitoggle(id: any, name: any, defaultValue: any) {
     autoTrimpSettings[id].value =
         Number.isInteger(fallback) && fallback >= 0 && fallback < name.length ? fallback : 0;
 }
+// #237 — "can this value survive a round trip through the store and come back as a number?"
+//
+// It has to tolerate strings, because 18 of the declared `value` defaults ARE strings ('-1', '0',
+// '1e33', …) and getPageSetting reads them with parseFloat, not parseInt — so `'-1'` is a perfectly
+// good stored value and must not be treated as damage. What it must reject is anything JSON cannot
+// carry: NaN and ±Infinity both serialize to `null`, and `null` is what comes back on the next boot.
+const isStorableNumber = (v: any) => Number.isFinite(typeof v === 'number' ? v : parseFloat(v));
+
+// #237 — the load-side half of the NaN hole, and the reason the title says "can never fall back to
+// the default". An unparseable entry used to write NaN straight into the record; serializeSettings
+// flattens that to `{"MaxHut":null}`, and on the next boot createSetting's
+// `loaded === undefined ? defaultValue : loaded` KEEPS the null, because `null !== undefined`. From
+// then on getPageSetting returns parseFloat(null) = NaN forever, and every >=/<=/> comparison against
+// it is false — buildings.ts:162 (`owned < cap || cap < 1`) has BOTH disjuncts false, so AT silently
+// stops buying that building. The visible face lies in the opposite direction: settings-visibility
+// tests `item.value > -1`, and `NaN > -1` is false, so the control renders the ∞ glyph — identical to
+// a legitimately-configured -1, i.e. it reads as "no cap" while the code has switched to "never".
+//
+// Closing only the write path leaves every already-poisoned user broken forever, so the repair lives
+// here at the same chokepoint clampMultitoggle uses — every path that adopts a store (boot, pasted
+// import, profile switch, factory reset) funnels through initializeAllSettings → createSetting.
+// `defaultValue` is the only non-arbitrary target: it is the fallback the setting itself declares.
+//
+// SURGICAL, in two directions. A storable value is left byte-identical, strings included. And for
+// multiValue only an ARRAY carrying a non-storable element is repaired — a multiValue holding a bare
+// scalar is the separate #162/#201 array-vs-scalar family, not this one, and folding it in here would
+// silently rewrite stored values this defect never touched.
+function clampValue(id: any, defaultValue: any, multi: boolean) {
+    const rec = autoTrimpSettings[id];
+    if (multi) {
+        if (!Array.isArray(rec.value) || rec.value.every(isStorableNumber)) return;
+    } else if (isStorableNumber(rec.value)) return;
+    rec.value = defaultValue;
+}
+
+// #208 — the dropdown twin of clampMultitoggle, for the identical class in the identical blob.
+//
+// The dropdown arm stored `selected` verbatim and then did `btn.value = selected` with no membership
+// test, so a value that is no longer an option survives every load. The shipped "550+ AT Settings"
+// preset carries `AutoGoldenUpgrades: "Void 60"` — a label upstream deleted in 2018 when it collapsed
+// the seven-option list to today's five — and importing that preset is a documented feature.
+//
+// Three things go wrong at once, and only the first is visible. The <select> gets selectedIndex -1
+// and renders BLANK, which reads as "nothing picked yet". AT's dispatch (other.ts) matches no arm, so
+// `setting2` stays undefined and it buys no goldens at all. And `buyGoldenUpgrade(undefined)` reaches
+// the game's `if (!upgrade)` branch, which calls setAutoGoldenSetting(0) — so AT silently switches OFF
+// the player's own NATIVE AutoGolden, every tick a golden is waiting, at 10 Hz against the native
+// loop's 2 Hz. Nothing consumes the pending upgrade, so it re-fires forever.
+//
+// `defaultValue` is the fallback for the same reason it is in clampMultitoggle: it is the value the
+// setting itself declares, so this invents no behavior. Deliberately NOT mapping "Void 60" → "Void":
+// that is a guess about a 2018 author's intent, and a value migration wants the explicit table in
+// settings-migrations.ts, not a similarity match buried in the render path.
+function clampDropdown(id: any, defaultValue: any, list: any) {
+    if (!Array.isArray(list) || !list.length) return;
+    if (list.includes(autoTrimpSettings[id].selected)) return;
+    autoTrimpSettings[id].selected = list.includes(defaultValue) ? defaultValue : list[0];
+}
+
 // #76 — the id census of the CURRENT build. Every createSetting call registers its id here, so
 // "is this key in the user's saved file a setting this version still declares?" is answerable
 // without asking the DOM. cleanupAutoTrimps() used to ask the DOM instead (`getElementById(id) ==
@@ -199,6 +266,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
                 type: type,
                 value: loaded === undefined ? defaultValue : loaded
             };
+        clampValue(id, defaultValue, false);
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn btn-info settingKind-input');
         btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == 'valueNegative'}, ${type == 'multiValue'})`);
@@ -217,6 +285,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
                 type: type,
                 value: loaded === undefined ? defaultValue : loaded
             };
+        clampValue(id, defaultValue, true);
         btn.setAttribute("style", "font-size: 1.1vw;");
         btn.setAttribute('class', 'noselect settingsBtn btn-info settingKind-input');
         btn.setAttribute("onclick", `autoSetValueToolTip("${id}", "${name}", ${type == 'valueNegative'}, ${type == 'multiValue'})`);
@@ -254,6 +323,7 @@ export function createSetting(id: any, name: any, description: any, type: any, d
                 selected: loaded === undefined ? defaultValue : loaded,
                 list: list
             };
+        clampDropdown(id, defaultValue, list);
         var btn: any = document.createElement("select");
         btn.id = id;
         if (game.options.menu.darkTheme.enabled == 2) btn.setAttribute("style", "color: #C8C8C8; font-size: 1.0vw;");
@@ -446,8 +516,26 @@ export function onKeyPressSetting(event: any, id: any, negative: any, multi: any
 
 export function parseNum(num: any) {
     if (num.split('e')[1]) {
-        num = num.split('e');
-        num = Math.floor(parseFloat(num[0]) * (Math.pow(10, parseInt(num[1]))));
+        // #236 — this was `Math.floor(parseFloat(mantissa) * Math.pow(10, parseInt(exponent)))`, and
+        // the floor is the defect. It is only meaningful for the large-integer shorthand the input
+        // hint advertises ("You can also use shorthand such as 2e5 or 200k"), but it applies to every
+        // exponent — so ANY value below 1 typed in the form the tooltip tells the user to use floors
+        // straight to 0. `amalcoordhd` ships with default 0.0000025, i.e. e-notation is its natural
+        // input form, and `2.5e-6` stored 0; upgrades.ts requires `> 0`, so the feature the user just
+        // configured went inert with no error and a face that reads "0".
+        //
+        // Worse, the round trip is not closed even without user shorthand: autoSetValueToolTip seeds
+        // the box with `String(value)`, and JS switches to exponential form strictly below 1e-6 — so
+        // re-opening a box holding 1e-7 and pressing Apply WITHOUT EDITING stored 0. A parser that
+        // cannot re-read the string its own prefill emits is broken regardless of what the hint says.
+        //
+        // parseFloat over the WHOLE string is the exact fix, not `parseFloat(m) * 10 ** e` — the
+        // latter reintroduces float error (2.5 * Math.pow(10, -6) === 0.0000024999999999999998), and
+        // the old multiply had the same flaw in the positive direction the floor then made visible
+        // (1.23 * 100 === 122.99999999999999, floored to 122). The rest of the pipeline is already
+        // float-capable: the sibling suffix/plain branch below returns exact fractions, getPageSetting
+        // parseFloats rather than parseInts, and serializeSettings stores the bare number.
+        num = parseFloat(num);
     } else {
         var letters = num.replace(/[^a-z]/gi, '');
         var base = 0;
@@ -479,13 +567,33 @@ export function autoSetValue(id: any, negative: any, multi: any) {
             num = parseNum(num);
         }
     } else return;
+    // #237 — the box is a plain <input> with no type="number" and no pattern, so `parseNum` hands back
+    // NaN for the two most ordinary mistakes there are: clearing the box (the natural "reset this"
+    // gesture) and typing a word. NaN used to go straight into the record, and from there it is not
+    // recoverable by any automatic path — see clampValue above for the full chain. Rejecting it here
+    // costs the user nothing: the value they had is what they keep, and the label below re-renders
+    // from it, so the face and the store agree. ±Infinity ('1e999') is rejected for the same reason —
+    // JSON.stringify writes `null` for it too.
+    if (Array.isArray(num) ? !num.every(isStorableNumber) : !isStorableNumber(num))
+        num = autoTrimpSettings[id].value;
     autoTrimpSettings[id].value = num;
     if (Array.isArray(num)) {
         document.getElementById(id)!.textContent = ranstring + ': ' + num[0] + '+';
     } else if (num > -1 || negative)
         document.getElementById(id)!.textContent = ranstring + ': ' + prettify(num);
-    else
-        document.getElementById(id)!.innerHTML = ranstring + ': ' + "<span class='icomoon icon-infinity'></span>";
+    else {
+        // #235 — the name spliced here is first-party, so this was never exploitable; it is simply the
+        // last innerHTML on the value-apply path, and it was building a string for exactly one STATIC
+        // <span>. Build the span instead and nothing on this path is markup at all. (settings-visibility
+        // does the same thing in renderInfinityFace; it is not shared because settings-visibility has no
+        // imports — it reaches everything through the bridge — and a one-way import for three lines of
+        // DOM construction is a worse trade than the three lines.)
+        const el = document.getElementById(id)!;
+        el.textContent = ranstring + ': ';
+        const infinity = document.createElement('span');
+        infinity.className = 'icomoon icon-infinity';
+        el.appendChild(infinity);
+    }
     saveSettings();
     checkPortalSettings();
 }

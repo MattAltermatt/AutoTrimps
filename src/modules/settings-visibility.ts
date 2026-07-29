@@ -105,6 +105,19 @@ export function updateCustomButtons() {
         toggleElem(elem, true);
     }
 
+    // #238 — the two STATUS elements (the breed-timer countdown and the AutoMaps status line) are not
+    // settings controls. They live in the fight-button column, and their containers were authored
+    // `display: block` (breedtimer.ts:214, settings-menu.ts:48) — so restoring them through turnOn,
+    // which writes `inline-block` on the parent, would "show" them in a layout they were never
+    // designed in. They get their own restore instead of borrowing one that encodes a settings-row
+    // assumption. Everything else about the pair is identical to toggleElem.
+    function toggleStatusElem(elem: any, showHide: any) {
+        var $item = document.getElementById(elem);
+        if ($item == null) return;
+        $item.style.display = showHide ? '' : 'none';
+        ($item as any).parentNode.style.display = showHide ? 'block' : 'none';
+    }
+
     //Hide settings
 
     //Radon
@@ -657,7 +670,20 @@ export function updateCustomButtons() {
     !radonon ? turnOn("fullice") : turnOff("fullice");
     !radonon ? turnOn("45stacks") : turnOff("45stacks");
     !radonon ? turnOn("ForceAbandon") : turnOff("ForceAbandon");
-    !radonon && getPageSetting('AutoStance') != 3 ? turnOn("IgnoreCrits") : turnOff("IgnoreCrits");
+    // #240 — the `|| DynamicGyms` is new. Hiding a control does NOT neutralize its value: turnOff only
+    // writes display:none, so getPageSetting keeps returning whatever is stored. IgnoreCrits has a
+    // SECOND consumer with no AutoStance term anywhere near it — buildings.ts's Gym block reads
+    // DynamicGyms, then calcSpecificEnemyAttack → badGuyCritMult, which branches on IgnoreCrits and
+    // moves the modelled enemy attack by 5x (corruptCrit) or 7x (healthyCrit). That flips whether AT
+    // keeps buying Gyms. So in Windstacking the setting stayed live and became unreachable, which is
+    // the worst combination: it still decides something and the user cannot see or change it.
+    //
+    // Fixed on the RENDER side deliberately. The other repair — narrowing the runtime read so the Gym
+    // calc ignores this setting under Windstacking — would change which Gyms AT buys, i.e. a strategy
+    // change, and the setting is not broken there; only its visibility was. (The tooltip's stance-half
+    // rationale is genuinely true: AutoStance==3 routes to windStance → calcCurrentStance, which never
+    // reaches badGuyCritMult. It was just never true of the Gym calc, and settings-defs now says so.)
+    !radonon && (getPageSetting('AutoStance') != 3 || getPageSetting('DynamicGyms')) ? turnOn("IgnoreCrits") : turnOff("IgnoreCrits");
 
 
     //RCombat
@@ -950,8 +976,30 @@ export function updateCustomButtons() {
 
 
     //Memory
-    if (getPageSetting('showbreedtimer') == false) turnOff("hiddenBreedTimer");
-    if (getPageSetting('showautomapstatus') == false) turnOff("autoMapStatus");
+    // #238 — these two were the only ONE-ARMED conditional hides in the file: `if (setting == false)
+    // turnOff(...)` with no partner. Every other visibility decision here is a ternary. Nothing in
+    // src/ ever turned either id back on, so toggling the setting off and on again without reloading
+    // left the element hidden for the rest of the session while main-loop.ts happily resumed writing
+    // text into it. Both descriptions promise the opposite ("Turning it off skips that per-tick update
+    // and hides the countdown / status line"), which only reads as reversible.
+    //
+    // #239 — and the AutoMaps status line dispatches on UNIVERSE now. There is exactly one
+    // #autoMapStatus span (settings-menu.ts:57, created regardless of universe) and both universes
+    // write it, but the hide read only the U1 key while main-loop.ts:454 gates the U2 writer on
+    // 'Rshowautomapstatus'. So a U2 player who turned their status line off got a permanently FROZEN,
+    // stale line (updates stop, element stays visible), and a U2 player whose U1 key was off from
+    // earlier play got no line at all — with the control that would fix it hidden, because the very
+    // next line hides 'showautomapstatus' whenever the settings page is in Radon view. The author of
+    // the U2 setting updated the two checkbox rows below and missed the element hide above them.
+    // The render gate and the runtime gate are one invariant; they are now spelled the same way.
+    toggleStatusElem("hiddenBreedTimer", !(getPageSetting('showbreedtimer') == false));
+    // NB the dispatch is on game.global.universe, NOT on `radonon`. `radonon` is which settings PAGE
+    // the user is looking at (it is what the two control rows below key off, correctly — that is a
+    // view choice). The element itself is driven by whichever universe is actually running, so it has
+    // to match main-loop.ts's `game.global.universe == 1 / == 2` gates or the two invariants disagree
+    // again in a new way.
+    const statusKey = game.global.universe == 2 ? 'Rshowautomapstatus' : 'showautomapstatus';
+    toggleStatusElem("autoMapStatus", !(getPageSetting(statusKey) == false));
     !radonon ? turnOn("showautomapstatus") : turnOff("showautomapstatus");
     radonon ? turnOn("Rshowautomapstatus") : turnOff("Rshowautomapstatus");
 
@@ -1063,10 +1111,13 @@ export function updateCustomButtons() {
         document.getElementById('autoMapBtn')!.setAttribute('class', 'noselect settingsBtn settingBtn' + autoTrimpSettings.RAutoMaps.value);
 
 
-    if (game.global.universe == 1 && getPageSetting('DisableFarm') <= 0)
-        shouldFarm = false;
-    if (game.global.universe == 2 && getPageSetting('RDisableFarm') <= 0)
-        RshouldFarm = false;
+    // #209 — two automation writes that were here are GONE. This is updateCustomButtons: a RENDER
+    // function, dispatched from guiLoop once per second. It has no business owning a global that
+    // autoMap writes and reads ten times per second — the reset landed between two autoMap ticks, so
+    // one tick in ten read a value the previous tick had not written, and siphlvl plus the game's
+    // repeatClicked() flapped at ~1 Hz as a result. The reset now lives in autoMap/RautoMap, as the
+    // `else` of their DisableFarm arm: one writer, before any reader, every tick. Do not reintroduce
+    // a copy here — a second writer at a different frequency is the whole defect, not a detail of it.
 
     MODULES["maps"] && (MODULES["maps"].preferGardens = !getPageSetting('PreferMetal'));
     if (byId<HTMLSelectElement>('Prestige').selectedIndex > 11 && game.global.slowDone == false) {

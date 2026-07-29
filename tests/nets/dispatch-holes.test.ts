@@ -133,6 +133,53 @@ const inventory = new Map<string, Multitoggle>()
   visit(sf)
 }
 
+// ── 1b. The same inventory for DROPDOWNS. ───────────────────────────────────────────────────────────
+// #208 — a dropdown carries the identical hazard in a different shape: the option set is a list of
+// STRINGS rather than a range of indices, and createSetting stored `selected` verbatim with no
+// membership test. So a label upstream deleted years ago survives every load and matches no dispatch
+// arm. The multitoggle inventory above could not see it (it filters `type === 'multitoggle'`), which
+// is why the same 2018 preset shipped TWO instances of this class and only one of them was caught.
+type Dropdown = { options: string[]; defaultValue: string | null; line: number }
+const dropdowns = new Map<string, Dropdown>()
+{
+  const sf = parse(DEFS)
+  const visit = (n: ts.Node): void => {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'createSetting') {
+      const [idArg, , , typeArg, defArg, listArg] = n.arguments
+      if (
+        idArg && ts.isStringLiteralLike(idArg) &&
+        typeArg && ts.isStringLiteralLike(typeArg) && typeArg.text === 'dropdown' &&
+        listArg && ts.isArrayLiteralExpression(listArg)
+      ) {
+        dropdowns.set(idArg.text, {
+          options: listArg.elements.map((e) => (ts.isStringLiteralLike(e) ? e.text : '<non-literal>')),
+          defaultValue: defArg && ts.isStringLiteralLike(defArg) ? defArg.text : null,
+          line: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1,
+        })
+      }
+    }
+    ts.forEachChild(n, visit)
+  }
+  visit(sf)
+}
+
+// ── 1c. The shipped presets. Module-scope because BOTH out-of-range nets below read them: the
+// multitoggle one (#81) and the dropdown one (#208). Every `serializeSettings*()` whose body is a
+// single frozen JSON string literal.
+const presets: { name: string; obj: Record<string, unknown> }[] = []
+{
+  const utils = parse('src/modules/utils.ts')
+  const visit = (n: ts.Node): void => {
+    if (ts.isFunctionDeclaration(n) && n.name && /^serializeSettings\d+$/.test(n.name.text) && n.body) {
+      const ret = n.body.statements.find(ts.isReturnStatement)
+      if (ret?.expression && ts.isStringLiteralLike(ret.expression))
+        presets.push({ name: n.name.text, obj: JSON.parse(ret.expression.text) })
+    }
+    ts.forEachChild(n, visit)
+  }
+  visit(utils)
+}
+
 // ── 2. Every read of a multitoggle, across the shipped corpus. ──────────────────────────────────────
 type Op = '==' | '!=' | '>' | '>=' | '<' | '<=' | 'truthy' | 'value'
 type Read = { id: string; op: Op; n: number; dead: string[]; file: string; line: number }
@@ -483,22 +530,6 @@ describe('no multitoggle can hold an index that does not exist (#81 / #61)', () 
   // "550+ AT Settings" preset wrote BetterAutoFight = 3 into a 3-option (0..2) setting, and nothing on
   // the import path clamped it — so getPageSetting returned 3 and NEITHER dispatch arm fired. A player
   // loading that preset got no AutoFight management at all, silently, forever.
-  const utils = parse('src/modules/utils.ts')
-
-  /** Every `serializeSettings*()` whose body is a single frozen JSON string literal — the shipped presets. */
-  const presets: { name: string; obj: Record<string, unknown> }[] = []
-  {
-    const visit = (n: ts.Node): void => {
-      if (ts.isFunctionDeclaration(n) && n.name && /^serializeSettings\d+$/.test(n.name.text) && n.body) {
-        const ret = n.body.statements.find(ts.isReturnStatement)
-        if (ret?.expression && ts.isStringLiteralLike(ret.expression))
-          presets.push({ name: n.name.text, obj: JSON.parse(ret.expression.text) })
-      }
-      ts.forEachChild(n, visit)
-    }
-    visit(utils)
-  }
-
   it('finds the shipped presets (anti-false-green)', () => {
     expect(presets.map((p) => p.name).sort()).toEqual(['serializeSettings550', 'serializeSettings60'])
     for (const p of presets) {
@@ -566,4 +597,77 @@ describe('no multitoggle can hold an index that does not exist (#81 / #61)', () 
     expect(stringDefaults).toEqual(['AutoPortalDaily', 'RAutoPortalDaily', 'Rdfightforever', 'dfightforever'])
   })
 
+})
+
+describe('no dropdown can hold a value that is not one of its options (#208)', () => {
+  // The multitoggle net above has existed since #81 and it is blind to this by construction — its
+  // inventory filters `type === 'multitoggle'`. So the SAME 2018 preset shipped a second instance of
+  // the same class, in a different type-arm, and it survived seven years and one code review.
+  //
+  // `AutoGoldenUpgrades: "Void 60"` was a legal option until commit f7927b4c (2018-12-10) collapsed the
+  // seven-option list to today's five; the frozen preset was never updated. Importing it left the
+  // <select> at selectedIndex -1 (blank), made every dispatch arm in other.ts miss so AT bought no
+  // goldens at all, and — because the miss reached the game's `buyGoldenUpgrade(undefined)` →
+  // `if (!upgrade) setAutoGoldenSetting(0)` branch — silently switched OFF the player's own NATIVE
+  // AutoGolden, at 10 Hz, forever.
+
+  it('finds the dropdown inventory (anti-false-green)', () => {
+    // If the parse breaks, every assertion below passes vacuously — the #66 failure mode.
+    expect(dropdowns.size).toBeGreaterThan(30)
+    for (const [id, d] of dropdowns) {
+      expect(d.options.length, `${id} has an empty option list`).toBeGreaterThan(1)
+      expect(d.options, `${id} has a non-literal option`).not.toContain('<non-literal>')
+    }
+    // And that preset keys actually MATCH dropdown ids — otherwise "no out-of-list value" is trivial.
+    for (const p of presets)
+      expect(Object.keys(p.obj).filter((k) => dropdowns.has(k)).length).toBeGreaterThan(5)
+  })
+
+  // Same disposition as KNOWN_OUT_OF_RANGE above, for the same reason: the blobs are the frozen,
+  // exact-string-guarded historical presets and rewriting a 2018 preset's stored value is a data
+  // decision. The RUNTIME hole is closed at the chokepoint by clampDropdown() in settings-engine.ts,
+  // proven end-to-end against the real blob in tests/dispatch-holes.regression.test.ts. This baseline
+  // exists so a NEW out-of-list preset value still fails on arrival.
+  const KNOWN_OUT_OF_LIST: Record<string, string> = {
+    'serializeSettings550().AutoGoldenUpgrades':
+      '#208 — "Void 60" was removed from the option list in 2018 (f7927b4c). Neutralized at load by ' +
+      'clampDropdown() in settings-engine.ts; the blob itself is frozen and deliberately unedited.',
+    'serializeSettings550().dAutoGoldenUpgrades': '#208 — the Daily twin of the same 2018 value.',
+  }
+
+  const outOfList = presets.flatMap(({ name, obj }) =>
+    Object.entries(obj)
+      .filter(([k, v]) => {
+        const d = dropdowns.get(k)
+        return d && !d.options.includes(v as string)
+      })
+      .map(([k, v]) => ({
+        key: `${name}().${k}`,
+        detail: `${name}(): ${k} = ${JSON.stringify(v)} — legal values are [${dropdowns.get(k)!.options.join(' | ')}]`,
+      })),
+  )
+
+  it('every dropdown value in a shipped preset is one of that dropdown’s options', () => {
+    expect(outOfList.filter((o) => !(o.key in KNOWN_OUT_OF_LIST)).map((o) => o.detail)).toEqual([])
+  })
+
+  it('the out-of-list baseline only shrinks', () => {
+    const live = new Set(outOfList.map((o) => o.key))
+    for (const k of Object.keys(KNOWN_OUT_OF_LIST))
+      expect(live.has(k), `${k} is now in list — delete it from KNOWN_OUT_OF_LIST`).toBe(true)
+    expect(Object.keys(KNOWN_OUT_OF_LIST).length).toBeLessThanOrEqual(2)
+  })
+
+  it("every dropdown's declared default is one of its own options", () => {
+    // clampDropdown falls back to defaultValue, so a default that is not itself in-list would make the
+    // clamp write a value as dead as the one it replaced.
+    const bad: string[] = []
+    for (const [id, d] of dropdowns) {
+      if (d.defaultValue === null)
+        bad.push(`${DEFS}:${d.line}: ${id} default is not a string literal — cannot be membership-checked`)
+      else if (!d.options.includes(d.defaultValue))
+        bad.push(`${DEFS}:${d.line}: ${id} default = ${JSON.stringify(d.defaultValue)}, legal [${d.options.join(' | ')}]`)
+    }
+    expect(bad).toEqual([])
+  })
 })

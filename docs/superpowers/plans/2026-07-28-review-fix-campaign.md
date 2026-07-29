@@ -4,14 +4,16 @@
 > That plan was the **discovery** campaign (Phases 0–3b). This is the **remediation** campaign:
 > how the findings it produced actually get fixed, verified, and merged.
 >
-> **Status: Sessions 1–2 SHIPPED 2026-07-28.** Sessions 3–10 pending.
+> **Status: Sessions 1–3 SHIPPED 2026-07-28.** Sessions 4–10 pending.
 >
 > ```text
 > session  state        record
 > -------  -----------  --------------------------------------------------------------
 > 1        ✅ SHIPPED   9 instrument issues closed/refuted · queue labelled + milestoned
 > 2        ✅ SHIPPED   Fix S2 closed: #210 #211 #235 #241 #242 #243 #255 · live 6.0.0.139
-> 3–6      ⬜ Track A   47 issues left, oracle-free, independent of every open decision
+> 3        ✅ SHIPPED   Fix S3 closed, all 12: #208 #236 #237 #252 #253 #186 #251
+>                       #209 #238 #239 #240 #254 · split out #286
+> 4–6      ⬜ Track A   35 issues left, oracle-free, independent of every open decision
 > 7–9      ⬜ Track B   39 issues, trace-moving, collect the red
 > 10       ⬜ re-pin     one oracle re-pin, ledgered
 > ```
@@ -31,6 +33,31 @@
 > golden-master test against the clone's own function; mirror drift becomes a permanent net. This
 > unblocks Fix S9. Decision 2 (sentinel semantics) is still open and is now asked per session, as its
 > issues come up, rather than as one round of eight.
+
+> **Session 3 split one issue rather than half-fixing it.** `#209` had a genuinely strong
+> counter-argument in its own reproduction pass: the render-layer write is the deliberate counterpart
+> of `maps.ts`'s `DisableFarm > 0` arm, and the Nom-exempt version the finding proposed is a *strategy*
+> change, not a mechanism fix. What survives that argument is narrower and still real — one `autoMap()`
+> call reading `shouldFarm` as false and writing it true, with `siphlvl` and `repeatClicked()` flapping
+> at 1 Hz. So the ownership half shipped (the reset moved into the owner, symmetric, one writer before
+> any reader) and the strategy half became **#286**, blocked on modelling Nom's `1.25^stacks` healing in
+> `calcEnemyHealth` — without which `calcHDratio()` sits under the cutoff in exactly the scenario the
+> setting exists for, so widening the trigger would be tuning against a broken instrument.
+>
+> **Two findings were larger than reported, both caught by mechanizing the class rather than fixing the
+> instance.** `#208`'s reproduction pass noted the #81 net was multitoggle-only *by construction*, which
+> is why one 2018 preset shipped two instances of one class and only one was ever caught — a dropdown
+> inventory now sits beside it. And the `#238` net (`one-armed-hides.test.ts`) found 15 sites the
+> finding's own derivation had asserted did not exist: conditional hides sitting on top of unconditional
+> ones. Redundant rather than stranding, so pinned as a shrinking count rather than fixed in a behaviour
+> commit. **Both are the same lesson: the finding's derivation is a claim, and mechanizing it checks it.**
+>
+> **Mutation-test against the NEAR-MISS fix, not only the unfixed code** — Session 2's rule, and it paid
+> three times here. `#237`'s obvious guard (`Number()` coercion) leaves `null` storable, because
+> `Number(null)` is 0; `isNaN`-only accepts `±Infinity`, which JSON also writes as `null`. `#208`'s
+> obvious repair maps `"Void 60"` → `"Void"` by similarity, which is a guess about a 2018 author's
+> intent. `#238`'s obvious repair restores via `turnOn`, which writes `inline-block` on a container
+> authored `block`. All three go red now; none would have without a deliberate near-miss mutant.
 
 ---
 

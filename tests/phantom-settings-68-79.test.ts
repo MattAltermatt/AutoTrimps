@@ -1,5 +1,12 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import {
+  row,
+  def,
+  dropdownScaffold,
+  clearScaffoldRows,
+  baseGame,
+} from './harness/updateCustomButtons'
 
 // Regression net for the LIVE fixes in #68 (phantom setting ids) and #79 (the (R)doPortal `||` guard
 // + settings-visibility's hson/dhson).
@@ -180,82 +187,24 @@ describe("#68 — checkPortalSettings compares 'DailyVoidMod' on a Daily", () =>
 describe("#79 — updateCustomButtons shows the daily U2 staff row (hson → dhson)", () => {
   let vis: typeof import('../src/modules/settings-visibility')
 
-  const row = (id: string) => {
-    const parent = document.createElement('div')
-    parent.setAttribute('data-phantom-row', '')
-    const el = document.createElement('div')
-    el.id = id
-    parent.appendChild(el)
-    document.body.appendChild(parent)
-    return el
-  }
-
   beforeEach(async () => {
     // NB: do NOT reset document.body — tests/setup.ts installs the shared scaffold (#logBtnGroup et al)
     // that utils.ts/heirlooms.ts append to at module load. Wiping it makes those imports throw.
-    for (const el of document.querySelectorAll('[data-phantom-row]')) el.remove()
+    clearScaffoldRows()
     ;(globalThis as any).MODULES = {}
     ;(globalThis as any).autoTrimpSettings = {}
-    ;(globalThis as any).game = {
-      options: { menu: { darkTheme: { enabled: false } } },
-      permaBoneBonuses: { boosts: { owned: 0 } },
-      global: { challengeActive: '', universe: 2, world: 1 },
-      talents: {},
-      upgrades: {},
-      buildings: {},
-      jobs: {},
-      portal: {},
-      stats: {},
-      resources: {},
-      unlocks: { imps: {} },
-      worldUnlocks: { easterEgg: { locked: true } },
-      mapUnlocks: {},
-      achievements: {},
-      c2: {},
-      empowerments: {},
-    }
+    ;(globalThis as any).game = baseGame()
     ;(globalThis as any).debug = vi.fn()
     // Game/bridge functions updateCustomButtons calls by bare name on its way to the row under test.
     ;(globalThis as any).bwRewardUnlocked = () => false
     ;(globalThis as any).renderControlFace = () => {}
-    ;(globalThis as any).RshouldFarm = false
+    // #209 — a `globalThis.RshouldFarm = false` stub used to be required here, and ONLY here: without
+    // it, updateCustomButtons' `RshouldFarm = false` write threw a strict-mode ReferenceError before
+    // this test ever reached its row. That write is gone (the reset moved into RautoMap, which owns
+    // it), so the stub is gone too — and these twelve tests still passing is the evidence.
     Object.assign(globalThis, await import('../src/modules/utils')) // bare-name getPageSetting (bridge)
     vis = await import('../src/modules/settings-visibility')
   })
-
-  // updateCustomButtons reaches these dropdowns through autoTrimpSettings DIRECTLY (`.selected`, not
-  // getPageSetting) and writes each back onto a <select> by id. Every one must exist or the function
-  // throws before it ever reaches the daily-staff row under test. Derived mechanically:
-  //   grep -oE 'autoTrimpSettings\.[A-Za-z0-9_]+\.selected' src/modules/settings-visibility.ts
-  const DIRECT_DROPDOWNS = [
-    'AutoPortal', 'HeliumHourChallenge', 'RAutoPortal', 'RadonHourChallenge', 'dHeliumHourChallenge',
-    'RdHeliumHourChallenge', 'AutoGoldenUpgrades', 'dAutoGoldenUpgrades', 'cAutoGoldenUpgrades',
-    'RAutoGoldenUpgrades', 'RdAutoGoldenUpgrades', 'RcAutoGoldenUpgrades', 'AutoPoison', 'AutoWind',
-    'AutoIce', 'Prestige', 'mapselection', 'Rmapselection', 'raretokeep',
-    ...['1', '2', '3', '4', '5', '6', '7'].flatMap((n) => [`slot${n}modsh`, `slot${n}modst`]),
-    ...['1', '2', '3', '4'].map((n) => `slot${n}modcr`),
-  ]
-  const dropdownScaffold = () => {
-    for (const id of DIRECT_DROPDOWNS) {
-      setSelect(id, 'Off')
-      row(id)
-    }
-    // …and the handful of elements it dereferences with a non-null assertion, plus the two settings it
-    // reads `.value` off directly (autoTrimpSettings.AutoMaps / .RAutoMaps at :944/:947).
-    for (const id of ['autoMapBtn']) row(id)
-    def('AutoMaps', 'multitoggle', { value: 0 })
-    def('RAutoMaps', 'multitoggle', { value: 0 })
-  }
-
-  // updateCustomButtons' final pass (settings-visibility.ts:961-965) walks EVERY entry in
-  // autoTrimpSettings and, for the value/multitoggle/multiValue/textValue types, does
-  // `document.getElementById(item.id).parentNode` — with the null check one line too late. So any such
-  // setting we stub must carry its own `id` AND have a live row, or the walk throws. (That misordered
-  // null check is a real latent NPE in production too; out of scope here, reported separately.)
-  const def = (id: string, type: string, extra: Record<string, unknown>) => {
-    ;(globalThis as any).autoTrimpSettings[id] = { id, name: id, type, ...extra }
-    if (!document.getElementById(id)) row(id)
-  }
 
   it("turns 'Rdhsstaff' ON when radon + Rdhs are on — it was hard-off before", () => {
     const el = row('Rdhsstaff')
