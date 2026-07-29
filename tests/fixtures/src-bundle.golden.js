@@ -1040,8 +1040,47 @@
 
   // src/modules/native-conflicts.ts
   var u2 = () => game.global.universe === 2;
-  var structureOn = () => typeof getAutoStructureSetting === "function" && !!getAutoStructureSetting()?.enabled;
-  var jobsMasteryOn = () => typeof getAutoJobsSetting === "function" && !!getAutoJobsSetting()?.enabled;
+  var AUTOSTRUCTURE_ITEMS = [
+    "Tribute",
+    "Smithy",
+    "Nursery",
+    "Laboratory",
+    "Gym",
+    "Warpstation",
+    "Hut",
+    "House",
+    "Mansion",
+    "Hotel",
+    "Resort",
+    "Gateway",
+    "Collector",
+    "Wormhole"
+  ];
+  var AUTOJOBS_ITEMS = [
+    "Trainer",
+    "Explorer",
+    "Magmamancer",
+    "Meteorologist",
+    "Worshipper",
+    "Farmer",
+    "Lumberjack",
+    "Miner",
+    "Scientist"
+  ];
+  var structureOn = () => {
+    if (typeof getAutoStructureSetting !== "function") return false;
+    const setting = getAutoStructureSetting();
+    if (!setting?.enabled) return false;
+    if (typeof bwRewardUnlocked !== "function" || !bwRewardUnlocked("AutoStructure")) return false;
+    return AUTOSTRUCTURE_ITEMS.some((item) => !!setting[item]?.enabled) || !!setting["Gigastation"]?.enabled;
+  };
+  var jobsMasteryOn = () => {
+    if (typeof getAutoJobsSetting !== "function") return false;
+    const setting = getAutoJobsSetting();
+    if (!setting?.enabled) return false;
+    if (typeof bwRewardUnlocked !== "function" || !bwRewardUnlocked("AutoJobs")) return false;
+    return AUTOJOBS_ITEMS.some((item) => !!setting[item]?.enabled);
+  };
   var atBuysPrestiges = () => u2() ? getPageSetting2("Requipon") === true : getPageSetting2("BuyArmorNew") == 1 || getPageSetting2("BuyArmorNew") == 2 || getPageSetting2("BuyWeaponsNew") == 1 || getPageSetting2("BuyWeaponsNew") == 2;
   var atBuysUpgrades = () => u2() ? getPageSetting2("RBuyUpgradesNew") > 0 : getPageSetting2("BuyUpgradesNew") > 0;
   var atBuysBuildings = () => u2() ? getPageSetting2("RBuyBuildingsNew") === true : getPageSetting2("BuyBuildingsNew") == 1 || getPageSetting2("BuyBuildingsNew") == 2;
@@ -1052,7 +1091,24 @@
   var NATIVE_GOLDEN_POOL = ["Off", "Helium", "Battle", "Void", "Void + Battle", "Custom"];
   var nativeGoldenMode = () => typeof getAutoGoldenSetting === "function" ? Number(getAutoGoldenSetting()) : 0;
   var nativeGoldenPool = () => NATIVE_GOLDEN_POOL[nativeGoldenMode()] ?? "Custom";
+  var VOID_GOLDEN_CAP = 0.72;
+  var nativeGoldenEffective = () => {
+    const mode = nativeGoldenMode();
+    if (mode <= 0) return null;
+    if (mode >= 5) return "Custom";
+    let selected = NATIVE_GOLDEN_POOL[mode] ?? "Custom";
+    if (selected === "Void" || selected === "Void + Battle") {
+      const v = game?.goldenUpgrades?.Void;
+      const next = typeof v?.nextAmt === "function" ? v.nextAmt() : 0;
+      if (v && parseFloat((v.currentBonus + next).toFixed(2)) > VOID_GOLDEN_CAP)
+        selected = mode === 3 ? "Helium" : "Battle";
+      else selected = "Void";
+    }
+    if (selected === "Helium" && game.global.runningChallengeSquared) return null;
+    return selected;
+  };
   var atGoldenPool = (raw) => raw === "Radon" ? "Helium" : String(raw);
+  var U2_BATTLE_OVERRIDE_CHALLENGES = ["Mayhem", "Pandemonium", "Desolation"];
   var atGoldenChoices = () => {
     const normal = u2() ? getPageSetting2("RAutoGoldenUpgrades") : getPageSetting2("AutoGoldenUpgrades");
     const daily = u2() ? getPageSetting2("RdAutoGoldenUpgrades") : getPageSetting2("dAutoGoldenUpgrades");
@@ -1062,12 +1118,15 @@
       out.push(atGoldenPool(normal));
     if (daily && daily != "Off" && game.global.challengeActive == "Daily") out.push(atGoldenPool(daily));
     if (c2 && c2 != "Off" && game.global.runningChallengeSquared) out.push(atGoldenPool(c2));
+    if (u2() && U2_BATTLE_OVERRIDE_CHALLENGES.includes(game.global.challengeActive))
+      return out.map(() => "Battle");
     return out;
   };
   var nativeAutoEquipOn = () => typeof getAutoEquipSetting === "function" && !!getAutoEquipSetting()?.enabled && !!game.global.autoEquipUnlocked;
   var atBuysLevels = () => u2() ? getPageSetting2("Requipon") === true : getPageSetting2("BuyWeaponsNew") == 1 || getPageSetting2("BuyWeaponsNew") == 3 || getPageSetting2("BuyArmorNew") == 1 || getPageSetting2("BuyArmorNew") == 3;
   var atGoldenDisagrees = () => {
-    const native = nativeGoldenPool();
+    const native = nativeGoldenEffective();
+    if (native === null) return false;
     return atGoldenChoices().some((choice) => choice !== native);
   };
   var REC = "<br><br><b>Recommended:</b> ";
@@ -1129,7 +1188,7 @@
       // Improbability, native AutoGold can read "AutoGold Battle" on a visible button and buy nothing.
       when: () => nativeGoldenMode() > 0 && !!game.global.autoUpgradesAvailable && atGoldenDisagrees(),
       body: () => {
-        const native = nativeGoldenPool();
+        const native = nativeGoldenEffective() ?? nativeGoldenPool();
         const mine = atGoldenChoices().join(" / ");
         return "Golden Upgrades are a fixed, permanent pool &mdash; the game grants a set number per run, and both automations spend from the same count through the same purchase. AT is set to buy <b>" + mine + "</b>, while the game&rsquo;s AutoGold is set to buy <b>" + native + "</b>. Whichever fires first on a given tick wins that golden, so you get an unpredictable mix of the two" + (native === "Custom" ? " &mdash; and <b>Custom</b> AutoGold is a hand-built order AT cannot see or account for" : "") + ". AT&rsquo;s switch-over rules (the " + (u2() ? "Radon" : "Helium") + "/Battle purchase counts, the Void fallback zone) stop meaning anything once something else is spending the same pool." + REC + "pick one owner. To keep AT in charge, set AutoGold to <b>Off</b>. To hand Golden Upgrades to the game, set AT&rsquo;s <b>AutoGoldenUpgrades</b> &mdash; and its <b>Daily</b> and <b>C2</b> variants, which are separate settings &mdash; to <b>Off</b>.";
       }
@@ -1209,6 +1268,26 @@
     // These two are in BOTH frozen blobs, which is fine and is precisely why the seam is createSetting
     // rather than boot: importing a pre-rename preset re-introduces the old key, and the very next
     // initializeAllSettings() — which an import triggers directly — migrates it again.
+    // #194 — the ONLY row so far that exists for its `transform` rather than for its name. `raretokeep`
+    // offered ["Any","Common","Uncommon","Rare",…] against a game whose rarities are
+    // ['Basic','Common','Rare',…] (config.js:7928), so its bottom two labels were shifted by one:
+    // "Common" resolved to threshold 0 — which is BASIC, i.e. it filtered nothing — and "Uncommon", a
+    // rarity Trimps does not have, was the option that actually meant "Common or better".
+    //
+    // Correcting the list in place was not available. The corrected list still contains the string
+    // "Common", now meaning rarity 1, so a value-keyed migration cannot tell an un-migrated store from
+    // a new user who deliberately picked Common, and would overwrite the latter on every boot forever.
+    // Riding the id move makes the trigger the OLD KEY's presence, which a migrated store no longer
+    // has. `HeirloomRarityToKeep` is confirmed absent from all history and from both frozen preset
+    // blobs, so it carries no #68 resurrection hazard. Net effect: every existing user keeps the exact
+    // threshold they had, and only the word describing it changes. (User decision, 2026-07-28.)
+    {
+      from: "raretokeep",
+      to: "HeirloomRarityToKeep",
+      since: "6.0.0 (#194)",
+      why: 'option list was one label short at the bottom and invented "Uncommon"; the labels now mirror game.heirlooms.rarityNames',
+      transform: (v) => v === "Common" ? "Basic" : v === "Uncommon" ? "Common" : v
+    },
     { from: "spireshitbuy", to: "SpirePrepGear", since: "6.0.0 (#151)", why: "profanity; buys cheap prep gear before a Spire" },
     { from: "fuckjobs", to: "HideJobBoxes", since: "6.0.0 (#151)", why: "profanity; hides the job boxes, and that is all it does" }
     // DELIBERATELY ABSENT, recorded so nobody re-derives the same wrong answer from the id alone:
@@ -1228,7 +1307,7 @@
     for (const row of table) {
       if (row.to !== to) continue;
       if (!has(row.from)) continue;
-      store[to] = retag(store[row.from], to);
+      store[to] = applyTransform(retag(store[row.from], to), row.transform);
       delete store[row.from];
       return row.from;
     }
@@ -1239,6 +1318,18 @@
       value.id = to;
     }
     return value;
+  }
+  function applyTransform(value, transform) {
+    if (!transform) return value;
+    try {
+      if (value !== null && typeof value === "object" && !Array.isArray(value) && "selected" in value) {
+        value.selected = transform(value.selected);
+        return value;
+      }
+      return transform(value);
+    } catch {
+      return value;
+    }
   }
 
   // src/modules/settings-engine.ts
@@ -1959,7 +2050,10 @@
         if ((getPageSetting("BWraid") == true || getPageSetting("Dailybwraid") == true) && bwraidon) buyWeps();
       });
       atGuard("buyWeps:bwraidMap", function() {
-        if (game.global.mapsActive && game.global.universe == 1 && getPageSetting("BWraid") == true && game.global.world == getPageSetting("BWraidingz") && getCurrentMapObject().level <= getPageSetting("BWraidingmax")) buyWeps();
+        if (!game.global.mapsActive || game.global.universe != 1 || getPageSetting("BWraid") != true) return;
+        const bwCeiling = bwRaidTargetFor(game.global.world, getPageSetting("BWraidingz"), getPageSetting("BWraidingmax"));
+        if (bwCeiling === void 0) return;
+        if (getCurrentMapObject().level <= bwCeiling) buyWeps();
       });
       atGuard("autoGoldenUpgradesAT", function() {
         var agu = getPageSetting("AutoGoldenUpgrades");
@@ -2508,7 +2602,7 @@
         var targetNature = match ? match[1] : null;
         if (!targetNature || targetNature === nature || !game.empowerments[targetNature]) continue;
         empowerment.tokens -= 10;
-        var convertRate = game.talents.nature.purchased ? game.talents.nature2.purchased ? 8 : 6 : 5;
+        var convertRate = game.talents.nature.purchased ? 8 : 5;
         game.empowerments[targetNature].tokens += convertRate;
         changed = true;
         debug2("Converted " + nature + " tokens to " + targetNature, "nature");
@@ -2547,7 +2641,7 @@
       fillernature = [{ nature: "Poison", cost: poisondiff }, { nature: "Wind", cost: winddiff }, { nature: "Ice", cost: icediff }].sort(function(a, b) {
         return a.cost > b.cost ? -1 : a.cost < b.cost ? 1 : 0;
       });
-      if (fillernature[0].cost > 0) {
+      if (fillernature[0].cost >= 0) {
         nature = fillernature[0].nature;
       } else {
         nature = "None";
@@ -2578,7 +2672,7 @@
       dailynature = [{ nature: "Poison", cost: dpoisondiff }, { nature: "Wind", cost: dwinddiff }, { nature: "Ice", cost: dicediff }].sort(function(a, b) {
         return a.cost > b.cost ? -1 : a.cost < b.cost ? 1 : 0;
       });
-      if (dailynature[0].cost > 0) {
+      if (dailynature[0].cost >= 0) {
         dnature = dailynature[0].nature;
       } else {
         dnature = "None";
@@ -2609,7 +2703,7 @@
       c2nature = [{ nature: "Poison", cost: cpoisondiff }, { nature: "Wind", cost: cwinddiff }, { nature: "Ice", cost: cicediff }].sort(function(a, b) {
         return a.cost > b.cost ? -1 : a.cost < b.cost ? 1 : 0;
       });
-      if (c2nature[0].cost > 0) {
+      if (c2nature[0].cost >= 0) {
         cnature = c2nature[0].nature;
       } else {
         cnature = "None";
@@ -2656,26 +2750,23 @@
     const supspend = getPageSetting2("supratio") > 0 ? getPageSetting2("supratio") : 0;
     const ocspend = getPageSetting2("ocratio") > 0 ? getPageSetting2("ocratio") : 0;
     const totalspend = effspend + capspend + supspend + ocspend;
-    const effspendr = effspend > 0 ? totalspend / effspend * 100 : 0;
-    const capspendr = capspend > 0 ? totalspend / capspend * 100 : 0;
-    const supspendr = supspend > 0 ? totalspend / supspend * 100 : 0;
-    const ocspendr = ocspend > 0 ? totalspend / ocspend * 100 : 0;
+    const effspendr = effspend > 0 ? effspend / totalspend * 100 : 0;
+    const capspendr = capspend > 0 ? capspend / totalspend * 100 : 0;
+    const supspendr = supspend > 0 ? supspend / totalspend * 100 : 0;
+    const ocspendr = ocspend > 0 ? ocspend / totalspend * 100 : 0;
     const efffinal = effspendr - effr;
     const capfinal = capspendr - capr;
     const supfinal = supspendr - supr;
     const ocfinal = ocspendr - ocr;
     const ratios = [];
-    if (efffinal !== -1) ratios.push(efffinal);
-    if (capfinal !== -1) ratios.push(capfinal);
-    if (supfinal !== -1) ratios.push(supfinal);
-    if (ocfinal !== -1) ratios.push(ocfinal);
+    if (effspend > 0) ratios.push({ name: "Efficiency", diff: efffinal });
+    if (capspend > 0) ratios.push({ name: "Capacity", diff: capfinal });
+    if (supspend > 0) ratios.push({ name: "Supply", diff: supfinal });
+    if (ocspend > 0) ratios.push({ name: "Overclocker", diff: ocfinal });
     ratios.sort(function(a, b) {
-      return b - a;
+      return b.diff - a.diff;
     });
-    if (ratios[0] === efffinal) return "Efficiency";
-    if (ratios[0] === capfinal) return "Capacity";
-    if (ratios[0] === supfinal) return "Supply";
-    if (ratios[0] === ocfinal) return "Overclocker";
+    return ratios.length > 0 ? ratios[0].name : void 0;
   }
   function autoMagmiteSpender2() {
     if (getPageSetting2("ratiospend") == true) {
@@ -6537,6 +6628,32 @@
     protectHeirloom: () => protectHeirloom,
     worthOfHeirlooms3: () => worthOfHeirlooms3
   });
+
+  // src/modules/heirloom-rarities.ts
+  var HEIRLOOM_RARITY_NAMES = [
+    "Basic",
+    "Common",
+    "Rare",
+    "Epic",
+    "Legendary",
+    "Magnificent",
+    "Ethereal",
+    "Magmatic",
+    "Plagued",
+    "Radiating",
+    "Hazardous",
+    "Enigmatic",
+    "Mutated"
+  ];
+  var HEIRLOOM_RARITY_ANY = "Any";
+  var HEIRLOOM_RARITY_OPTIONS = [HEIRLOOM_RARITY_ANY, ...HEIRLOOM_RARITY_NAMES];
+  function heirloomRarityThreshold(selected) {
+    if (selected === HEIRLOOM_RARITY_ANY) return 0;
+    const i = HEIRLOOM_RARITY_NAMES.indexOf(String(selected));
+    return i === -1 ? 0 : i;
+  }
+
+  // src/modules/heirlooms.ts
   var hrlmProtBtn1 = document.createElement("DIV");
   hrlmProtBtn1.setAttribute("class", "noselect heirloomBtnActive heirBtn");
   hrlmProtBtn1.setAttribute("onclick", "protectHeirloom(this, true)");
@@ -6616,20 +6733,7 @@
     var name;
     var type;
     var rarity;
-    var raretokeep = getPageSetting2("raretokeep");
-    if (raretokeep == "Any" || raretokeep == "Common") raretokeep = 0;
-    else if (raretokeep == "Uncommon") raretokeep = 1;
-    else if (raretokeep == "Rare") raretokeep = 2;
-    else if (raretokeep == "Epic") raretokeep = 3;
-    else if (raretokeep == "Legendary") raretokeep = 4;
-    else if (raretokeep == "Magnificent") raretokeep = 5;
-    else if (raretokeep == "Ethereal") raretokeep = 6;
-    else if (raretokeep == "Magmatic") raretokeep = 7;
-    else if (raretokeep == "Plagued") raretokeep = 8;
-    else if (raretokeep == "Radiating") raretokeep = 9;
-    else if (raretokeep == "Hazardous") raretokeep = 10;
-    else if (raretokeep == "Enigmatic") raretokeep = 11;
-    else if (raretokeep == "Mutated") raretokeep = 12;
+    var raretokeep = heirloomRarityThreshold(getPageSetting2("HeirloomRarityToKeep"));
     if (location.includes("Equipped"))
       loom = game.global[location];
     else
@@ -7989,8 +8093,10 @@
         error += " Preset " + (x + 1) + " can't have a zone and map combination below zone 6.";
         continue;
       }
+      if (isNaN(level)) level = 0;
       if (level > 10) level = 10;
       if (!titleText.includes("Quagmire")) {
+        if (isNaN(cell)) cell = 81;
         if (cell < 1) cell = 1;
         if (cell > 100) cell = 100;
       }
@@ -8010,7 +8116,7 @@
       return a.zone > b.zone ? 1 : -1;
     });
     else thisSetting.sort(function(a, b) {
-      if (a.zone == b.zone) return a.zone > b.zone ? 1 : -1;
+      return a.zone > b.zone ? 1 : -1;
     });
     if (error) {
       var elem = document.getElementById("windowError");
@@ -8102,9 +8208,9 @@
       }
     }
     cancelTooltip(true);
+    document.getElementById("tooltipDiv").style.overflowY = "";
     if (reopen) MAZLookalike(titleText);
     saveSettings2();
-    document.getElementById("tooltipDiv").style.overflowY = "";
   }
   function addRow() {
     for (var x = 0; x < 30; x++) {
@@ -8174,8 +8280,13 @@
     if (considerEdges) for (let i = power; i > 1 && !getCurrentEnemy(i); i--) ;
     return power;
   }
+  function formationDamageMult(formation) {
+    if (formation === "D") return 4;
+    if (formation === "H" || formation === "B" || formation === "S") return 0.5;
+    return 1;
+  }
   function oneShotPower2(specificStance, offset = 0, maxOrMin) {
-    const baseDamage2 = calcOurDmg(maxOrMin ? "max" : "min", false, true);
+    const baseDamage2 = calcOurDmg(maxOrMin ? "max" : "min", false, true) * formationDamageMult(specificStance);
     let damageLeft = baseDamage2 + addPoison(true);
     let power = 1;
     for (; power <= maxOneShotPower(); power++) {
@@ -14741,6 +14852,7 @@
     BWraiding: () => BWraiding2,
     PraidHarder: () => PraidHarder2,
     Praiding: () => Praiding2,
+    bwRaidTargetFor: () => bwRaidTargetFor2,
     dailyPraiding: () => dailyPraiding2,
     findLastBionic: () => findLastBionic,
     isBelowThreshold: () => isBelowThreshold,
@@ -16063,13 +16175,19 @@
     }
     savedClimbBw = null;
   }
+  function bwRaidTargetFor2(world, zones, maxes) {
+    if (!Array.isArray(zones)) return void 0;
+    const bwIndex = zones.indexOf(world);
+    if (bwIndex === -1) return void 0;
+    const target = Array.isArray(maxes) ? maxes[bwIndex] : void 0;
+    return typeof target === "number" && !Number.isNaN(target) && target >= 0 ? target : void 0;
+  }
   function BWraiding2() {
     var bwraidZ;
     var bwraidSetting;
     var bwraidMax;
     var isBWRaidZ;
     var targetBW;
-    var bwIndex;
     var cell;
     if (game.global.challengeActive == "Daily") {
       bwraidZ = "dBWraidingz";
@@ -16083,9 +16201,8 @@
       cell = getPageSetting2("bwraidcell") > 0 ? getPageSetting2("bwraidcell") : 1;
     }
     isBWRaidZ = getPageSetting2(bwraidZ).includes(game.global.world) && game.global.lastClearedCell + 1 >= cell;
-    bwIndex = getPageSetting2(bwraidZ).indexOf(game.global.world);
-    targetBW = bwIndex == -1 ? void 0 : getPageSetting2(bwraidMax)[bwIndex];
-    var bwTargetSet = typeof targetBW === "number" && targetBW >= 0;
+    targetBW = bwRaidTargetFor2(game.global.world, getPageSetting2(bwraidZ), getPageSetting2(bwraidMax));
+    var bwTargetSet = targetBW !== void 0;
     if (isBWRaidZ && !bwTargetSet && getPageSetting2(bwraidSetting)) {
       var bwWarnKey = game.global.challengeActive == "Daily" ? "daily" : "normal";
       if (bwUnsetWarnedZone[bwWarnKey] !== game.global.world) {
@@ -16095,6 +16212,7 @@
       return;
     }
     if (isBWRaidZ && !bwraided && !failbwraid && getPageSetting2(bwraidSetting)) {
+      const bwCeiling = targetBW;
       if (getPageSetting2("AutoMaps") == 1 && !bwraided && !failbwraid) {
         autoTrimpSettings["AutoMaps"].value = 0;
       }
@@ -16115,14 +16233,14 @@
           debug2("Failed to BW raid. Looks like you don't have a BW to raid...");
         }
       }
-      if (findLastBionic().level <= targetBW && !bwraided && !failbwraid && game.global.preMapsActive) {
+      if (findLastBionic().level <= bwCeiling && !bwraided && !failbwraid && game.global.preMapsActive) {
         runMap();
         bwraidon = true;
       }
       if (!game.global.repeatMap && !bwraided && !failbwraid && game.global.mapsActive) {
         repeatClicked();
       }
-      if (findLastBionic().level > targetBW && !bwraided && !failbwraid) {
+      if (findLastBionic().level > bwCeiling && !bwraided && !failbwraid) {
         bwraided = true;
         failbwraid = false;
         bwraidon = false;
@@ -17352,7 +17470,7 @@
     var keepstaffenable = autoheirloomenable && getPageSetting("keepstaffs") == true;
     var keepcoreenable = autoheirloomenable && getPageSetting("keepcores") == true;
     autoheirloomenable ? turnOn("typetokeep") : turnOff("typetokeep");
-    autoheirloomenable ? turnOn("raretokeep") : turnOff("raretokeep");
+    autoheirloomenable ? turnOn("HeirloomRarityToKeep") : turnOff("HeirloomRarityToKeep");
     autoheirloomenable ? turnOn("keepshields") : turnOff("keepshields");
     autoheirloomenable ? turnOn("keepstaffs") : turnOff("keepstaffs");
     autoheirloomenable ? turnOn("keepcores") : turnOff("keepcores");
@@ -17392,7 +17510,7 @@
     byId("AutoPoison").value = autoTrimpSettings.AutoPoison.selected;
     byId("AutoWind").value = autoTrimpSettings.AutoWind.selected;
     byId("AutoIce").value = autoTrimpSettings.AutoIce.selected;
-    byId("raretokeep").value = autoTrimpSettings.raretokeep.selected;
+    byId("HeirloomRarityToKeep").value = autoTrimpSettings.HeirloomRarityToKeep.selected;
     byId("slot1modsh").value = autoTrimpSettings.slot1modsh.selected;
     byId("slot2modsh").value = autoTrimpSettings.slot2modsh.selected;
     byId("slot3modsh").value = autoTrimpSettings.slot3modsh.selected;
@@ -19591,7 +19709,15 @@
     createSetting("fuellater", "Start Fuel Z", tip({
       what: "The zone AT starts fueling the generator, instead of the default z230.",
       ignoredWhen: "Ignored in Universe 2.",
-      how: "Set lower than your usual max zone. Use 230 to just use your Before Fuel setting the whole time."
+      // #184 — this used to read "Use 230 to just use your Before Fuel setting the whole time", and
+      // 230 does the OPPOSITE: autoGenerator returns below z230 and main-loop only dispatches it above
+      // z229, so `world >= fuellater` already holds on the first tick it runs and AT starts fueling
+      // immediately. The mechanism the sentence was reaching for exists and works — it is `< 1`
+      // (magmite.ts:218-221), which is what the -1 default already is. The code was right and the
+      // tooltip was wrong, so the tooltip is what changed (user decision, 2026-07-28): 230 stays an
+      // ordinary zone number, and a player who genuinely wants fueling to begin at the earliest legal
+      // zone can still say so.
+      how: "Set lower than your usual max zone. Leave it at -1 (the default) to keep your Before Fuel setting for the whole run."
     }), "value", -1, null, "Magma");
     createSetting("fuelend", "End Fuel Z", tip({
       what: "The zone AT stops fueling and switches to your After Fuel setting.",
@@ -19723,12 +19849,25 @@
       how: "<b>Shields</b> / <b>Staffs</b> / <b>Cores</b> carry only that type. <b>All</b> cycles Shield, then Staff, then Core, repeatedly, until your carried slots are full or you run out of spares &mdash; it does not guarantee an even split between the three.",
       cannot: "Choosing <b>None</b> disables Auto Heirlooms entirely for every portal, even while the <b>Auto Heirlooms</b> master box is checked."
     }), "multitoggle", 0, null, "Heirlooms");
-    createSetting("raretokeep", "Rarity to Keep", tip({
+    createSetting("HeirloomRarityToKeep", "Rarity to Keep", tip({
       what: "The rarity threshold Auto Heirlooms favors when scoring your spare heirlooms for carrying.",
       how: "A heirloom at or above this rarity gets a very large scoring bonus over one below it, so those tend to get carried first. It is a scoring weight, not a hard filter &mdash; a lower-rarity heirloom can still be carried if slots remain.",
       ignoredWhen: "Has no effect unless Auto Heirlooms is on and Kept Type is not None."
-    }), "dropdown", "Any", ["Any", "Common", "Uncommon", "Rare", "Epic", "Legendary", "Magnificent", "Ethereal", "Magmatic", "Plagued", "Radiating", "Hazardous", "Enigmatic", "Mutated"], "Heirlooms");
-    document.getElementById("raretokeep").parentNode.insertAdjacentHTML("afterend", "<br>");
+      // #194 — this list read ["Any","Common","Uncommon","Rare",…]: the bottom two labels were
+      // shifted by one against the game's real rarities, so "Common" mapped to threshold 0 (which is
+      // BASIC, i.e. identical to "Any") and "Uncommon" — a rarity Trimps does not have at all — was
+      // the option that actually meant "Common or better". It is now 'Any' + the game's own
+      // rarityNames, and settings-migrations.ts moves existing users' stored picks so nobody's
+      // threshold changes. See heirlooms.ts, which derives its index mapping from this same list
+      // rather than re-transcribing it.
+      // The list is spelled out rather than spread from HEIRLOOM_RARITY_OPTIONS for the same reason
+      // the ids around it are literals: tests/nets/dispatch-holes.test.ts reads every dropdown's
+      // options off the AST, so a spread makes the option list invisible and the net can no longer
+      // prove the declared default is one of them. It is not a second source of truth —
+      // tests/nets/heirloom-rarities.test.ts asserts this literal EQUALS HEIRLOOM_RARITY_OPTIONS,
+      // which is itself pinned against the clone's config.js.
+    }), "dropdown", "Any", ["Any", "Basic", "Common", "Rare", "Epic", "Legendary", "Magnificent", "Ethereal", "Magmatic", "Plagued", "Radiating", "Hazardous", "Enigmatic", "Mutated"], "Heirlooms");
+    document.getElementById("HeirloomRarityToKeep").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("keepshields", "Show Shield Mods", tip({
       what: "Shows the per-slot Shield modifier pickers below in the settings panel.",
       cannot: "This is a display toggle only. Whatever those pickers are set to is scored when ranking Shields for carrying whether this row is shown or hidden &mdash; hiding it does not turn the modifiers off.",
@@ -23071,15 +23210,15 @@
       powerful: "#000000",
       fast: "#000000"
     };
-    M["fightinfo"].lastProcessedWorld = null;
+    M["fightinfo"].lastProcessedGrid = null;
     M["fightinfo"].lastProcessedMap = null;
     function Update() {
       if (game.global.mapsActive) {
         var cells = game.global.mapGridArray;
         var $rows = Array.prototype.slice.call(M["fightinfo"].$mapGrid.children);
       } else {
-        if (M["fightinfo"].lastProcessedWorld === null || M["fightinfo"].lastProcessedWorld !== game.global.world)
-          M["fightinfo"].lastProcessedWorld = game.global.world;
+        if (M["fightinfo"].lastProcessedGrid !== game.global.gridArray)
+          M["fightinfo"].lastProcessedGrid = game.global.gridArray;
         else
           return;
         var cells = game.global.gridArray;
@@ -23109,7 +23248,8 @@
           $cell.title = cell.name;
           $cell.style.textShadow = "0px 0px 10px #8c0000";
         } else if (M["fightinfo"].fast.indexOf(cell.name) > -1) {
-          $cell.innerHTML = '<span class="glyphicon glyphicon-forward"></span> ';
+          if (cell.special.length === 0)
+            $cell.innerHTML = '<span class="glyphicon glyphicon-forward"></span> ';
           $cell.title = cell.name;
           $cell.style.textShadow = "0px 0px 10px #ffffff";
         }

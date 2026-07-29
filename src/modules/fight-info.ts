@@ -60,7 +60,8 @@
     		fast : '#000000'
 	}
 
-	M["fightinfo"].lastProcessedWorld = null;
+	// #192 — this was `lastProcessedWorld`, keyed on game.global.world. See Update() below.
+	M["fightinfo"].lastProcessedGrid = null;
 	M["fightinfo"].lastProcessedMap = null;
 
 	function Update()
@@ -84,8 +85,20 @@
 		else
 		{
 			// Check if current world already infoed
-			if(M["fightinfo"].lastProcessedWorld === null || M["fightinfo"].lastProcessedWorld !== game.global.world)
-				M["fightinfo"].lastProcessedWorld = game.global.world;
+			// #192 — this once-per-zone cache was keyed on game.global.world, which is blind to the two
+			// U2-Spire paths that rebuild the world grid WITHOUT advancing the zone: nextU2SpireFloor
+			// (.trimps-game/main.js:13131-13139) does `gridArray = []; grid.innerHTML = ''; buildGrid();
+			// drawGrid();` and finishU2Spire (main.js:13731-13734) does `buildGrid(); drawGrid();`.
+			// Neither touches game.global.world, so the freshly drawn DOM carried no glyphs while the
+			// cache reported "already processed" — floors 2-10 of the U2 Spire, plus the whole remainder
+			// of the post-Spire zone, rendered with the feature silently off.
+			//
+			// buildGrid() ends with `game.global.gridArray = array` — a NEW array object on every call —
+			// so the array's IDENTITY is an exact grid-identity signal. It changes on a zone advance
+			// (nextWorld calls buildGrid too) and on both Spire rebuilds, and on nothing else, which is
+			// precisely the invalidation this cache wanted in the first place.
+			if(M["fightinfo"].lastProcessedGrid !== game.global.gridArray)
+				M["fightinfo"].lastProcessedGrid = game.global.gridArray;
 			else
 				return;
 
@@ -150,7 +163,15 @@
       
       			else if(M["fightinfo"].fast.indexOf(cell.name) > -1)				// Fast imp
 			{
-				//if(cell.special.length === 0)
+				// #181 — this guard was commented out with its body left behind, so the write ran
+				// unconditionally and was the sole outlier among this file's seven glyph sites. The
+				// game stores the "there is an upgrade / loot here" indicator as MARKUP in cell.text
+				// (findHomeForSpecial, .trimps-game/main.js:10460-10464) and renders it as the cell's
+				// innerHTML in drawGrid (main.js:10552) — so overwriting it destroys the cue for the
+				// rest of the zone, and fight-info never restores it. Any cell can carry both: the
+				// world unlock table puts Shield at level 4 and Dagger/…/Gigastation at 19, and all 12
+				// fast imps spawn on world and map grids alike with no location restriction.
+				if(cell.special.length === 0)
 					$cell.innerHTML = "<span class=\"glyphicon glyphicon-forward\"></span> ";
 
 				$cell.title = cell.name;
@@ -191,3 +212,8 @@
 
 	M["fightinfo"].Update = Update;
 })(MODULES);
+
+// This file publishes everything through MODULES.fightinfo rather than through exports, which left it
+// a SCRIPT rather than a module as far as tsc is concerned — so a test could not `await import` it
+// without a type error. An empty export list makes it a module and emits nothing.
+export {}

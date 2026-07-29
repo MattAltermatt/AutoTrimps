@@ -1453,13 +1453,43 @@ function restoreClimbBw() {
     savedClimbBw = null;
 }
 
+/**
+ * #178 — the zone→max pairing for BW Raiding, in ONE place.
+ *
+ * `BWraidingz` and `BWraidingmax` are parallel multiValue lists: the ceiling for a zone is the entry
+ * at that zone's OWN index, which is why the setting's tooltip documents them as pairs ("Example:
+ * 480, 495 paired with Max BW to raid 500, 515", settings-defs.ts:1693). BWraiding() has always done
+ * this correctly; main-loop.ts's buyWeps dispatch instead compared the world number to the whole
+ * ARRAY (`495 == [480,495]` → ToPrimitive → "480,495" → NaN → false), so it fired only for a
+ * single-entry list and never for the documented multi-entry form.
+ *
+ * Exported and shared rather than copied, because a second copy of a code-owned rule is what rots
+ * ([[reference-derive-dont-retype]]) — and #168 in this same session is a fix that landed on one of
+ * two identical expressions and left the other alive for seven years.
+ *
+ * Returns the configured ceiling for `world`, or `undefined` when this zone is not configured — an
+ * unset max is NOT an infinite one (#176): the raid's exit test IS the ceiling, so Infinity hangs.
+ *
+ * Takes the resolved LISTS, not the setting ids. Taking ids would move two `getPageSetting(...)` calls
+ * behind a parameter, and tests/nets/settings-reverse.test.ts (#68) resolves ids at the callsite — so
+ * the ids would stop being provably createSetting'd and would need an ALLOWED_DYNAMIC waiver. That is
+ * the same trap native-conflicts.ts documents at its own top. Callers keep their reads where the net
+ * can see them.
+ */
+export function bwRaidTargetFor(world: number, zones: unknown, maxes: unknown): number | undefined {
+    if (!Array.isArray(zones)) return undefined;
+    const bwIndex = zones.indexOf(world);
+    if (bwIndex === -1) return undefined;
+    const target = Array.isArray(maxes) ? maxes[bwIndex] : undefined;
+    return typeof target === 'number' && !Number.isNaN(target) && target >= 0 ? target : undefined;
+}
+
 export function BWraiding() {
     var bwraidZ;
     var bwraidSetting;
     var bwraidMax;
     var isBWRaidZ;
-    var targetBW;
-    var bwIndex;
+    var targetBW: number | undefined;
     var cell;
 
     if (game.global.challengeActive == "Daily") {
@@ -1475,8 +1505,11 @@ export function BWraiding() {
     }
 
     isBWRaidZ = getPageSetting(bwraidZ).includes(game.global.world) && ((game.global.lastClearedCell + 1) >= cell);
-    bwIndex = getPageSetting(bwraidZ).indexOf(game.global.world);
-    targetBW = (bwIndex == -1) ? undefined : getPageSetting(bwraidMax)[bwIndex];
+    // #178 — the pairing now lives in bwRaidTargetFor(), shared with main-loop.ts's buyWeps dispatch.
+    // It folds in the `>= 0` / non-NaN check that used to be `bwTargetSet` below, so an unconfigured
+    // zone reads as `undefined` from both callers rather than each re-deriving "is this set". (The
+    // separate `bwIndex` local it replaced had no other reader.)
+    targetBW = bwRaidTargetFor(game.global.world, getPageSetting(bwraidZ), getPageSetting(bwraidMax));
 
     // #176 — an UNSET ceiling is not a ceiling of -1.
     //
@@ -1498,7 +1531,7 @@ export function BWraiding() {
     // So an unset max means the zone is not configured. Skip it, and say so — rather than claim a
     // success, and rather than take AutoMaps and Climb BW hostage for a raid that will not happen.
     // (User decision, 2026-07-28.)
-    var bwTargetSet = typeof targetBW === "number" && targetBW >= 0;
+    var bwTargetSet = targetBW !== undefined;
     if (isBWRaidZ && !bwTargetSet && getPageSetting(bwraidSetting)) {
         var bwWarnKey = (game.global.challengeActive == "Daily") ? 'daily' : 'normal';
         if (bwUnsetWarnedZone[bwWarnKey] !== game.global.world) {
@@ -1510,6 +1543,11 @@ export function BWraiding() {
     }
 
     if (isBWRaidZ && !bwraided && !failbwraid && getPageSetting(bwraidSetting)) {
+        // The early return above fires for exactly `isBWRaidZ && setting && !bwTargetSet`, and this
+        // block re-tests both of those, so reaching here means the ceiling IS configured. Bound once
+        // so the two comparisons below read a plain number rather than each carrying an assertion —
+        // and so that if the guard above is ever loosened, this line is where it breaks.
+        const bwCeiling = targetBW as number;
         if (getPageSetting('AutoMaps') == 1 && !bwraided && !failbwraid) {
             autoTrimpSettings["AutoMaps"].value = 0;
         }
@@ -1535,7 +1573,7 @@ export function BWraiding() {
             }
         }
 
-        if (findLastBionic().level <= targetBW && !bwraided && !failbwraid && game.global.preMapsActive) {
+        if (findLastBionic().level <= bwCeiling && !bwraided && !failbwraid && game.global.preMapsActive) {
             runMap();
             bwraidon = true;
         }
@@ -1544,7 +1582,7 @@ export function BWraiding() {
             repeatClicked();
         }
 
-        if (findLastBionic().level > targetBW && !bwraided && !failbwraid) {
+        if (findLastBionic().level > bwCeiling && !bwraided && !failbwraid) {
             bwraided = true;
             failbwraid = false;
             bwraidon = false;

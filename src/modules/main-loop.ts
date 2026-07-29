@@ -412,8 +412,25 @@ export function mainLoop() {
         // #68: the id argument here WAS the string "game.global.universe == 1 && BWraid" — an entire
         // expression pasted inside the quotes. No such setting exists, so getPageSetting returned false,
         // `false == true` was false, and this line NEVER ran. Restored to what the string plainly says.
+        // #178 — this compared a NUMBER to a multiValue ARRAY, with the operands the wrong way round for
+        // the #162 net to see it (tests/nets/setting-array-compare.test.ts requires the getPageSetting
+        // call on the LEFT of ==/!=). getPageSetting returns `Array.from(value).map(parseInt)` for a
+        // multiValue (utils.ts:64), so `495 == [480,495]` coerces via ToPrimitive to "480,495" → NaN →
+        // FALSE, and `500 <= [500,515]` likewise. The dispatch therefore never fired for any BW Raiding
+        // list with more than one entry — it worked only by accident on a single-element list, while the
+        // setting's own tooltip documents the multi-entry form as the normal usage ("Example: 480, 495
+        // paired with Max BW to raid 500, 515", settings-defs.ts:1693).
+        //
+        // BWraiding() itself pairs them correctly (other-praiding.ts:1419-1421): find the zone's INDEX,
+        // then read the max at that same index. Use the same pairing here rather than inventing a second
+        // rule — a zone's ceiling is the one on its own row.
         atGuard('buyWeps:bwraidMap', function () {
-            if (game.global.mapsActive && game.global.universe == 1 && getPageSetting('BWraid') == true && game.global.world == getPageSetting('BWraidingz') && getCurrentMapObject().level <= getPageSetting('BWraidingmax')) buyWeps();
+            if (!game.global.mapsActive || game.global.universe != 1 || getPageSetting('BWraid') != true) return;
+            // bwRaidTargetFor (other-praiding.ts) owns the pairing and returns undefined for a zone with
+            // no configured ceiling — an unset max is not an infinite one (#176).
+            const bwCeiling = bwRaidTargetFor(game.global.world, getPageSetting('BWraidingz'), getPageSetting('BWraidingmax'));
+            if (bwCeiling === undefined) return;
+            if (getCurrentMapObject().level <= bwCeiling) buyWeps();
         });
 
         //Golden

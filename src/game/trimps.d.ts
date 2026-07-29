@@ -90,8 +90,11 @@ declare global {
   function toggleAutoStorage(...args: any[]): void
   // #150 — the game's universe-aware resolvers for the AutoStructure / AutoJobs masteries
   // (main.js:18026, :18046). Read-only from AT: the conflict matrix asks whether they are enabled.
-  function getAutoStructureSetting(): { enabled: boolean }
-  function getAutoJobsSetting(): { enabled: boolean }
+  // The per-item sub-settings are written lazily by saveAutoStructureConfig/saveAutoJobsConfig
+  // (main.js:18191/18134) — an ON-but-never-configured automation carries `enabled` and nothing else,
+  // which is exactly the case #187 turns on. Indexed so native-conflicts can read them.
+  function getAutoStructureSetting(): { enabled: boolean } & Record<string, any>
+  function getAutoJobsSetting(): { enabled: boolean } & Record<string, any>
   // #152 — the universe-aware AutoGold mode (main.js:18082). Returns game.global.autoGolden in U1 and
   // autoGoldenU2 in U2. A NUMBER, not an object like the two above: 0 Off · 1 Helium/Radon · 2 Battle ·
   // 3 Voidlium · 4 Voidtle · 5 Custom, plus -1 meaning the button is hidden entirely (main.js:18107).

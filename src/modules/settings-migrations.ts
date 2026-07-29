@@ -45,6 +45,25 @@ export type SettingIdMigration = {
     readonly since: string
     /** Why the id was retired. One line; it is the only record a future reader gets. */
     readonly why: string
+    /**
+     * Optional value rewrite applied while the value moves from `from` to `to`.
+     *
+     * #194 is why this exists, and the shape of that problem is worth stating because it will recur.
+     * A dropdown's stored value is its LABEL, so correcting an option list can leave the same string
+     * meaning two different things: `raretokeep` offered "Common" for rarity 0, and the corrected
+     * list offers "Common" for rarity 1. A migration keyed on the value alone therefore CANNOT be
+     * idempotent — it cannot distinguish "an old store that needs moving" from "a new store where
+     * the user deliberately picked that option", so it re-fires on every boot and silently overwrites
+     * the user's choice, permanently. (A value-migration table was written first and this is exactly
+     * what its own test caught.)
+     *
+     * Riding on the id move fixes that by construction: `migrateLegacyId` DELETES the old key, so the
+     * trigger is the presence of a key that a migrated store no longer has — not the value, which is
+     * ambiguous. The same property that makes the id table safe makes the transform safe.
+     *
+     * Must be pure and total: it runs during the settings define-pass, where a throw strands the boot.
+     */
+    readonly transform?: (value: unknown) => unknown
 }
 
 // ⚠️ BEFORE ADDING A ROW, run `git log --all -S"createSetting('<to>'"` and confirm it is EMPTY.
@@ -74,6 +93,25 @@ export const SETTING_ID_MIGRATIONS: readonly SettingIdMigration[] = [
     // These two are in BOTH frozen blobs, which is fine and is precisely why the seam is createSetting
     // rather than boot: importing a pre-rename preset re-introduces the old key, and the very next
     // initializeAllSettings() — which an import triggers directly — migrates it again.
+    // #194 — the ONLY row so far that exists for its `transform` rather than for its name. `raretokeep`
+    // offered ["Any","Common","Uncommon","Rare",…] against a game whose rarities are
+    // ['Basic','Common','Rare',…] (config.js:7928), so its bottom two labels were shifted by one:
+    // "Common" resolved to threshold 0 — which is BASIC, i.e. it filtered nothing — and "Uncommon", a
+    // rarity Trimps does not have, was the option that actually meant "Common or better".
+    //
+    // Correcting the list in place was not available. The corrected list still contains the string
+    // "Common", now meaning rarity 1, so a value-keyed migration cannot tell an un-migrated store from
+    // a new user who deliberately picked Common, and would overwrite the latter on every boot forever.
+    // Riding the id move makes the trigger the OLD KEY's presence, which a migrated store no longer
+    // has. `HeirloomRarityToKeep` is confirmed absent from all history and from both frozen preset
+    // blobs, so it carries no #68 resurrection hazard. Net effect: every existing user keeps the exact
+    // threshold they had, and only the word describing it changes. (User decision, 2026-07-28.)
+    {
+        from: 'raretokeep', to: 'HeirloomRarityToKeep', since: '6.0.0 (#194)',
+        why: 'option list was one label short at the bottom and invented "Uncommon"; the labels now mirror game.heirlooms.rarityNames',
+        transform: (v) => (v === 'Common' ? 'Basic' : v === 'Uncommon' ? 'Common' : v),
+    },
+
     { from: 'spireshitbuy', to: 'SpirePrepGear', since: '6.0.0 (#151)', why: 'profanity; buys cheap prep gear before a Spire' },
     { from: 'fuckjobs', to: 'HideJobBoxes', since: '6.0.0 (#151)', why: 'profanity; hides the job boxes, and that is all it does' },
 
@@ -118,7 +156,7 @@ export function migrateLegacyId(
     for (const row of table) {
         if (row.to !== to) continue
         if (!has(row.from)) continue
-        store[to] = retag(store[row.from], to)
+        store[to] = applyTransform(retag(store[row.from], to), row.transform)
         delete store[row.from]
         return row.from
     }
@@ -143,4 +181,28 @@ function retag(value: any, to: string): any {
         value.id = to
     }
     return value
+}
+
+/**
+ * Run a row's `transform` over the stored value, handling both shapes retag() does.
+ *
+ * A dropdown normally persists as a bare string (serializeSettings flattens the record down to its
+ * `selected`), but both frozen preset blobs carry a few ids as WHOLE RECORDS — utils.ts's
+ * serializeSettings60() has `"PrestigeBackup":{"selected":"Dagadder",…}` — so a transform that only
+ * understood the primitive form would silently skip exactly the users who imported a preset.
+ *
+ * Never throws: this runs inside the settings define-pass, where a throw strands the boot. A
+ * transform that fails leaves the value as it was, which is the same outcome as having no row at all.
+ */
+function applyTransform(value: any, transform?: (v: unknown) => unknown): any {
+    if (!transform) return value
+    try {
+        if (value !== null && typeof value === 'object' && !Array.isArray(value) && 'selected' in value) {
+            value.selected = transform(value.selected)
+            return value
+        }
+        return transform(value)
+    } catch {
+        return value
+    }
 }

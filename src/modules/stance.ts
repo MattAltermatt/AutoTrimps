@@ -49,9 +49,35 @@ export function maxOneShotPower(considerEdges?: boolean): number {
     return power;
 }
 
+/**
+ * #182 — the attack multiplier `setFormation` applies when ENTERING `formation`, as a plain factor.
+ *
+ * Read off .trimps-game/main.js:16877-16897 (the `switch (what)` that applies the new formation, not
+ * the one above it that removes the old): 1/H halves attack, 2/D quadruples it, 3/B halves it, 4/S
+ * halves it, and 5/W has no case at all — it is neutral. Same table `survive()` uses thirty lines
+ * below, which is deliberate: that function needs health and block too, so it keeps its own copy, and
+ * the two are pinned against each other by tests/stance.oneShotPower.test.ts rather than by hope.
+ *
+ * This composes with `calcOurDmg(..., incStance = false, ...)`, whose answer is formation-NEUTRAL:
+ * calc.ts:370-372 divides the CURRENT formation's factor back out before returning.
+ */
+function formationDamageMult(formation: unknown): number {
+    if (formation === "D") return 4;
+    if (formation === "H" || formation === "B" || formation === "S") return 0.5;
+    return 1;
+}
+
 export function oneShotPower(specificStance?: unknown, offset: number = 0, maxOrMin?: boolean): number {
     //Calculates our minimum damage
-    const baseDamage = calcOurDmg(maxOrMin ? "max" : "min", false, true);
+    // #182 — `specificStance` was declared and then never referenced anywhere in this body (confirmed
+    // pre-existing in the legacy original, `git show d283f152:legacy/modules/stance.js`), so the two
+    // Scryer calls differed ONLY in `maxOrMin`: scryer.ts asked for "one-shot power in Scryer" and
+    // "one-shot power in D" and got MIN and MAX power in the SAME formation. oneShotPower is monotone
+    // in base damage, so HS <= HSD always and the gate `HS >= HSD` collapsed to `HS === HSD` — while
+    // the halving that entering Scryer actually costs was never modelled at all. Concrete failure:
+    // min damage 1.5H and max damage 1.9H both one-shot, the gate passes, and switching to S drops
+    // damage to 0.75H, losing exactly the overkill the gate exists to protect.
+    const baseDamage = calcOurDmg(maxOrMin ? "max" : "min", false, true)! * formationDamageMult(specificStance);
     let damageLeft = baseDamage + addPoison(true);
 
     //Calculates how many enemies we can one shot + overkill

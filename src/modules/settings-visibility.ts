@@ -1034,7 +1034,7 @@ export function updateCustomButtons() {
     var keepcoreenable = (autoheirloomenable && getPageSetting('keepcores') == true);
 
     (autoheirloomenable) ? turnOn('typetokeep') : turnOff('typetokeep');
-    (autoheirloomenable) ? turnOn('raretokeep') : turnOff('raretokeep');
+    (autoheirloomenable) ? turnOn('HeirloomRarityToKeep') : turnOff('HeirloomRarityToKeep');
     (autoheirloomenable) ? turnOn('keepshields') : turnOff('keepshields');
     (autoheirloomenable) ? turnOn('keepstaffs') : turnOff('keepstaffs');
     // #121 §3 — keepcores was the only one of the three with no entry here, so the Cores checkbox stayed
@@ -1085,7 +1085,7 @@ export function updateCustomButtons() {
     byId('AutoIce').value = autoTrimpSettings.AutoIce.selected;
 
     //Heirloom dropdowns
-    byId('raretokeep').value = autoTrimpSettings.raretokeep.selected;
+    byId('HeirloomRarityToKeep').value = autoTrimpSettings.HeirloomRarityToKeep.selected;
     byId('slot1modsh').value = autoTrimpSettings.slot1modsh.selected;
     byId('slot2modsh').value = autoTrimpSettings.slot2modsh.selected;
     byId('slot3modsh').value = autoTrimpSettings.slot3modsh.selected;

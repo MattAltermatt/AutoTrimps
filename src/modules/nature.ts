@@ -54,7 +54,15 @@ export function autoNatureTokens() {
             var targetNature = (match ? match[1] : null) as string;
             if (!targetNature || targetNature === nature || !game.empowerments[targetNature]) continue;
             empowerment.tokens -= 10;
-            var convertRate = (game.talents.nature.purchased) ? ((game.talents.nature2.purchased) ? 8 : 6) : 5;
+            // Parity fix (#168): game uses 8:5, nature2 has no effect on trade ratio. The identical
+            // expression 13 lines above was corrected by da366a3d (#22); this copy was missed, so the
+            // single-target "Convert to X" path credited 6 for the 10 it deducts at the line above —
+            // and because this mutates game.empowerments[...].tokens DIRECTLY rather than calling
+            // native naturePurchase('convert', …), the 2 missing tokens were DESTROYED on every
+            // conversion. Authoritative: .trimps-game/main.js:8551
+            // `var convertRate = (game.talents.nature.purchased) ? 8 : 5;` — nature2 only adds levels
+            // (config.js:2286), used solely by getLevel()/getRetainBonus().
+            var convertRate = (game.talents.nature.purchased) ? 8 : 5;
             game.empowerments[targetNature].tokens += convertRate;
             changed = true;
             debug('Converted ' + nature + ' tokens to ' + targetNature, 'nature');
@@ -105,7 +113,14 @@ export function autoEnlight() {
 
 	fillernature = [{nature:'Poison', cost:poisondiff}, {nature:'Wind', cost:winddiff}, {nature:'Ice', cost:icediff}].sort(function(a, b) {return a.cost > b.cost ? -1 : a.cost < b.cost ? 1 : 0;});
 	
-	if (fillernature[0].cost > 0) {
+	// #183 — this was `> 0`, but `cost` here is the MARGIN `threshold - nextUberCost`, and eligibility
+	// three lines up is computed with `<=`. So an exact match (threshold 300, nextUberCost 300) is
+	// eligible, scores 0, and is then rejected by this strictly-greater test. Because nextUberCost only
+	// moves on a purchase (main.js:8576 `+= 150`) or at a Daily start, the state never changes and AT
+	// never buys — a permanent no-op for a user who typed the exact figure the game displays. The
+	// tooltip's promise is "once its cost drops to OR BELOW this token threshold"
+	// (settings-defs.ts:2824). The ineligible sentinel is -999999, so `>= 0` still excludes it.
+	if (fillernature[0].cost >= 0) {
 	    nature = fillernature[0].nature;
 	}
 	else { nature = "None"; }
@@ -146,7 +161,7 @@ export function autoEnlight() {
 
 	dailynature = [{nature:'Poison', cost:dpoisondiff}, {nature:'Wind', cost:dwinddiff}, {nature:'Ice', cost:dicediff}].sort(function(a, b) {return a.cost > b.cost ? -1 : a.cost < b.cost ? 1 : 0;});
 
-	if (dailynature[0].cost > 0) {
+	if (dailynature[0].cost >= 0) { // #183, the Daily copy of the same margin test
 	    dnature = dailynature[0].nature;
 	}
 	else { dnature = "None"; }
@@ -187,7 +202,7 @@ export function autoEnlight() {
 
 	c2nature = [{nature:'Poison', cost:cpoisondiff}, {nature:'Wind', cost:cwinddiff}, {nature:'Ice', cost:cicediff}].sort(function(a, b) {return a.cost > b.cost ? -1 : a.cost < b.cost ? 1 : 0;});
 
-	if (c2nature[0].cost > 0) {
+	if (c2nature[0].cost >= 0) { // #183, the Challenge² copy of the same margin test
 	    cnature = c2nature[0].nature;
 	}
 	else { cnature = "None"; }

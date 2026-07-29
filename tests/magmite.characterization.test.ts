@@ -84,8 +84,15 @@ describe('magmite.calcMiSpent — L1a golden master (spent-magmite formula)', ()
 })
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-// L1a — miRatio (next-spend ratio selector) — drives all four `ratios[0] == Xfinal` return
-// branches to true + the `Xfinal != -1` exclusion guard (all ==/!= refactor targets).
+// L1a — miRatio (next-spend ratio selector) — drives all four winner branches + the
+// "this upgrade was never configured" exclusion guard.
+//
+// ⚠️ #167 INVERTED THE EXPECTED VALUES IN THIS BLOCK. The four winner cases below used to read
+// `ratios(1, 100, 100, 100)` → 'Efficiency', with a comment explaining that "the resource whose
+// target ratio is LOWEST (=1) gets the highest spend-need → wins". That was the bug, characterized:
+// the target share was computed as `(totalspend / spend) * 100`, the RECIPROCAL of the actual share
+// it is subtracted from, so a bigger weight produced a smaller number. This block is now written
+// the way the setting's own tooltip reads — the BIGGEST weight is the most-starved one.
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 describe('magmite.miRatio — L1a golden master (next-spend selector)', () => {
   // Each of the four generator upgrades: baseCost 100, upgrades 1, cost() > baseCost →
@@ -102,7 +109,8 @@ describe('magmite.miRatio — L1a golden master (next-spend selector)', () => {
       ...over,
     })
   }
-  // The resource whose target ratio is LOWEST (=1) gets the highest spend-need → wins.
+  // With spend even at 25% apiece, the resource whose target share is HIGHEST is the most starved
+  // relative to its target → wins.
   function ratios(eff: number, cap: number, sup: number, oc: number) {
     return {
       effratio: { type: 'value', value: eff },
@@ -112,37 +120,51 @@ describe('magmite.miRatio — L1a golden master (next-spend selector)', () => {
     }
   }
 
-  it('Efficiency wins → the `ratios[0] == efffinal` branch', () => {
-    ;(globalThis as any).autoTrimpSettings = ratios(1, 100, 100, 100)
+  it('Efficiency wins when it carries the heaviest weight', () => {
+    ;(globalThis as any).autoTrimpSettings = ratios(100, 1, 1, 1)
     ;(globalThis as any).game = evenGenerators()
     expect(magmite.miRatio()).toBe('Efficiency')
   })
 
-  it('Capacity wins → the `ratios[0] == capfinal` branch', () => {
-    ;(globalThis as any).autoTrimpSettings = ratios(100, 1, 100, 100)
+  it('Capacity wins when it carries the heaviest weight', () => {
+    ;(globalThis as any).autoTrimpSettings = ratios(1, 100, 1, 1)
     ;(globalThis as any).game = evenGenerators()
     expect(magmite.miRatio()).toBe('Capacity')
   })
 
-  it('Supply wins → the `ratios[0] == supfinal` branch', () => {
-    ;(globalThis as any).autoTrimpSettings = ratios(100, 100, 1, 100)
+  it('Supply wins when it carries the heaviest weight', () => {
+    ;(globalThis as any).autoTrimpSettings = ratios(1, 1, 100, 1)
     ;(globalThis as any).game = evenGenerators()
     expect(magmite.miRatio()).toBe('Supply')
   })
 
-  it('Overclocker wins → the `ratios[0] == ocfinal` branch', () => {
-    ;(globalThis as any).autoTrimpSettings = ratios(100, 100, 100, 1)
+  it('Overclocker wins when it carries the heaviest weight', () => {
+    ;(globalThis as any).autoTrimpSettings = ratios(1, 1, 1, 100)
     ;(globalThis as any).game = evenGenerators()
     expect(magmite.miRatio()).toBe('Overclocker')
   })
 
-  it('a resource with 0 spent + 0 target is excluded via `efffinal != -1` (== -1 → not pushed)', () => {
-    // Efficiency spends 0 (cost()<=baseCost → calcMiSpent 0) so effr=1; effratio unset → effspend 0
-    // → effspendr 0 → efffinal = 0 - 1 = -1 → EXCLUDED from the ratios array. Capacity still wins.
+  // #167 — the direction itself, stated as a property rather than as four fixed answers. Under the
+  // reciprocal every one of these assertions held with the operands swapped, so a mutant that
+  // restores `(totalspend / spend)` fails all four.
+  it('#167: the heavier weight wins, in both directions of the same pair', () => {
+    ;(globalThis as any).game = evenGenerators()
+    ;(globalThis as any).autoTrimpSettings = ratios(10, 90, -1, -1)
+    expect(magmite.miRatio()).toBe('Capacity')
+    ;(globalThis as any).game = evenGenerators()
+    ;(globalThis as any).autoTrimpSettings = ratios(90, 10, -1, -1)
+    expect(magmite.miRatio()).toBe('Efficiency')
+  })
+
+  // The exclusion guard. It used to be the arithmetic coincidence `efffinal != -1`; it is now the
+  // thing that was actually meant, `effspend > 0`. Either way an unconfigured upgrade must not win.
+  it('an unconfigured resource is excluded even though it has spent nothing', () => {
+    // Efficiency spends 0 (cost()<=baseCost → calcMiSpent 0) and effratio is unset, so it is the
+    // hungriest candidate by actual share and must STILL lose — the player did not ask for it.
     ;(globalThis as any).autoTrimpSettings = {
-      capratio: { type: 'value', value: 1 },
-      supratio: { type: 'value', value: 100 },
-      ocratio: { type: 'value', value: 100 },
+      capratio: { type: 'value', value: 100 },
+      supratio: { type: 'value', value: 1 },
+      ocratio: { type: 'value', value: 1 },
       // effratio deliberately unset → getPageSetting false → effspend 0
     }
     ;(globalThis as any).game = makeMinimalGame({
@@ -154,6 +176,37 @@ describe('magmite.miRatio — L1a golden master (next-spend selector)', () => {
       },
     })
     expect(magmite.miRatio()).toBe('Capacity')
+  })
+
+  // #167's payoff, stated as the convergence the tooltip promises rather than as a single pick.
+  // Under the reciprocal this ran to 100/0; the assertion is that the weights are now respected.
+  it('#167: 400 purchases converge on the configured 10/90 split, not its inverse', () => {
+    const owned: Record<string, number> = { Efficiency: 0, Capacity: 0, Supply: 0, Overclocker: 0 }
+    const priceIncreases: Record<string, number> = { Efficiency: 8, Capacity: 32, Supply: 64, Overclocker: 32 }
+    const baseCosts: Record<string, number> = { Efficiency: 8, Capacity: 32, Supply: 64, Overclocker: 512 }
+    const spentOn = (u: string) =>
+      owned[u]! * (baseCosts[u]! + (priceIncreases[u]! / 2) * (owned[u]! - 1))
+
+    ;(globalThis as any).autoTrimpSettings = ratios(10, 90, -1, -1)
+    for (let i = 0; i < 400; i++) {
+      ;(globalThis as any).game = makeMinimalGame({
+        generatorUpgrades: Object.fromEntries(
+          Object.keys(owned).map((u) => [
+            u,
+            { baseCost: baseCosts[u]!, upgrades: owned[u]!, cost: () => baseCosts[u]! + 1e9 },
+          ]),
+        ),
+      })
+      const pick = magmite.miRatio() as string
+      owned[pick]!++
+    }
+    const eff = spentOn('Efficiency')
+    const cap = spentOn('Capacity')
+    const share = (eff / (eff + cap)) * 100
+    // Pre-fix this was 100.0 (all Efficiency). The selector is greedy and the cost curves are coarse,
+    // so pin the direction and a generous band rather than a fragile exact figure.
+    expect(share).toBeGreaterThan(5)
+    expect(share).toBeLessThan(20)
   })
 })
 
@@ -173,10 +226,12 @@ describe('magmite.autoMagmiteSpender — L1b actuator spy-log', () => {
     installSpies()
     ;(globalThis as any).autoTrimpSettings = {
       ratiospend: { type: 'boolean', enabled: true },
-      effratio: { type: 'value', value: 1 },
-      capratio: { type: 'value', value: 100 },
-      supratio: { type: 'value', value: 100 },
-      ocratio: { type: 'value', value: 100 },
+      // #167: the heaviest weight is the winner. This block used to read 1/100/100/100 → 'Efficiency',
+      // which was the inverted selector characterized rather than the documented behaviour.
+      effratio: { type: 'value', value: 100 },
+      capratio: { type: 'value', value: 1 },
+      supratio: { type: 'value', value: 1 },
+      ocratio: { type: 'value', value: 1 },
     }
     ;(globalThis as any).game = makeMinimalGame({
       global: { magmite: 1000 },

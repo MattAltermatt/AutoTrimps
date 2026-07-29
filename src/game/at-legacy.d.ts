@@ -562,6 +562,9 @@ declare global {
   var Praiding: typeof import('../modules/other-praiding').Praiding
   var dailyPraiding: typeof import('../modules/other-praiding').dailyPraiding
   var BWraiding: typeof import('../modules/other-praiding').BWraiding
+  // #178 — read by main-loop.ts's buyWeps:bwraidMap dispatch, which resolves everything by bare name
+  // through the bridge. Typed off the export so the two cannot drift (#36).
+  var bwRaidTargetFor: typeof import('../modules/other-praiding').bwRaidTargetFor
   var ABswitch: typeof import('../modules/ab').ABswitch
   var ABdustsimple: typeof import('../modules/ab').ABdustsimple
   var ABdustsimplenonhid: typeof import('../modules/ab').ABdustsimplenonhid

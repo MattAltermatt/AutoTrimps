@@ -35,6 +35,27 @@ function setup(universe: number) {
     universe === 2
       ? (globalThis as any).game.global.autoJobsSettingU2
       : (globalThis as any).game.global.autoJobsSetting
+  // #187 — the game gates every AutoStructure/AutoJobs purchase on bwRewardUnlocked() as well as on
+  // `.enabled` (main.js:18246, :5081). Default true so the existing rows keep testing what they were
+  // written to test; the #187 block below drives it false explicitly.
+  ;(globalThis as any).bwRewardUnlocked = () => true
+}
+
+// #187 — a native automation that is ON but never CONFIGURED buys nothing: config.js:245-248 seeds
+// `{enabled: false}` with no per-item keys, and only saveAutoStructureConfig/saveAutoJobsConfig ever
+// add them. So "turn it on" in a fixture now means "on AND configured", or the state under test is
+// one the game never actually acts on.
+function turnStructureOn(universe = 1, configured = true) {
+  const key = universe === 2 ? 'autoStructureSettingU2' : 'autoStructureSetting'
+  const s: any = { enabled: true }
+  if (configured) s.Hut = { enabled: true, value: '100', buyMax: 0 }
+  ;(globalThis as any).game.global[key] = s
+}
+function turnJobsOn(universe = 1, configured = true) {
+  const key = universe === 2 ? 'autoJobsSettingU2' : 'autoJobsSetting'
+  const s: any = { enabled: true }
+  if (configured) s.Farmer = { enabled: true, ratio: 1, buyMax: 0 }
+  ;(globalThis as any).game.global[key] = s
 }
 
 /** Install an AT setting the way createSetting would have. */
@@ -103,7 +124,7 @@ describe('native-conflicts matrix (#150)', () => {
   it('"Buy Storage" is COMPLEMENTARY to AutoStructure, not a conflict (#150 review F3)', () => {
     // buyAutoStructures()' order list (main.js:18247) contains no Barn/Shed/Forge, so native buys the
     // buildings and AT buys the storage — a clean split, not a double-schedule.
-    ;(globalThis as any).game.global.autoStructureSetting.enabled = true
+    turnStructureOn()
     set('BuyBuildingsNew', 'multitoggle', 3) // Buy Storage
     expect(keys()).not.toContain('autoStructure')
     set('BuyBuildingsNew', 'multitoggle', 2) // Buy Buildings — the genuine overlap
@@ -119,7 +140,7 @@ describe('native-conflicts matrix (#150)', () => {
   })
 
   it('AutoStructure on while AT still buys buildings conflicts', () => {
-    ;(globalThis as any).game.global.autoStructureSetting.enabled = true
+    turnStructureOn()
     set('BuyBuildingsNew', 'multitoggle', 1) // Buy Buildings & Storage
     expect(keys()).toContain('autoStructure')
     set('BuyBuildingsNew', 'multitoggle', 0) // Buy Neither — the sanctioned handoff
@@ -127,7 +148,7 @@ describe('native-conflicts matrix (#150)', () => {
   })
 
   it('AutoJobs on while AT still buys jobs conflicts', () => {
-    ;(globalThis as any).game.global.autoJobsSetting.enabled = true
+    turnJobsOn()
     set('BuyJobsNew', 'multitoggle', 1)
     expect(keys()).toContain('autoJobs')
   })
@@ -151,7 +172,7 @@ describe('native-conflicts matrix (#150)', () => {
     set('hidebuildings', 'boolean', true)
     expect(keys()).toContain('buildingsOrphan')
     // AutoStructure on ⇒ the handoff is complete, no advisory.
-    ;(globalThis as any).game.global.autoStructureSetting.enabled = true
+    turnStructureOn()
     expect(keys()).not.toContain('buildingsOrphan')
   })
 
@@ -175,7 +196,7 @@ describe('native-conflicts matrix (#150)', () => {
   it("Don't Buy Jobs + AutoJobs off is the orphan state; Hide Jobs is irrelevant", () => {
     set('BuyJobsNew', 'multitoggle', 0)
     expect(keys()).toContain('jobsOrphan')
-    ;(globalThis as any).game.global.autoJobsSetting.enabled = true
+    turnJobsOn()
     expect(keys()).not.toContain('jobsOrphan')
   })
 
@@ -183,6 +204,107 @@ describe('native-conflicts matrix (#150)', () => {
     set('BuyJobsNew', 'multitoggle', 1)
     set('HideJobBoxes', 'boolean', true)
     expect(keys()).not.toContain('jobsOrphan')
+  })
+
+  // ── #187: "the button is lit" is not "the automation is buying" ────────────────────────────────
+  describe('#187: an ON-but-unconfigured native automation invents no conflict', () => {
+    it('AutoStructure enabled with no per-building keys is not buying, so no conflict', () => {
+      // The exact state a player reaches by clicking the button on and never opening the cog:
+      // config.js:245-248 seeds `{enabled: false}` with no sub-keys and the bwReward's fire only calls
+      // toggleAutoStructure(true) (config.js:13407-13409). main.js:18250 then `continue`s past all 14
+      // buildings, so native buys nothing at all.
+      turnStructureOn(1, false)
+      set('BuyBuildingsNew', 'multitoggle', 1)
+      expect(keys()).not.toContain('autoStructure')
+      // Open the cog and tick one building, and it becomes a real conflict.
+      turnStructureOn(1, true)
+      expect(keys()).toContain('autoStructure')
+    })
+
+    it('AutoJobs enabled with no per-job keys is not buying, so no conflict', () => {
+      turnJobsOn(1, false)
+      set('BuyJobsNew', 'multitoggle', 1)
+      expect(keys()).not.toContain('autoJobs')
+      turnJobsOn(1, true)
+      expect(keys()).toContain('autoJobs')
+    })
+
+    // The other omitted gate. It is masked on the autoStructure/autoJobs rows by anchorVisible (their
+    // buttons carry .autoUpgradeBtn{display:none}), but NOT on the orphan rows, which anchor to
+    // buildingsTitleDiv/jobsTitleDiv — so a stale `enabled:true` there silenced the very advisory
+    // those rows exist for. Drive the orphan direction, where the bug was actually reachable.
+    it('a locked bwReward means the automation is not buying, so the orphan advisory still fires', () => {
+      ;(globalThis as any).bwRewardUnlocked = () => false
+      turnStructureOn(1, true)
+      set('BuyBuildingsNew', 'multitoggle', 0)
+      expect(keys()).toContain('buildingsOrphan')
+      turnJobsOn(1, true)
+      set('BuyJobsNew', 'multitoggle', 0)
+      expect(keys()).toContain('jobsOrphan')
+    })
+
+    it('an unconfigured AutoStructure also leaves the buildings orphan advisory standing', () => {
+      turnStructureOn(1, false)
+      set('BuyBuildingsNew', 'multitoggle', 0)
+      expect(keys()).toContain('buildingsOrphan')
+    })
+
+    // The near-miss this fix originally shipped, and the reason it is now a test. `buyAutoStructures`
+    // tests each item TWICE: main.js:18250 `if (!setting[item]) continue` skips items the cog has
+    // never written, and main.js:18264 `if (!locked && setting[item].enabled)` is the actual purchase
+    // gate. saveAutoStructureConfig writes `enabled = false` rather than deleting, so an item
+    // unchecked in the cog is PRESENT and disabled — and the game buys nothing for it. A presence
+    // test calls that "both are buying".
+    it('a structure sub-setting toggled back OFF does NOT count — the game skips it', () => {
+      ;(globalThis as any).game.global.autoStructureSetting = {
+        enabled: true,
+        Hut: { enabled: false, value: '100', buyMax: 0 },
+      }
+      set('BuyBuildingsNew', 'multitoggle', 1)
+      expect(keys()).not.toContain('autoStructure')
+    })
+
+    // …and the same state must leave the ORPHAN advisory standing, which is the direction where the
+    // bug was actually reachable: those rows anchor to buildingsTitleDiv, which has no display rule,
+    // so nothing else would have suppressed a wrong answer.
+    it('an all-disabled AutoStructure still leaves the buildings orphan advisory standing', () => {
+      ;(globalThis as any).game.global.autoStructureSetting = {
+        enabled: true,
+        Hut: { enabled: false, value: '100', buyMax: 0 },
+      }
+      set('BuyBuildingsNew', 'multitoggle', 0)
+      expect(keys()).toContain('buildingsOrphan')
+    })
+
+    // The badge must still fire when ONE item is live among several dead ones — a fix that demanded
+    // every item be enabled would be the opposite over-correction.
+    it('one enabled item among disabled ones is still a real conflict', () => {
+      ;(globalThis as any).game.global.autoStructureSetting = {
+        enabled: true,
+        Hut: { enabled: false, value: '100', buyMax: 0 },
+        Gym: { enabled: true, value: '100', buyMax: 0 },
+      }
+      set('BuyBuildingsNew', 'multitoggle', 1)
+      expect(keys()).toContain('autoStructure')
+    })
+
+    it('a job sub-setting toggled back OFF does NOT count — the game skips it', () => {
+      ;(globalThis as any).game.global.autoJobsSetting = {
+        enabled: true,
+        Farmer: { enabled: false, ratio: 1, buyMax: 0 },
+      }
+      set('BuyJobsNew', 'multitoggle', 1)
+      expect(keys()).not.toContain('autoJobs')
+    })
+
+    it('Gigastation alone arms AutoStructure, via its own .enabled gate (main.js:18278)', () => {
+      ;(globalThis as any).game.global.autoStructureSetting = {
+        enabled: true,
+        Gigastation: { enabled: true, value: '1', buyMax: 1 },
+      }
+      set('BuyBuildingsNew', 'multitoggle', 1)
+      expect(keys()).toContain('autoStructure')
+    })
   })
 
   // ── AutoGold (#152) ───────────────────────────────────────────────────────────────────────────────
@@ -252,6 +374,82 @@ describe('native-conflicts matrix (#150)', () => {
       nativeGold(2)
       atGold('AutoGoldenUpgrades', 'Void')
       expect(keys()).not.toContain('autoGolden')
+    })
+
+    // ── #188: native bails out before buying, so there is no race ────────────────────────────────
+    it('#188: native mode 1 during a Challenge2 buys NOTHING, so no conflict', () => {
+      // main.js:18591 `if (selected == "Helium" && game.global.runningChallengeSquared) return;` —
+      // native returns BEFORE buyGoldenUpgrade. AT's C2 dropdown has no Helium option at all
+      // (settings-defs.ts:2669-2672), so the two sides could never agree and this fired on EVERY C2
+      // run with the native button on its first mode, recommending the user hand goldens to an
+      // automation that buys none.
+      ;(globalThis as any).game.global.runningChallengeSquared = true
+      nativeGold(1)
+      atGold('cAutoGoldenUpgrades', 'Battle')
+      expect(keys()).not.toContain('autoGolden')
+    })
+
+    it('#188: native mode 1 OUTSIDE a Challenge2 still conflicts', () => {
+      // The other side of the same guard — a mutant that treats mode 1 as "never picking" fails here.
+      nativeGold(1)
+      atGold('AutoGoldenUpgrades', 'Battle')
+      expect(keys()).toContain('autoGolden')
+    })
+
+    it('#188: mode 3 reaches the same bail-out once Void is capped', () => {
+      // main.js:18584-18588 rewrites a capped Void to Helium for mode 3, which then hits the same
+      // `return`. Naming only mode 1 would have left the identical false positive from a second
+      // direction — the finding's own scope is a claim.
+      ;(globalThis as any).game.global.runningChallengeSquared = true
+      ;(globalThis as any).game.goldenUpgrades = { Void: { currentBonus: 0.7, nextAmt: () => 0.05 } }
+      nativeGold(3)
+      atGold('cAutoGoldenUpgrades', 'Battle')
+      expect(keys()).not.toContain('autoGolden') // 0.75 > 0.72 → Helium → native returns
+
+      // Below the cap it is a genuine Void purchase, and Battle vs Void is a real race.
+      ;(globalThis as any).game.goldenUpgrades = { Void: { currentBonus: 0.1, nextAmt: () => 0.05 } }
+      expect(keys()).toContain('autoGolden')
+    })
+
+    // ── #195: AT's own U2 override was missing from the comparison ────────────────────────────────
+    describe('#195: the U2 Mayhem/Pandemonium/Desolation Battle override', () => {
+      for (const challenge of ['Mayhem', 'Pandemonium', 'Desolation']) {
+        it(`${challenge}: AT really buys Battle, so native Battle AGREES`, () => {
+          // upgrades.ts:241-243 forces setting2 = "Battle" after every other assignment, immediately
+          // before buyGoldenUpgrade. Reporting the configured pool instead printed "AT is set to buy
+          // Helium" and fired a row while the two sides actually agreed.
+          setup(2)
+          ;(globalThis as any).game.global.challengeActive = challenge
+          nativeGold(2) // Battle
+          atGold('RAutoGoldenUpgrades', 'Radon')
+          expect(keys()).not.toContain('autoGolden')
+        })
+      }
+
+      it('the mirror case: a REAL conflict the old code missed', () => {
+        // RAutoGoldenUpgrades='Void' with native on Void produced no badge, yet AT buys Battle.
+        setup(2)
+        ;(globalThis as any).game.global.challengeActive = 'Mayhem'
+        ;(globalThis as any).game.goldenUpgrades = { Void: { currentBonus: 0.1, nextAmt: () => 0.05 } }
+        nativeGold(3) // Void
+        atGold('RAutoGoldenUpgrades', 'Void')
+        expect(keys()).toContain('autoGolden')
+      })
+
+      it('does not apply in U1 — other.ts has no such override', () => {
+        ;(globalThis as any).game.global.challengeActive = 'Mayhem'
+        nativeGold(2) // Battle
+        atGold('AutoGoldenUpgrades', 'Helium')
+        expect(keys()).toContain('autoGolden')
+      })
+
+      it('does not apply to an unrelated U2 challenge', () => {
+        setup(2)
+        ;(globalThis as any).game.global.challengeActive = 'Daily'
+        nativeGold(2)
+        atGold('RdAutoGoldenUpgrades', 'Radon')
+        expect(keys()).toContain('autoGolden')
+      })
     })
 
     it('a MISSING AT golden setting is no conflict — `false != "Off"` is TRUE (#68)', () => {

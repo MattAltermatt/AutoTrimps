@@ -16,6 +16,36 @@ const html = readFileSync(resolve(process.cwd(), '.trimps-game/index.html'), 'ut
 const settingsDefs = readFileSync(resolve(process.cwd(), 'src/modules/settings-defs.ts'), 'utf8')
 const matrixSrc = readFileSync(resolve(process.cwd(), 'src/modules/native-conflicts.ts'), 'utf8')
 
+// The advisory-only net below scans SOURCE TEXT for mutation shapes, so it matched its own subject
+// matter: a comment citing the game's `toggleAutoStructure(true)` reddened the gate while the module
+// stayed provably mutation-free. That is the same species as the `@vitest-environment` pragma firing
+// from an explanatory comment — a text net whose corpus includes prose has a false-positive surface
+// exactly where the code is best documented, and the pressure it creates is to explain LESS.
+// Strip comments and string literals first, so the net reads code and only code.
+const matrixCode = (() => {
+  let out = ''
+  let i = 0
+  while (i < matrixSrc.length) {
+    const two = matrixSrc.slice(i, i + 2)
+    if (two === '//') {
+      const nl = matrixSrc.indexOf('\n', i)
+      i = nl === -1 ? matrixSrc.length : nl
+    } else if (two === '/*') {
+      const end = matrixSrc.indexOf('*/', i + 2)
+      i = end === -1 ? matrixSrc.length : end + 2
+    } else if (matrixSrc[i] === "'" || matrixSrc[i] === '"' || matrixSrc[i] === '`') {
+      const quote = matrixSrc[i]!
+      i++
+      while (i < matrixSrc.length && matrixSrc[i] !== quote) i += matrixSrc[i] === '\\' ? 2 : 1
+      i++
+    } else {
+      out += matrixSrc[i]
+      i++
+    }
+  }
+  return out
+})()
+
 // EVERY native automation button the clone ships that AT ALSO automates. This list is the net's claim
 // about the world, so it must be complete — the first version of this file listed only the five #150
 // covered and called that "every native automation button the game ships", which made the net unable to
@@ -120,9 +150,23 @@ describe('native-conflict advisory completeness (#150)', () => {
   })
 
   it('the matrix is advisory-only: no mutation of game state or settings in the source', () => {
-    expect(matrixSrc).not.toMatch(/game\.global\.[A-Za-z]+\s*=[^=]/)
-    expect(matrixSrc).not.toMatch(/\bsetPageSetting\b/)
-    expect(matrixSrc).not.toMatch(/\btoggleAuto[A-Za-z]*\s*\(/)
+    expect(matrixCode).not.toMatch(/game\.global\.[A-Za-z]+\s*=[^=]/)
+    expect(matrixCode).not.toMatch(/\bsetPageSetting\b/)
+    expect(matrixCode).not.toMatch(/\btoggleAuto[A-Za-z]*\s*\(/)
+  })
+
+  // The stripper itself is a claim, so prove it still SEES the three shapes it is meant to catch —
+  // otherwise "comments are stripped" quietly becomes "everything is stripped" and the gate above
+  // can no longer fail. Each string is code-shaped, not comment-shaped.
+  it('the comment/string stripper has not disarmed the advisory-only net', () => {
+    // The three shapes the gate above exists to catch, still matched.
+    expect('game.global.autoUpgradesAvailable = true').toMatch(/game\.global\.[A-Za-z]+\s*=[^=]/)
+    expect('setPageSetting(id, 1)').toMatch(/\bsetPageSetting\b/)
+    expect('toggleAutoStructure(true)').toMatch(/\btoggleAuto[A-Za-z]*\s*\(/)
+    // And the stripper keeps real code while dropping prose — if it dropped everything the gate
+    // would pass vacuously, which is the failure mode this whole file was written against.
+    expect(matrixCode).toContain('const structureOn')
+    expect(matrixCode).not.toContain('the native-automation conflict matrix')
   })
 
   it('keys are unique — two rows sharing a key would share one badge element id', () => {

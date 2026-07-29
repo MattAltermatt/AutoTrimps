@@ -2388,7 +2388,15 @@ export function initializeAllSettings() {
     createSetting('fuellater', 'Start Fuel Z',tip({
         what: 'The zone AT starts fueling the generator, instead of the default z230.',
         ignoredWhen: 'Ignored in Universe 2.',
-        how: 'Set lower than your usual max zone. Use 230 to just use your Before Fuel setting the whole time.',
+        // #184 — this used to read "Use 230 to just use your Before Fuel setting the whole time", and
+        // 230 does the OPPOSITE: autoGenerator returns below z230 and main-loop only dispatches it above
+        // z229, so `world >= fuellater` already holds on the first tick it runs and AT starts fueling
+        // immediately. The mechanism the sentence was reaching for exists and works — it is `< 1`
+        // (magmite.ts:218-221), which is what the -1 default already is. The code was right and the
+        // tooltip was wrong, so the tooltip is what changed (user decision, 2026-07-28): 230 stays an
+        // ordinary zone number, and a player who genuinely wants fueling to begin at the earliest legal
+        // zone can still say so.
+        how: 'Set lower than your usual max zone. Leave it at -1 (the default) to keep your Before Fuel setting for the whole run.',
     }), 'value', -1, null, 'Magma');
     createSetting('fuelend', 'End Fuel Z',tip({
         what: 'The zone AT stops fueling and switches to your After Fuel setting.',
@@ -2532,14 +2540,27 @@ export function initializeAllSettings() {
         how: '<b>Shields</b> / <b>Staffs</b> / <b>Cores</b> carry only that type. <b>All</b> cycles Shield, then Staff, then Core, repeatedly, until your carried slots are full or you run out of spares &mdash; it does not guarantee an even split between the three.',
         cannot: 'Choosing <b>None</b> disables Auto Heirlooms entirely for every portal, even while the <b>Auto Heirlooms</b> master box is checked.',
     }), 'multitoggle', 0, null, 'Heirlooms');
-    createSetting('raretokeep', 'Rarity to Keep',tip({
+    createSetting('HeirloomRarityToKeep', 'Rarity to Keep',tip({
         what: 'The rarity threshold Auto Heirlooms favors when scoring your spare heirlooms for carrying.',
         how: 'A heirloom at or above this rarity gets a very large scoring bonus over one below it, so those tend to get carried first. It is a scoring weight, not a hard filter &mdash; a lower-rarity heirloom can still be carried if slots remain.',
         ignoredWhen: 'Has no effect unless Auto Heirlooms is on and Kept Type is not None.',
-    }), 'dropdown', 'Any', ["Any", "Common", "Uncommon", "Rare", "Epic", "Legendary", "Magnificent", "Ethereal", "Magmatic", "Plagued", "Radiating", "Hazardous", "Enigmatic", "Mutated"], 'Heirlooms');
+        // #194 — this list read ["Any","Common","Uncommon","Rare",…]: the bottom two labels were
+        // shifted by one against the game's real rarities, so "Common" mapped to threshold 0 (which is
+        // BASIC, i.e. identical to "Any") and "Uncommon" — a rarity Trimps does not have at all — was
+        // the option that actually meant "Common or better". It is now 'Any' + the game's own
+        // rarityNames, and settings-migrations.ts moves existing users' stored picks so nobody's
+        // threshold changes. See heirlooms.ts, which derives its index mapping from this same list
+        // rather than re-transcribing it.
+        // The list is spelled out rather than spread from HEIRLOOM_RARITY_OPTIONS for the same reason
+        // the ids around it are literals: tests/nets/dispatch-holes.test.ts reads every dropdown's
+        // options off the AST, so a spread makes the option list invisible and the net can no longer
+        // prove the declared default is one of them. It is not a second source of truth —
+        // tests/nets/heirloom-rarities.test.ts asserts this literal EQUALS HEIRLOOM_RARITY_OPTIONS,
+        // which is itself pinned against the clone's config.js.
+    }), 'dropdown', 'Any', ["Any", "Basic", "Common", "Rare", "Epic", "Legendary", "Magnificent", "Ethereal", "Magmatic", "Plagued", "Radiating", "Hazardous", "Enigmatic", "Mutated"], 'Heirlooms');
 
     //Shield Line
-    (document.getElementById('raretokeep') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
+    (document.getElementById('HeirloomRarityToKeep') as any).parentNode.insertAdjacentHTML('afterend', '<br>');
     createSetting('keepshields', 'Show Shield Mods',tip({
         what: 'Shows the per-slot Shield modifier pickers below in the settings panel.',
         cannot: 'This is a display toggle only. Whatever those pickers are set to is scored when ranking Shields for carrying whether this row is shown or hidden &mdash; hiding it does not turn the modifiers off.',

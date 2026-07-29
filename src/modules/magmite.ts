@@ -53,30 +53,47 @@ export function miRatio() {
 
     const totalspend = effspend + capspend + supspend + ocspend;
 
-    const effspendr = (effspend > 0) ? (totalspend / effspend) * 100 : 0;
-    const capspendr = (capspend > 0) ? (totalspend / capspend) * 100 : 0;
-    const supspendr = (supspend > 0) ? (totalspend / supspend) * 100 : 0;
-    const ocspendr = (ocspend > 0) ? (totalspend / ocspend) * 100 : 0;
+    // #167 — these were `(totalspend / spend) * 100`, the RECIPROCAL of the share computed above, so a
+    // LARGER weight produced a SMALLER target and the code below bought the LEAST-weighted upgrade.
+    // Simulated over 400 purchases against the game's real cost curves: eff10/cap90 put 100% of the
+    // magmite into Efficiency and eff90/cap10 put 100% into Capacity — the table is perfectly mirrored
+    // about 50/50, which is the only pair that looked right and is why this went unnoticed. The
+    // tooltip promises the plain reading: "Set … to the relative weight you want each to get"
+    // (settings-defs.ts:2425). Now a true share, directly comparable to eff/cap/sup/ocr above.
+    const effspendr = (effspend > 0) ? (effspend / totalspend) * 100 : 0;
+    const capspendr = (capspend > 0) ? (capspend / totalspend) * 100 : 0;
+    const supspendr = (supspend > 0) ? (supspend / totalspend) * 100 : 0;
+    const ocspendr = (ocspend > 0) ? (ocspend / totalspend) * 100 : 0;
 
-    //Find Next Spend
+    //Find Next Spend — how far each upgrade is BELOW its target share; the most-starved one wins.
     const efffinal = effspendr - effr;
     const capfinal = capspendr - capr;
     const supfinal = supspendr - supr;
     const ocfinal = ocspendr - ocr;
 
-    const ratios = [];
-    if (efffinal !== -1) ratios.push(efffinal);
-    if (capfinal !== -1) ratios.push(capfinal);
-    if (supfinal !== -1) ratios.push(supfinal);
-    if (ocfinal !== -1) ratios.push(ocfinal);
+    // The old membership test was `*final !== -1`, an arithmetic coincidence standing in for "the
+    // player did not configure this one" (an unconfigured, unspent upgrade scores 0 - 1). Testing the
+    // thing we actually mean is not a behaviour fix — an exhaustive sweep of 15.7M weight/spend states
+    // finds no case where the two guards disagree about the WINNER, because the configured targets
+    // always sum to 100 and so the maximum margin is never negative. It is kept because the
+    // coincidence was load-bearing on the exact formula being replaced above, and because the
+    // `ratios[0] === *final` chain it fed could in principle mis-attribute a win to an excluded
+    // upgrade that happened to hold the same value. (#87/#15: all four unset => empty => undefined,
+    // and the caller treats that as "spend on nothing". Preserved exactly.)
+    const ratios: { name: string, diff: number }[] = [];
+    if (effspend > 0) ratios.push({ name: "Efficiency", diff: efffinal });
+    if (capspend > 0) ratios.push({ name: "Capacity", diff: capfinal });
+    if (supspend > 0) ratios.push({ name: "Supply", diff: supfinal });
+    if (ocspend > 0) ratios.push({ name: "Overclocker", diff: ocfinal });
 
-    ratios.sort(function (a, b) { return b - a; });
+    // Stable sort, so a tie still resolves Efficiency > Capacity > Supply > Overclocker exactly as the
+    // old first-match-wins `ratios[0] === *final` chain did. That chain also had a latent mis-attribution
+    // (an EXCLUDED upgrade whose value happened to equal the winner's would be returned instead of the
+    // winner); carrying the name with the value removes it.
+    ratios.sort(function (a, b) { return b.diff - a.diff; });
 
     //Return Next Spend
-    if (ratios[0] === efffinal) return "Efficiency";
-    if (ratios[0] === capfinal) return "Capacity";
-    if (ratios[0] === supfinal) return "Supply";
-    if (ratios[0] === ocfinal) return "Overclocker";
+    return ratios.length > 0 ? ratios[0]!.name : undefined;
 }
 
 export function autoMagmiteSpender() {

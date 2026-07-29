@@ -520,8 +520,23 @@ export function settingsWindowSave(titleText: any, reopen?: any) {
             continue;
         }
 
+        // #180 — only `zone` was NaN-validated above. An emptied Cell box parses to NaN, and NaN fails
+        // BOTH of the clamps below (`NaN < 1` and `NaN > 100` are each false), so it survived
+        // unclamped into the stored array. Every consumer gate is `lastClearedCell + 2 >= cell`
+        // (mapfunctions.ts:456/497/603) and `x >= NaN` is always false, so the row looked configured
+        // and could never fire — permanently, and silently, since no error text was appended either.
+        // The redisplay made it worse: the popup renders a FALSY stored value as 81 (the `? … : 81`
+        // hydration above), and NaN is falsy, so the user saw a valid-looking config that did nothing.
+        //
+        // Coerce to the same defaults the popup redisplays — 81 for cell, 0 for level — so what is
+        // persisted always matches what is shown. (The tempting one-liner `if (!(cell >= 1)) cell = 1`
+        // is NaN-safe but lands on 1, which the popup would then redisplay as 1: self-consistent, but
+        // it silently retargets the preset to the first cell instead of the documented default.)
+        // `level` has the identical hole — `NaN > 10` is false — and its redisplay default is 0.
+        if (isNaN(level)) level = 0;
         if (level > 10) level = 10;
         if (!titleText.includes('Quagmire')) {
+            if (isNaN(cell)) cell = 81;
             if (cell < 1) cell = 1;
             if (cell > 100) cell = 100;
         }
@@ -543,8 +558,17 @@ export function settingsWindowSave(titleText: any, reopen?: any) {
         return (a.zone > b.zone) ? 1 : -1
     });
 
+    // #179 — this used to read `if (a.zone == b.zone) return (a.zone > b.zone) ? 1 : -1`, i.e. it only
+    // returned a value in the case where the two zones are EQUAL (and then compared them to each
+    // other, which is always -1). For every unequal pair it fell off the end and returned undefined;
+    // ES SortCompare does ToNumber(undefined) → NaN → +0, so every distinct-zone pair compared equal
+    // and the array was stored exactly as typed. That matters because the consumer prefix-sums it:
+    // Rbogs() (mapfunctions.ts:628-644) takes `bogzone.indexOf(world)` and sums amounts [0..index],
+    // which only means "every lower zone" on an ascending array. Unsorted, a z70 row entered first
+    // got a STRICTER target than a z30 row entered second. Quagmire has no cell, so unlike the
+    // sibling above there is no tiebreak to apply — just the zone ordering the other 13 windows use.
     else (thisSetting as any).sort(function(a: any, b: any) {
-        if (a.zone == b.zone) return (a.zone > b.zone) ? 1 : -1
+        return (a.zone > b.zone) ? 1 : -1
     });
 
     if (error) {
@@ -648,10 +672,18 @@ export function settingsWindowSave(titleText: any, reopen?: any) {
     }
 
     cancelTooltip(true);
+    // #193 — the overflowY reset used to run AFTER the reopen, at the end of this function. MAZLookalike
+    // sets maxHeight (85vh) and overflowY:'scroll' together as INLINE styles (MAZ.ts:291-292) and swaps
+    // in `tooltipExtraLg`, which — unlike `tooltipWindowLg` — declares no overflow of its own
+    // (tabs.css:244-246), and neither does the game's base #tooltipDiv rule. So wiping the inline value
+    // last left the reopened window capped at 85vh with overflow:visible: any window long enough to
+    // scroll spilled its rows and its own Save/Cancel buttons outside the box with no way to reach them.
+    // Only the in-place Save path was affected; Save-and-Close then reopening by hand was always fine.
+    // Reset BEFORE the reopen, so the cleanup only applies to the close path it was written for.
+    document.getElementById('tooltipDiv')!.style.overflowY = '';
     if (reopen) MAZLookalike(titleText);
 
     saveSettings();
-    document.getElementById('tooltipDiv')!.style.overflowY = '';
 }
 
 export function addRow() {

@@ -188,16 +188,7 @@ function enclosingFn(n: ts.Node): string {
  * form — and #178 is exactly that: `game.global.world == getPageSetting('BWraidingz')`. A net that
  * cannot see half of its own class is worse than none, because its green is quoted as coverage.
  */
-function collectSites(multiValueIds: Set<string>): CompareSite[] {
-  const files: string[] = []
-  const walk = (d: string) => {
-    for (const e of readdirSync(d, { withFileTypes: true })) {
-      if (e.isDirectory()) walk(join(d, e.name))
-      else if (e.name.endsWith('.ts') && !e.name.endsWith('.d.ts')) files.push(join(d, e.name))
-    }
-  }
-  walk(join(ROOT, 'src/modules'))
-
+function sitesInSource(file: string, text: string, multiValueIds: Set<string>): CompareSite[] {
   /** `getPageSetting('X')` used BARE — not `...[i]`, not `.length`, not `.includes(...)`. */
   const bareSettingId = (n: ts.Expression): string | null => {
     if (!ts.isCallExpression(n)) return null
@@ -208,31 +199,41 @@ function collectSites(multiValueIds: Set<string>): CompareSite[] {
   }
 
   const sites: CompareSite[] = []
-  for (const f of files) {
-    const sf = ts.createSourceFile(f, readFileSync(f, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS)
-    const visit = (n: ts.Node): void => {
-      if (ts.isBinaryExpression(n) && OPS.has(n.operatorToken.kind)) {
-        const left = bareSettingId(n.left)
-        const id = left ?? bareSettingId(n.right)
-        if (id) {
-          const other = left ? n.right : n.left
-          sites.push({
-            file: f.replace(ROOT + '/', ''),
-            line: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1,
-            fn: enclosingFn(n),
-            id,
-            op: OPS.get(n.operatorToken.kind)!,
-            literal: numericValue(other),
-            other: other.getText(sf).replace(/\s+/g, ' ').slice(0, 60),
-            reversed: !left,
-          })
-        }
+  const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS)
+  const visit = (n: ts.Node): void => {
+    if (ts.isBinaryExpression(n) && OPS.has(n.operatorToken.kind)) {
+      const left = bareSettingId(n.left)
+      const id = left ?? bareSettingId(n.right)
+      if (id) {
+        const other = left ? n.right : n.left
+        sites.push({
+          file: file.replace(ROOT + '/', ''),
+          line: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1,
+          fn: enclosingFn(n),
+          id,
+          op: OPS.get(n.operatorToken.kind)!,
+          literal: numericValue(other),
+          other: other.getText(sf).replace(/\s+/g, ' ').slice(0, 60),
+          reversed: !left,
+        })
       }
-      ts.forEachChild(n, visit)
     }
-    visit(sf)
+    ts.forEachChild(n, visit)
   }
+  visit(sf)
   return sites
+}
+
+function collectSites(multiValueIds: Set<string>): CompareSite[] {
+  const files: string[] = []
+  const walk = (d: string) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      if (e.isDirectory()) walk(join(d, e.name))
+      else if (e.name.endsWith('.ts') && !e.name.endsWith('.d.ts')) files.push(join(d, e.name))
+    }
+  }
+  walk(join(ROOT, 'src/modules'))
+  return files.flatMap((f) => sitesInSource(f, readFileSync(f, 'utf8'), multiValueIds))
 }
 
 /** The stable key: setting id + file + ENCLOSING FUNCTION. Never a line number. */
@@ -278,13 +279,9 @@ const KNOWN_BROKEN: Record<string, { op: CompareOp; literal: number | null; why:
     op: '==', literal: 50,
     why: '#263 — a VALUE test against a whole list; silently stops matching past one configured entry.',
   },
-  'BWraidingz@src/modules/main-loop.ts#atGuard:buyWeps:bwraidMap': {
-    op: '==', literal: null,
-    why: '#178 — reversed operands, so the old line-regex could not see it at all. BWraiding() itself pairs by index correctly; this dispatch site is the odd one out.',
-  },
-  'BWraidingmax@src/modules/main-loop.ts#atGuard:buyWeps:bwraidMap': {
-    op: '<=', literal: null, why: '#178 — the paired max on the same expression.',
-  },
+  // #178's two entries (BWraidingz / BWraidingmax @ atGuard:buyWeps:bwraidMap) are GONE, not waived:
+  // that dispatch now pairs zone to max by INDEX, the way BWraiding() itself does, so neither setting
+  // is compared as a scalar any more and the shrink-only check below would reject a leftover entry.
 }
 
 const settings = parseSettings()
@@ -303,9 +300,18 @@ describe('multiValue settings compared against a scalar (#162 / #178 / #263)', (
   it('anti-false-green: the scan really found comparison sites, in BOTH operand positions', () => {
     expect(sites.length).toBeGreaterThan(10)
     expect(sites.some((s) => s.op === '!=')).toBe(true)
-    // The reversed form is the half the old line-regex was blind to (#178). If this ever reads
-    // false, the walk has silently narrowed back to the shape that missed a real defect.
-    expect(sites.some((s) => s.reversed)).toBe(true)
+    // The reversed form is the half the old line-regex was blind to (#178). This used to assert
+    // `sites.some(s => s.reversed)` against LIVE src — which meant the tripwire's own health depended
+    // on a real defect continuing to exist, and it went red the moment #178's last reversed site was
+    // repaired. A capability check has to be provable from a FIXTURE, or "the class is now clean"
+    // and "the scanner broke" are the same observation. Both operand positions, same walker.
+    const probeId = [...multiValueIds][0]!
+    const forward = sitesInSource('probe.ts', `function f(){ if (getPageSetting('${probeId}') != -1) g() }`, multiValueIds)
+    const reversed = sitesInSource('probe.ts', `function f(){ if (game.global.world == getPageSetting('${probeId}')) g() }`, multiValueIds)
+    expect(forward.map((s) => s.reversed)).toEqual([false])
+    expect(reversed.map((s) => s.reversed)).toEqual([true])
+    expect(reversed[0]!.id).toBe(probeId)
+    expect(reversed[0]!.other).toBe('game.global.world')
     // And the enclosing-scope resolution has to actually resolve, or the key is no more stable than
     // the line number it replaced. A site that lands here needs a better anchor, not a waiver.
     expect(sites.filter((s) => s.fn === '<module>' || s.fn === '<anonymous>').map(keyOf)).toEqual([])

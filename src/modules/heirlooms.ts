@@ -9,6 +9,7 @@
 //   - top-level DOM code appends heirloom buttons to static index.html elements (safe at
 //     the early src slot). animated/worth3/hrlmProtBtn* module vars are heirlooms-internal.
 import { getPageSetting, textSettingIsSet } from './utils'
+import { heirloomRarityThreshold } from './heirloom-rarities'
 
 var hrlmProtBtn1 = document.createElement('DIV');
 hrlmProtBtn1.setAttribute('class', 'noselect heirloomBtnActive heirBtn');
@@ -86,20 +87,11 @@ export function evaluateHeirloomMods2(loom: any, location: string): number {
   var name;
   var type;
   var rarity;
-  var raretokeep = getPageSetting('raretokeep');
-	if (raretokeep == 'Any' || raretokeep == 'Common') raretokeep = 0;
-	else if (raretokeep == 'Uncommon') raretokeep = 1;
-	else if (raretokeep == 'Rare') raretokeep = 2;
-	else if (raretokeep == 'Epic') raretokeep = 3;
-	else if (raretokeep == 'Legendary') raretokeep = 4;
-	else if (raretokeep == 'Magnificent') raretokeep = 5;
-	else if (raretokeep == 'Ethereal') raretokeep = 6;
-	else if (raretokeep == 'Magmatic') raretokeep = 7;
-	else if (raretokeep == 'Plagued') raretokeep = 8;
-	else if (raretokeep == 'Radiating') raretokeep = 9;
-        else if (raretokeep == 'Hazardous') raretokeep = 10;
-	else if (raretokeep == 'Enigmatic') raretokeep = 11;
-	else if (raretokeep == 'Mutated') raretokeep = 12;
+  // #194 — this was a thirteen-branch if/else chain hand-transcribing the rarity ladder, and it was
+  // wrong at the bottom in exactly the way the dropdown it read from was wrong: `'Common' -> 0` (which
+  // is BASIC, so "Common" filtered nothing) and an `'Uncommon' -> 1` branch for a rarity the game does
+  // not have. Two independent copies of one game-owned array; now both derive from it.
+  var raretokeep: number = heirloomRarityThreshold(getPageSetting('HeirloomRarityToKeep'));
 
   if (location.includes('Equipped'))
     loom = game.global[location];

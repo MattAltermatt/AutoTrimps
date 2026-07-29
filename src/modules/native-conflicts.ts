@@ -37,12 +37,54 @@ const u2 = (): boolean => game.global.universe === 2
 // A key MISSING from the store returns `false` (#68), and `false == 1` / `false > 0` are both false, so
 // a veteran whose localStorage lacks the key never gets a phantom conflict.
 
+// #187 — these used to read `.enabled` alone, which answers "is the button lit", not "is this
+// automation buying anything". The game applies TWO more gates before any purchase, and an
+// ON-but-never-configured automation fails the second: config.js:245-248 seeds the settings as
+// `{enabled: false}` with NO per-item keys, the bwReward's `fire` only calls `toggleAutoStructure(true)`
+// (config.js:13407-13409), and the per-item keys appear only when the cog popup is saved
+// (saveAutoStructureConfig / saveAutoJobsConfig, main.js:18191/18134). So a player who clicks the
+// button on and never opens the cog had `{enabled: true}` and bought NOTHING — while AT's badge
+// asserted "Both are buying right now". This module's own stated bar is at the bottom of this file:
+// an advisory that misses a case is a far smaller failure than one that invents a conflict.
+//
+// The second omitted gate, bwRewardUnlocked, is masked for the autoStructure/autoJobs rows by
+// anchorVisible (their buttons carry `.autoUpgradeBtn{display:none}`) — but NOT for the
+// buildingsOrphan/jobsOrphan rows, which anchor to buildingsTitleDiv/jobsTitleDiv and have no display
+// rule, so a stale `enabled:true` there silenced the very advisory those rows exist for.
+//
+// The per-item tests below mirror the game's own: an item counts only when its `.enabled` is true.
+// `buyAutoStructures` tests each item TWICE and only the second is the purchase gate —
+// main.js:18250's `if (!setting[item]) continue;` merely skips items the cog has never written, and
+// the real gate is main.js:18264, `if (!game.buildings[item].locked && setting[item].enabled)`.
+// saveAutoStructureConfig (main.js:18191) writes `setting[name].enabled = checked` rather than
+// deleting the entry, so an item unchecked in the cog stays PRESENT and disabled while the game buys
+// nothing for it. Jobs (main.js:5092/5106) and Gigastation (main.js:18278) read `.enabled` the same
+// way; there is no asymmetry here.
+//
+// (An earlier version of this fix asserted exactly such an asymmetry, having read only as far as
+// :18250, and shipped a comment AND a regression test that both pinned the misreading. Caught by
+// review. Read to the end of the loop body before deciding which line is the gate.)
+const AUTOSTRUCTURE_ITEMS = ['Tribute', 'Smithy', 'Nursery', 'Laboratory', 'Gym', 'Warpstation', 'Hut',
+    'House', 'Mansion', 'Hotel', 'Resort', 'Gateway', 'Collector', 'Wormhole'] as const
+const AUTOJOBS_ITEMS = ['Trainer', 'Explorer', 'Magmamancer', 'Meteorologist', 'Worshipper',
+    'Farmer', 'Lumberjack', 'Miner', 'Scientist'] as const
+
 // The game's own universe-aware resolvers (main.js:18026, :18046). Guarded because the unit
 // environment mounts this module without the game's script.
-const structureOn = (): boolean =>
-    typeof getAutoStructureSetting === 'function' && !!getAutoStructureSetting()?.enabled
-const jobsMasteryOn = (): boolean =>
-    typeof getAutoJobsSetting === 'function' && !!getAutoJobsSetting()?.enabled
+const structureOn = (): boolean => {
+    if (typeof getAutoStructureSetting !== 'function') return false
+    const setting = getAutoStructureSetting()
+    if (!setting?.enabled) return false
+    if (typeof bwRewardUnlocked !== 'function' || !bwRewardUnlocked('AutoStructure')) return false
+    return AUTOSTRUCTURE_ITEMS.some((item) => !!setting[item]?.enabled) || !!setting['Gigastation']?.enabled
+}
+const jobsMasteryOn = (): boolean => {
+    if (typeof getAutoJobsSetting !== 'function') return false
+    const setting = getAutoJobsSetting()
+    if (!setting?.enabled) return false
+    if (typeof bwRewardUnlocked !== 'function' || !bwRewardUnlocked('AutoJobs')) return false
+    return AUTOJOBS_ITEMS.some((item) => !!setting[item]?.enabled)
+}
 
 // AT-side gates. U1 and U2 are separate settings trees, and reading the wrong one is a phantom
 // conflict — `BuyArmorNew` is meaningless in U2, where AutoEquip is one boolean.
@@ -134,9 +176,60 @@ const nativeGoldenMode = (): number =>
 
 const nativeGoldenPool = (): string => NATIVE_GOLDEN_POOL[nativeGoldenMode()] ?? 'Custom'
 
+/**
+ * #188 — does native autoGoldenUpgrades() actually BUY on this tick, or does it bail out first?
+ *
+ * The table above maps the button's mode to a pool, which is what the tooltip should print. It is not
+ * the same question as "is native competing for this golden", because main.js:18576-18592 has a
+ * RETURN in it:
+ *
+ *     var selections = ["", "Helium", "Battle", "Void", "Void"];
+ *     selected = selections[setting];
+ *     if (selected == "Void" && (Void.currentBonus + Void.nextAmt() > 0.72))
+ *         selected = (getAutoGoldenSetting() == 3) ? "Helium" : "Battle";
+ *     if (selected == "Helium" && game.global.runningChallengeSquared) return;   // <- buys NOTHING
+ *     buyGoldenUpgrade(selected);
+ *
+ * So during any Challenge² a native button left on its first mode buys zero goldens for the whole run,
+ * while AT's C2 dropdowns deliberately offer no Helium option at all (settings-defs.ts:2669-2672
+ * `["Off","Battle","Void","Void + Battle"]`) — the two sides could therefore NEVER agree, and the row
+ * fired on every C2 run with native on mode 1, claiming a race with an automation that does nothing
+ * and recommending the user hand goldens to the game, which would leave nothing buying them at all.
+ *
+ * The saturation arm is mirrored too, not just the mode-1 case #188 named: mode 3 reaches the same
+ * `return` once Void is capped, which is the identical false positive from a second direction. This is
+ * a direct mirror of five lines of game source rather than a model of AT's own logic, so it is not the
+ * `derive-don't-retype` hazard the waiver below is about — but it IS a second copy, so it is pinned by
+ * tests/nativeConflicts.goldenBailout.test.ts against the clone's constant.
+ *
+ * Returns the pool native will actually buy from, or null when it will not buy.
+ */
+const VOID_GOLDEN_CAP = 0.72
+const nativeGoldenEffective = (): string | null => {
+    const mode = nativeGoldenMode()
+    if (mode <= 0) return null
+    // Mode 5 is archoGolden's custom queue — nothing AT can express, so it stays a disagreement.
+    if (mode >= 5) return 'Custom'
+    let selected = NATIVE_GOLDEN_POOL[mode] ?? 'Custom'
+    if (selected === 'Void' || selected === 'Void + Battle') {
+        const v = game?.goldenUpgrades?.Void
+        const next = typeof v?.nextAmt === 'function' ? v.nextAmt() : 0
+        if (v && parseFloat((v.currentBonus + next).toFixed(2)) > VOID_GOLDEN_CAP)
+            selected = mode === 3 ? 'Helium' : 'Battle'
+        else selected = 'Void'
+    }
+    if (selected === 'Helium' && game.global.runningChallengeSquared) return null
+    return selected
+}
+
 // AT itself normalises 'Radon' onto the Helium pool (upgrades.ts:231-232) — U2 has no golden pool of its
 // own — so compare pools, never the labels the two universes happen to print.
 const atGoldenPool = (raw: unknown): string => (raw === 'Radon' ? 'Helium' : String(raw))
+
+// #195 — the three U2 challenges whose dispatcher overrides the configured pool with Battle
+// unconditionally (upgrades.ts:241-243). All three exist in the pinned clone: config.js:5052 Mayhem,
+// :5639 Pandemonium, :6147 Desolation.
+const U2_BATTLE_OVERRIDE_CHALLENGES = ['Mayhem', 'Pandemonium', 'Desolation']
 
 /**
  * Every AT golden strategy DISPATCHING right now, as pool names.
@@ -163,6 +256,16 @@ const atGoldenChoices = (): string[] => {
         out.push(atGoldenPool(normal))
     if (daily && daily != 'Off' && game.global.challengeActive == 'Daily') out.push(atGoldenPool(daily))
     if (c2 && c2 != 'Off' && game.global.runningChallengeSquared) out.push(atGoldenPool(c2))
+
+    // #195 — this reported AT's CONFIGURED pool and missed RautoGoldenUpgradesAT's last word. In U2,
+    // upgrades.ts:241-243 does `if (challengeActive === "Mayhem" || "Pandemonium" || "Desolation")
+    // setting2 = "Battle"` AFTER every other assignment and immediately before buyGoldenUpgrade, so it
+    // is unconditional. Both directions were wrong: RAutoGoldenUpgrades='Radon' with native on Battle
+    // printed "AT is set to buy Helium" and fired a row while the two sides actually AGREED, and
+    // ='Void' with native on Void produced no row while AT really bought Battle and native bought Void.
+    // The U1 sibling (other.ts:125-144) has no such override, hence the u2() gate.
+    if (u2() && U2_BATTLE_OVERRIDE_CHALLENGES.includes(game.global.challengeActive))
+        return out.map(() => 'Battle')
     return out
 }
 
@@ -201,8 +304,11 @@ const atBuysLevels = (): boolean =>
           getPageSetting('BuyArmorNew') == 1 ||
           getPageSetting('BuyArmorNew') == 3
 
+// #188 — compare against what native will actually BUY, not against what its button says. A native
+// side that bails out before buyGoldenUpgrade() is not racing AT for anything.
 const atGoldenDisagrees = (): boolean => {
-    const native = nativeGoldenPool()
+    const native = nativeGoldenEffective()
+    if (native === null) return false
     return atGoldenChoices().some((choice) => choice !== native)
 }
 
@@ -290,7 +396,9 @@ export const CONFLICTS: readonly NativeConflict[] = [
         // Improbability, native AutoGold can read "AutoGold Battle" on a visible button and buy nothing.
         when: () => nativeGoldenMode() > 0 && !!game.global.autoUpgradesAvailable && atGoldenDisagrees(),
         body: () => {
-            const native = nativeGoldenPool()
+            // The EFFECTIVE pool, so the tooltip names what native is really buying. `when` has already
+            // established this is non-null; nativeGoldenPool() is the fallback for the impossible case.
+            const native = nativeGoldenEffective() ?? nativeGoldenPool()
             const mine = atGoldenChoices().join(' / ')
             return (
                 'Golden Upgrades are a fixed, permanent pool &mdash; the game grants a set number per run, and ' +

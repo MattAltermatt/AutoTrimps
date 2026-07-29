@@ -194,3 +194,71 @@ describe('an unset Max BW skips the zone instead of faking a raid (#176)', () =>
     expect(logText()).toBe('') // no message for a zone that was never going to raid
   })
 })
+
+// ── #178 — the zone→max pairing, now shared with main-loop.ts's buyWeps dispatch ────────────────
+//
+// main-loop.ts:416 used to read `game.global.world == getPageSetting('BWraidingz')`: a NUMBER against
+// a multiValue ARRAY, with the operands reversed so the #162 net (which requires the getPageSetting
+// call on the LEFT) could not see it at all. `495 == [480,495]` coerces via ToPrimitive to the string
+// "480,495", then to NaN, so it is FALSE — the dispatch fired only for a single-entry list, and never
+// for the multi-entry form the setting's own tooltip documents as the example.
+describe('bwRaidTargetFor pairs a zone with the max on its own row (#178)', () => {
+  // The helper takes the RESOLVED lists, not the ids — see its docblock: taking ids would hide two
+  // getPageSetting callsites from the #68 settings-reverse net.
+  const getPageSetting = (id: string) => {
+    const s = g.autoTrimpSettings[id]
+    return s?.type === 'multiValue' ? Array.from(s.value).map((x) => parseInt(x as string)) : s?.value
+  }
+
+  beforeEach(() => {
+    setMV('BWraidingz', [480, 495])
+    setMV('BWraidingmax', [500, 515])
+  })
+
+  it('each zone gets the ceiling at its OWN index', () => {
+    expect(praiding.bwRaidTargetFor(480, getPageSetting('BWraidingz'), getPageSetting('BWraidingmax'))).toBe(500)
+    expect(praiding.bwRaidTargetFor(495, getPageSetting('BWraidingz'), getPageSetting('BWraidingmax'))).toBe(515)
+  })
+
+  it('a zone not in the list has no ceiling', () => {
+    expect(praiding.bwRaidTargetFor(490, getPageSetting('BWraidingz'), getPageSetting('BWraidingmax'))).toBeUndefined()
+  })
+
+  // The multi-entry case is the whole bug: pre-fix, the SECOND entry was unreachable.
+  it('the second entry is reachable — it was not, before', () => {
+    expect(praiding.bwRaidTargetFor(495, getPageSetting('BWraidingz'), getPageSetting('BWraidingmax'))).toBeDefined()
+  })
+
+  it('a max list shorter than the zone list leaves the trailing zones unconfigured', () => {
+    setMV('BWraidingmax', [500])
+    expect(praiding.bwRaidTargetFor(480, getPageSetting('BWraidingz'), getPageSetting('BWraidingmax'))).toBe(500)
+    expect(praiding.bwRaidTargetFor(495, getPageSetting('BWraidingz'), getPageSetting('BWraidingmax'))).toBeUndefined()
+  })
+
+  // #176's rule, enforced in the shared helper so BOTH callers get it: an unset max is NOT infinite.
+  it('the -1 sentinel is unconfigured, not an infinite ceiling', () => {
+    setMV('BWraidingmax', [-1, 515])
+    expect(praiding.bwRaidTargetFor(480, getPageSetting('BWraidingz'), getPageSetting('BWraidingmax'))).toBeUndefined()
+    expect(praiding.bwRaidTargetFor(495, getPageSetting('BWraidingz'), getPageSetting('BWraidingmax'))).toBe(515)
+  })
+
+  it('a NaN max is unconfigured too', () => {
+    setMV('BWraidingmax', ['', 515])
+    expect(praiding.bwRaidTargetFor(480, getPageSetting('BWraidingz'), getPageSetting('BWraidingmax'))).toBeUndefined()
+  })
+
+  it('the Daily settings pair the same way', () => {
+    setMV('dBWraidingz', [495, 510])
+    setMV('dBWraidingmax', [515, 530])
+    expect(praiding.bwRaidTargetFor(510, getPageSetting('dBWraidingz'), getPageSetting('dBWraidingmax'))).toBe(530)
+  })
+
+  // The coercion that made the old expression false. Kept as an executable note: it is the reason
+  // this is a pairing helper and not a comparison.
+  it('documents the coercion the old `world == list` compare hit', () => {
+    expect((495 as unknown as number) == ([480, 495] as unknown as number)).toBe(false)
+    expect(Number([480, 495])).toBeNaN()
+    // …and why a SINGLE-entry list made it look like it worked.
+    expect((495 as unknown as number) == ([495] as unknown as number)).toBe(true)
+  })
+})
