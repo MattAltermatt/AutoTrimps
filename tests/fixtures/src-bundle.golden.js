@@ -2366,7 +2366,7 @@
     if (game.buildings.Nursery.owned > 0) potencyMod2 = potencyMod2.mul(Math.pow(1.01, game.buildings.Nursery.owned));
     if (game.unlocks.impCount.Venimp > 0) potencyMod2 = potencyMod2.mul(Math.pow(1.003, game.unlocks.impCount.Venimp));
     if (game.global.brokenPlanet) potencyMod2 = potencyMod2.div(10);
-    potencyMod2 = potencyMod2.mul(1 + game.portal.Pheromones.level * game.portal.Pheromones.modifier);
+    potencyMod2 = potencyMod2.mul(1 + getPerkLevel("Pheromones") * game.portal.Pheromones.modifier);
     if (game.singleRunBonuses.quickTrimps.owned) potencyMod2 = potencyMod2.mul(2);
     if (game.global.challengeActive == "Daily") {
       if (typeof game.global.dailyChallenge.dysfunctional !== "undefined")
@@ -2406,7 +2406,7 @@
       if (game.buildings.Nursery.owned > 0) potencyMod2 = potencyMod2.mul(Math.pow(1.01, game.buildings.Nursery.owned));
       if (game.unlocks.impCount.Venimp > 0) potencyMod2 = potencyMod2.mul(Math.pow(1.003, game.unlocks.impCount.Venimp));
       if (game.global.brokenPlanet) potencyMod2 = potencyMod2.div(10);
-      potencyMod2 = potencyMod2.mul(1 + game.portal.Pheromones.level * game.portal.Pheromones.modifier);
+      potencyMod2 = potencyMod2.mul(1 + getPerkLevel("Pheromones") * game.portal.Pheromones.modifier);
       if (game.singleRunBonuses.quickTrimps.owned) potencyMod2 = potencyMod2.mul(2);
       if (game.global.challengeActive == "Daily") {
         if (typeof game.global.dailyChallenge.dysfunctional !== "undefined") {
@@ -14271,11 +14271,11 @@
     if (game.buildings.Nursery.owned > 0) potencyMod2 *= Math.pow(1.01, game.buildings.Nursery.owned);
     if (game.unlocks.impCount.Venimp > 0) potencyMod2 *= Math.pow(1.003, game.unlocks.impCount.Venimp);
     if (game.global.brokenPlanet) potencyMod2 /= 10;
-    potencyMod2 *= 1 + game.portal.Pheromones.level * game.portal.Pheromones.modifier;
+    potencyMod2 *= 1 + getPerkLevel("Pheromones") * game.portal.Pheromones.modifier;
     if (!howManyMoreGenes) howManyMoreGenes = 0;
     if (game.jobs.Geneticist.owned > 0)
       potencyMod2 *= Math.pow(0.98, game.jobs.Geneticist.owned + howManyMoreGenes);
-    if (game.unlocks.quickTrimps) potencyMod2 *= 2;
+    if (game.singleRunBonuses.quickTrimps.owned) potencyMod2 *= 2;
     if (game.global.challengeActive === "Daily") {
       if (typeof game.global.dailyChallenge.dysfunctional !== "undefined") {
         potencyMod2 *= dailyModifiers.dysfunctional.getMult(game.global.dailyChallenge.dysfunctional.strength);
@@ -14290,6 +14290,8 @@
     if (game.global.challengeActive === "Toxicity" && game.challenges.Toxicity.stacks > 0) {
       potencyMod2 *= Math.pow(game.challenges.Toxicity.stackMult, game.challenges.Toxicity.stacks);
     }
+    if (challengeActive("Archaeology")) potencyMod2 *= game.challenges.Archaeology.getStatMult("breed");
+    if (challengeActive("Quagmire")) potencyMod2 *= game.challenges.Quagmire.getExhaustMult();
     if (game.global.voidBuff === "slowBreed") {
       potencyMod2 *= 0.2;
     }

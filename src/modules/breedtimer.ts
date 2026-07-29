@@ -44,7 +44,10 @@ export function potencyMod() {
     if (game.global.brokenPlanet) potencyMod = potencyMod.div(10);
 
     //Pheromones
-    potencyMod = potencyMod.mul(1+ (game.portal.Pheromones.level * game.portal.Pheromones.modifier));
+    // #250 — getPerkLevel, not `.level`. The perk carries both `level` and `radLevel` and getPerkLevel
+    // switches on universe (.trimps-game/main.js:2405), so `.level` used the U1 allocation in a U2 run.
+    // The game itself uses getPerkLevel here (main.js:5595). All THREE AT copies of this formula had it.
+    potencyMod = potencyMod.mul(1+ (getPerkLevel("Pheromones") * game.portal.Pheromones.modifier));
 
     //Quick Trimps
     if (game.singleRunBonuses.quickTrimps.owned) potencyMod = potencyMod.mul(2);
@@ -109,7 +112,8 @@ export function ATGA2() {
 		if (game.buildings.Nursery.owned > 0) potencyMod = potencyMod.mul(Math.pow(1.01, game.buildings.Nursery.owned));
 		if (game.unlocks.impCount.Venimp > 0) potencyMod = potencyMod.mul(Math.pow(1.003, game.unlocks.impCount.Venimp));
 		if (game.global.brokenPlanet) potencyMod = potencyMod.div(10);
-		potencyMod = potencyMod.mul(1+ (game.portal.Pheromones.level * game.portal.Pheromones.modifier));
+		// #250 — getPerkLevel, not `.level` (see potencyMod() above).
+		potencyMod = potencyMod.mul(1+ (getPerkLevel("Pheromones") * game.portal.Pheromones.modifier));
 		if (game.singleRunBonuses.quickTrimps.owned) potencyMod = potencyMod.mul(2);
 		if (game.global.challengeActive == "Daily"){
 			if (typeof game.global.dailyChallenge.dysfunctional !== 'undefined'){

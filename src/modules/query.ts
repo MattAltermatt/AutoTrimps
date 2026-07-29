@@ -241,13 +241,20 @@ export function getPotencyMod(howManyMoreGenes?: number) {
     //Broken Planet
     if (game.global.brokenPlanet) potencyMod /= 10;
     //Pheromones
-    potencyMod *= 1 + game.portal.Pheromones.level * game.portal.Pheromones.modifier;
+    // #250 — getPerkLevel, not `.level`: the perk carries BOTH `level` and `radLevel`
+    // (.trimps-game/config.js:2922) and getPerkLevel switches on universe (main.js:2405), so reading
+    // `.level` directly used the U1 allocation for a U2 run. The game uses getPerkLevel at main.js:5595.
+    potencyMod *= 1 + getPerkLevel('Pheromones') * game.portal.Pheromones.modifier;
     //Geneticist
     if (!howManyMoreGenes) howManyMoreGenes = 0;
     if (game.jobs.Geneticist.owned > 0)
         potencyMod *= Math.pow(0.98, game.jobs.Geneticist.owned + howManyMoreGenes);
     //Quick Trimps
-    if (game.unlocks.quickTrimps) potencyMod *= 2;
+    // #233 — `game.unlocks.quickTrimps` has not existed since Trimps 4.8; the flag moved to
+    // game.singleRunBonuses.quickTrimps.owned, and main.js:708 migrates old saves ONE WAY into it.
+    // So this branch was permanently dead and the x2 was never credited. Both breedtimer copies
+    // already read the new field (breedtimer.ts:50, :113); this third copy was missed.
+    if (game.singleRunBonuses.quickTrimps.owned) potencyMod *= 2;
     //Daily mods
     if (game.global.challengeActive === 'Daily') {
         if (typeof game.global.dailyChallenge.dysfunctional !== 'undefined') {
@@ -263,6 +270,11 @@ export function getPotencyMod(howManyMoreGenes?: number) {
     if (game.global.challengeActive === 'Toxicity' && game.challenges.Toxicity.stacks > 0) {
         potencyMod *= Math.pow(game.challenges.Toxicity.stackMult, game.challenges.Toxicity.stacks);
     }
+    // #250 — Archaeology / Quagmire, mirroring the game's breed() (main.js:5629-5630). AT's #22 parity
+    // fix added these to BOTH breedtimer copies (breedtimer.ts:67-71, :125-127) and missed this third
+    // one, so the Army Count tooltip disagreed with the breed timer during either challenge.
+    if (challengeActive('Archaeology')) potencyMod *= game.challenges.Archaeology.getStatMult('breed');
+    if (challengeActive('Quagmire')) potencyMod *= game.challenges.Quagmire.getExhaustMult();
     if (game.global.voidBuff === 'slowBreed') {
         potencyMod *= 0.2;
     }
