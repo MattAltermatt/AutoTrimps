@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { directDamage, challengeDamage, maxOneShotPower } from '../src/modules/stance'
+import { survive, directDamage, challengeDamage, maxOneShotPower } from '../src/modules/stance'
 
 // #229/#230/#231 — three survivability defects that a differential oracle structurally cannot see.
 // `baseline-zero` pins the formation AT chose; it can detect a CHANGE, never that the choice was
@@ -49,43 +49,61 @@ describe('#229 — survive() translates the pierce halving in BOTH directions', 
     expect(src).toMatch(/function getPierceAmt\(\)\{[\s\S]{0,300}?if \(game\.global\.formation == 3\) base \*= 0\.5;/)
   })
 
-  // The invariant, stated without reference to the fix's own arithmetic: how survivable a TARGET
-  // formation is cannot depend on which formation you happen to be standing in right now. That is
-  // exactly what the pre-fix code violated — survive("B") used pierce 0.2 from D and 0.1 from B.
+  // ⚠️ The first version of this block computed survive()'s pierce adjustment IN THE HELPER and
+  // asserted on that. It passed against a build with the fix reverted — the test was a copy of the
+  // production logic, so mutating production could not move it. Both mutants survived 13/13. What
+  // follows drives `survive()` itself; the only thing the test knows is the game's rule.
   //
-  // Driven through directDamage, which survive() feeds its computed pierce and which is exported,
-  // so the number under test is observed rather than recomputed.
-  function harmInTarget(target: string, currentFormation: number): number {
-    G.game.global.formation = currentFormation
-    const base = G.getPierceAmt()
-    let pierce = base
-    if (target !== 'B' && currentFormation === 3) pierce *= 2
-    if (target === 'B' && currentFormation !== 3) pierce *= 0.5
-    // block far above enemyDamage so Math.max(enemyDamage - block, pierce*enemyDamage, 0) is decided
-    // by the PIERCE term — otherwise this measures nothing about pierce at all.
-    return directDamage(1e9, pierce, 1e9, 1, 2)
+  // The invariant, stated without reference to the fix's arithmetic: how survivable a TARGET
+  // formation is cannot depend on which formation you are standing in right now. Pre-fix,
+  // survive("B") used pierce 0.2 from D and 0.1 from B, so it violated exactly that.
+
+  /** Seed the module-level base stats survive() reads, so the pierce term is the only variable. */
+  function armPierceDecided(baseHealth: number) {
+    G.baseHealth = baseHealth
+    G.baseBlock = 1e9 / 4 // *4 in B → 2.5e8, far above enemyDamage, so max() picks the pierce arm
+    G.baseMinDamage = 1
+    G.baseMaxDamage = 1
+    G.game.global.soldierHealth = 1000
+    G.game.global.soldierHealthMax = 1000 // missingHealth = 0
   }
 
   it.each([
-    ['B', 'B'],
-    ['D', 'D'],
-    ['H', 'H'],
-  ])('survive-modelled harm in %s is the same whether you come from B or from D', (_l, target) => {
-    expect(harmInTarget(target as string, 3)).toBeCloseTo(harmInTarget(target as string, 0), 9)
-  })
-
-  it('anti-false-green: pierce really is the deciding term in this fixture', () => {
-    // If block were below enemyDamage the max() would pick the other arm and every row above would
-    // agree trivially, proving nothing.
-    const lowPierce = directDamage(1e9, 0.1, 1e9, 1, 2)
-    const highPierce = directDamage(1e9, 0.2, 1e9, 1, 2)
-    expect(highPierce).toBeGreaterThan(lowPierce)
-  })
-
-  it('and B really is modelled as HALF of D — not merely consistent', () => {
-    // Consistency alone would also be satisfied by halving both, or neither.
+    ['B', 30], ['B', 16], ['B', 8],
+    ['D', 30], ['D', 16],
+    ['H', 30], ['H', 16],
+  ])('survive(%s) agrees whether you come from Barrier or not (health %i)', (target, h) => {
+    armPierceDecided(h as number)
+    G.game.global.formation = 3
+    const fromBarrier = survive(target as string, 2, true)
     G.game.global.formation = 0
-    expect(harmInTarget('B', 0) * 2).toBeCloseTo(harmInTarget('D', 0), 9)
+    const fromElsewhere = survive(target as string, 2, true)
+    expect(fromBarrier).toBe(fromElsewhere)
+  })
+
+  it('anti-false-green: the fixture straddles the threshold — these are not all true or all false', () => {
+    // If every row above returned the same boolean the agreement would be trivially satisfiable.
+    G.game.global.formation = 0
+    armPierceDecided(30)
+    const roomy = survive('B', 2, true)
+    armPierceDecided(8)
+    const tight = survive('B', 2, true)
+    expect(roomy).toBe(true)
+    expect(tight).toBe(false)
+  })
+
+  it('B is modelled at HALF D\'s pierce — not merely consistently', () => {
+    // Consistency alone would also be satisfied by halving both formations, or neither.
+    G.game.global.formation = 0
+    // Both B and D halve health, so baseHealth 30 → 15 in either: between 0.1*100 = 10 of harm
+    // (Barrier's real pierce) and 0.2*100 = 20 (Dominance's).
+    armPierceDecided(30)
+    expect(survive('B', 2, true)).toBe(true)  // pierce 0.1 → harm 10 → 15 > 10
+    expect(survive('D', 2, true)).toBe(false) // pierce 0.2 → harm 20 → 15 < 20
+  })
+
+  it('directDamage really is pierce-decided at these block levels', () => {
+    expect(directDamage(1e9, 0.2, 1e9, 1, 2)).toBeGreaterThan(directDamage(1e9, 0.1, 1e9, 1, 2))
   })
 })
 
