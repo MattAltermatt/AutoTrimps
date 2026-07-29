@@ -18,7 +18,11 @@ let mf: typeof import('../src/modules/mapfunctions')
 beforeAll(async () => {
   G.MODULES = {}
   G.Decimal = (await import('decimal.js')).default
-  document.body.insertAdjacentHTML('beforeend', `<div id="trimps"><div class="row"></div></div><div id="trimpsFighting"></div>`)
+  document.body.insertAdjacentHTML("beforeend",
+    `<div id="trimps"><div class="row"></div></div><div id="trimpsFighting"></div>` +
+    `<select id="biomeAdvMapsSelect"><option>Random</option><option>Farmlands</option><option>Plentiful</option><option>Depths</option></select>` +
+    `<select id="advSpecialSelect"><option>0</option><option>lc</option><option>hc</option><option>lwc</option><option>swc</option><option>lmc</option><option>smc</option></select>` +
+    `<input id="mapLevelInput"><select id="advExtraLevelSelect"><option>0</option><option>1</option><option>2</option></select>`)
   // mapfunctions.ts evaluates `2 < getPlayerCritChance()` at IMPORT time (mapfunctions.ts:26). A
   // suite that cannot load reports as SKIPPED rather than red, which is the one outcome that looks
   // like nothing is wrong — so seed it before the import, not in a beforeEach.
@@ -38,6 +42,12 @@ function arm(over: { owned?: number; target?: number; cell?: number; world?: num
   G.getHighestLevelCleared = () => 100
   // RmapLevelCalc (reached via RsmithyCalc(true, ...)) reads the U2 HD ratio.
   G.RcalcHDratio = () => 1.5
+  G.updateMapCost = () => 0
+  G.RfragCalc = () => {}
+  G.byId = (id: string) => document.getElementById(id)
+  // mapfunctions reads this as a BARE identifier; jsdom's named-element window access does not reach
+  // the module's globalThis, so publish it the way the bridge does.
+  G.biomeAdvMapsSelect = document.getElementById('biomeAdvMapsSelect')
   G.autoTrimpSettings = {
     Rsmithyfarmzone: { type: 'multiValue', value: [String(world)] },
     Rsmithyfarmcell: { type: 'multiValue', value: ['1'] },
@@ -46,7 +56,7 @@ function arm(over: { owned?: number; target?: number; cell?: number; world?: num
   G.game = {
     global: { world, lastClearedCell: 90, farmlandsUnlocked: true, mapsOwnedArray: [] },
     buildings: { Smithy: { owned: over.owned ?? 0 } },
-    resources: { wood: { owned: 0 }, metal: { owned: 0 }, gems: { owned: 0 } },
+    resources: { wood: { owned: 0 }, metal: { owned: 0 }, gems: { owned: 0 }, fragments: { owned: 1e9 } },
   }
   G.Rshouldsmithyfarm = false
 }
@@ -101,12 +111,44 @@ describe('#300 — RsmithyCalc returns undefined in the affordable state, and co
   it('RselectSmithy refuses to match on an undefined special', () => {
     arm({ owned: 0, target: 10 })
     affordable = true
-    // A bonus-less owned map at exactly the right level: the pre-fix loop matched it, because
-    // `undefined == undefined`. Prove that shape is real, then that RselectSmithy no longer takes it.
-    const bonusless = { noRecycle: false, level: 200, bonus: undefined, id: 'map99' }
+    // A bonus-less owned map at exactly the level the match loop wants — the LEVEL has to line up or
+    // the loop bails before it ever reaches the `bonus` comparison, and the test proves nothing.
+    // (The first version planted it at world level while RmapLevelCalc returns 1 here; the guard
+    // mutant survived 8/8 because the loop never got that far.)
+    const levelzones = mf.RsmithyCalc(true, false, false, false) as number
+    expect(levelzones).not.toBe(0)
+    const bonusless = { noRecycle: false, level: 200 + levelzones, bonus: undefined, id: 'map99' }
     expect(bonusless.bonus == mf.RsmithyCalc(false, false, true, false)).toBe(true)
     G.game.global.mapsOwnedArray = [bonusless]
     expect(mf.RselectSmithy()).toBe('create')
+  })
+
+  it('RsmithyFarmMap leaves the selects alone rather than writing undefined into them', () => {
+    // The game reads these RAW: updateMapCost does `if (biomeAdvMapsSelect.value != "Random")
+    // baseCost *= 2`, and assigning undefined lands as "" — so the pre-fix map was DOUBLE-priced and
+    // named "<prefix> undefined". A sentinel proves the write did not happen at all.
+    arm({ owned: 0, target: 10 })
+    affordable = true
+    const biome = document.getElementById('biomeAdvMapsSelect') as HTMLSelectElement
+    const special = document.getElementById('advSpecialSelect') as HTMLSelectElement
+    biome.value = 'Random'
+    special.value = '0'
+    mf.RsmithyFarmMap()
+    expect(biome.value).toBe('Random')
+    expect(special.value).toBe('0')
+  })
+
+  it('...and DOES write them when there is a real shortfall to farm', () => {
+    arm({ owned: 0, target: 10 })
+    affordable = false
+    const biome = document.getElementById('biomeAdvMapsSelect') as HTMLSelectElement
+    const special = document.getElementById('advSpecialSelect') as HTMLSelectElement
+    biome.value = 'Random'
+    special.value = '0'
+    mf.RsmithyFarmMap()
+    expect(biome.value).not.toBe('Random')
+    expect(special.value).not.toBe('0')
+    expect(special.value).not.toBe('undefined')
   })
 
   it('RselectSmithy still matches a genuinely correct map when the special is real', () => {
