@@ -152,9 +152,19 @@ globalThis.magmiteSpenderChanged = false;
 globalThis.lastHeliumZone = 0;
 globalThis.lastRadonZone = 0;
 
-//Get Gamma burst % value
-globalThis.gammaBurstPct = (getHeirloomBonus("Shield", "gammaBurst") / 100) > 0 ? (getHeirloomBonus("Shield", "gammaBurst") / 100) : 1;
-globalThis.shieldEquipped = game.global.ShieldEquipped.id;
+// #170 — this line used to duplicate heirlooms.ts's HeirloomShieldSwapped() body, and its false arm
+// minted **1** as the "there is no Gamma Burst" sentinel. calc.ts:359/364/1283/1288 guard on
+// `gammaBurstPct > 0` and then scale by `(gammaBurstPct + 1) / 5`, so that sentinel was not inert:
+// it reported 40% of the player's real damage for every player without a gamma shield — the majority
+// case, since the mod only rolls on rarity 9 (config.js:8158) and the innate version needs rarity >= 10.
+//
+// It is now a zero-init plus a sentinel that cannot equal any real ShieldEquipped.id (ids are strings;
+// an unequipped slot is `{}` so `.id` is undefined — see .trimps-game/config.js:176). The first tick's
+// `shieldEquipped !== game.global.ShieldEquipped.id` check below therefore always fires once and
+// HeirloomShieldSwapped() computes both globals. Do NOT restore a computation here: it was a second
+// copy of a one-line formula, which is exactly how #168's convertRate fix landed on one of two copies.
+globalThis.gammaBurstPct = 0;
+globalThis.shieldEquipped = null;
 
 // #87 — EVERY DISPATCH BELOW IS WRAPPED IN atGuard(name, fn). See src/modules/guard.ts for the
 // contract. In short: this loop used to contain not one try/catch, so a throw in any one automation

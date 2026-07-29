@@ -441,12 +441,26 @@ export function Rdheirloomswap() {
 	}
 }
 
+// The ONLY writer of gammaBurstPct / shieldEquipped. main-loop.ts seeds them (0 / null) and then
+// dispatches this from both universes whenever the equipped shield's id changes.
 export function HeirloomShieldSwapped() {
-	// #49: only credit gammaBurst for rarity >= 10 shields, matching the game's gate
-	// (trimps-game main.js:6612 / main.js:6836). The original `if (!…rarity >= 10) return`
-	// precedence-parsed as `(!rarity) >= 10` (always false), so the guard never fired.
-	if (game.global.ShieldEquipped.rarity < 10) return;
-	gammaBurstPct = (getHeirloomBonus("Shield", "gammaBurst") / 100) > 0 ? (getHeirloomBonus("Shield", "gammaBurst") / 100) : 1;
+	// #169 — this used to early-return on `rarity < 10`, added by #49 to stop crediting gammaBurst to
+	// low-rarity shields. That gate is redundant: getHeirloomBonus substitutes game.global.gammaMult
+	// ONLY for rarity >= 10 (.trimps-game/main.js:6836) and otherwise returns the shield's own rolled
+	// currentBonus, which unequipHeirloom zeroes for every mod on each swap (main.js:7246). So the
+	// accessor already returns 0 in exactly the cases where the game's own burst mechanic is off
+	// (main.js:16022 gates on `getHeirloomBonus('Shield','gammaBurst') > 0`) — and it correctly keeps
+	// crediting a rarity-9 shield that actually rolled the mod, which the outer gate wrongly denied.
+	//
+	// The gate was also actively harmful: by returning BEFORE both assignments it never CLEARED the
+	// previous shield's credit, so any swap DOWN latched a stale pct forever, and shieldEquipped never
+	// advanced — leaving main-loop's guard permanently true and re-calling this no-op every tick.
+	//
+	// #170 — the false arm is 0, not 1. calc.ts guards on `gammaBurstPct > 0` and then scales by
+	// `(gammaBurstPct + 1) / 5`, so a sentinel of 1 is indistinguishable from a live reading and
+	// silently multiplies the damage estimate by 0.4.
+	const pct = getHeirloomBonus("Shield", "gammaBurst") / 100;
+	gammaBurstPct = pct > 0 ? pct : 0;
 	shieldEquipped = game.global.ShieldEquipped.id;
 }
 
