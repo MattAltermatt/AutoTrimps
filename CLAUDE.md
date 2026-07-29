@@ -235,6 +235,51 @@ that has already cost a session at least once.
   value `"Void 60"` → `"Void"` instead of the declared default (#208); restoring a hidden element with
   `turnOn`, which writes `inline-block` over a container authored `block` (#238). Aim mutants at the
   **predicate**, the **fallback target**, and the **written value** — not at the presence of the call.
+  **And mutate the NET'S OWN CLASSIFIER, not only the source.** A net that sorts code into good/bad
+  shapes has a boundary, and the near-miss repair sits just inside it: `buymap-return-checked.test.ts`
+  asked only "does the value go nowhere", which passes `bought = buyMap()` — and every refusal code is
+  **truthy**, so `if (bought)` still fires and the bug is fully intact (#177/#205, caught by review, not
+  by me). *Not thrown away is not checked.* Three more S5 survivors, each naming a missing assertion
+  rather than a wrong fix: `swapNiceCheckbox(el)` with the force argument omitted **TOGGLES**
+  (updates.js:1934), so it lands on the right answer from the default state and every single-run
+  assertion passes — drive BOTH starting states; gating the bought FLAG while still capturing the map id
+  parks the slot forever, and is invisible in the all-refused case because the failure bail blanks every
+  slot anyway (only the partial band sees it); and a restore that skips its paired `toggleSetting`
+  repaint passes `toContain`, because the SUSPEND's repaint already satisfied it.
+- **🔌 AT IS ONLY IMMUNE TO GAME CHANGES IT DELEGATES — DOM POKES ARE NOT DELEGATION.** The fork's
+  structural immunity (reads native `locked` flags, calls native `buyJob`/`buyUpgrade`) does **not**
+  extend to anywhere it reaches around the game's own setter and writes the DOM directly. `advPerfectCheckbox`
+  was an `<input type="checkbox">` when AT was written and became a `<span class="niceCheckbox"
+  data-checked>` in Trimps 4.9 (clone commit b43ef65, 2018-09-04). `.checked` on a span is an inert
+  expando; the game's only reader is `readNiceCheckbox` → `dataset.checked` (updates.js:1958). All **20**
+  of AT's writes did nothing for ~8 years, and both halves of a ladder died at once: the "start Perfect"
+  write never turned it on, and the "degrade to imperfect" rung re-priced an unchanged map, making its
+  inner affordability test the exact negation of the `if` it sits inside — a provably dead branch worth
+  2.34× (#175/#228/#247). Drive `swapNiceCheckbox(el, bool)`, the setter the game itself uses at
+  main.js:6134. Two corollaries: **repairing a dead write can be worse than deleting it** — 14 of those
+  20 sit in designs that pin `lootAdvMapsRange` to 0, so `checkMaxSliders` forces Perfect off regardless,
+  and "fixing" them changes nothing locally while leaking a real `data-checked` write into every map
+  designed later in the same Map-Chamber session; and **a repair that un-deadens a write makes its
+  READERS live too** — `maps.ts`'s two `create` designers open at 9/9/9 and had to start re-asserting the
+  preset, or they would have inherited a Perfect state nobody asked for. Net: `nice-checkbox-writes.test.ts`
+  derives the niceCheckbox id set from the clone's markup and bans the write class under either disposition.
+- **♾️ `-1` MEANS INFINITE ONLY WHERE SOMETHING ELSE ENDS THE LOOP.** `settings-engine.ts` renders
+  " Put -1 for Infinite." into the input dialog of *every* value/multiValue setting — a blanket claim by
+  one renderer that no consumer is obliged to honour. `BWraidingmax`'s loop exits on
+  `findLastBionic().level > targetBW`, and clearing a BW is what creates the next tier (config.js
+  `roboTrimp.fire`), so the top level climbs until the chain stops at `getObsidianStart() + 100` and then
+  never climbs again: `targetBW = Infinity` **never terminates**. #176's own suggested fix converts a
+  silent no-op into a hang. Before implementing any such sentinel, find the consumer and ask *what ends
+  this loop if the bound never fires?* — if the answer is "the bound", `-1` has to mean **unconfigured**
+  instead. Note the sibling `MaxPraidZone` rescues its own `[-1]` to a literal 10 for exactly this reason.
+- **🔑 KEY A DEDUP LATCH BY EVERY DIMENSION ITS FUNCTION BRANCHES ON.** `BWraiding()` swaps its entire
+  setting triple on `challengeActive == "Daily"`, so one zone number is TWO independent raids. A
+  warn-once latch keyed by zone alone let whichever context arrived first silence the other's *only*
+  diagnostic — and the failure is silent by construction, because the whole point of the latch is that
+  nothing prints. The #227 sibling ten minutes earlier was already keyed `{ daily, normal }`; this one
+  was not, and nothing in the #176 tests touched the Daily path at all (found by review). **Test the
+  dimension you keyed by** — a latch test that only exercises one context proves the dedup works, not
+  that the key is right.
 - **🔎 A FINDING'S OWN SCOPING CLAIM IS A CLAIM.** "A mechanical scan returns EXACTLY these two lines"
   reads like a boundary and is really a one-pass reading that nobody re-derives — so a fix scoped to it
   inherits its blind spot *silently*, and the remaining instances get harder to find because the class
