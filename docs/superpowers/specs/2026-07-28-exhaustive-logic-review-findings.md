@@ -24,14 +24,15 @@ instrumentation.
 findings from the discovery campaign (#162-#263)    102     100      2
   ├─ product defects in AutoTrimps                  93      92      1   #214 (needs a migration)
   └─ defects in the review's own instruments          9       8      1   #196 (needs deeper fixtures)
-found BY the remediation (#286-#310)                 25      15     10   all triaged, labelled, milestoned
+found BY the remediation (#286-#311)                 26      15     11   all triaged, labelled, milestoned
 ------------------------------------------------  -----  ------  -----  ------------------------------
-total                                               127     115     12
+total                                               128     115     13
 ```
 
 The remediation found **one new issue for every four it fixed.** That ratio is the report's most useful
 number: a fix campaign over a review is not a drain-down, and a plan that budgets only for the queue it
-starts with will run out of sessions.
+starts with will run out of sessions. The last one (#311) was found by the re-pin itself, in the final
+session, and it is a *cost* of a correct fix rather than a defect — see the sensitivity section below.
 
 **93 product findings are ~87 root causes.** Four documented collapses: #175+#228+#247
 (`advPerfectCheckbox` — one dead DOM write, three symptoms), #177+#205 (`buyMap`'s return value
@@ -151,6 +152,55 @@ One re-pin for the whole campaign: `oracle/v4-post-fix-sweep` → `oracle/v5-pos
 
 Full ledger: `tests/fixtures/traces/manifest.json` → `oracle.repinRationale`.
 
+**Three gates moved with the re-pin, and each was a finding rather than a bump:**
+
+1. **`oracle.test.ts` had been pinning a deleted file for fourteen days, green.** Its #64 anchors were
+   single-quoted verbatim strings that matched because the v4 oracle bundle still *concatenated*
+   `legacy/AutoTrimps2.js`; #133 ported that file into `src/` on 2026-07-15, after which the line is
+   esbuild output and esbuild normalises the quotes. The assertion could no longer say anything about the
+   shipping code, and nothing noticed, **because the artifact it reads is frozen by design.** Every anchor
+   now asserts against a freshly built working bundle *as well as* the oracle, so an anchor that stops
+   describing `src/` fails loudly instead of ageing into a claim about history. Mutation-proven both ways
+   against the v4 bundle.
+2. **`corpus-coverage` gained exactly one reach cell** — `03-challenge-watch` now buys Efficiency, because
+   the crit correction shifts its trajectory. One cell, out of twelve saves, for the whole campaign.
+3. **The `08-starved-u1` saturation tripwire went red, and it was right to** — see below.
+
+### 🎯 The campaign cost the net some of its combat sensitivity, and that is the honest headline
+
+`enoughDamage` is a *threshold* predicate, and a saturated threshold absorbs any buff you throw at it
+(#90/#98). By making AT's damage estimate 2.5× more honest, #199 pushed three fixtures over their own
+thresholds:
+
+```text
+                        old (v4 oracle)          new (v5 oracle)
+damage-1e6   total      6297 on 5/21 runs        3563 on 2/21 runs
+  06-deep-u1.2           719                        0
+  06-deep-u1.3             8                        0
+  12-warp-u1            1991                        0
+  08-starved-u1.1       1851                     1822
+  08-starved-u1.2       1728                     1741
+```
+
+**`08-starved-u1` is now the only fixture where `calcOurDmg`'s answer can change a decision**, and on
+that save `enoughDamage` — which had never been true — is true on 124 of 500 ticks. Filed as **#311**
+with three fix options; the recommended one makes the probe threshold-relative rather than 1e6×, which
+fixes the measurement for the whole class of "the bot's self-estimate got more honest". The rest of the
+census is unchanged and **zero rows are blind** — and `baseline-zero` reads 21/21, without which a
+census number means nothing at all.
+
+### 🔍 The final reviewer pass found no new cross-session defect
+
+A fresh reviewer with no implementation bias was pointed at the one thing per-session reviews
+structurally could not do: defects arising from *interactions between* sessions — the class #298
+exemplified, where #198's correct removal of a special case orphaned the code compensating for it. It
+re-audited every compensating-multiplier and sibling-twin chain the campaign touched (`calcSpire` /
+`calcEnemyBaseHealth`, the formation-5 chain, the gamma-burst sentinel, the crit formula, Pandemonium's
+`getEnemyMult`, the jobs scientist double-subtract, `pairedCellGateOpen`, the equipment cap/lock set) and
+returned **clean negatives on all of them**, plus independent confirmation that #307, #308 and #309 —
+all three already filed from inside S9 — are still live and are exactly this shape: a fix landed on one
+member of a twin set and not the other.
+
 ---
 
 ## 📋 What remains open, and why
@@ -174,7 +224,8 @@ is false, per the refutation table above, and widening the range is a gameplay d
 `-1` flows into arithmetic), #301 (any `finishExpOnBw` below 605 is unacceptable to the game), #307
 (U2 MaZ `done` is per-cell), #308 (`RequipExtra` has no boss→map normalizer), #309 (U2 enemy-stat twins
 read `mapsActive`), **#310** (🔴 a negative `DeltaGigastation` silently stalls the Warpstation economy —
-`max(65, HZE)` can point *behind* the current world, inverting an exponent).
+`max(65, HZE)` can point *behind* the current world, inverting an exponent), #311 (the combat sensitivity
+regression above).
 
 #310 is the one to take next: it is high severity, it was found by the live Chrome verify rather than by
 any gate, and it was *created* by #297's failsafe — the campaign's own last-session change.

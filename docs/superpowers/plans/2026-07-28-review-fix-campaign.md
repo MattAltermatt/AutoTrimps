@@ -810,6 +810,45 @@ at once).
    gaps in the review's own instrumentation.
 6. Update `docs/decisions-log.md`, close every issue with its fixing commit.
 
+#### S10 as shipped — what the re-pin actually taught
+
+**The attribution is measured, not inherited, and it is measured BY EVENT.** `scripts/sim/event-diff.mjs`
+is committed for this (LCS over `fn`+`args`, never `tick`): the positional count `baseline-zero` prints
+turns 697 event edits into "1991 divergences", and the manifest's own #69 entry had to hand-count that
+once already. Four boundary commits were checked out in detached worktrees and the whole corpus
+re-recorded against each, so every moved fixture names its cause:
+
+```text
+step                                 moved  fixtures
+A  baseline/pre-s9 (main @ S8)         1/21  10-hypo-u2 (+149/-2)                    #203 + #220
+B  493d4a2a  gammaBurstPct             3/21  06-deep .2 (+49/-48) .3 (+8/-8), 12-warp (+328/-325)
+C  e8732552  formation-5 mirror        4/21  06-deep x3, 07-map-cap; 12-warp INERT (predicted)
+D  2cfef274  crit pricing             10/21  01-early x3, 03-challenge x3, 06-deep .3, 08-starved x2, 12-warp
+   everything after D                  0/21  all 21 byte-identical — Wave 1 tail + Waves 2-5 move NOTHING
+```
+
+That last row is the one worth keeping: **one measurement reproduced every per-wave "moves no traces"
+result S9 had recorded separately**, and it covers 24 issues the ledger therefore does not have to argue
+about.
+
+**Three gates moved, and none of them was a bump.**
+
+- `oracle.test.ts` had been asserting single-quoted verbatim text from `legacy/AutoTrimps2.js` — a file
+  #133 deleted on 2026-07-15 — and stayed green for fourteen days because **the artifact it reads is
+  frozen by design.** A presence check against a frozen artifact ages into a claim about history. Every
+  anchor now asserts against a freshly built working bundle too, so a stale anchor fails loudly; the
+  post-strangler property is pinned outright; mutation-proven against the v4 bundle.
+- `corpus-coverage` gained exactly ONE reach cell in the whole campaign (`03-challenge-watch` now buys
+  Efficiency).
+- **`08-starved-u1`'s saturation tripwire went red, and the finding is a cost rather than a defect.**
+  #199's 2.5× correction pushed `enoughDamage` true on 124/500 ticks there, and pushed three OTHER
+  fixtures fully over their thresholds: the `damage-1e6` census row fell from 6297 across 5 runs to 3563
+  across 2. Making the bot's self-estimate honest bought a real loss of combat sensitivity — filed as
+  **#311**, recommended fix being a threshold-relative probe rather than 1e6×.
+
+**Deploy restored.** `test:ci` is green on `main` again for the first time since S8, so the Pages
+publish resumes and the hosted userscript stops being three sessions stale.
+
 ---
 
 ## 🧭 Rules that hold for every session
@@ -846,6 +885,9 @@ session  track        issues  cumulative  merges  oracle
 10       re-pin + report   —         102      10  RE-PINNED ONCE, ledgered
 ```
 
-Ten sessions, ten reviewed merges, one oracle re-pin, 102 issues closed. Sessions 2–6 are
+**As shipped: 128 filed, 115 closed, 13 open** — the projection above budgeted for the 102 findings
+discovery produced and missed that remediation would file 26 of its own (one new issue per four fixed).
+
+Ten sessions, ten reviewed merges, one oracle re-pin. Sessions 2–6 are
 independent of each other and of every decision above — if the user wants motion before answering
 Decisions 1 and 2, that is where it starts.
