@@ -771,6 +771,7 @@
     getPageSettingAt: () => getPageSettingAt,
     loadPageVariables: () => loadPageVariables2,
     message2: () => message2,
+    pairedCellGateOpen: () => pairedCellGateOpen,
     safeSetItems: () => safeSetItems2,
     saveSettings: () => saveSettings2,
     serializeSettings: () => serializeSettings2,
@@ -1036,6 +1037,11 @@
   };
   function byId2(id) {
     return document.getElementById(id);
+  }
+  function pairedCellGateOpen(cellList, index, clearedCell) {
+    if (index < 0) return false;
+    const cell = cellList?.[index] ?? 1;
+    return cell <= 1 || clearedCell + 1 >= cell;
   }
 
   // src/modules/native-conflicts.ts
@@ -9586,8 +9592,8 @@
     if (game.global.challengeActive == "Insanity") {
       const insanityfarmzone = getPageSetting2("Rinsanityfarmzone");
       const insanitystacksfarmindex = insanityfarmzone.indexOf(game.global.world);
-      const insanityfarmcell = getPageSetting2("Rinsanityfarmcell") != 0 ? getPageSetting2("Rinsanityfarmcell")[insanitystacksfarmindex] : 1;
-      Rinsanityfarm = getPageSetting2("Rinsanityon") == true && (insanityfarmcell <= 1 || insanityfarmcell > 1 && game.global.lastClearedCell + 1 >= insanityfarmcell) && game.global.world > 5 && (game.global.challengeActive == "Insanity" && getPageSetting2("Rinsanityfarmzone")[0] > 0 && getPageSetting2("Rinsanityfarmstack")[0] > 0);
+      const insanityfarmcellReached = pairedCellGateOpen(getPageSetting2("Rinsanityfarmcell"), insanitystacksfarmindex, game.global.lastClearedCell);
+      Rinsanityfarm = getPageSetting2("Rinsanityon") == true && insanityfarmcellReached && game.global.world > 5 && (game.global.challengeActive == "Insanity" && getPageSetting2("Rinsanityfarmzone")[0] > 0 && getPageSetting2("Rinsanityfarmstack")[0] > 0);
       if (Rinsanityfarm) {
         Rinsanity(true, false, false);
       }
@@ -9616,8 +9622,8 @@
     if (game.global.challengeActive == "Alchemy") {
       const alchfarmzone = getPageSetting2("Ralchfarmzone");
       const alchstacksfarmindex = alchfarmzone.indexOf(game.global.world);
-      const alchfarmcell = getPageSetting2("Ralchfarmcell") != 0 ? getPageSetting2("Ralchfarmcell")[alchstacksfarmindex] : 1;
-      Ralchfarm = getPageSetting2("Ralchon") == true && (alchfarmcell <= 1 || alchfarmcell > 1 && game.global.lastClearedCell + 1 >= alchfarmcell) && game.global.world > 5 && (game.global.challengeActive == "Alchemy" && getPageSetting2("Ralchfarmzone")[0] > 0 && getPageSetting2("Ralchfarmstack").length > 0);
+      const alchfarmcellReached = pairedCellGateOpen(getPageSetting2("Ralchfarmcell"), alchstacksfarmindex, game.global.lastClearedCell);
+      Ralchfarm = getPageSetting2("Ralchon") == true && alchfarmcellReached && game.global.world > 5 && (game.global.challengeActive == "Alchemy" && getPageSetting2("Ralchfarmzone")[0] > 0 && getPageSetting2("Ralchfarmstack").length > 0);
       if (Ralchfarm) {
         Ralch(true, false, false);
       }
@@ -9630,8 +9636,8 @@
       }
       const hypofarmzone = getPageSetting2("Rhypofarmzone");
       const hypoamountfarmindex = hypofarmzone.indexOf(game.global.world);
-      const hypofarmcell = getPageSetting2("Rhypofarmcell") != 0 ? getPageSetting2("Rhypofarmcell")[hypoamountfarmindex] : 1;
-      Rhypofarm = getPageSetting2("Rhypoon") == true && (hypofarmcell <= 1 || hypofarmcell > 1 && game.global.lastClearedCell + 1 >= hypofarmcell) && game.global.world > 5 && (game.global.challengeActive == "Hypothermia" && getPageSetting2("Rhypofarmzone")[0] > 0 && getPageSetting2("Rhypofarmstack").length > 0);
+      const hypofarmcellReached = pairedCellGateOpen(getPageSetting2("Rhypofarmcell"), hypoamountfarmindex, game.global.lastClearedCell);
+      Rhypofarm = getPageSetting2("Rhypoon") == true && hypofarmcellReached && game.global.world > 5 && (game.global.challengeActive == "Hypothermia" && getPageSetting2("Rhypofarmzone")[0] > 0 && getPageSetting2("Rhypofarmstack").length > 0);
       if (Rhypofarm) {
         Rhypo(true, false, false);
       }
@@ -10443,9 +10449,12 @@
     var raidzone = daily ? getPageSetting2("RdAMPraidraid") : getPageSetting2("RAMPraidraid");
     var praidindex = praidzone.indexOf(game.global.world);
     var raidzones = raidzone[praidindex];
-    var cell;
-    cell = daily ? getPageSetting2("RdAMPraidcell") != 0 ? getPageSetting2("RdAMPraidcell")[praidindex] : 1 : getPageSetting2("RAMPraidcell") != 0 ? getPageSetting2("RAMPraidcell")[praidindex] : 1;
-    if (praidzone.includes(game.global.world) && (cell <= 1 || cell > 1 && game.global.lastClearedCell + 1 >= cell) && Rgetequips(raidzones, false) > 0) {
+    const cellGateOpen = pairedCellGateOpen(
+      daily ? getPageSetting2("RdAMPraidcell") : getPageSetting2("RAMPraidcell"),
+      praidindex,
+      game.global.lastClearedCell
+    );
+    if (praidzone.includes(game.global.world) && cellGateOpen && Rgetequips(raidzones, false) > 0) {
       if (daily) {
         Rdshoulddopraid = true;
       } else Rshoulddopraid = true;
@@ -12507,50 +12516,58 @@
         doPortal();
     }
   }
+  function c2Selectable(what) {
+    globalThis.challengeSquaredMode = true;
+    displayChallenges();
+    if (document.getElementById("challenge" + what)) return true;
+    globalThis.challengeSquaredMode = false;
+    debug2("C2 Runner: " + what + " cannot be started as a Challenge\xB2 right now (locked, or unavailable in this universe) - trying the next one.");
+    return false;
+  }
   function c2runner() {
     if (!game.global.portalActive) return;
     if (getPageSetting2("c2runnerstart") == true && getPageSetting2("c2runnerportal") > 0 && getPageSetting2("c2runnerpercent") > 0) {
-      if (game.global.highestLevelCleared > 34 && 100 * (game.c2.Size / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
+      if (game.global.highestLevelCleared > 34 && 100 * (game.c2.Size / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent") && c2Selectable("Size")) {
         globalThis.challengeSquaredMode = true;
         selectChallenge("Size");
         debug2("C2 Runner: Running C2 Challenge Size");
-      } else if (game.global.highestLevelCleared > 129 && 100 * (game.c2.Slow / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
+      } else if (game.global.highestLevelCleared > 129 && 100 * (game.c2.Slow / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent") && c2Selectable("Slow")) {
         globalThis.challengeSquaredMode = true;
         selectChallenge("Slow");
         debug2("C2 Runner: Running C2 Challenge Slow");
-      } else if (game.global.highestLevelCleared > 179 && 100 * (game.c2.Watch / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
+      } else if (game.global.highestLevelCleared > 179 && 100 * (game.c2.Watch / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent") && c2Selectable("Watch")) {
         globalThis.challengeSquaredMode = true;
         selectChallenge("Watch");
         debug2("C2 Runner: Running C2 Challenge Watch");
-      } else if (100 * (game.c2.Discipline / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
+      } else if (100 * (game.c2.Discipline / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent") && c2Selectable("Discipline")) {
         globalThis.challengeSquaredMode = true;
         selectChallenge("Discipline");
         debug2("C2 Runner: Running C2 Challenge Discipline");
-      } else if (game.global.highestLevelCleared > 39 && 100 * (game.c2.Balance / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
+      } else if (game.global.highestLevelCleared > 39 && 100 * (game.c2.Balance / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent") && c2Selectable("Balance")) {
         globalThis.challengeSquaredMode = true;
         selectChallenge("Balance");
         debug2("C2 Runner: Running C2 Challenge Balance");
-      } else if (game.global.highestLevelCleared > 44 && 100 * (game.c2.Meditate / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
+      } else if (game.global.highestLevelCleared > 44 && 100 * (game.c2.Meditate / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent") && c2Selectable("Meditate")) {
         globalThis.challengeSquaredMode = true;
         selectChallenge("Meditate");
         debug2("C2 Runner: Running C2 Challenge Meditate");
-      } else if (game.global.highestLevelCleared > 24 && 100 * (game.c2.Metal / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
+      } else if (game.global.highestLevelCleared > 24 && 100 * (game.c2.Metal / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent") && c2Selectable("Metal")) {
         globalThis.challengeSquaredMode = true;
         selectChallenge("Metal");
         debug2("C2 Runner: Running C2 Challenge Metal");
-      } else if (game.global.highestLevelCleared > 179 && 100 * (game.c2.Lead / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
+      } else if (game.global.highestLevelCleared > 179 && 100 * (game.c2.Lead / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent") && c2Selectable("Lead")) {
         globalThis.challengeSquaredMode = true;
         selectChallenge("Lead");
         debug2("C2 Runner: Running C2 Challenge Lead");
-      } else if (game.global.highestLevelCleared > 144 && 100 * (game.c2.Nom / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
+      } else if (game.global.highestLevelCleared > 144 && 100 * (game.c2.Nom / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent") && c2Selectable("Nom")) {
         globalThis.challengeSquaredMode = true;
         selectChallenge("Nom");
         debug2("C2 Runner: Running C2 Challenge Nom");
-      } else if (100 * (game.c2.Electricity / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
+      } else if (100 * (game.c2.Electricity / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent") && c2Selectable("Electricity")) {
         globalThis.challengeSquaredMode = true;
         selectChallenge("Electricity");
         debug2("C2 Runner: Running C2 Challenge Electricity");
-      } else if (game.global.highestLevelCleared > 164 && 100 * (game.c2.Toxicity / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
+      } else if (game.global.highestLevelCleared > 164 && 100 * (game.c2.Toxicity / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent") && c2Selectable("Toxicity")) {
         globalThis.challengeSquaredMode = true;
         selectChallenge("Toxicity");
         debug2("C2 Runner: Running C2 Challenge Toxicity");
@@ -14093,13 +14110,13 @@
         b *= (1 + 0.01 * game.portal.Meditation.getBonusPercent()).toFixed(2);
       if (game.jobs.Magmamancer.owned > 0 && c === "metal")
         b *= game.jobs.Magmamancer.getBonusPercent();
-      if (game.global.challengeActive === "Meditate") b *= 1.25;
-      else if (game.global.challengeActive === "Size") b *= 1.5;
-      if (game.global.challengeActive === "Toxicity") {
+      if (challengeActive("Meditate")) b *= 1.25;
+      else if (challengeActive("Size") && (c === "food" || c === "wood" || c === "metal")) b *= 1.5;
+      if (challengeActive("Toxicity")) {
         const d = game.challenges.Toxicity.lootMult * game.challenges.Toxicity.stacks / 100;
         b *= 1 + d;
       }
-      if (game.global.challengeActive === "Balance") b *= game.challenges.Balance.getGatherMult();
+      if (challengeActive("Balance")) b *= game.challenges.Balance.getGatherMult();
       if (game.global.challengeActive === "Decay") {
         b *= 10;
         b *= Math.pow(0.995, game.challenges.Decay.stacks);
@@ -14110,8 +14127,8 @@
         if (typeof game.global.dailyChallenge.famine !== "undefined" && c !== "fragments" && c !== "science")
           b *= dailyModifiers.famine.getMult(game.global.dailyChallenge.famine.strength);
       }
-      if (game.global.challengeActive === "Watch") b /= 2;
-      if (game.global.challengeActive === "Lead" && game.global.world % 2 === 1) b *= 2;
+      if (challengeActive("Watch")) b /= 2;
+      if (challengeActive("Lead") && game.global.world % 2 === 1) b *= 2;
       b = calcHeirloomBonus("Staff", a + "Speed", b);
     }
     return b;
@@ -14303,7 +14320,7 @@
         );
       }
     }
-    if (game.global.challengeActive === "Toxicity" && game.challenges.Toxicity.stacks > 0) {
+    if (challengeActive("Toxicity") && game.challenges.Toxicity.stacks > 0) {
       potencyMod2 *= Math.pow(game.challenges.Toxicity.stackMult, game.challenges.Toxicity.stacks);
     }
     if (challengeActive("Archaeology")) potencyMod2 *= game.challenges.Archaeology.getStatMult("breed");
@@ -18822,7 +18839,7 @@
     createSetting("finishExpOnBw", "Finish XP on BW", tip({
       what: "The Bionic Wonderland zone AutoTrimps runs to finish the Experience challenge.",
       how: "This level of BW should already be in your inventory &mdash; use the BW Raiding module first if you want to raid to a specific level before 601. Snapped to a valid BW zone (125, then every 15 zones after) if you enter one that doesn't exist &mdash; e.g. 606 runs 605. Set it to -1 to switch the BW finish off entirely and keep wonder-farming.",
-      cannot: "Cannot go below zone 125 &mdash; anything lower is treated as 125. Note the game only accepts a BW of 605 or higher as an Experience completion, so a lower target runs a BW that cannot end the challenge."
+      cannot: "Cannot go below zone 125 &mdash; anything lower <i>other than -1</i> is treated as 125. Note the game only accepts a BW of 605 or higher as an Experience completion, so a lower target runs a BW that cannot end the challenge."
     }), "value", "605", null, "Maps");
     document.getElementById("finishExpOnBw").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("Hshrine", "AutoShrine", tip({

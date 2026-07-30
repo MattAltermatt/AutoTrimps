@@ -168,6 +168,23 @@ describe('#223 — finishExpOnBw = -1 disables the Experience BW finish', () => 
     expect(selected).toEqual(['bw575'])
   })
 
+  it('-1 disables ONLY the BW finish — wonder-farming carries on', () => {
+    // Found by review as a surviving near-miss: `if (finishOnBw == -1) { farmingWonder = false; return }`
+    // placed before the wonder arm passes every other assertion in this file, because they only check
+    // that no BW was selected. It also silently kills the feature the tooltip promises to keep. The
+    // justifying claim ("keep wonder-farming") was prose in a tooltip and nowhere an expect — the
+    // exact shape CLAUDE.md's "write the justifying claim as an assertion" rule exists for.
+    //
+    // nextWonder <= world arms the wonder-farm branch, which lives BEFORE the finish-BW else-if.
+    arm('-1', { world: 601 })
+    G.game.challenges.Experience.nextWonder = 600 // 601 >= 600 → the wonder arm is live
+    selected = []
+    G.farmingWonder = undefined
+    maps.autoMap()
+    expect(G.farmingWonder, 'the wonder-farm arm must still run with the BW finish disabled').toBe(true)
+    expect(selected, 'and it must not be selecting a Bionic Wonderland').toEqual([])
+  })
+
   it('-1 ONLY: other negatives still clamp to 125, as the tooltip promises', () => {
     // `pageSetting < 0` reads as the same fix and is a different feature: it would make every
     // negative a disable, contradicting `cannot: anything lower is treated as 125`. -1 is the

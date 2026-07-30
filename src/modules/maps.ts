@@ -550,12 +550,24 @@ export function autoMap() {
         // they did. The row filters below are the game's, operator for operator, including the
         // `times`/`tx` repeat arms the old loop ignored entirely. `on !== false`, NOT `!on`: the
         // factory row carries no `on` field at all and the game honours it. The U2 twin in RautoMap
-        // has always used the accessor; this back-ports it to U1.
+        // has always used the ACCESSOR — but only the accessor: found by review, it still spells the
+        // flag `!setZone[x].on` (which skips the un-edited U2 factory row, since it has no `on`), has
+        // no `times == -2`/`tx` arm, and no `getMaxSettings()` bound. Filed separately; do NOT read
+        // this back-port as evidence that the U2 side of the class is closed.
         //
-        // Deliberately NOT mirrored: the game's `done` / `cell` / `preMapsActive` gates. Those decide
-        // WHEN within a zone the game fires its own map run, whereas `shouldDoMaps` is AT's coarser
-        // per-zone "go do maps" decision — gating it on `done` would make AT abandon the map the
-        // moment the game's own MaZ consumed the row.
+        // Deliberately NOT mirrored: the game's `cell` / `preMapsActive` / `done` gates. `cell` is the
+        // WHEN-within-a-zone, and `shouldDoMaps` is AT's coarser per-zone "go do maps" decision.
+        //
+        // ⚠️ `done` is NOT a "when" gate, and an earlier version of this comment said it was — it is
+        // the game's ONE-SHOT LATCH (`totalPortals_world_cell`, stamped at main.js:13415), the only
+        // thing making a MaZ row fire once per zone per portal. AT has no equivalent: nothing after
+        // this block clears `shouldDoMaps` except the spire-gated arm below, and `game.global.world`
+        // cannot advance while AT is in maps, so AT stays map-locked for the whole matched zone. That
+        // is pre-existing (it is the stall #221 describes, just at the right zone now) but honouring
+        // `times` widens it from one zone to a RANGE for anyone using an "Every Zone" row. AT's own
+        // AutoMaps tooltip already says not to run MaZ alongside it; a `done`-equivalent latch keyed by
+        // (getTotalPortals(), world) is what would make them coexist, and is filed rather than done
+        // here because it is a behaviour change, not a mirror correction.
         const mazSetZone = game.options.menu.mapAtZone.getSetZone();
         const mazMaxSettings = game.options.menu.mapAtZone.getMaxSettings();
         for (let x = 0; x < mazSetZone.length; x++) {
