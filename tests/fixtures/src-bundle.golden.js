@@ -6492,7 +6492,8 @@
   function RmanualLabor22() {
     const trapTrimpsOK = getPageSetting2("RTrapTrimps");
     const hasTurkimp = game.talents.turkimp2.purchased || game.global.turkimpTimer > 0;
-    const needToTrap = game.resources.trimps.max - game.resources.trimps.owned >= game.resources.trimps.max * 0.05 || game.resources.trimps.getCurrentSend() > game.resources.trimps.owned - trimpsEffectivelyEmployed();
+    const realMaxPop = game.resources.trimps.realMax();
+    const needToTrap = realMaxPop - game.resources.trimps.owned >= realMaxPop * 0.05 || game.resources.trimps.getCurrentSend() > game.resources.trimps.owned - trimpsEffectivelyEmployed();
     let fresh = false;
     if (!game.upgrades.Battle.done) {
       fresh = true;
@@ -8957,8 +8958,19 @@
       shouldDoMaps = true;
     vanillaMapatZone = game.options.menu.mapAtZone.enabled && game.global.canMapAtZone && !isActiveSpireAT() && !disActiveSpireAT();
     if (vanillaMapatZone) {
-      for (let x = 0; x < game.options.menu.mapAtZone.setZone.length; x++) {
-        if (game.global.world == game.options.menu.mapAtZone.setZone[x].world)
+      const mazSetZone = game.options.menu.mapAtZone.getSetZone();
+      const mazMaxSettings = game.options.menu.mapAtZone.getMaxSettings();
+      for (let x = 0; x < mazSetZone.length; x++) {
+        if (x >= mazMaxSettings) break;
+        if (mazSetZone[x].on === false) continue;
+        if (mazSetZone[x].through < game.global.world) continue;
+        let nextRepeat = false;
+        if (mazSetZone[x].times > -1) {
+          if (game.global.world > mazSetZone[x].world && (game.global.world - mazSetZone[x].world) % mazSetZone[x].times == 0) nextRepeat = true;
+        } else if (mazSetZone[x].times == -2 && game.global.world > mazSetZone[x].world) {
+          if ((game.global.world - mazSetZone[x].world) % mazSetZone[x].tx == 0) nextRepeat = true;
+        }
+        if (nextRepeat || game.global.world == mazSetZone[x].world)
           shouldDoMaps = true;
       }
     }
@@ -9258,10 +9270,10 @@
       const wondersAmount = getPageSetting2("wondersAmount");
       const wondersFloorZ = wondersFromZ - (getPageSetting2("wondersAmount") - 1) * 5;
       const finishOnBw = (() => {
-        let pageSetting = getPageSetting2("finishExpOnBw");
-        pageSetting = pageSetting < 125 ? 125 : pageSetting;
-        pageSetting = pageSetting != -1 ? Math.floor((pageSetting - 125) / 15) * 15 + 125 : -1;
-        return pageSetting;
+        const pageSetting = getPageSetting2("finishExpOnBw");
+        if (pageSetting == -1) return -1;
+        const clamped = pageSetting < 125 ? 125 : pageSetting;
+        return Math.floor((clamped - 125) / 15) * 15 + 125;
       })();
       const bionics = game.global.mapsOwnedArray.filter((map) => map.location == "Bionic").sort((a, b) => b.level - a.level);
       if (game.global.world >= game.challenges.Experience.nextWonder && wondersAmount > game.challenges.Experience.wonders && game.global.world >= wondersFloorZ) {
@@ -12346,7 +12358,6 @@
     finishChallengeSquared: () => finishChallengeSquared2
   });
   MODULES["portal"] = {};
-  var challengeSquaredMode;
   MODULES["portal"].timeout = 5e3;
   MODULES["portal"].bufferExceedFactor = 5;
   globalThis.zonePostpone = 0;
@@ -12500,47 +12511,47 @@
     if (!game.global.portalActive) return;
     if (getPageSetting2("c2runnerstart") == true && getPageSetting2("c2runnerportal") > 0 && getPageSetting2("c2runnerpercent") > 0) {
       if (game.global.highestLevelCleared > 34 && 100 * (game.c2.Size / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
-        challengeSquaredMode = true;
+        globalThis.challengeSquaredMode = true;
         selectChallenge("Size");
         debug2("C2 Runner: Running C2 Challenge Size");
       } else if (game.global.highestLevelCleared > 129 && 100 * (game.c2.Slow / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
-        challengeSquaredMode = true;
+        globalThis.challengeSquaredMode = true;
         selectChallenge("Slow");
         debug2("C2 Runner: Running C2 Challenge Slow");
       } else if (game.global.highestLevelCleared > 179 && 100 * (game.c2.Watch / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
-        challengeSquaredMode = true;
+        globalThis.challengeSquaredMode = true;
         selectChallenge("Watch");
         debug2("C2 Runner: Running C2 Challenge Watch");
       } else if (100 * (game.c2.Discipline / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
-        challengeSquaredMode = true;
+        globalThis.challengeSquaredMode = true;
         selectChallenge("Discipline");
         debug2("C2 Runner: Running C2 Challenge Discipline");
       } else if (game.global.highestLevelCleared > 39 && 100 * (game.c2.Balance / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
-        challengeSquaredMode = true;
+        globalThis.challengeSquaredMode = true;
         selectChallenge("Balance");
         debug2("C2 Runner: Running C2 Challenge Balance");
       } else if (game.global.highestLevelCleared > 44 && 100 * (game.c2.Meditate / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
-        challengeSquaredMode = true;
+        globalThis.challengeSquaredMode = true;
         selectChallenge("Meditate");
         debug2("C2 Runner: Running C2 Challenge Meditate");
       } else if (game.global.highestLevelCleared > 24 && 100 * (game.c2.Metal / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
-        challengeSquaredMode = true;
+        globalThis.challengeSquaredMode = true;
         selectChallenge("Metal");
         debug2("C2 Runner: Running C2 Challenge Metal");
       } else if (game.global.highestLevelCleared > 179 && 100 * (game.c2.Lead / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
-        challengeSquaredMode = true;
+        globalThis.challengeSquaredMode = true;
         selectChallenge("Lead");
         debug2("C2 Runner: Running C2 Challenge Lead");
       } else if (game.global.highestLevelCleared > 144 && 100 * (game.c2.Nom / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
-        challengeSquaredMode = true;
+        globalThis.challengeSquaredMode = true;
         selectChallenge("Nom");
         debug2("C2 Runner: Running C2 Challenge Nom");
       } else if (100 * (game.c2.Electricity / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
-        challengeSquaredMode = true;
+        globalThis.challengeSquaredMode = true;
         selectChallenge("Electricity");
         debug2("C2 Runner: Running C2 Challenge Electricity");
       } else if (game.global.highestLevelCleared > 164 && 100 * (game.c2.Toxicity / (game.global.highestLevelCleared + 1)) < getPageSetting2("c2runnerpercent")) {
-        challengeSquaredMode = true;
+        globalThis.challengeSquaredMode = true;
         selectChallenge("Toxicity");
         debug2("C2 Runner: Running C2 Challenge Toxicity");
       }
@@ -12574,7 +12585,7 @@
     }
     if (portalWindowOpen && getPageSetting2("c2runnerstart") == true && getPageSetting2("c2runnerportal") > 0 && getPageSetting2("c2runnerpercent") > 0) {
       c2runner();
-      if (challengeSquaredMode == true) {
+      if (globalThis.challengeSquaredMode == true) {
         c2done = false;
       } else debug2("C2 Runner: All C2s above Threshold!");
     }
@@ -18810,8 +18821,8 @@
     }), "value", "600", null, "Maps");
     createSetting("finishExpOnBw", "Finish XP on BW", tip({
       what: "The Bionic Wonderland zone AutoTrimps runs to finish the Experience challenge.",
-      how: "This level of BW should already be in your inventory &mdash; use the BW Raiding module first if you want to raid to a specific level before 601. Snapped to a valid BW zone (125, then every 15 zones after) if you enter one that doesn't exist &mdash; e.g. 606 runs 605.",
-      cannot: "Cannot go below zone 125 &mdash; anything lower is treated as 125."
+      how: "This level of BW should already be in your inventory &mdash; use the BW Raiding module first if you want to raid to a specific level before 601. Snapped to a valid BW zone (125, then every 15 zones after) if you enter one that doesn't exist &mdash; e.g. 606 runs 605. Set it to -1 to switch the BW finish off entirely and keep wonder-farming.",
+      cannot: "Cannot go below zone 125 &mdash; anything lower is treated as 125. Note the game only accepts a BW of 605 or higher as an Experience completion, so a lower target runs a BW that cannot end the challenge."
     }), "value", "605", null, "Maps");
     document.getElementById("finishExpOnBw").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("Hshrine", "AutoShrine", tip({
