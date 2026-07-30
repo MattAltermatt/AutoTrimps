@@ -1558,7 +1558,19 @@ export function RcalcBadGuyDmg(enemy?: any, attack?: number, equality?: boolean)
         number *= game.challenges.Mayhem.getBossMult();
     }
     if (game.global.challengeActive === "Pandemonium") {
-        number *= game.challenges.Pandemonium.getEnemyMult();
+        // #213/#299 — `getEnemyMult()` is NOT applied here. Pandemonium's accessors already fold it in
+        // (config.js:5679 `getBossMult = (1 + pandemonium * 10) * getEnemyMult()`, :5686
+        // `getPandMult = (1 + pandemonium) * getEnemyMult()`), so multiplying by it as well SQUARED it —
+        // 25x at two completions, 625x once the consumer's own copy is counted too. Mayhem's
+        // `getBossMult` (config.js:5068) does not fold it in, which is exactly why the same two-line
+        // shape above is correct for Mayhem and wrong here.
+        //
+        // What remains is the WORLD-BOSS value, and that is this function's contract for both
+        // challenges — the health twin below already spelled it that way, and every non-map consumer
+        // (calcHDratio, Rmayhem, the gamma-burst gates, underStats) depends on it. Map-cell consumers
+        // convert with the `/ getBossMult() * getPandMult()` idiom in mapfunctions.ts; see the note
+        // there, and note the two halves are ONE change — landing either alone leaves the estimate
+        // wrong by getEnemyMult().
         number *= game.challenges.Pandemonium.getBossMult();
     }
     if (game.global.challengeActive === "Desolation") {

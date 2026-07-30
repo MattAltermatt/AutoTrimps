@@ -4051,7 +4051,6 @@
       number *= game.challenges.Mayhem.getBossMult();
     }
     if (game.global.challengeActive === "Pandemonium") {
-      number *= game.challenges.Pandemonium.getEnemyMult();
       number *= game.challenges.Pandemonium.getBossMult();
     }
     if (game.global.challengeActive === "Desolation") {
@@ -10568,7 +10567,7 @@
       pandaextra = 1;
       var health = RcalcOurHealth() * 2;
       var attack = RcalcOurDmg("avg", false, true);
-      var mult = game.challenges.Pandemonium.getEnemyMult() * game.challenges.Pandemonium.getPandMult();
+      var mult = game.challenges.Pandemonium.getPandMult();
       var boss = game.challenges.Pandemonium.getBossMult();
       var hitsmap = getPageSetting2("Rpandahits") > 0 ? getPageSetting2("Rpandahits") : 10;
       var hitssurv = 1;

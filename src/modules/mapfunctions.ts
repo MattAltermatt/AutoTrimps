@@ -801,7 +801,20 @@ export function RpandaExtra() {
         pandaextra = 1;
         var health = (RcalcOurHealth() * 2);
         var attack = RcalcOurDmg("avg", false, true);
-        var mult = (game.challenges.Pandemonium.getEnemyMult() * game.challenges.Pandemonium.getPandMult());
+        // #213/#299 — `mult` converts the producers' WORLD-BOSS estimate into a MAP-CELL one, paired
+        // with the `/ boss` below: `base * B / B * P` = `base * P`, which is exactly what the game
+        // builds for a Pandemonium map cell (main.js:12383's non-boss arm, main.js:11586). The
+        // `getEnemyMult()` factor is dropped because `getPandMult()` already contains it
+        // (config.js:5686) — including it squared the completion multiplier, and combined with the same
+        // slip in calc.ts's attack twin the survival arm ran 625x over-tight, so every +1..+6 rung
+        // failed and RpandaExtra always fell through to the unconditional +1.
+        //
+        // The DIVISOR is correct and unchanged. It is not compensating for a bug: RmayhemExtra's
+        // `/ Mb` turns `base * Me * Mb` into the game's map value `base * Me` to the last bit, the
+        // sibling RdesoExtra has no divisor because Desolation's multiplier applies to map cells too
+        // (main.js:11572-11575), and the settings vocabulary names the distinction outright —
+        // 'M: Attack Boss' is read without the divisor, 'M: Attack Map' with it.
+        var mult = game.challenges.Pandemonium.getPandMult();
         var boss = game.challenges.Pandemonium.getBossMult();
         var hitsmap = (getPageSetting('Rpandahits') > 0) ? getPageSetting('Rpandahits') : 10;
         var hitssurv = 1;
