@@ -63,6 +63,16 @@ describe('pairedCellGateOpen — the rule, on its own', () => {
     expect(open([40], 0, 98)).toBe(true)
   })
 
+  it('a NaN entry closes the gate — `??`, not `||`', () => {
+    // getPageSetting on a multiValue is `Array.from(value).map(parseInt)`, so a non-numeric entry is
+    // NaN, and it IS reachable: nothing validates what the value dialog stores. `|| 1` reads as the
+    // same fix and silently promotes garbage to "start at cell 1"; `?? 1` leaves NaN, which fails both
+    // arms and refuses to act on an entry nobody can interpret. This is the ONLY input that tells the
+    // two operators apart — for 0 and -1 they agree, because `cell <= 1` covers both.
+    expect(open([NaN], 0, 99)).toBe(false)
+    expect(open([1, NaN], 1, 99)).toBe(false)
+  })
+
   it('it reads the entry at the given INDEX, not the first one', () => {
     // A repair that ignored `index` (or always read [0]) would pass every row above.
     expect(open([1, 90], 1, 10)).toBe(false)
