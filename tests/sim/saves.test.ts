@@ -136,6 +136,31 @@ describe('corpus depth tripwire — the saves reach the code the net claims to g
     // And AT must remain damage-STARVED, so the threshold can still flip. If a future regeneration hands
     // 08 more damage (a stray perk, a deeper base save), this goes red — and the mutation test would
     // otherwise have gone quietly, uselessly green.
-    expect(ticksEnoughDamage).toBe(0)
+    //
+    // ⚠️ ORACLE v5 (2026-07-29) — IT WENT RED, AND THAT IS THIS TRIPWIRE DOING ITS JOB. Nothing regenerated
+    // the save: #199 corrected a non-crit's price from getMegaCritDamageMult(0) = 1/critD to 1, and this
+    // fixture's player has critChance 0 with critD 2 — so AT's own damage estimate rose 2.5x and the
+    // threshold it had never crossed is now TRUE on 124 of these 500 ticks. **The campaign eroded its own
+    // sensitivity fixture**, which is the #90/#98 hazard arriving from the one direction nobody watches:
+    // not a weaker net, a stronger bot.
+    //
+    // Two assertions, deliberately of different kinds. The exact pin is the ALARM — any further erosion,
+    // from any cause, has to be looked at rather than absorbed. The ratio bound is the PROPERTY: this
+    // fixture is only worth having while `enoughDamage` can still be false, and it still is on 75% of ticks.
+    //
+    // ON THIS SAVE the net's power is intact — the 1e6x census probe measures 1822 + 1741 divergences
+    // post-re-pin against 1851 + 1728 before, i.e. flat. CORPUS-WIDE IT IS NOT: the damage-1e6 row fell
+    // from 6297 across FIVE runs to 3563 across TWO, because the same 2.5x correction saturated
+    // 06-deep-u1.2 (719 -> 0), .3 (8 -> 0) and 12-warp-u1 (1991 -> 0). 08-starved-u1 is now the ONLY
+    // fixture in the corpus where calcOurDmg's answer can still change a decision. That is a real coverage
+    // regression caused by a correct fix, it is why this file exists, and it is filed as **#311** —
+    // making the bot's self-estimate honest moved three fixtures past their own thresholds.
+    expect(ticksEnoughDamage, 'saturation moved — do NOT just bump this number; find the cause first').toBe(124)
+    expect(
+      ticksEnoughDamage / 500,
+      '08-starved is no longer damage-STARVED: enoughDamage is true on most ticks, so calcOurDmg cannot ' +
+        'flip a decision here and damage-sensitivity has lost its only unsaturated fixture. Regenerate ' +
+        '08 from a poorer save rather than relaxing this bound.',
+    ).toBeLessThan(0.5)
   }, 120_000)
 })

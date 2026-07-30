@@ -4,7 +4,9 @@
 > That plan was the **discovery** campaign (Phases 0–3b). This is the **remediation** campaign:
 > how the findings it produced actually get fixed, verified, and merged.
 >
-> **Status: Sessions 1–9 SHIPPED.** Session 10 (the single oracle re-pin) pending.
+> **Status: ALL TEN SESSIONS SHIPPED.** The oracle is re-pinned once, at
+> `oracle/v5-post-review-campaign` (f7b9ac86), and the Pages deploy is unblocked. Honest report:
+> [`2026-07-28-exhaustive-logic-review-findings.md`](../specs/2026-07-28-exhaustive-logic-review-findings.md).
 >
 > ```text
 > session  state        record
@@ -35,7 +37,13 @@
 >                       REFUTED; #286 premise falsified) · Waves 3-5 moved NO traces, measured
 >                       per wave · filed #291-#297 #300-#301 #307 #308 #309 · remaining: #286
 >                       (user decision), #214 (own branch, needs a migration)
-> 10       ⬜ re-pin     one oracle re-pin, ledgered
+> 10       ✅ SHIPPED   ONE oracle re-pin, ledgered: v4 -> v5-post-review-campaign. 14/21 fixtures
+>                       moved, 7 byte-identical, all 14 attributed to four root causes measured
+>                       per boundary commit at EVENT granularity (#203/#220 · #199/#212/#295 ·
+>                       #169/#170 · #290/#294). scripts/sim/event-diff.mjs committed so the ledger
+>                       is re-derivable. Census re-run, deploy unblocked, fresh-save + deep-save
+>                       Chrome verify clean. THREE gates moved with the re-pin and each was a
+>                       finding, not a bump — see the S10 section below.
 > ```
 >
 > **Session 6 broke Track A's defining property, and that is the finding.** Track A was "47 issues,
