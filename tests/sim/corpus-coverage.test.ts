@@ -59,7 +59,12 @@ describe('corpus mutator coverage (loud, pinned)', () => {
       // entire corpus. 05/06/07 are the ones that watch the bot.
       '01-early-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyUpgrade', 'setGather'],
       '02-mid-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'setGather'],
-      '03-challenge-watch': ['buyBuilding', 'buyEquipment', 'buyJob', 'setGather'],
+      // ORACLE v5: buyUpgrade is NEW here, and it is a coverage GAIN with a named cause. #199 priced a
+      // non-crit at 1/critD, so on a zero-crit save AT believed it was 2.5x weaker than it is; with the
+      // pricing corrected its gather/build trajectory shifts and Efficiency becomes affordable inside the
+      // 1500-tick budget (the event-diff shows `+ buyUpgrade(["Efficiency"])` on all three seeds). This is
+      // the ONLY reach cell the whole campaign moved — every other save reaches exactly what it did.
+      '03-challenge-watch': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyUpgrade', 'setGather'],
       // #69 ship C: U2 reaches buyBuilding because RBuyBuildingsNew's default was the STRING 'true' and
       // its only gate is `== true`, so RbuyBuildings() had never executed. U2 shows no buyEquipment
       // because `Requipon` defaults false, so RautoEquip never runs in the sim at all (#74).

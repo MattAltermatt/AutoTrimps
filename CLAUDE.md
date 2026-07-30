@@ -443,5 +443,31 @@ that has already cost a session at least once.
   it, and the consumers compute `Math.floor(done * delta) + first`, a target that SHRINKS as Gigastations
   accumulate (measured live: 1 → 0 → −12), stalling Warpstation buying with no error and no log line
   (#310). Whenever an HZE-derived value feeds an exponent or a difference against `world`, check the sign.
+- **🧊 A PRESENCE CHECK AGAINST A FROZEN ARTIFACT AGES INTO A CLAIM ABOUT HISTORY.** `oracle.test.ts`
+  asserted the pinned oracle contains the #64 fix by matching single-quoted verbatim text — and it passed
+  for fourteen days after that text stopped existing, because the v4 bundle still *concatenated*
+  `legacy/AutoTrimps2.js` while #133 had moved the line into `src/`, where esbuild normalises the quotes.
+  The assertion was pinning a deleted file: green, and unable to say anything about the code that ships.
+  Nothing can notice this on its own — the artifact is frozen *by design*, so the anchor rots silently and
+  only a re-pin exposes it. Fix structurally, not by escaping the quote: assert every anchor against a
+  **freshly built working bundle as well as** the frozen one, so an anchor that stops describing `src/`
+  fails loudly and says "re-derive me". Same family as the DISABLED-GATE entry above, one level up: not a
+  gate that cannot fail, a gate testing a *different program* than the one you ship.
+- **🧮 COUNT A TRACE CHANGE BY EVENT, NOT BY INDEX — the honest number decides whether a re-pin is
+  honest.** `diffTraces` aligns positionally, so ONE inserted event at tick 9 reports as every later index:
+  `12-warp-u1` reads 1991 divergences and is 697 event edits; `08-starved-u1.1` reads 1742 and is 704.
+  Re-pin rationales are argued over these numbers, and "1991" reads like the wholly-shifted trajectory the
+  re-pin rule exists to refuse. `scripts/sim/event-diff.mjs` is the committed LCS (keyed on `fn`+`args`,
+  never `tick` — reaching the same decision a tick earlier changed WHEN, not WHAT). And the control that
+  makes a re-pin trustworthy is the set of fixtures that did **not** move: it must be exactly the set the
+  old oracle already agreed with, byte-for-byte, or something else moved too.
+- **🎯 A CORRECT FIX CAN COST THE NET ITS SENSITIVITY — the threshold moves under you.** `enoughDamage` is
+  `ourBaseDamage * cutoff > enemyHealth`, and a saturated threshold absorbs any buff (#90/#98). #199 made
+  AT's damage estimate 2.5× more honest, which pushed three fixtures over their own thresholds: the
+  `damage-1e6` census row fell from **6297 across 5 runs to 3563 across 2**, leaving `08-starved-u1` the
+  only fixture where `calcOurDmg`'s answer can still change a decision (#311). This is the #98 hazard
+  arriving from the direction nobody watches — not a weaker net, a stronger bot — so **after any fix to
+  the bot's own self-estimate, re-run the census and read the row that fix feeds.** A 1e6× probe measures
+  nothing once the predicate is saturated; prefer a threshold-relative injection.
 - **🎚️ Game balance numbers are sacrosanct.** Mirror game constants exactly; mechanism fixes ship
   freely, numeric tuning is always a user decision.
