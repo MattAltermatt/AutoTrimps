@@ -313,3 +313,36 @@ window.onerror=function(b,c,d,e,f){var g=['Message: '+b,'URL: '+c,'Line: '+d,'Co
 export function byId<T extends HTMLElement = HTMLInputElement>(id: string): T {
     return document.getElementById(id) as T
 }
+
+/**
+ * #162 — the "have we reached the configured cell?" gate for a `multiValue` cell list that is paired
+ * POSITION-BY-POSITION with a zone list (PR raiding, and the Insanity / Alchemy / Hypothermia farms).
+ *
+ * Five sites hand-copied this shape:
+ *
+ *     cell = (getPageSetting(ID) != 0) ? getPageSetting(ID)[index] : 1
+ *     … && ((cell <= 1) || (cell > 1 && (game.global.lastClearedCell + 1) >= cell)) && …
+ *
+ * and the guard is broken at all five. `getPageSetting` on a multiValue returns an ARRAY (utils.ts:64),
+ * so `!= 0` coerces through String: `[-1] != 0` is `-1 != 0` — TRUE. Every one of these settings
+ * defaults to `[-1]`, so the guard always passes and the `: 1` fallback is unreachable. A user who
+ * configures three zones and leaves the cell list at its one-element default then indexes past its end
+ * for zones 2 and 3, gets `undefined`, and `undefined` satisfies NEITHER arm of the gate — the feature
+ * is silently skipped for every zone but the first.
+ *
+ * ⚠️ The obvious repair — `cellList?.[index] ?? 1` — is a REGRESSION at three of the five sites, and
+ * that is why this is a function rather than five edits. `index` is an `indexOf()` result, so it is
+ * `-1` whenever the current zone is not in the list at all, and the three maps.ts farms have no
+ * membership test anywhere else in their condition: `undefined` failing both arms was the only thing
+ * stopping them from farming at every zone of the challenge. Defaulting a `-1` index to cell 1 opens
+ * that gate. So a negative index closes the gate explicitly, which is what the old code did by luck.
+ *
+ * `clearedCell` is passed in rather than read here so the rule is pure and testable on its own.
+ */
+export function pairedCellGateOpen(cellList: number[] | undefined, index: number, clearedCell: number): boolean {
+    if (index < 0) return false;
+    // A missing or unconfigured entry means "start at cell 1" — the documented meaning of -1, which
+    // `cell <= 1` already covers, now extended to the entries the user never filled in.
+    const cell = cellList?.[index] ?? 1;
+    return cell <= 1 || clearedCell + 1 >= cell;
+}

@@ -263,18 +263,12 @@ const waiverFor = (s: CompareSite) => {
 // unrelated fixes — every one of which would have reddened this net while finding nothing. Line-keyed
 // baselines have already produced two false reds on this repo.
 const KNOWN_BROKEN: Record<string, { op: CompareOp; literal: number | null; why: string }> = {
-  'RAMPraidcell@src/modules/mapfunctions.ts#RPraid': {
-    op: '!=', literal: 0,
-    why: '#162 — reproduced in tests/mapfunctions.rpraid-cell.test.ts: the 2nd+ configured PR zone never praids.',
-  },
-  'RdAMPraidcell@src/modules/mapfunctions.ts#RPraid': {
-    op: '!=', literal: 0, why: '#162 — the daily twin of the above, same expression.',
-  },
-  'Rinsanityfarmcell@src/modules/maps.ts#RautoMap': {
-    op: '!=', literal: 0, why: '#162 — same shape: [-1] default guarded with != 0.',
-  },
-  'Ralchfarmcell@src/modules/maps.ts#RautoMap': { op: '!=', literal: 0, why: '#162 — same shape.' },
-  'Rhypofarmcell@src/modules/maps.ts#RautoMap': { op: '!=', literal: 0, why: '#162 — same shape.' },
+  // #162's five entries (RAMPraidcell / RdAMPraidcell @ RPraid, and Rinsanityfarmcell /
+  // Ralchfarmcell / Rhypofarmcell @ RautoMap) are GONE, not waived: all five now go through
+  // `pairedCellGateOpen` (utils.ts), which takes the fallback per INDEX instead of guarding the whole
+  // array, so none of them is compared as a scalar any more and the shrink-only check below would
+  // reject a leftover entry. Covered by tests/utils.pairedCellGate.test.ts +
+  // tests/mapfunctions.rpraid-cell.test.ts.
   'Rshipfarmamount@src/modules/mapfunctions.ts#Rship': {
     op: '==', literal: 50,
     why: '#263 — a VALUE test against a whole list; silently stops matching past one configured entry.',
@@ -353,7 +347,15 @@ describe('multiValue settings compared against a scalar (#162 / #178 / #263)', (
     // different comparison — and it must still be reported.
     const waived = sites.find((s) => waiverFor(s))!
     expect(waived, 'the fix queue is empty — this guard has nothing to stand on').toBeTruthy()
-    const impostor: CompareSite = { ...waived, op: '==', literal: 50 }
+    // The impostor's comparison is DERIVED to differ from whatever is actually waived. It used to be
+    // hardcoded `== 50`, which silently became the waived comparison itself once #162's five `!= 0`
+    // entries were deleted and only #263's `== 50` remained — the guard then asserted that a waiver
+    // does not cover itself, and failed. A test that depends on which entries happen to be in the
+    // queue is no more durable than the queue.
+    const impostor: CompareSite = waived.op === '=='
+      ? { ...waived, op: '!=', literal: (waived.literal ?? 0) + 1 }
+      : { ...waived, op: '==', literal: (waived.literal ?? 0) + 1 }
+    expect(waiverFor(impostor as CompareSite), 'the impostor must not be the waived comparison').toBeUndefined()
     expect(keyOf(impostor)).toBe(keyOf(waived)) // same slot...
     expect(waiverFor(impostor)).toBeUndefined() // ...but not the same reviewed comparison
     expect(classify(impostor, settings.get(impostor.id)?.rawDefault ?? null)).toBeTruthy()

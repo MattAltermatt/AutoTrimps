@@ -8,7 +8,7 @@
 // every top-level var is published to globalThis (shared-var seam; they were all globals in
 // the original concat). Plus 3 sloppy implicit-global writes (sepcial/levelzones/selectedMap)
 // initialised on globalThis below; functions with a local var selectedMap/levelzones keep it.
-import { getPageSetting, getPageSettingAt, debug, byId } from './utils'
+import { getPageSetting, getPageSettingAt, debug, byId, pairedCellGateOpen } from './utils'
 
 // Formerly-implicit-global state (see header) — published so strict-mode bare writes resolve.
 globalThis.sepcial = undefined; globalThis.levelzones = undefined; globalThis.selectedMap = undefined;
@@ -690,10 +690,15 @@ export function RPraid(daily: any) {
     var praidindex = praidzone.indexOf(game.global.world);
     var raidzones = raidzone[praidindex];
 
-    var cell;
-    cell = daily ? ((getPageSetting('RdAMPraidcell') != 0) ? getPageSetting('RdAMPraidcell')[praidindex] : 1) : ((getPageSetting('RAMPraidcell') != 0) ? getPageSetting('RAMPraidcell')[praidindex] : 1);
+    // #162 — the cell list is paired position-by-position with the zone list, so the fallback has to
+    // be per-INDEX. The old `!= 0` guard was always true ([-1] coerces to -1), which made the `: 1`
+    // arm unreachable and left the 2nd+ configured PR zone indexing past the default one-element
+    // list — `undefined` fails both arms of the gate below, so those zones never praided at all.
+    const cellGateOpen = pairedCellGateOpen(
+        daily ? getPageSetting('RdAMPraidcell') : getPageSetting('RAMPraidcell'),
+        praidindex, game.global.lastClearedCell);
 
-    if (praidzone.includes(game.global.world) && ((cell <= 1) || (cell > 1 && (game.global.lastClearedCell + 1) >= cell)) && Rgetequips(raidzones, false) > 0) {
+    if (praidzone.includes(game.global.world) && cellGateOpen && Rgetequips(raidzones, false) > 0) {
         if (daily) {
             Rdshoulddopraid = true;
         } else Rshoulddopraid = true;

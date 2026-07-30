@@ -7,7 +7,7 @@
 // (equipment/upgrades/mapfunctions/other/AutoTrimps2/SettingsGUI), so every one is published to
 // globalThis (shared-var seam). The 16 keep their init values; the 41 implicit ones are
 // initialised undefined below so strict-mode bare writes resolve. MODULES["maps"] kept verbatim.
-import { getPageSetting, debug, setPageSetting } from './utils'
+import { getPageSetting, debug, setPageSetting, pairedCellGateOpen } from './utils'
 
 // Formerly-implicit-global maps state (see header) — published so external readers + strict-mode
 // writes both work.
@@ -1334,8 +1334,12 @@ export function RautoMap() {
     if (game.global.challengeActive == "Insanity") {
         const insanityfarmzone = getPageSetting('Rinsanityfarmzone');
         const insanitystacksfarmindex = insanityfarmzone.indexOf(game.global.world);
-        const insanityfarmcell = ((getPageSetting('Rinsanityfarmcell') != 0) ? getPageSetting('Rinsanityfarmcell')[insanitystacksfarmindex] : 1);
-        Rinsanityfarm = (getPageSetting('Rinsanityon') == true && ((insanityfarmcell <= 1) || (insanityfarmcell > 1 && (game.global.lastClearedCell + 1) >= insanityfarmcell)) && game.global.world > 5 && (game.global.challengeActive == "Insanity" && getPageSetting('Rinsanityfarmzone')[0] > 0 && getPageSetting('Rinsanityfarmstack')[0] > 0));
+        // #162 — per-INDEX cell fallback. The old `!= 0` guard was always true ([-1] coerces to -1),
+        // so the `: 1` arm was unreachable and a 2nd+ configured zone indexed past the default
+        // one-element list. Note this condition has NO zone-membership test of its own, so a
+        // not-configured zone (indexOf → -1) must still close the gate — see pairedCellGateOpen.
+        const insanityfarmcellReached = pairedCellGateOpen(getPageSetting('Rinsanityfarmcell'), insanitystacksfarmindex, game.global.lastClearedCell);
+        Rinsanityfarm = (getPageSetting('Rinsanityon') == true && insanityfarmcellReached && game.global.world > 5 && (game.global.challengeActive == "Insanity" && getPageSetting('Rinsanityfarmzone')[0] > 0 && getPageSetting('Rinsanityfarmstack')[0] > 0));
         if (Rinsanityfarm) {
             Rinsanity(true, false, false);
         }
@@ -1371,8 +1375,12 @@ export function RautoMap() {
     if (game.global.challengeActive == "Alchemy") {
         const alchfarmzone = getPageSetting('Ralchfarmzone');
         const alchstacksfarmindex = alchfarmzone.indexOf(game.global.world);
-        const alchfarmcell = ((getPageSetting('Ralchfarmcell') != 0) ? getPageSetting('Ralchfarmcell')[alchstacksfarmindex] : 1);
-        Ralchfarm = (getPageSetting('Ralchon') == true && ((alchfarmcell <= 1) || (alchfarmcell > 1 && (game.global.lastClearedCell + 1) >= alchfarmcell)) && game.global.world > 5 && (game.global.challengeActive == "Alchemy" && getPageSetting('Ralchfarmzone')[0] > 0 && getPageSetting('Ralchfarmstack').length > 0));
+        // #162 — per-INDEX cell fallback. The old `!= 0` guard was always true ([-1] coerces to -1),
+        // so the `: 1` arm was unreachable and a 2nd+ configured zone indexed past the default
+        // one-element list. Note this condition has NO zone-membership test of its own, so a
+        // not-configured zone (indexOf → -1) must still close the gate — see pairedCellGateOpen.
+        const alchfarmcellReached = pairedCellGateOpen(getPageSetting('Ralchfarmcell'), alchstacksfarmindex, game.global.lastClearedCell);
+        Ralchfarm = (getPageSetting('Ralchon') == true && alchfarmcellReached && game.global.world > 5 && (game.global.challengeActive == "Alchemy" && getPageSetting('Ralchfarmzone')[0] > 0 && getPageSetting('Ralchfarmstack').length > 0));
         if (Ralchfarm) {
             Ralch(true, false, false);
         }
@@ -1387,8 +1395,12 @@ export function RautoMap() {
         }
         const hypofarmzone = getPageSetting('Rhypofarmzone');
         const hypoamountfarmindex = hypofarmzone.indexOf(game.global.world);
-        const hypofarmcell = ((getPageSetting('Rhypofarmcell') != 0) ? getPageSetting('Rhypofarmcell')[hypoamountfarmindex] : 1);
-        Rhypofarm = (getPageSetting('Rhypoon') == true && ((hypofarmcell <= 1) || (hypofarmcell > 1 && (game.global.lastClearedCell + 1) >= hypofarmcell)) && game.global.world > 5 && (game.global.challengeActive == "Hypothermia" && getPageSetting('Rhypofarmzone')[0] > 0 && getPageSetting('Rhypofarmstack').length > 0));
+        // #162 — per-INDEX cell fallback. The old `!= 0` guard was always true ([-1] coerces to -1),
+        // so the `: 1` arm was unreachable and a 2nd+ configured zone indexed past the default
+        // one-element list. Note this condition has NO zone-membership test of its own, so a
+        // not-configured zone (indexOf → -1) must still close the gate — see pairedCellGateOpen.
+        const hypofarmcellReached = pairedCellGateOpen(getPageSetting('Rhypofarmcell'), hypoamountfarmindex, game.global.lastClearedCell);
+        Rhypofarm = (getPageSetting('Rhypoon') == true && hypofarmcellReached && game.global.world > 5 && (game.global.challengeActive == "Hypothermia" && getPageSetting('Rhypofarmzone')[0] > 0 && getPageSetting('Rhypofarmstack').length > 0));
         if (Rhypofarm) {
             Rhypo(true, false, false);
         }
