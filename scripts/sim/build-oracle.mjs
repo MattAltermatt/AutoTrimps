@@ -73,9 +73,10 @@
 //
 // ORACLE v5 (Session 10 of the 2026-07-28 review-fix campaign, 2026-07-29) — re-pinned from
 // `oracle/v4-post-fix-sweep` (abd6b1c0) to `oracle/v5-post-review-campaign` (f7b9ac86). The campaign
-// landed 102 issues across nine sessions; 41 of them live in modules the L0 differential watches, so
-// v4 was left deliberately stale for three sessions while the reds were COLLECTED rather than
-// absorbed one at a time. This is that single absorption.
+// closed 115 issues across nine sessions (128 filed — remediation found 26 of its own); 41 of them live
+// in modules the L0 differential watches (39 at plan time plus #169/#170, re-milestoned out of Track A
+// when they turned out to move three fixtures), so v4 was left deliberately stale for three sessions
+// while the reds were COLLECTED rather than absorbed one at a time. This is that single absorption.
 //
 //   THE FROZEN v4 BUNDLE BUYS EQUIPMENT THE GAME REFUSES TO SELL, AND PRICES A NON-CRIT AT 1/2.5.
 //

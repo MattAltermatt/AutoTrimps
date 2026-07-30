@@ -31,7 +31,7 @@ closed [GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/issues).
   stale oracle (#105), so `blind-spot-census.md` was regenerated AFTER the re-pin, never before.
   📄 The honest campaign report is
   [`2026-07-28-exhaustive-logic-review-findings.md`](superpowers/specs/2026-07-28-exhaustive-logic-review-findings.md):
-  **127 issues filed, 115 closed, 12 open** — and the ratio worth remembering is that remediation found
+  **128 issues filed, 115 closed, 13 open** — and the ratio worth remembering is that remediation found
   **one new issue for every four it fixed** (25 filed from inside it, including 🔴 #310, which #297's own
   failsafe created).
 

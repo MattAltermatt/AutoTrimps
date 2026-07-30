@@ -217,7 +217,7 @@ member of a twin set and not the other.
   (`'Max' + name`), so the rename silently breaks the lookup — and a missed lookup returns `false`,
   which the gem buyer's rescue converts to **uncapped**: the exact failure being fixed, reintroduced by
   its own fix. Gets its own reviewed branch.
-**Found by the remediation, triaged, not yet fixed (10):** **#286** (the Nom gate — its blocking premise
+**Found by the remediation, triaged, not yet fixed (11):** **#286** (the Nom gate — its blocking premise
 is false, per the refutation table above, and widening the range is a gameplay decision the user owns),
 #288 (duplicate `updatePerkRatios`), #289
 (`PraidHarder` leaves AutoMaps off), #292 (Watch arm has no F/L/M trickle), #293 (`Requipfarmzone`'s
