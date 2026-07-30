@@ -1,7 +1,7 @@
 # AutoTrimps Modernization — Design Spec
 
 **Date:** 2026-07-08
-**Status:** Implemented — and the strangler is **COMPLETE** as of v6.0.0 (2026-07-15). There is no remaining legacy: `AutoTrimps2.js` → `src/modules/main-loop.ts` and `Graphs.js` → `src/modules/graphs/` (ECharts) landed in #133/#134, and #171 deleted the `legacy/` directory along with the concat step. Deployment is CI-only via GitHub Actions → Pages; the `gh-pages` branch this spec was written against **no longer exists**. This spec remains the living architecture reference. Live phase status: [GitHub Milestones](https://github.com/MattAltermatt/AutoTrimps/milestones).
+**Status:** Implemented — and the strangler is **COMPLETE** as of v6.0.0 (2026-07-15). There is no remaining legacy: `AutoTrimps2.js` → `src/modules/main-loop.ts` and `Graphs.js` → `src/modules/graphs/` (ECharts) landed in #133/#134, and #171 later deleted the `legacy/` directory along with the concat step (2026-07-29 — by then it held only the vendored `FastPriorityQueue.js`). Deployment is CI-only via GitHub Actions → Pages; the `gh-pages` branch this spec was written against **no longer exists**. This spec remains the living architecture reference. Live phase status: [GitHub Milestones](https://github.com/MattAltermatt/AutoTrimps/milestones).
 **Horizon:** Long-term, multi-session side project
 
 ---
