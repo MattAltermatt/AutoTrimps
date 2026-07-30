@@ -25,7 +25,7 @@ npm run build:watch   # rebuild on change
 npm run serve         # static-serve a local Trimps clone (:8080) with the bundle injected
 npm test              # vitest
 npm run test:ci       # what CI runs: vitest + the zero-skip census
-npm run typecheck     # tsc --noEmit
+npm run typecheck     # BOTH configs: src+tests, and the .mjs script harness
 npm run lint          # oxlint --deny-warnings
 ```
 
@@ -82,6 +82,9 @@ method (all load the same auto-built script). Visit that page for one-click inst
   ```
 - **Steam:** save `autotrimps.user.js` into `Steam\steamapps\common\Trimps\mods\mods.js` and
   restart the game.
+- **Nothing to install:** <https://mattaltermatt.github.io/TrimpsAT/> is a hosted copy of Trimps
+  with AutoTrimps already injected from first load. Note it is a *separate save* from
+  trimps.github.io (browser storage is per-origin) — the page offers a first-load save import.
 
 After loading, **configure your settings** — AutoTrimps will *not* behave as intended with
 defaults.
@@ -89,7 +92,7 @@ defaults.
 Graphs are built into the script (open the **Graphs** button in-game) — there is no separate
 "graphs-only" download in this fork.
 
-## Equipment && Upgrade's colour explaination:
+## Equipment & upgrade colours
 
 White - Upgrade is not available
 
