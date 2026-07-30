@@ -410,5 +410,38 @@ that has already cost a session at least once.
   warns about for copy-without-delete). Ride the id migration instead: `SettingIdMigration.transform`
   runs while `migrateLegacyId` moves the value, and that mechanism DELETES the old key, so the trigger
   is a key a migrated store no longer has. Idempotent by construction (#194).
+- **🕳️ WHEN SEVERAL CAUSES FUNNEL TO ONE VALUE, THE VALUE CANNOT TEST ANY OF THEM.** `autoGiga` ends
+  with `+(Math.round(delta + "e+2") + "e-2")`, a string round-trip that turns **every** non-finite
+  intermediate into NaN — so five arithmetically distinct faults arrive as one indistinguishable value.
+  All five refusal guards therefore survived a delete-mutant: `expect(...).toBeNaN()` passes just as well
+  with the guard gone, because the funnel produces NaN either way. The guards' actual product is the
+  **diagnostic**, so each route now asserts its own message, and only then do the mutants die (#297).
+  Generalise past NaN: any time N inputs collapse onto one output (a sentinel, a `false`, a `0`, an empty
+  array), the output is a test of the funnel and not of the branch — assert the thing that still differs.
+  Corollary: **an edit no test can observe is not a fix.** A `CustomTargetZone >= 60` → `>= 61`
+  tightening looked like the matching half of the same repair and survived the whole suite, because
+  `autoGiga` re-derives 60 to the same zone. It was reverted with the reasoning kept as a comment;
+  shipping it would have been a second unfalsifiable claim wearing a fix's clothes.
+- **🩻 A STUB THAT IGNORES ITS ARGUMENTS CANNOT SEE WHICH ARGUMENT PRODUCTION PASSED — and removing a
+  behaviour orphans whatever COMPENSATED for it.** Two halves of one audit, both live on `calcSpire`
+  (#298). (1) Its test stubbed `getEnemyAttack: () => 100`, so the fixture was blind to the third
+  parameter, and a double-applied imp multiplier sat under a green test **from 2022**: the game passes
+  `ignoreImpStat: true` precisely so `getSpireStats` can apply `badGuys[name][what]` once itself
+  (main.js:13715/13726), AT passed `false` and then applied it again. When mirroring a game function that
+  takes a flag, the stub must HONOUR the flag or the mirror is untested. (2) The health path had been
+  correct only because `calcEnemyBaseHealth` skipped `badGuys` above z60 — a premise stated **only in a
+  comment** — so #198's correct removal of that skip silently made the compensation a second application,
+  in the same session, invisible to every gate. **After deleting a special case, grep for code that
+  compensated for it**; a comment beginning "…so only X needs the explicit Y" is that code announcing
+  itself. And prefer a **required** parameter over an optional one when threading new context: `tsc`
+  enumerates every call site for a required param, while a default silently keeps the old behaviour at
+  any site you forget (the #298 seam names every caller for exactly this reason).
+- **🧭 `highestLevelCleared` IS BEHIND `game.global.world` FOR THE ZONE YOU ARE PUSHING.** So a fallback
+  spelled `Math.max(65, game.global.highestLevelCleared)` can hand back a target zone *behind* the
+  current one — and `autoGiga`'s `Math.pow(megabook, targetZone - baseZone)` then goes below 1, `Math.log`
+  goes negative, and `DeltaGigastation` becomes negative. It is finite, so no storability guard catches
+  it, and the consumers compute `Math.floor(done * delta) + first`, a target that SHRINKS as Gigastations
+  accumulate (measured live: 1 → 0 → −12), stalling Warpstation buying with no error and no log line
+  (#310). Whenever an HZE-derived value feeds an exponent or a difference against `world`, check the sign.
 - **🎚️ Game balance numbers are sacrosanct.** Mirror game constants exactly; mechanism fixes ship
   freely, numeric tuning is always a user decision.
