@@ -68,7 +68,14 @@ function arm(over: { world?: number; staleInput?: string; wonders?: number } = {
     },
     challenges: { Experience: { nextWonder: 600, wonders: over.wonders ?? 0 }, Mapology: { credits: 99 } },
     stats: { heliumHour: { value: () => 0 } },
-    portal: new Proxy({} as any, { get: () => ({ level: 0, radLevel: 0, modifier: 0 }) }),
+    // Siphonology is REAL here, not the Proxy default. autoMap's ordinary create path writes
+    // `siphlvl = world - Siphonology.level` into mapLevelInput just before the wonder-farm block,
+    // and that is precisely the stale value #224 was buying at. With Siphonology 0 the ordinary
+    // path leaves 700 in the box, the wonder-farm's write is redundant, and the revert mutant
+    // SURVIVES — which is exactly what happened on the first pass.
+    portal: new Proxy({ Siphonology: { level: 8 } } as any, {
+      get: (t, k: string) => t[k] ?? { level: 0, radLevel: 0, modifier: 0 },
+    }),
     jobs: new Proxy({} as any, { get: () => ({ owned: 0, locked: true, modifier: 0 }) }),
     buildings: new Proxy({} as any, { get: () => ({ owned: 0, purchased: 0, locked: true }) }),
     unlocks: { impCount: new Proxy({} as any, { get: () => 0 }) },
