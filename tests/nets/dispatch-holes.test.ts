@@ -393,15 +393,18 @@ const UNROUTED: Record<string, string> = {
   'RAutoPortalDaily[0]': 'OFF — 0 = "Daily Portal Off"; AT2:340 gates on > 0',
   'RBuyJobsNew[0]': 'OFF — 0 = "Don\'t Buy Jobs"; AT2:334 gates hireWorkers on > 0',
   'RBuyUpgradesNew[0]': 'OFF — 0 = "Manual Upgrades"; AT2:296 gates on != 0',
-  'Rcarmormagic[0]': 'OFF — 0 = "C2 Armor Magic Off"; AT2:358 gates on > 0',
-  'Rdarmormagic[0]': 'OFF — 0 = "Daily Armor Magic Off"; AT2:358 gates on > 0',
+  // #234 — the four armormagic entries were REMOVED here, not because index 0 became meaningful, but
+  // because the dispatchers now pass the setting's value across a function boundary
+  // (`armormagic(getPageSetting('darmormagic'))`), and this net classifies a bare read as `value`,
+  // whose `routes()` is `true` for every index by design ("the index itself crosses the seam").
+  // The `> 0` admit-gate is still there and 0 still means Off; the net simply cannot follow the value
+  // into the callee any more. Recorded so a future reader does not mistake the deletion for a
+  // behaviour change: carmormagic[0] / darmormagic[0] / Rcarmormagic[0] / Rdarmormagic[0].
   'Rdfightforever[0]': 'OFF — 0 = "DFA: Off"',
   'Rdhs[0]': 'OFF — 0 = "DHS: Off"',
   'Rdshrine[0]': 'OFF — 0 = "Daily AutoShrine Off"',
   'Rmayhemmap[0]': 'OFF — 0 = "M: Maps Off"; maps.ts:1527 gates on > 0',
-  'carmormagic[0]': 'OFF — 0 = "C2 Armor Magic Off"; AT2:249 gates on > 0',
   'dATGA2Auto[0]': 'OFF — 0 = "ATGA: Manual"',
-  'darmormagic[0]': 'OFF — 0 = "Daily Armor Magic Off"; AT2:249 gates on > 0',
   'dfightforever[0]': 'OFF — 0 = "DFA: Off"',
   'radonsettings[0]': 'OFF — 0 = "Helium" = the default (U1) settings UI; visibility.ts:40 shows the radon UI only for 1',
   'spendmagmite[0]': 'OFF — 0 = "Spend Magmite OFF"',

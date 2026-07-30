@@ -304,27 +304,67 @@ describe('calc.calcSpecificEnemyAttack', () => {
 
 describe('calc.calcSpire', () => {
   beforeEach(() => neutralCombat())
-  it('U1 attack: base × mod^exitCell × badGuys.attack', () => {
+
+  /**
+   * #298 — the game's getEnemyAttack applies `badGuys[name].attack` internally UNLESS ignoreImpStat is
+   * set (config.js:513-514), and getSpireStats passes it TRUE precisely so it can apply the stat once
+   * itself (main.js:13715/13726). The old fixture here was `getEnemyAttack: () => 100` — a stub that
+   * ignores its arguments — so it could not see which flag AT passed, and the double-apply that existed
+   * from 2022 until this session went unnoticed with this test green. An argument-honouring stub is the
+   * whole difference between a test of calcSpire and a test of arithmetic I did myself.
+   */
+  const RAW = 100
+  const gameGetEnemyAttack = (_cell: number, name: string, ignoreImpStat?: boolean) =>
+    ignoreImpStat ? RAW : RAW * G.game.badGuys[name].attack
+
+  it('U1 attack: base × mod^exitCell × badGuys.attack, applied exactly ONCE', () => {
     G.game = makeMinimalGame({
       global: {
         challengeActive: '', universe: 1, world: 100, spireLevel: 0,
-        getEnemyAttack: () => 100, gridArray: [{ name: 'Snimp' }],
+        getEnemyAttack: gameGetEnemyAttack, gridArray: [{ name: 'Snimp' }],
       },
-      badGuys: { Snimp: { attack: 2 } },
+      badGuys: { Snimp: { attack: 2, health: 3 } },
     })
-    // exitCell 0 → mod^0 = 1 → base 100 × 1 × badGuys.attack 2 = 200
+    // exitCell 0 → mod^0 = 1 → 100 × 1 × 2 = 200. Squared it would be 400.
     expect(calcSpire(0, 'Snimp', 'attack')).toBe(200)
+    expect(calcSpire(0, 'Snimp', 'attack')).not.toBe(RAW * 2 * 2)
   })
-  it('U2 attack: base × 200^(spireLevel+1)', () => {
+
+  it('U1 health: the imp stat is applied once here too — #198 made it twice', () => {
+    // calcEnemyBaseHealth used to skip badGuys above z60, which calcSpire compensated for explicitly.
+    // #198 removed that skip and the compensation became a second application: a spire is always z100+,
+    // so from that commit until this one every U1 spire health estimate was off by the imp stat.
+    G.game = makeMinimalGame({
+      global: {
+        challengeActive: '', universe: 1, world: 100, spireLevel: 0,
+        getEnemyAttack: gameGetEnemyAttack, gridArray: [{ name: 'Snimp' }],
+      },
+      badGuys: { Snimp: { attack: 2, health: 3 } },
+    })
+    // Ratio against the same call with an imp stat of 1: it must be exactly the stat, never its square.
+    const withStat = calcSpire(0, 'Snimp', 'health')
+    G.game.badGuys.Snimp.health = 1
+    const without = calcSpire(0, 'Snimp', 'health')
+    expect(withStat / without).toBeCloseTo(3, 10)
+    expect(withStat / without).not.toBeCloseTo(9, 10)
+  })
+
+  it('U2: both stats apply the imp multiplier once, not just health', () => {
+    // The U2 arm used to apply it for health only, because the attack fetch baked it in. Both fetches
+    // now suppress it, so the arm applies it unconditionally — and a `what === "health"` guard left
+    // behind would make attack short by the stat.
     G.game = makeMinimalGame({
       global: {
         challengeActive: '', universe: 2, world: 300, spireLevel: 1,
-        getEnemyAttack: () => 5, gridArray: [{ name: 'Snimp' }],
+        getEnemyAttack: gameGetEnemyAttack, gridArray: [{ name: 'Snimp' }],
       },
-      badGuys: { Snimp: { attack: 1 } },
+      badGuys: { Snimp: { attack: 2, health: 3 } },
     })
-    // cell 0 !== 99 → enemy = name 'Snimp'; base = getEnemyAttack=5 → ×200^2 = 200000
-    expect(calcSpire(0, 'Snimp', 'attack')).toBe(200000)
+    // base 100 (imp suppressed) × 200^2 × attack 2
+    expect(calcSpire(0, 'Snimp', 'attack')).toBe(RAW * 40000 * 2)
+    const health = calcSpire(0, 'Snimp', 'health')
+    G.game.badGuys.Snimp.health = 1
+    expect(health / calcSpire(0, 'Snimp', 'health')).toBeCloseTo(3, 10)
   })
 })
 
@@ -363,11 +403,15 @@ describe('calc.calcEnemyHealth — U1 enemy health composer', () => {
       ...over,
     })
   }
-  it('map=true in U1 halves the base health', () => {
+  it('map=true in U1 halves the base health, then adds the game\'s map x1.1', () => {
+    // #298 — the 0.5 is AT's own map-corruption halving; the 1.1 is the game's map multiplier
+    // (config.js:548, `world > 5 && mapsActive`), which calcEnemyBaseHealth omitted entirely until this
+    // fix. At world 50 both apply, so the composed factor is 0.55 — and asserting the product rather
+    // than each factor is what makes this test able to notice either one going missing.
     g()
     const world = calcEnemyHealth(50, false)
     const map = calcEnemyHealth(50, true)
-    expect(map).toBeCloseTo(world * 0.5, 3)
+    expect(map).toBeCloseTo(world * 0.5 * 1.1, 3)
   })
   it('Toxicity doubles health', () => {
     G.challengeActive = (n: string) => n === 'Toxicity'

@@ -58,27 +58,32 @@ beforeEach(() => {
   ;(globalThis as any).RcalcHDratio = vi.fn(() => 1e9) // >= cutoff, for the ==2 path
 })
 
+// #234 — Rarmormagic() now takes the MODE as a parameter; the dispatcher picks it from the context
+// that admitted the call (Daily -> Rdarmormagic, C2 -> Rcarmormagic) instead of the body OR-ing both.
+// Every assertion below is about a MODE, so they carry over unchanged; only the driver moves.
+let mode = 0
 const setRcarmormagic = (value: number) => {
+  mode = value
   ;(globalThis as any).autoTrimpSettings.Rcarmormagic = { type: 'multitoggle', value }
 }
 
 describe('#59: Rarmormagic routes the real Rcarmormagic gate to RbuyArms', () => {
   it('Rcarmormagic=3 (Always) + low health → buys all affordable armor', () => {
     setRcarmormagic(3)
-    other.Rarmormagic()
+    other.Rarmormagic(mode)
     expect(buyEquipmentCalls.map((a) => a[0])).toEqual(ARMOR)
   })
 
   it('Rcarmormagic=0 (Off) → does not buy (the phantom-era default, no fire)', () => {
     setRcarmormagic(0)
-    other.Rarmormagic()
+    other.Rarmormagic(mode)
     expect(buyEquipmentCalls).toEqual([])
   })
 
   it('Rcarmormagic=3 but health above 40% → health gate blocks the buy', () => {
     setRcarmormagic(3)
     ;(globalThis as any).game.global.soldierHealth = 50 // 50 > 40% of 100 → gate NOT met
-    other.Rarmormagic()
+    other.Rarmormagic(mode)
     expect(buyEquipmentCalls).toEqual([])
   })
 
@@ -90,14 +95,14 @@ describe('#59: Rarmormagic routes the real Rcarmormagic gate to RbuyArms', () =>
   it('#70: Rcarmormagic=2 (H:D) + H:D at/above RMapDamageCutoff → buys armor', () => {
     setRcarmormagic(2)
     ;(globalThis as any).RcalcHDratio = vi.fn(() => 5) // 5 >= 1 → under-damaged → buy armor
-    other.Rarmormagic()
+    other.Rarmormagic(mode)
     expect(buyEquipmentCalls.map((a) => a[0])).toEqual(ARMOR)
   })
 
   it('#70: Rcarmormagic=2 (H:D) + H:D below RMapDamageCutoff → does NOT buy', () => {
     setRcarmormagic(2)
     ;(globalThis as any).RcalcHDratio = vi.fn(() => 0.5) // 0.5 < 1 → damage is fine → no armor
-    other.Rarmormagic()
+    other.Rarmormagic(mode)
     expect(buyEquipmentCalls).toEqual([])
   })
 
@@ -107,19 +112,19 @@ describe('#59: Rarmormagic routes the real Rcarmormagic gate to RbuyArms', () =>
     setRcarmormagic(2)
     ;(globalThis as any).RcalcHDratio = vi.fn(() => 3)
     ;(globalThis as any).autoTrimpSettings.RMapDamageCutoff.value = '10' // 3 < 10 → no buy
-    other.Rarmormagic()
+    other.Rarmormagic(mode)
     expect(buyEquipmentCalls).toEqual([])
 
     buyEquipmentCalls.length = 0
     ;(globalThis as any).autoTrimpSettings.RMapDamageCutoff.value = '2' // 3 >= 2 → buy
-    other.Rarmormagic()
+    other.Rarmormagic(mode)
     expect(buyEquipmentCalls.map((a) => a[0])).toEqual(ARMOR)
   })
 
   it('Rcarmormagic=1 (Above 80%) requires world >= 0.8*(HZE+1); below it does not fire', () => {
     setRcarmormagic(1)
     ;(globalThis as any).game.global.world = 10 // armormagicworld = floor(100*0.8)=80 → 10 < 80 → no fire
-    other.Rarmormagic()
+    other.Rarmormagic(mode)
     expect(buyEquipmentCalls).toEqual([])
   })
 })

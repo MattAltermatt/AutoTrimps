@@ -816,7 +816,7 @@ export function initializeAllSettings() {
     }), 'boolean', true, null, 'Buildings');
     createSetting('CustomTargetZone', 'Custom Target Zone',tip({
         what: 'The target zone Auto Gigas uses when calculating its Warpstation delta, instead of letting AT guess one from your portal/void settings.',
-        cannot: 'Values below 60 are silently discarded \u2014 AT falls back to computing its own target zone.',
+        cannot: 'Values below 61 are silently discarded \u2014 AT falls back to computing its own target zone. 61 is the floor because zone 60 has no Gigastation pattern in it at all.',
         ignoredWhen: 'Only matters for your FIRST Gigastation of a run \u2014 Auto Gigas computes a pattern once, when <b>Gigastation</b> is still at 0.',
     }), 'value', '-1', null, "Buildings");
     createSetting('CustomDeltaFactor', 'Custom Delta Factor',tip({
@@ -1347,9 +1347,17 @@ export function initializeAllSettings() {
     }), 'value', '600', null, 'Maps');
     createSetting('finishExpOnBw', 'Finish XP on BW',tip({
         what: 'The Bionic Wonderland zone AutoTrimps runs to finish the Experience challenge.',
-        how: 'This level of BW should already be in your inventory &mdash; use the BW Raiding module first if you want to raid to a specific level before 601. Snapped to a valid BW zone (125, then every 15 zones after) if you enter one that doesn\'t exist &mdash; e.g. 606 runs 605.',
-        cannot: 'Cannot go below zone 125 &mdash; anything lower is treated as 125.',
-    }), 'value', '605', null, 'Maps');
+        how: 'This level of BW should already be in your inventory &mdash; use the BW Raiding module first if you want to raid to a specific level before 601. Snapped to a valid BW zone (125, then every 15 zones after) if you enter one that doesn\'t exist &mdash; e.g. 606 runs 605. Set it to -1 to switch the BW finish off entirely and keep wonder-farming.',
+        cannot: 'Cannot go below zone 125 &mdash; anything lower <i>other than -1</i> is treated as 125. Note the game only accepts a BW of 605 or higher as an Experience completion, so a lower target runs a BW that cannot end the challenge.',
+        // #306 — 'valueNegative', not 'value'. #223 made -1 genuinely DISABLE the BW finish, and the
+        // type is what tells the UI whether a negative is a real input or the infinity sentinel:
+        // settings-engine.ts:272 passes `type == 'valueNegative'` as the dialog's `negative` flag (so
+        // the hint stops saying "Put -1 for Infinite"), and settings-visibility.ts:1169 uses the same
+        // test to decide between printing the number and rendering the ∞ glyph. Left as 'value', a
+        // user who followed the tooltip and typed -1 saw "Finish XP on BW: ∞" over a disabled feature.
+        // Storage-neutral: getPageSetting parseFloats both types identically (utils.ts:90) and the
+        // mount path at settings-engine.ts:260 is shared, so no stored value moves.
+    }), 'valueNegative', '605', null, 'Maps');
 
     //Shrine - U1
     (document.getElementById('finishExpOnBw') as any).parentNode.insertAdjacentHTML('afterend', '<br>');

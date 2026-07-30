@@ -44,7 +44,10 @@ export function potencyMod() {
     if (game.global.brokenPlanet) potencyMod = potencyMod.div(10);
 
     //Pheromones
-    potencyMod = potencyMod.mul(1+ (game.portal.Pheromones.level * game.portal.Pheromones.modifier));
+    // #250 — getPerkLevel, not `.level`. The perk carries both `level` and `radLevel` and getPerkLevel
+    // switches on universe (.trimps-game/main.js:2405), so `.level` used the U1 allocation in a U2 run.
+    // The game itself uses getPerkLevel here (main.js:5595). All THREE AT copies of this formula had it.
+    potencyMod = potencyMod.mul(1+ (getPerkLevel("Pheromones") * game.portal.Pheromones.modifier));
 
     //Quick Trimps
     if (game.singleRunBonuses.quickTrimps.owned) potencyMod = potencyMod.mul(2);
@@ -109,7 +112,8 @@ export function ATGA2() {
 		if (game.buildings.Nursery.owned > 0) potencyMod = potencyMod.mul(Math.pow(1.01, game.buildings.Nursery.owned));
 		if (game.unlocks.impCount.Venimp > 0) potencyMod = potencyMod.mul(Math.pow(1.003, game.unlocks.impCount.Venimp));
 		if (game.global.brokenPlanet) potencyMod = potencyMod.div(10);
-		potencyMod = potencyMod.mul(1+ (game.portal.Pheromones.level * game.portal.Pheromones.modifier));
+		// #250 — getPerkLevel, not `.level` (see potencyMod() above).
+		potencyMod = potencyMod.mul(1+ (getPerkLevel("Pheromones") * game.portal.Pheromones.modifier));
 		if (game.singleRunBonuses.quickTrimps.owned) potencyMod = potencyMod.mul(2);
 		if (game.global.challengeActive == "Daily"){
 			if (typeof game.global.dailyChallenge.dysfunctional !== 'undefined'){
@@ -256,7 +260,14 @@ export function forceAbandonTrimps() {
     if (!game.global.mapsUnlocked) return;
     if (game.global.mapsActive && getCurrentMapObject().location == "Void") return;
     if (game.global.preMapsActive) return;
-    if (isActiveSpireAT() && disActiveSpireAT() && !game.global.mapsActive) return;
+    // #249 — this was `&&`, and the two predicates are mutually exclusive by construction:
+    // isActiveSpireAT() requires challengeActive != 'Daily' and disActiveSpireAT() requires == 'Daily'
+    // (other.ts:88/92). So the conjunction was unsatisfiable and this function had no Spire exclusion
+    // of its own — the Trimpicide tooltip's "Never fires in the Spire" was carried entirely by
+    // trimpcide()'s separate `&& !game.global.spireActive` (other.ts:154), which happens to be the
+    // only caller. Masked, not live, but one call site away from being live. Every sibling that means
+    // "in either kind of Spire" spells it with OR; this was the repo's only `&&` of the pair.
+    if ((isActiveSpireAT() || disActiveSpireAT()) && !game.global.mapsActive) return;
     if (getPageSetting('AutoMaps')) {
         mapsClicked();
         if (game.global.switchToMaps || game.global.switchToWorld)

@@ -35,13 +35,17 @@ export function maxOneShotPower(considerEdges?: boolean): number {
     //No overkill perk
     if (game.portal.Overkill.level === 0) return 1;
 
-    //Mastery
-    if (game.talents.overkill.purchased) power++;
-
-    //Ice
-    if (game.global.uberNature === "Ice") power += 2; // Fix (#22): uber ICE grants +2 overkill (game getOverkillerCount); was checking "Poison".
-    if (getEmpowerment() === "Ice" && game.empowerments.Ice.getLevel() >=  50) power++;
-    if (getEmpowerment() === "Ice" && game.empowerments.Ice.getLevel() >= 100) power++;
+    // #231 — DELEGATE rather than re-derive. This block used to hand-copy getOverkillerCount()'s body
+    // and had drifted in both directions: it omitted `Fluffy.isRewardActive("overkiller")`, which the
+    // game's count STARTS at, and it read the raw `game.global.uberNature` where the game reads
+    // getUberEmpowerment() — which returns "" below getNatureStartZone(), so AT granted +2 for uber Ice
+    // in a zone range where the game grants nothing. #22 had already corrected one constant in here
+    // ("Poison" -> "Ice"), which is the tell that a copy of a game-owned fact keeps re-rotting.
+    //
+    // The relationship is exact, from main.js:11613-11620: a killed cell chains to the next while
+    // `cell.OKcount <= overkillerCount`, OKcount starts at 0 and increments per chained cell, so the
+    // cells killed by one attack are the direct one plus overkillerCount+1 chained = count + 2.
+    power = 2 + getOverkillerCount();
 
     //No enemy to attack
     if (considerEdges) for (let i=power; i > 1 && !getCurrentEnemy(i); i--);
@@ -105,7 +109,15 @@ export function challengeDamage(maxHealth?: number, minDamage?: number, maxDamag
     if (!maxHealth) maxHealth = calcOurHealth();
     if (!minDamage) minDamage = calcOurDmg("min", false, true) + addPoison(true);
     if (!maxDamage) maxDamage = calcOurDmg("max", false, true) + addPoison(true);
-    if (!missingHealth) missingHealth = game.global.soldierHealthMax - game.global.soldierHealth;
+    // #230 — `=== undefined`, NOT `!missingHealth`. Zero is a MEANINGFUL argument here: survive()'s
+    // harm2 term passes a literal 0 to model a brand-new squad at full health (the sibling
+    // directDamage call on the same line passes full `healthier` for the same reason). `!0` is true,
+    // so the 0 was discarded and the DYING squad's missing health substituted — understating the
+    // fresh squad's bleed by `missingHealth * 0.20` (0.30 for healthyBleed) via the
+    // `harm += (maxHealth - missingHealth) * challengeDamage` line below. At 50% health that is 10%
+    // of soldierHealthMax of damage the new squad will really take, making `healthier > harm2` true
+    // when it should be false — AT keeps a formation that gets the fresh squad killed.
+    if (missingHealth === undefined) missingHealth = game.global.soldierHealthMax - game.global.soldierHealth;
     if (!pierce) pierce = (game.global.brokenPlanet && !game.global.mapsActive) ? getPierceAmt() : 0;
     if (!block) block = calcOurBlock(false);
 
@@ -225,8 +237,24 @@ export function survive(formation: string = "S", critPower: number = 2, ignoreAr
     maxDamage += addPoison(true);
 
     //Pierce
+    // getPierceAmt() answers for the CURRENT formation — the game halves it only while
+    // game.global.formation == 3 (.trimps-game/main.js:11221) — but survive() is asking about a
+    // HYPOTHETICAL one, so the halving has to be translated in BOTH directions. Four cases:
+    //
+    //   current  target   getPierceAmt   needed   adjustment
+    //   -------  ------   ------------   ------   ----------
+    //   B (3)    B        halved         halved   none
+    //   B (3)    not-B    halved         full     *2      <- was already here
+    //   not-B    B        full           halved   *0.5    <- #229: missing
+    //   not-B    not-B    full           full     none
+    //
+    // Only the third was wrong, and it is the one that matters: survive("B") also multiplies block by
+    // 4, so directDamage's `Math.max(enemyDamage - block, pierce * enemyDamage, 0)` is almost always
+    // decided by the pierce term. Doubling it made Barrier look unsurvivable in exactly the regime
+    // Barrier exists for, and autoStance fell through to X/H.
     let pierce = (game.global.brokenPlanet && !game.global.mapsActive) ? getPierceAmt() : 0;
     if (formation !== "B" && game.global.formation === 3) pierce *= 2;
+    if (formation === "B" && game.global.formation !== 3) pierce *= 0.5;
 
     //Decides if the trimps can survive in this formation
     const notSpire = game.global.mapsActive || !game.global.spireActive;
@@ -298,10 +326,14 @@ export function windStance() {
     if (game.global.world <= 70) return;
     let stancey = 2;
     if (game.global.challengeActive !== "Daily") {
-        if (calcCurrentStance() === 5) {
-            stancey = 5;
-            lowHeirloom();
-        }
+        // #248 — the `calcCurrentStance() === 5` arm that stood here (and its dlowHeirloom twin below)
+        // was unreachable. calcCurrentStance returns exactly {15, 2, 0, 1, 12, 10, 11} or undefined;
+        // 5 is not among them. The 10+n encoding suggests a low/high pair for every stance, but the
+        // `return 15` is an EARLY return taken before the usehigh decision is made at all (calc.ts),
+        // so W is not "W with the high heirloom" — it is just W, and it always pairs with
+        // highHeirloom(). Whether a low-heirloom W should exist is a gameplay question, filed
+        // separately; the dead arms are removed so the encoding stops implying a state the producer
+        // cannot emit.
         if (calcCurrentStance() === 2) {
             stancey = 2;
             lowHeirloom();
@@ -332,10 +364,6 @@ export function windStance() {
         }
     }
     if (game.global.challengeActive === "Daily") {
-        if (calcCurrentStance() === 5) {
-            stancey = 5;
-            dlowHeirloom();
-        }
         if (calcCurrentStance() === 2) {
             stancey = 2;
             dlowHeirloom();

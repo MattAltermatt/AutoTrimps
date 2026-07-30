@@ -227,7 +227,15 @@ export function RmanualLabor2() {
     //Vars
     const trapTrimpsOK = getPageSetting('RTrapTrimps');
     const hasTurkimp = game.talents.turkimp2.purchased || game.global.turkimpTimer > 0;
-    const needToTrap = (game.resources.trimps.max - game.resources.trimps.owned >= game.resources.trimps.max * 0.05) || (game.resources.trimps.getCurrentSend() > game.resources.trimps.owned - trimpsEffectivelyEmployed());
+    // #185 — realMax(), not the raw `.max`. `.max` is only the summed housing (main.js:9959
+    // addMaxHousing); the effective cap is realMax() (config.js:8214), which applies maxMod,
+    // Carpentry/Carpentry_II, expandingTauntimp, Elixir of Crafting, Scaffolding and the U2 Trimps
+    // mutation. Population fills toward realMax(), so with any of those above 1 the raw expression
+    // goes NEGATIVE as soon as owned passes `.max` — at Carpentry radLevel 20 that is 14.9% of the
+    // real cap — and this disjunct was dead for the rest of the run. The U1 twin at :48 and the
+    // game's own town-full test (main.js:9959 `owned == realMax()`) both use realMax().
+    const realMaxPop = game.resources.trimps.realMax();
+    const needToTrap = (realMaxPop - game.resources.trimps.owned >= realMaxPop * 0.05) || (game.resources.trimps.getCurrentSend() > game.resources.trimps.owned - trimpsEffectivelyEmployed());
     let fresh = false;
 
     //ULTRA FRESH

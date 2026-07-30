@@ -41,6 +41,10 @@ declare global {
   var addPoison: typeof import('../modules/calc').addPoison
   var getCurrentEnemy: typeof import('../modules/query').getCurrentEnemy
   function getEmpowerment(zone?: number): string
+  /** .trimps-game/main.js:8193 — uberNature, but "" below getNatureStartZone(). NOT game.global.uberNature. */
+  function getUberEmpowerment(): string
+  /** .trimps-game/main.js:12029 — how many EXTRA cells an overkill chains to. See #231. */
+  function getOverkillerCount(getNumber?: boolean): number
   function challengeActive(name?: string): any
   var calcCurrentStance: typeof import('../modules/calc').calcCurrentStance
   function setFormation(formation?: string | number): void

@@ -51,7 +51,12 @@ beforeEach(() => {
   ;(globalThis as any).calcHDratio = vi.fn(() => 1)
 })
 
+// #234 — armormagic() now takes the MODE as a parameter; the dispatcher picks it from the context
+// that admitted the call (Daily -> darmormagic, C2 -> carmormagic) instead of the body OR-ing both.
+// Every assertion below is about a MODE, so they carry over unchanged; only the driver moves.
+let mode = 0
 const setCarmormagic = (value: number) => {
+  mode = value
   ;(globalThis as any).autoTrimpSettings.carmormagic = { type: 'multitoggle', value }
 }
 const bought = () => buyEquipmentCalls.map((a) => a[0])
@@ -66,14 +71,14 @@ describe('#70: U1 armormagic "CAM: H:D" arm is live (it read a MODULES field not
   it('carmormagic=2 (H:D) + H:D at/above MapDamageCutoff → buys armor', () => {
     setCarmormagic(2)
     ;(globalThis as any).calcHDratio = vi.fn(() => 9) // 9 >= 4 → under-damaged → buy armor
-    other.armormagic()
+    other.armormagic(mode)
     expect(bought()).toEqual(ARMOR)
   })
 
   it('carmormagic=2 (H:D) + H:D below MapDamageCutoff → does NOT buy', () => {
     setCarmormagic(2)
     ;(globalThis as any).calcHDratio = vi.fn(() => 1) // 1 < 4 → damage is fine → no armor
-    other.armormagic()
+    other.armormagic(mode)
     expect(bought()).toEqual([])
     // Before the fix BOTH of these cases bought nothing (`n >= undefined` is always false). The pair
     // above + this one is what proves the arm is live AND threshold-sensitive, not merely reachable.
@@ -83,12 +88,12 @@ describe('#70: U1 armormagic "CAM: H:D" arm is live (it read a MODULES field not
     setCarmormagic(2)
     ;(globalThis as any).calcHDratio = vi.fn(() => 3)
     ;(globalThis as any).autoTrimpSettings.MapDamageCutoff.value = '10' // 3 < 10 → no buy
-    other.armormagic()
+    other.armormagic(mode)
     expect(bought()).toEqual([])
 
     buyEquipmentCalls.length = 0
     ;(globalThis as any).autoTrimpSettings.MapDamageCutoff.value = '2' // 3 >= 2 → buy
-    other.armormagic()
+    other.armormagic(mode)
     expect(bought()).toEqual(ARMOR)
   })
 
@@ -96,21 +101,62 @@ describe('#70: U1 armormagic "CAM: H:D" arm is live (it read a MODULES field not
     setCarmormagic(2)
     ;(globalThis as any).calcHDratio = vi.fn(() => 9)
     ;(globalThis as any).game.global.soldierHealth = 50 // 50 > 40% of 100 → gate NOT met
-    other.armormagic()
+    other.armormagic(mode)
     expect(bought()).toEqual([])
   })
 
   it('carmormagic=3 (Always) + low health → buys, regardless of H:D', () => {
     setCarmormagic(3)
     ;(globalThis as any).calcHDratio = vi.fn(() => 0.01) // far below the cutoff — irrelevant on this arm
-    other.armormagic()
+    other.armormagic(mode)
     expect(bought()).toEqual(ARMOR)
   })
 
   it('carmormagic=0 (Off) → does not buy', () => {
     setCarmormagic(0)
     ;(globalThis as any).calcHDratio = vi.fn(() => 9)
-    other.armormagic()
+    other.armormagic(mode)
     expect(bought()).toEqual([])
+  })
+})
+
+describe('#234: the mode comes from the caller — the body reads NEITHER multitoggle', () => {
+  beforeEach(() => {
+    // Both settings armed at "Always", the mode that fires unconditionally on low health. Pre-fix the
+    // body OR'd them, so EITHER of these satisfied the third arm no matter which context called.
+    ;(globalThis as any).autoTrimpSettings.carmormagic = { type: 'multitoggle', value: 3 }
+    ;(globalThis as any).autoTrimpSettings.darmormagic = { type: 'multitoggle', value: 3 }
+  })
+
+  it('mode 1 below the zone gate does NOT buy, even with both settings at 3', () => {
+    // THE BUG: a bogged Daily configured "DAM: Above 80%" (mode 1) below that zone used to buy anyway,
+    // because carmormagic == 3 satisfied the Always arm. world 10 vs armormagicworld = floor(100*0.8).
+    ;(globalThis as any).game.global.world = 10
+    other.armormagic(1)
+    expect(bought()).toEqual([])
+  })
+
+  it('mode 2 below the H:D cutoff does NOT buy, even with both settings at 3', () => {
+    ;(globalThis as any).calcHDratio = vi.fn(() => 1) // 1 < MapDamageCutoff 4
+    other.armormagic(2)
+    expect(bought()).toEqual([])
+  })
+
+  it('mode 0 (Off) does NOT buy, even with both settings at 3', () => {
+    other.armormagic(0)
+    expect(bought()).toEqual([])
+  })
+
+  it('anti-false-green: mode 3 with the SAME settings does buy', () => {
+    // Without this, a body that never buys would satisfy all three assertions above.
+    other.armormagic(3)
+    expect(bought()).toEqual(ARMOR)
+  })
+
+  it('and the settings are genuinely irrelevant — clearing both changes nothing', () => {
+    delete (globalThis as any).autoTrimpSettings.carmormagic
+    delete (globalThis as any).autoTrimpSettings.darmormagic
+    other.armormagic(3)
+    expect(bought()).toEqual(ARMOR)
   })
 })

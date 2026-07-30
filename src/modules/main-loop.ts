@@ -152,9 +152,19 @@ globalThis.magmiteSpenderChanged = false;
 globalThis.lastHeliumZone = 0;
 globalThis.lastRadonZone = 0;
 
-//Get Gamma burst % value
-globalThis.gammaBurstPct = (getHeirloomBonus("Shield", "gammaBurst") / 100) > 0 ? (getHeirloomBonus("Shield", "gammaBurst") / 100) : 1;
-globalThis.shieldEquipped = game.global.ShieldEquipped.id;
+// #170 — this line used to duplicate heirlooms.ts's HeirloomShieldSwapped() body, and its false arm
+// minted **1** as the "there is no Gamma Burst" sentinel. calc.ts:359/364/1283/1288 guard on
+// `gammaBurstPct > 0` and then scale by `(gammaBurstPct + 1) / 5`, so that sentinel was not inert:
+// it reported 40% of the player's real damage for every player without a gamma shield — the majority
+// case, since the mod only rolls on rarity 9 (config.js:8158) and the innate version needs rarity >= 10.
+//
+// It is now a zero-init plus a sentinel that cannot equal any real ShieldEquipped.id (ids are strings;
+// an unequipped slot is `{}` so `.id` is undefined — see .trimps-game/config.js:176). The first tick's
+// `shieldEquipped !== game.global.ShieldEquipped.id` check below therefore always fires once and
+// HeirloomShieldSwapped() computes both globals. Do NOT restore a computation here: it was a second
+// copy of a one-line formula, which is exactly how #168's convertRate fix landed on one of two copies.
+globalThis.gammaBurstPct = 0;
+globalThis.shieldEquipped = null;
 
 // #87 — EVERY DISPATCH BELOW IS WRAPPED IN atGuard(name, fn). See src/modules/guard.ts for the
 // contract. In short: this loop used to contain not one try/catch, so a throw in any one automation
@@ -360,7 +370,14 @@ export function mainLoop() {
             if (getPageSetting('buywepsvoid') == true && ((getPageSetting('VoidMaps') == game.global.world && game.global.challengeActive != "Daily") || (getPageSetting('DailyVoidMod') == game.global.world && game.global.challengeActive == "Daily")) && game.global.mapsActive && getCurrentMapObject().location == "Void") buyWeps();
         });
         atGuard('armormagic', function () {
-            if ((getPageSetting('darmormagic') > 0 && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) || (getPageSetting('carmormagic') > 0 && (challengeActive("Toxicity") || challengeActive("Nom")))) armormagic();
+            // #234 — the two contexts are now dispatched SEPARATELY and each passes its own mode.
+            // They used to be OR'd into one admit-check and armormagic() then OR'd the two settings
+            // internally, so a "CAM: Always" carried a bogged Daily straight past the "Above 80%" zone
+            // gate the user had chosen in darmormagic — and symmetrically on a Toxicity/Nom run.
+            const dailyArmorMagic = getPageSetting('darmormagic') > 0 && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined');
+            const c2ArmorMagic = getPageSetting('carmormagic') > 0 && (challengeActive("Toxicity") || challengeActive("Nom"));
+            if (dailyArmorMagic) armormagic(getPageSetting('darmormagic'));
+            else if (c2ArmorMagic) armormagic(getPageSetting('carmormagic'));
         });
 
         //Stance
@@ -576,7 +593,11 @@ export function mainLoop() {
             }
         });
         atGuard('Rarmormagic', function () {
-            if ((getPageSetting('Rdarmormagic') > 0 && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) || (getPageSetting('Rcarmormagic') > 0 && (challengeActive('Toxicity') || challengeActive('Nom')))) Rarmormagic();
+            // #234 — see the U1 twin above; same split, same reason.
+            const RdailyArmorMagic = getPageSetting('Rdarmormagic') > 0 && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined');
+            const Rc2ArmorMagic = getPageSetting('Rcarmormagic') > 0 && (challengeActive('Toxicity') || challengeActive('Nom'));
+            if (RdailyArmorMagic) Rarmormagic(getPageSetting('Rdarmormagic'));
+            else if (Rc2ArmorMagic) Rarmormagic(getPageSetting('Rcarmormagic'));
             // #216 (same class) — Rcarmormagic is the "C2 Armor Magic" setting: its own tooltip says it
             // applies "while running the Toxicity or Nom Challenge² in Universe 2" and it sits in the C2
             // category. The direct compares it used can never be true in either C² — Toxad² sets

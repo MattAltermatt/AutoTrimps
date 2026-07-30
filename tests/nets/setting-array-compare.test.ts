@@ -263,18 +263,12 @@ const waiverFor = (s: CompareSite) => {
 // unrelated fixes — every one of which would have reddened this net while finding nothing. Line-keyed
 // baselines have already produced two false reds on this repo.
 const KNOWN_BROKEN: Record<string, { op: CompareOp; literal: number | null; why: string }> = {
-  'RAMPraidcell@src/modules/mapfunctions.ts#RPraid': {
-    op: '!=', literal: 0,
-    why: '#162 — reproduced in tests/mapfunctions.rpraid-cell.test.ts: the 2nd+ configured PR zone never praids.',
-  },
-  'RdAMPraidcell@src/modules/mapfunctions.ts#RPraid': {
-    op: '!=', literal: 0, why: '#162 — the daily twin of the above, same expression.',
-  },
-  'Rinsanityfarmcell@src/modules/maps.ts#RautoMap': {
-    op: '!=', literal: 0, why: '#162 — same shape: [-1] default guarded with != 0.',
-  },
-  'Ralchfarmcell@src/modules/maps.ts#RautoMap': { op: '!=', literal: 0, why: '#162 — same shape.' },
-  'Rhypofarmcell@src/modules/maps.ts#RautoMap': { op: '!=', literal: 0, why: '#162 — same shape.' },
+  // #162's five entries (RAMPraidcell / RdAMPraidcell @ RPraid, and Rinsanityfarmcell /
+  // Ralchfarmcell / Rhypofarmcell @ RautoMap) are GONE, not waived: all five now go through
+  // `pairedCellGateOpen` (utils.ts), which takes the fallback per INDEX instead of guarding the whole
+  // array, so none of them is compared as a scalar any more and the shrink-only check below would
+  // reject a leftover entry. Covered by tests/utils.pairedCellGate.test.ts +
+  // tests/mapfunctions.rpraid-cell.test.ts.
   'Rshipfarmamount@src/modules/mapfunctions.ts#Rship': {
     op: '==', literal: 50,
     why: '#263 — a VALUE test against a whole list; silently stops matching past one configured entry.',
@@ -351,12 +345,34 @@ describe('multiValue settings compared against a scalar (#162 / #178 / #263)', (
     // The regression this net had itself: `keyOf` is a location, not a description. Synthesize a
     // fresh #263-shaped site inside RPraid — same id, same file, same function as a live waiver,
     // different comparison — and it must still be reported.
-    const waived = sites.find((s) => waiverFor(s))!
-    expect(waived, 'the fix queue is empty — this guard has nothing to stand on').toBeTruthy()
-    const impostor: CompareSite = { ...waived, op: '==', literal: 50 }
-    expect(keyOf(impostor)).toBe(keyOf(waived)) // same slot...
-    expect(waiverFor(impostor)).toBeUndefined() // ...but not the same reviewed comparison
-    expect(classify(impostor, settings.get(impostor.id)?.rawDefault ?? null)).toBeTruthy()
+    // FIXTURE-DRIVEN, deliberately. Two earlier versions of this guard were tied to whatever
+    // `KNOWN_BROKEN` happened to contain: a hardcoded `== 50` impostor (which silently BECAME the
+    // waived comparison once #162's five `!= 0` entries were deleted), then a derivation from
+    // `sites.find(waiverFor)` — which asserts the queue is non-empty and would therefore go RED on the
+    // day #263 is FIXED and the queue empties. That is exactly the #178 trap this same file explains 45
+    // lines above: a capability check whose health depends on a defect persisting cannot tell "the class
+    // is clean" from "the scanner broke". So the LOGIC is tested against a synthetic waiver map, and
+    // live-`sites` assertions are left to the census and shrink tests below.
+    const site = (op: CompareOp, literal: number | null): CompareSite => ({
+      file: 'src/modules/fake.ts', line: 1, fn: 'f', id: 'FakeSetting', op, literal, other: String(literal), reversed: false,
+    })
+    const key = keyOf(site('!=', 0))
+    const table: Record<string, { op: CompareOp; literal: number | null; why: string }> =
+      { [key]: { op: '!=', literal: 0, why: 'synthetic' } }
+    const lookup = (s: CompareSite) => {
+      const w = table[keyOf(s)]
+      return w && w.op === s.op && w.literal === s.literal ? w : undefined
+    }
+    // The waived comparison itself is covered...
+    expect(lookup(site('!=', 0)), 'the reviewed comparison must be covered').toBeTruthy()
+    // ...but a DIFFERENT comparison at the same id@file#fn slot must not be.
+    for (const impostor of [site('==', 50), site('!=', 1), site('==', 0), site('<=', 0), site('==', null)]) {
+      expect(keyOf(impostor), 'same slot').toBe(key)
+      expect(lookup(impostor), `${impostor.op} ${impostor.literal} must NOT be exempted`).toBeUndefined()
+      expect(classify(impostor, '[-1]'), 'and it must classify as broken').toBeTruthy()
+    }
+    // `waiverFor` and `lookup` are the same rule; pin that so testing the copy means something.
+    expect(waiverFor.toString().replace(/KNOWN_BROKEN/, 'table')).toContain('w.op === s.op && w.literal === s.literal')
   })
 
   it('the fix queue only SHRINKS — every entry is one real, still-broken, still-identical site', () => {

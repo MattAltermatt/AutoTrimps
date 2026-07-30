@@ -166,11 +166,11 @@ describe('calc.calcEnemyBaseHealth / calcEnemyBaseAttack — Layer-1 golden mast
   })
 
   it('base health at zone 5 (pre-planet branch)', () => {
-    expect(calcEnemyBaseHealth(5, 50, 'Snimp')).toBeCloseTo(2395.3454337187586, 6)
+    expect(calcEnemyBaseHealth(5, 50, 'Snimp', 'world')).toBeCloseTo(2395.3454337187586, 6)
   })
 
   it('base health at zone 60 (post-planet exponential branch)', () => {
-    expect(calcEnemyBaseHealth(60, 50, 'Snimp')).toBeCloseTo(2.6010562269595694e18, -6)
+    expect(calcEnemyBaseHealth(60, 50, 'Snimp', 'world')).toBeCloseTo(2.6010562269595694e18, -6)
   })
 
   it('base attack at zone 5 (floored)', () => {
@@ -180,12 +180,19 @@ describe('calc.calcEnemyBaseHealth / calcEnemyBaseAttack — Layer-1 golden mast
 
   // zone 1/2 boundary arms (#51 net-depth follow-up — the zone===1 / zone===2 literal branches
   // the general suite skipped; guards a future edit to those exact early-game coefficients).
-  it('base attack at zone 1 (zone===1 arm: ×0.35 then 0.2/0.75 split)', () => {
-    expect(calcEnemyBaseAttack('world', 1, 50, 'Snimp')).toBe(16)
+  //
+  // ⚠️ These two moved in #296 (16 -> 13, 73 -> 62). They were CHARACTERIZATION goldens: they pinned
+  // what AT did, and what AT did was omit the game's pre-break-the-planet 0.85 for exactly these two
+  // zones, because it had been folded into the `zone < 60` arm that zones 1 and 2 never take. The new
+  // values are the pinned clone's own (config.js getEnemyAttack), so the change is the correction, not
+  // a re-baseline — and `calc.enemyStatMirror.test.ts` now diffs the whole curve against the clone
+  // rather than against a number, so this class cannot recur silently.
+  it('base attack at zone 1 (zone===1 arm: ×0.35 then 0.2/0.75 split, then ×0.85)', () => {
+    expect(calcEnemyBaseAttack('world', 1, 50, 'Snimp')).toBe(13)
   })
 
-  it('base attack at zone 2 (zone===2 arm: ×0.5 then 0.32/0.68 split)', () => {
-    expect(calcEnemyBaseAttack('world', 2, 50, 'Snimp')).toBe(73)
+  it('base attack at zone 2 (zone===2 arm: ×0.5 then 0.32/0.68 split, then ×0.85)', () => {
+    expect(calcEnemyBaseAttack('world', 2, 50, 'Snimp')).toBe(62)
   })
 })
 
@@ -203,6 +210,8 @@ describe('calc.RcalcEnemyBaseHealth — Layer-1 golden master (U2 radon scaling)
       badGuys: { Snimp: { health: 1 } },
       global: { universe: 2, mapsActive: false },
     })
+    // The U2 twin keeps its 3-arg signature: it sources map context from game.global.mapsActive, which
+    // is its own pre-existing divergence (filed separately) rather than part of #298's seam.
     expect(RcalcEnemyBaseHealth(60, 50, 'Snimp')).toBeCloseTo(1.1718945345624699e33, -27)
   })
 })

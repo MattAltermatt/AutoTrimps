@@ -143,6 +143,22 @@ describe('#100 · calc.ts — the tautology that mispriced damage for every Wind
     // If the fix had over-reached and killed the feature, every assertion above would still pass. The
     // branch must remain live for the players it was written for. (The shield is not carried, so
     // trimpAA stays 1 and only the crit terms move — enough to prove the branch ran.)
+    //
+    // ⚠️ This test needed a real fixture as of #199. It used to run on the booted save as-is, where
+    // getPlayerCritChance() is 0 — and it passed only because getCritMulti priced a NON-crit at
+    // getMegaCritDamageMult(0) = 1/base. The 2.5x it measured WAS that bug: divide out 0.4, multiply
+    // back 1. With the pricing corrected both crit terms are exactly 1 on a zero-crit save, so the
+    // branch runs and correctly predicts nothing, and the old assertion could no longer see it.
+    //
+    // The claim in the name is "the branch is still ENTERED", so drive a player who actually crits:
+    // the branch divides out their real multiplier and multiplies back the one built from critCC /
+    // critDD, which stay at their module-init 1 precisely because the shield is NOT equipped.
+    w.getPlayerCritChance = () => 1.5
+    w.getPlayerCritDamageMult = () => 3
+    expect(w.getCritMulti(false)).toBe(9) // 0.5*(3) + 0.5*(3*5) — the tier-1/tier-2 blend
+    expect(w.critCC).toBe(1)
+    expect(w.critDD).toBe(1)
+
     const off = w.calcHDratio()
     withValue(w, ['highdmg'], 'Shield of Doom', () => expect(w.calcHDratio()).not.toBe(off))
   })

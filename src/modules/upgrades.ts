@@ -55,17 +55,66 @@ export function gigaTargetZone() {
     if (MODULES.upgrades.targetFuelZone && (getPageSetting("fuellater") >= 1 || getPageSetting("beforegen") != 0)) targetZone = Math.min(targetZone, Math.max(230, getPageSetting("fuellater")));
 
     //Failsafe
-    if (targetZone < 60) {
+    // #297 — the boundary was `< 60`, and 60 is the ONE value that breaks autoGiga's arithmetic:
+    // nGigas is min(floor(targetZone - 60), …), so it is exactly 0 for every targetZone in [60, 61),
+    // and autoGiga's fixed-point loop ends `delta /= nGigas`. `60 < 60` is false, so 60 sailed
+    // through the failsafe that exists to catch precisely "this is not a usable target zone" — and
+    // `VoidMaps = 60` was the reporter's sole trigger, an entirely ordinary setting. The predicate is
+    // now `!(targetZone >= 61)` rather than `targetZone < 61` because NaN also has to land here: a
+    // poisoned store (#237's class) makes voidZone NaN, Math.max propagates it, and `NaN < 61` is
+    // FALSE — so the strictly-less form would wave the one value through that breaks every consumer.
+    if (!(targetZone >= 61)) {
+        const badZone = targetZone;
         targetZone = Math.max(65, game.global.highestLevelCleared);
-        debug("Auto Gigastation: Warning! Unable to find a proper targetZone. Using your HZE instead", "general", "*rocket");
+        // Latched per (reason, zone) like other-praiding.ts:1437 and mapfunctions-amp.ts:105. This
+        // line is reached on every tick that firstGiga runs — which is every tick until the first
+        // Gigastation is owned — so an unlatched debug() is one log line per tick forever. That was
+        // half of #297's reported symptom, and it is pre-existing for any user whose target zone is
+        // below 60; fixing the NaN without latching would just swap one per-tick line for another.
+        warnGigaOnce("targetZone=" + badZone, "Unable to find a proper targetZone (" + badZone + "). Using your HZE instead");
     }
 
     return targetZone;
 }
 
+// #297 — warn-once-per-zone latch for the giga-pattern diagnostics. Keyed by the REASON string (which
+// carries the offending value), not by a bare boolean: a latch keyed too coarsely lets whichever
+// broken input arrives first silence every other one's only diagnostic, and these warnings are the
+// sole surface for a state where AT deliberately does nothing (#176/#227 are the same lesson). The
+// zone value is the re-arm, so a persisting fault is still visible once per zone rather than 10x/sec.
+const gigaWarnedZone: Record<string, number> = {};
+function warnGigaOnce(reason: string, message: string) {
+    if (gigaWarnedZone[reason] === game.global.world) return;
+    gigaWarnedZone[reason] = game.global.world;
+    debug("Auto Gigastation: Warning! " + message, "general", "*rocket");
+}
+
+// The refusal half: warn, then hand back the NaN that autoGiga's contract defines as "no pattern".
+// Returning NaN rather than a made-up number is deliberate — every candidate fallback (the declared
+// default, the previously stored delta, 0) is a guess about a pattern the arithmetic could not
+// produce, and firstGiga's job is to leave the user's stored pattern alone instead.
+function warnNoGigaPattern(reason: string, why: string): number {
+    warnGigaOnce(reason, "Leaving the giga pattern unchanged — " + why);
+    return NaN;
+}
+
+// #297 — RETURNS NaN when no pattern is computable, and that is a contract, not an accident: the
+// caller must not persist it. The final line's `+(Math.round(delta + "e+2") + "e-2")` string
+// round-trip is a funnel that converts EVERY non-finite intermediate into NaN — `Infinity + "e+2"` is
+// the string "Infinitye+2", Math.round of that is NaN, and `+"NaNe-2"` is NaN — so five arithmetically
+// distinct faults used to arrive as one indistinguishable value, which firstGiga then wrote into
+// DeltaGigastation. `JSON.stringify({d: NaN})` is `{"d":null}`, so the corruption outlived the tab, and
+// all three read sites compare with `<` (`x < NaN` is false for every x), inverting each guard — the
+// #202 shape. Each route is therefore refused at its own source, with the offending value named: a
+// single isFinite check on the result would stop the corruption but could not tell the user WHICH
+// input is broken, and one of them (the delta factor) is a setting they can fix.
 export function autoGiga(targetZone?: number, metalRatio = 0.5, slowDown = 10, customBase?: number) {
     //Pre Init
-    if (!targetZone || targetZone < 60) targetZone = gigaTargetZone();
+    // The guard was `!targetZone || targetZone < 60`. Two values got past it: an explicitly-passed 60
+    // (the caller's own arm, so layer one alone would not have closed this route), and ±Infinity,
+    // which is `>= 61` yet makes megabook^(zone - baseZone) infinite. `Number.isFinite` rejects
+    // undefined and NaN; the `< 61` arm still carries 0 and every too-shallow zone.
+    const zone = Number.isFinite(targetZone as number) && (targetZone as number) >= 61 ? targetZone as number : gigaTargetZone();
 
     //Init
     const base = customBase ? customBase : getPageSetting('FirstGigastation');
@@ -76,8 +125,27 @@ export function autoGiga(targetZone?: number, metalRatio = 0.5, slowDown = 10, c
     const megabook = game.global.frugalDone ? 1.6 : 1.5;
 
     //Calculus
-    const nGigas = Math.min(Math.floor(targetZone - 60), Math.floor(targetZone / 2 - 25), Math.floor(targetZone / 3 - 12), Math.floor(targetZone / 5), Math.floor(targetZone / 10 + 17), 39);
+    const nGigas = Math.min(Math.floor(zone - 60), Math.floor(zone / 2 - 25), Math.floor(zone / 3 - 12), Math.floor(zone / 5), Math.floor(zone / 10 + 17), 39);
     const metalDiff = Math.max(0.1 * metalRatio * metalPS / gemsPS, 1);
+
+    // The remaining routes to a non-finite delta, each refused with its own reason so the latch above
+    // cannot let one silence another. Every one of them is reachable through this exported signature
+    // and driven by a test; none is a defensive comment.
+    //   metalDiff    → gemsPS 0 with metalPS > 0 gives Infinity, 0/0 gives NaN, and Math.max(NaN, 1)
+    //                  is NaN, so one guard on the quotient covers every income route including a
+    //                  non-finite metalPS
+    //   rawPop <= 0  → `pop /= rawPop`
+    //   slowDown <= 0 → delta 0 or negative → Math.log gives -Infinity or NaN
+    //   base         → a poisoned FirstGigastation (#237's class) or customBase poisons pop directly
+    // Deliberately NOT guarded here: `nGigas < 1`, the route the live report actually hit. It is
+    // unreachable once `zone` is >= 61 (nGigas is min(floor(zone - 60), …), whose binding term is 1 at
+    // 61 and rises from there), and a guard no caller can reach is a comment pretending to be code —
+    // the #248/#225 class this campaign keeps filing. The zone guard above is where that route dies;
+    // the finite check after the loop is what catches anything this list has missed.
+    if (!Number.isFinite(metalDiff)) return warnNoGigaPattern("metalDiff=" + metalDiff, "cannot weigh metal against gems (metal/sec " + metalPS + ", gems/sec " + gemsPS + ")");
+    if (!(rawPop > 0)) return warnNoGigaPattern("rawPop=" + rawPop, "population is " + rawPop);
+    if (!(slowDown > 0)) return warnNoGigaPattern("slowDown=" + slowDown, "the delta factor is " + slowDown + " — set Custom Delta Factor to 1 or more, or below 1 to use the default");
+    if (!Number.isFinite(base)) return warnNoGigaPattern("base=" + base, "the first-Gigastation count is " + base);
 
     let delta = 3;
     for (let i = 0; i < 10; i++) {
@@ -88,7 +156,7 @@ export function autoGiga(targetZone?: number, metalRatio = 0.5, slowDown = 10, c
         pop /= rawPop;
 
         //Delta
-        delta = Math.pow(megabook, targetZone - baseZone);
+        delta = Math.pow(megabook, zone - baseZone);
         delta *= metalDiff * slowDown * pop;
         delta /= Math.pow(1.75, nGigas);
         delta = Math.log(delta);
@@ -97,7 +165,15 @@ export function autoGiga(targetZone?: number, metalRatio = 0.5, slowDown = 10, c
     }
 
     //Returns a number in the x.yy format, and as a number, not a string
-    return +(Math.round((delta + "e+2") as any) + "e-2");
+    const pattern = +(Math.round((delta + "e+2") as any) + "e-2");
+
+    // The funnel itself, closed. Every guard above is an INPUT check, and no list of input checks is a
+    // proof about the output: a finite-but-enormous target zone (megabook ** 1e300 is Infinity)
+    // overflows inside the loop with nothing invalid anywhere in the inputs. Refusing on the result is
+    // the only check that cannot be reasoned around, so it stays even though the named routes are
+    // covered — a NaN reaching setPageSetting is permanent damage (#237), and one comparison is cheap.
+    if (!Number.isFinite(pattern)) return warnNoGigaPattern("pattern=" + pattern, "the pattern arithmetic overflowed for target zone " + zone);
+    return pattern;
 }
 
 export function firstGiga(forced?: boolean) {
@@ -123,10 +199,29 @@ export function firstGiga(forced?: boolean) {
 
     //Define Base and Delta for this run
     const base = game.buildings.Warpstation.owned;
+    // #297 — LEFT AT 60 DELIBERATELY. `CustomTargetZone = 60` is the one route a user can drive the
+    // explicit-zone arm down, and tightening this to `>= 61` looked like the obvious matching fix — but
+    // it is inert: 60 then reaches autoGiga, whose own guard re-derives it to the same zone this line
+    // would have. A mutant reverting `>= 61` to `>= 60` survived the whole suite, because there is no
+    // observable difference to assert. An unprovable edit is not a fix, so the boundary is enforced in
+    // exactly one place (autoGiga) and this line is left alone. The tooltip DID have to move: whichever
+    // line does the discarding, "values below 60 are discarded" is now false for 60 itself.
     const deltaZ = getPageSetting('CustomTargetZone') >= 60 ? getPageSetting('CustomTargetZone') : undefined;
     const deltaM = MODULES["upgrades"].customMetalRatio > 0 ? MODULES["upgrades"].customMetalRatio : undefined;
     const deltaS = getPageSetting('CustomDeltaFactor') >= 1 ? getPageSetting('CustomDeltaFactor') : undefined;
     const delta = autoGiga(deltaZ, deltaM, deltaS);
+
+    // #297 — autoGiga returns NaN for "no pattern is computable", and this is the line that used to
+    // persist it: `setPageSetting` wrote it verbatim, serializeSettings flattened it to
+    // `{"DeltaGigastation":null}`, and createSetting keeps a stored null forever because
+    // `null !== undefined` — so one bad tick poisoned the setting permanently, across reloads, and
+    // every consumer's `<` comparison against NaN then reported the opposite of what it meant.
+    // Bailing before BOTH writes is deliberate: FirstGigastation is re-pinned to the live Warpstation
+    // count on purpose (it is what makes `owned < floor(0 * delta) + first` false so the first
+    // Gigastation can be bought at all — #107), but pinning a new base against a delta that does not
+    // exist would just move the corruption one setting over. autoGiga has already warned, latched by
+    // reason, so this bail is diagnosed rather than silent.
+    if (!Number.isFinite(delta)) return false;
 
     //Save settings
     setPageSetting('FirstGigastation', base);

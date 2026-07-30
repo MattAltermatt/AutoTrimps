@@ -7,7 +7,7 @@
 // (equipment/upgrades/mapfunctions/other/AutoTrimps2/SettingsGUI), so every one is published to
 // globalThis (shared-var seam). The 16 keep their init values; the 41 implicit ones are
 // initialised undefined below so strict-mode bare writes resolve. MODULES["maps"] kept verbatim.
-import { getPageSetting, debug, setPageSetting } from './utils'
+import { getPageSetting, debug, setPageSetting, pairedCellGateOpen } from './utils'
 
 // Formerly-implicit-global maps state (see header) — published so external readers + strict-mode
 // writes both work.
@@ -221,9 +221,20 @@ export function selectUniqueMap(): string | undefined {
             return theMap.id;
         }
         const treasure = getPageSetting('TrimpleZ');
-        if (theMap.name == 'Trimple Of Doom' && (!runningC2 && game.mapUnlocks.AncientTreasure.canRunOnce && game.global.world >= treasure)) {
+        // #222 — the TrimpleZ range test moved from this branch's BODY into its entry condition. As a
+        // `continue` it skipped the whole loop iteration, so the AMUtrimple `else if` below was
+        // unreachable in any non-C2 run — and the range covers TrimpleZ's own default of 0, so
+        // "AMU: Trimple" worked ONLY during a Challenge², the inverse of its tooltip, which says it
+        // "is independent of the Trimple Z setting elsewhere on this panel".
+        //
+        // The natural branch's own outcome is unchanged: it never returned the map while in range.
+        // Falling through rather than `continue`-ing is also unchanged — everything after this point
+        // in the loop body is gated on a different map NAME (The Prison, Bionic Wonderland, Imploding
+        // Star), so 'Trimple Of Doom' cannot match any of it.
+        const trimpleZinRange = treasure > -33 && treasure < 33;
+        if (theMap.name == 'Trimple Of Doom' && !trimpleZinRange && (!runningC2 && game.mapUnlocks.AncientTreasure.canRunOnce && game.global.world >= treasure)) {
             const theMapDifficulty = Math.ceil(theMap.difficulty / 2);
-            if ((game.global.world < 33 + theMapDifficulty) || treasure > -33 && treasure < 33) continue;
+            if (game.global.world < 33 + theMapDifficulty) continue;
             if (treasure < 0)
                 setPageSetting('TrimpleZ', 0);
             return theMap.id;
@@ -426,10 +437,21 @@ export function autoMap() {
     //
     // What this deliberately does NOT do is widen the Nom carve-out. FarmWhenNomStacks7's description
     // promises farming "at 30 stacks, exiting once the ratio drops back under 10x", but the trigger
-    // below is `== 30`, so it holds for exactly one stack value. Widening it to `>= 30` is a strategy
-    // change that first needs calcEnemyHealth to model Nom's 1.25^stacks healing — without that,
-    // calcHDratio() sits UNDER the cutoff in precisely the scenario the setting exists for. Filed
-    // separately; this change is the ownership fix only.
+    // below is `== 30`, so it holds for exactly one stack value of a counter that only ever rises.
+    //
+    // ⚠️ The reason this comment used to give for not widening it was WRONG, and so is #286's, which
+    // inherited it: "calcEnemyHealth does not model Nom's 1.25^stacks healing". `Math.pow(1.25,
+    // cell.nomStacks)` is not healing and not health — it is an enemy ATTACK multiplier, applied in the
+    // game's situational damage block (main.js:12365) and described by the challenge itself as "gaining
+    // 25% (compounding) more attack damage" (config.js:3776). AT already models it, at calc.ts:627 and
+    // :696. What is unmodelled is the separate 5%-of-max-health heal, which is a current-HP effect, not
+    // a multiplier `calcEnemyHealth` could carry.
+    //
+    // The real obstacle is worse than the imagined one: `calcHDratio()` with no argument is
+    // `calcEnemyHealth() / ourBaseDamage` (calc.ts:982), so NEITHER term moves with nomStacks. The
+    // cutoff below is blind to the mechanic it exists to react to, and widening `== 30` to `>= 30`
+    // would hold the carve-out across stacks 30-99 on a test that cannot see Nom at all. That is a
+    // design question about what the gate should read, not an operator swap — see #286.
     if (getPageSetting('DisableFarm') > 0) {
         shouldFarm = (calcHDratio() >= getPageSetting('DisableFarm'));
         if (game.options.menu.repeatUntil.enabled == 1 && shouldFarm)
@@ -531,8 +553,60 @@ export function autoMap() {
     //Maps
     vanillaMapatZone = (game.options.menu.mapAtZone.enabled && game.global.canMapAtZone && !isActiveSpireAT() && !disActiveSpireAT());
     if (vanillaMapatZone) {
-        for (let x = 0; x < game.options.menu.mapAtZone.setZone.length; x++) {
-            if (game.global.world == game.options.menu.mapAtZone.setZone[x].world)
+        // #221 — mirror the game's own MaZ driver (checkMapAtZoneWorld, main.js:13402-13413) instead
+        // of walking the raw `.setZone` array. That array is only the U1 preset-A list: getSetZone()
+        // (config.js:1435) resolves universe + A/B mode and storeSetting() writes ONLY the active
+        // one, so under `U1Mode == 'b'` the raw read sees stale rows (factory default [{world:200}])
+        // — AT parks in maps forever at a zone the user never configured and never reaches the one
+        // they did. The row filters below are the game's, operator for operator, including the
+        // `times`/`tx` repeat arms the old loop ignored entirely. `on !== false`, NOT `!on`: the
+        // factory row carries no `on` field at all and the game honours it. The U2 twin in RautoMap
+        // has always used the ACCESSOR — but only the accessor: found by review, it still spells the
+        // flag `!setZone[x].on` (which skips the un-edited U2 factory row, since it has no `on`), has
+        // no `times == -2`/`tx` arm, and no `getMaxSettings()` bound. Filed separately; do NOT read
+        // this back-port as evidence that the U2 side of the class is closed.
+        //
+        // Deliberately NOT mirrored: the game's `cell` / `preMapsActive` gates. `cell` is the
+        // WHEN-within-a-zone, and `shouldDoMaps` is AT's coarser per-zone "go do maps" decision.
+        //
+        // #303 — `done` IS mirrored now, and it is not a "when" gate: it is the game's ONE-SHOT LATCH
+        // (`totalPortals_world_nextCell`, stamped at main.js:13417 the moment a row fires), the only
+        // thing making a MaZ row fire once per zone per portal. AT had no equivalent, so nothing after
+        // this block cleared `shouldDoMaps` except the spire-gated arm below, and `game.global.world`
+        // cannot advance while AT is in maps — AT stayed map-locked for the whole matched zone, and
+        // #221's honouring of `times` widened that from one zone to a RANGE for anyone using an
+        // "Every Zone" row ({times: 1, through: 999} are both dialog defaults).
+        //
+        // DELEGATED, not re-implemented: AT reads the row's own `done` string rather than keeping a
+        // latch of its own. That is deliberate — a private latch is a second bookkeeper to key wrongly
+        // (#227's lesson), while this cannot drift from the game's answer, and #221's whole point was
+        // that AT and `checkMapAtZoneWorld` should agree about which rows are live.
+        //
+        // The comparison is a PREFIX, and that is the one place this departs from operator-for-operator.
+        // The game's key ends in `nextCell`, which advances through the zone, so an equality test
+        // against a freshly-computed key would only match during the single cell the row fired at and
+        // would let AT re-assert for the rest of the zone — the bug, intact. `<portals>_<world>_` asks
+        // the question AT actually needs: has this row already fired in THIS zone on THIS portal? (U2's
+        // spire suffix appends after the cell, so it is inside the prefix's reach either way.)
+        //
+        // Two things this does NOT fix, both pre-existing and both filed rather than folded in: a row
+        // with an explicit `cell` still lets AT enter at cell 1 and stay until the game fires at cell N,
+        // and a save loaded mid-zone past the row's cell never sees the stamp at all.
+        const mazSetZone = game.options.menu.mapAtZone.getSetZone();
+        const mazMaxSettings = game.options.menu.mapAtZone.getMaxSettings();
+        const mazDonePrefix = getTotalPortals() + "_" + game.global.world + "_";
+        for (let x = 0; x < mazSetZone.length; x++) {
+            if (x >= mazMaxSettings) break;
+            if (String(mazSetZone[x].done ?? '').startsWith(mazDonePrefix)) continue;
+            if (mazSetZone[x].on === false) continue;
+            if (mazSetZone[x].through < game.global.world) continue;
+            let nextRepeat = false;
+            if (mazSetZone[x].times > -1) {
+                if (game.global.world > mazSetZone[x].world && (game.global.world - mazSetZone[x].world) % mazSetZone[x].times == 0) nextRepeat = true;
+            } else if (mazSetZone[x].times == -2 && game.global.world > mazSetZone[x].world) {
+                if ((game.global.world - mazSetZone[x].world) % mazSetZone[x].tx == 0) nextRepeat = true;
+            }
+            if (nextRepeat || game.global.world == mazSetZone[x].world)
                 shouldDoMaps = true;
         }
     }
@@ -880,10 +954,17 @@ export function autoMap() {
         const wondersAmount = getPageSetting('wondersAmount');
         const wondersFloorZ = wondersFromZ - ((getPageSetting('wondersAmount') - 1) * 5);
         const finishOnBw = (() => {
-            let pageSetting = getPageSetting('finishExpOnBw');
-            pageSetting = pageSetting < 125 ? 125 : pageSetting;
-            pageSetting = pageSetting != -1 ? (Math.floor((pageSetting - 125) / 15) * 15) + 125 : -1;
-            return pageSetting;
+            const pageSetting = getPageSetting('finishExpOnBw');
+            // #223 — the -1 disable test has to run BEFORE the 125 clamp. It ran after, so -1 became
+            // 125 and BOTH the `: -1` arm here and the `finishOnBw != -1` gate at :970 were dead for
+            // every reachable input. A user who typed -1 to switch the BW finish off instead got AT
+            // committing to BW 125 — which config.js:9163 can never accept as an Experience
+            // completion, since that needs `mapLevel >= 605 && world > 600`. The sibling
+            // `wondersFromZ != -1` in the same conjunction is the author's own encoding of
+            // "disabled", added a day later (c8b0ca08) for exactly this hazard on maxExpZone.
+            if (pageSetting == -1) return -1;
+            const clamped = pageSetting < 125 ? 125 : pageSetting;
+            return (Math.floor((clamped - 125) / 15) * 15) + 125;
         })();
         const bionics = game.global.mapsOwnedArray
             .filter((map: any) => map.location == "Bionic")
@@ -906,6 +987,14 @@ export function autoMap() {
                 const maplvlpicked = game.global.world
                 debug("Buying a Map, level: #" + maplvlpicked, "maps", 'th-large');
                 mapsClicked(true)
+                // #224 — buyMap() reads mapLevelInput (.trimps-game/main.js:6591) and NOTHING here was
+                // writing it, so the map actually created was at whatever the box last held — normally
+                // `siphlvl` (world - Siphonology) from autoMap's ordinary create path above. The game
+                // only rolls a Wonder when `mapLevel >= game.global.world` (config.js:4053), so a
+                // sub-world map is Wonder-ineligible; the next tick's `map.level == game.global.world`
+                // filter then fails to match it too, so the branch re-entered and bought again. The
+                // level was already computed and LOGGED one line up — it just never reached the input.
+                byId("mapLevelInput").value = maplvlpicked;
                 let result = buyMap();
                 if (result == -2) {
                     debug("Too many maps, recycling now: ", "maps", 'th-large');
@@ -1189,14 +1278,44 @@ export function RautoMap() {
         if (nextCell === -1) nextCell = 1;
         else nextCell += 2;
         const totalPortals = getTotalPortals();
-        let setZone = game.options.menu.mapAtZone.getSetZone();
+        // #302 — mirror the game's driver (checkMapAtZoneWorld, main.js:13402-13413) row filter for
+        // filter, the way the U1 twin now does. This block already used `getSetZone()`, which is why
+        // #221's comment said the U2 side was fine; it was fine about the ACCESSOR only. FOUR
+        // divergences, all of which hit the un-edited factory row `setZoneU2: [{world: 10}]`
+        // (config.js:1423) hardest, because it carries no `on`, no `through`, no `times` and no `cell`:
+        //
+        //   1. `!setZone[x].on` skipped any row with no `on` field — the game tests `on !== false`, and
+        //      `save()` (config.js:1605) only stamps the field once the user opens the MaZ dialog.
+        //   2. No `times == -2` / `tx` arm, so an "Every X Zones" row matched at every zone in range.
+        //   3. No `getMaxSettings()` bound (7, or 8 with the u2 MaZ mutation — config.js:1429).
+        //   4. NOT in #302's list, found by re-deriving instead of trusting it: the cell test was
+        //      `cell === lastClearedCell + 2` alone, missing the game's `(!cell && nextCell == 1)` arm
+        //      — so a row with no `cell` could never fire at all, on top of (1).
+        //
+        // The repeat logic is transcribed as the game's `nextRepeat` shape rather than as two `continue`
+        // guards. That is not cosmetic: the old `times > 0` form left `times === 0` matching at ANY zone
+        // in range where the game requires an exact zone. `times` is normalized to
+        // {-1,1,2,3,5,10,30,-2} by the dialog (config.js:1557) so 0 is not reachable from the popup, but
+        // an imported settings string is not popup-written.
+        //
+        // DELIBERATELY LEFT: AT gates the `done` check on `preMapsActive` where the game's is
+        // unconditional. That is a stand-down-timing difference, not a factory-row bug, and changing it
+        // needs its own evidence — noted on #302.
+        const setZone = game.options.menu.mapAtZone.getSetZone();
+        const mazMaxSettings = game.options.menu.mapAtZone.getMaxSettings();
         for (let x = 0; x < setZone.length; x++) {
-            if (!setZone[x].on) continue;
-            if (game.global.world < setZone[x].world || game.global.world > setZone[x].through) continue;
+            if (x >= mazMaxSettings) break;
+            if (setZone[x].on === false) continue;
+            if (setZone[x].through < game.global.world) continue;
             if (game.global.preMapsActive && setZone[x].done == totalPortals + "_" + game.global.world + "_" + nextCell + (game.global.universe == 2 && game.global.spireActive ? "_" + game.global.spireLevel : "")) continue;
-            if (setZone[x].times === -1 && game.global.world !== setZone[x].world) continue;
-            if (setZone[x].times > 0 && (game.global.world - setZone[x].world) % setZone[x].times !== 0) continue;
-            if (setZone[x].cell === game.global.lastClearedCell + 2) {
+            let nextRepeat = false;
+            if (setZone[x].times > -1) {
+                if (game.global.world > setZone[x].world && (game.global.world - setZone[x].world) % setZone[x].times == 0) nextRepeat = true;
+            } else if (setZone[x].times == -2 && game.global.world > setZone[x].world) {
+                if ((game.global.world - setZone[x].world) % setZone[x].tx == 0) nextRepeat = true;
+            }
+            if (!nextRepeat && game.global.world != setZone[x].world) continue;
+            if ((!setZone[x].cell && nextCell === 1) || nextCell === setZone[x].cell) {
                 RvanillaMAZ = true;
                 if (setZone[x].until === 6) game.global.mapCounterGoal = 25;
                 if (setZone[x].until === 7) game.global.mapCounterGoal = 50;
@@ -1283,8 +1402,12 @@ export function RautoMap() {
     if (game.global.challengeActive == "Insanity") {
         const insanityfarmzone = getPageSetting('Rinsanityfarmzone');
         const insanitystacksfarmindex = insanityfarmzone.indexOf(game.global.world);
-        const insanityfarmcell = ((getPageSetting('Rinsanityfarmcell') != 0) ? getPageSetting('Rinsanityfarmcell')[insanitystacksfarmindex] : 1);
-        Rinsanityfarm = (getPageSetting('Rinsanityon') == true && ((insanityfarmcell <= 1) || (insanityfarmcell > 1 && (game.global.lastClearedCell + 1) >= insanityfarmcell)) && game.global.world > 5 && (game.global.challengeActive == "Insanity" && getPageSetting('Rinsanityfarmzone')[0] > 0 && getPageSetting('Rinsanityfarmstack')[0] > 0));
+        // #162 — per-INDEX cell fallback. The old `!= 0` guard was always true ([-1] coerces to -1),
+        // so the `: 1` arm was unreachable and a 2nd+ configured zone indexed past the default
+        // one-element list. Note this condition has NO zone-membership test of its own, so a
+        // not-configured zone (indexOf → -1) must still close the gate — see pairedCellGateOpen.
+        const insanityfarmcellReached = pairedCellGateOpen(getPageSetting('Rinsanityfarmcell'), insanitystacksfarmindex, game.global.lastClearedCell);
+        Rinsanityfarm = (getPageSetting('Rinsanityon') == true && insanityfarmcellReached && game.global.world > 5 && (game.global.challengeActive == "Insanity" && getPageSetting('Rinsanityfarmzone')[0] > 0 && getPageSetting('Rinsanityfarmstack')[0] > 0));
         if (Rinsanityfarm) {
             Rinsanity(true, false, false);
         }
@@ -1320,8 +1443,12 @@ export function RautoMap() {
     if (game.global.challengeActive == "Alchemy") {
         const alchfarmzone = getPageSetting('Ralchfarmzone');
         const alchstacksfarmindex = alchfarmzone.indexOf(game.global.world);
-        const alchfarmcell = ((getPageSetting('Ralchfarmcell') != 0) ? getPageSetting('Ralchfarmcell')[alchstacksfarmindex] : 1);
-        Ralchfarm = (getPageSetting('Ralchon') == true && ((alchfarmcell <= 1) || (alchfarmcell > 1 && (game.global.lastClearedCell + 1) >= alchfarmcell)) && game.global.world > 5 && (game.global.challengeActive == "Alchemy" && getPageSetting('Ralchfarmzone')[0] > 0 && getPageSetting('Ralchfarmstack').length > 0));
+        // #162 — per-INDEX cell fallback. The old `!= 0` guard was always true ([-1] coerces to -1),
+        // so the `: 1` arm was unreachable and a 2nd+ configured zone indexed past the default
+        // one-element list. Note this condition has NO zone-membership test of its own, so a
+        // not-configured zone (indexOf → -1) must still close the gate — see pairedCellGateOpen.
+        const alchfarmcellReached = pairedCellGateOpen(getPageSetting('Ralchfarmcell'), alchstacksfarmindex, game.global.lastClearedCell);
+        Ralchfarm = (getPageSetting('Ralchon') == true && alchfarmcellReached && game.global.world > 5 && (game.global.challengeActive == "Alchemy" && getPageSetting('Ralchfarmzone')[0] > 0 && getPageSetting('Ralchfarmstack').length > 0));
         if (Ralchfarm) {
             Ralch(true, false, false);
         }
@@ -1336,8 +1463,12 @@ export function RautoMap() {
         }
         const hypofarmzone = getPageSetting('Rhypofarmzone');
         const hypoamountfarmindex = hypofarmzone.indexOf(game.global.world);
-        const hypofarmcell = ((getPageSetting('Rhypofarmcell') != 0) ? getPageSetting('Rhypofarmcell')[hypoamountfarmindex] : 1);
-        Rhypofarm = (getPageSetting('Rhypoon') == true && ((hypofarmcell <= 1) || (hypofarmcell > 1 && (game.global.lastClearedCell + 1) >= hypofarmcell)) && game.global.world > 5 && (game.global.challengeActive == "Hypothermia" && getPageSetting('Rhypofarmzone')[0] > 0 && getPageSetting('Rhypofarmstack').length > 0));
+        // #162 — per-INDEX cell fallback. The old `!= 0` guard was always true ([-1] coerces to -1),
+        // so the `: 1` arm was unreachable and a 2nd+ configured zone indexed past the default
+        // one-element list. Note this condition has NO zone-membership test of its own, so a
+        // not-configured zone (indexOf → -1) must still close the gate — see pairedCellGateOpen.
+        const hypofarmcellReached = pairedCellGateOpen(getPageSetting('Rhypofarmcell'), hypoamountfarmindex, game.global.lastClearedCell);
+        Rhypofarm = (getPageSetting('Rhypoon') == true && hypofarmcellReached && game.global.world > 5 && (game.global.challengeActive == "Hypothermia" && getPageSetting('Rhypofarmzone')[0] > 0 && getPageSetting('Rhypofarmstack').length > 0));
         if (Rhypofarm) {
             Rhypo(true, false, false);
         }

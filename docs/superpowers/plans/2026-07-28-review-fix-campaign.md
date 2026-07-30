@@ -4,7 +4,7 @@
 > That plan was the **discovery** campaign (Phases 0–3b). This is the **remediation** campaign:
 > how the findings it produced actually get fixed, verified, and merged.
 >
-> **Status: Sessions 1–6 SHIPPED.** Sessions 7–10 pending.
+> **Status: Sessions 1–9 SHIPPED.** Session 10 (the single oracle re-pin) pending.
 >
 > ```text
 > session  state        record
@@ -26,7 +26,15 @@
 >                       #246 · #214 SPLIT OUT to its own branch (needs a settings
 >                       migration) · filed #293 · baseline-zero 20/21, RED on
 >                       10-hypo-u2 with 152 divergences, ALL attributed (below)
-> 9        ⬜ Track B   25 issues, trace-moving, collect the red
+> 9        ✅ SHIPPED   Fix S9 closed, 37 (one REFUTED: #304) · 6 open are all NEW or
+>                       deferred: #286 (user decision) #214 (own branch) #307 #308 #309
+>                       #310. Reviewer clean. Waves 1-5. Combat math (#169 #170 #199 #212 #290 #294 #295 #296
+>                       #198 #244) · stance/breed (#229 #230 #231 #233 #248 #249 #250) · maps
+>                       (#204 #222 #224 #225 #226 #234 #263 #300) · W3 (#221 #206 #185 #223) ·
+>                       W4 (#291 #162 #302 #306) · W5 (#297 #303 #305 #213/#299 #298; #304
+>                       REFUTED; #286 premise falsified) · Waves 3-5 moved NO traces, measured
+>                       per wave · filed #291-#297 #300-#301 #307 #308 #309 · remaining: #286
+>                       (user decision), #214 (own branch, needs a migration)
 > 10       ⬜ re-pin     one oracle re-pin, ledgered
 > ```
 >
@@ -616,6 +624,163 @@ The largest session and the one most dependent on Decision 1. Split it if the de
 `#206` is small but severe: C2 Runner's Challenge² flag is module-scoped so the game never sees it —
 **every C2 Runner portal starts a plain challenge.** `#204` makes Ship Farming re-buy a map every
 tick forever.
+
+#### S9 combat-math wave — attribution for the S10 ledger
+
+Measured, not asserted: each commit was checked out on its own and `baseline-zero` re-run, so every
+red below is attributed to the change that causes it rather than to the wave as a whole.
+
+```text
+build                              red   new fixtures (divergence count)
+---------------------------------  ----  ----------------------------------------------------------
+baseline/pre-s9 (= main @ S8)       1/21  10-hypo-u2 (152)            <- S8 carry-in, already ledgered
++ #169/#170  gammaBurstPct          4/21  06-deep-u1.2 (719), .3 (8), 12-warp-u1 (1808)
++ #290/#294  formation-5 mirror     6/21  06-deep-u1.1 (747), 07-map-cap-u1 (747)
+                                          [.2 719->864, .3 8->722; 12-warp UNCHANGED at 1808]
++ #199/#212/#295  crit pricing     14/21  01-early-u1 x3 (8/10/12), 03-challenge-watch x3 (16/15/16),
+                                          08-starved-u1 x2 (1742/1603)
+                                          [06-deep .3 722->724; 12-warp 1808->1991]
+```
+
+**The gamma-burst row reproduces S6's own measurement byte-for-byte** — 719 / 8 / 1808, the three
+numbers the status block above recorded when `#169`/`#170` were re-milestoned out of `Fix S6`. The
+commit was cherry-picked onto post-S7/S8 `main`, so an unchanged count is independent evidence that
+the rebase preserved its effect and that nothing in S7 or S8 interacts with it.
+
+**The crit fix moves the SHALLOW fixtures, and that is the tell.** `01-early-u1`, `03-challenge-watch`
+and `08-starved-u1` were untouched by everything else in this wave and go red only here, because their
+whole corpus decodes to a player with `getPlayerCritChance() === 0` — precisely the regime where the
+old code priced a non-crit at `getMegaCritDamageMult(0)` = 1/base. Measured on the booted save:
+`critD` is 2, so AT's damage estimate was **2.5x low** and every gear/stance/farm decision downstream
+of `calcHDratio()` inherited it. `08-starved-u1` is the clearest single reading — `setFormation("0")`
+and `setFormation(3)` become `setFormation(2)` from tick 71 onward: AT stops cowering in X/Barrier and
+takes Dominance, because it has stopped believing it is 2.5x weaker than it is.
+
+**`12-warp-u1` is the control for the formation change.** It stays at exactly 1808 across the
+formation commit and only moves (1808 -> 1991) once crit pricing lands. Formation 5 is uber-Wind, which
+that fixture never reaches, so a formation-5 mirror correction *should* be invisible there — and is.
+
+Two findings were filed from inside this wave, both by running the mechanical scan a finding asked for
+instead of trusting its scoping claim: **#294** (three more formation sites, and #290's own suggested
+one-line patch is a regression on its own — see the issue) and **#295** (no negative-crit-chance arm).
+`#290`'s "check the U2 twins around :1283" pointed at code that correctly has no formation logic at all.
+
+⚠️ **One net was passing because of a bug under test.** `settings-unset-encodings`' #100
+anti-false-green asserted "a SET highdmg that is not equipped DOES still take the branch" and measured
+a 2.5x ratio change to prove it. That 2.5x **was #199** — divide out 0.4, multiply back 1. With the
+pricing corrected, both crit terms are exactly 1 on a zero-crit save, the branch runs and correctly
+predicts nothing, and the old assertion could no longer see it. It now drives a player who actually
+crits. This is the `#178` shape again (a net whose health depended on a defect persisting), found this
+time not by the net breaking on its own but by a fix in a *different* file making it unprovable.
+
+#### S9 Wave 3 — maps preset, portal scope, gather cap, XP sentinel · **moves NO traces**
+
+`#221` `#206` `#185` `#223`. Four fixes, four nets, and the honest headline is the *negative* result:
+**Wave 3 moves zero oracle traces, and that was measured rather than inherited from the track label.**
+Per-fixture divergence counts were taken with the same script in a detached worktree at the
+pre-Wave-3 tip (`95c27e3c`) and in the post-Wave-3 tree, and all 21 are byte-identical — including
+`10-hypo-u2` (152), the U2 fixture where `#185`'s gather change was the plausible mover:
+
+```text
+                          pre-W3 = post-W3 (all 21 fixtures identical)
+01-early-u1        8 / 10 / 12          06-deep-u1     747 / 864 / 724
+03-challenge-watch 16 / 15 / 16         07-map-cap-u1  747
+08-starved-u1      1742 / 1603          10-hypo-u2     152        12-warp-u1  1991
+02-mid-u1 · 04-u2-radon · 05-maps-u1 · 09-housing-u2 · 11-portal-u1 → 0
+```
+
+So Wave 3 adds nothing to the S10 re-pin ledger. The only gates it moved are the two snapshots it
+owns — the src byte golden (regenerated with a stated reason; the reviewed diff is 55 lines and
+contains all four fixes plus one tooltip and nothing else) and the tooltip census (one entry).
+
+⚠️ **A measurement rig can manufacture its own red.** The pre-Wave-3 worktree reported
+`src-bundle-parity` RED, which would have been read as "the golden was already stale". It was not:
+symlinking `node_modules` into the worktree makes esbuild emit an absolute path in the
+`FastPriorityQueue` chunk comment, a 4-line diff entirely inside my rig. The trace counts were
+unaffected (both trees produced identical numbers), but the lesson generalises — **when a comparison
+tree disagrees with the main tree, suspect the tree before the code.**
+
+Two scope notes worth carrying to S10:
+- `#221` mirrors the game's row filters (`on !== false`, `through`, `times`, `times == -2`/`tx`,
+  `getMaxSettings`) but deliberately NOT its `done` / `cell` / `preMapsActive` gates: those decide
+  *when within a zone* the game fires its own map run, while `shouldDoMaps` is AT's coarser per-zone
+  decision. ⚠️ **The reason given for leaving `done` out was wrong, and S9 Wave 5 fixed it (#303).**
+  The claim was that gating on `done` "would make AT abandon a map the instant native MaZ consumed the
+  row". Written as an assertion it FAILS: with `shouldDoMaps` false, `selectedMap` stays `"world"`, so
+  `maps.ts:781`'s `selectedMap == currentMapId` conjunct is false and control reaches the else at
+  `:797`, whose only action is `repeatClicked()`. The in-flight map finishes and AT does not re-enter —
+  which is the intended one-map-per-zone behaviour, not an abandonment. Third time this session that a
+  justification surviving only as prose turned out to be false (`utils.ts` F1, the Watch trickle
+  comment, this one). Verified live: AT and `checkMapAtZoneWorld` now agree on every zone-selection
+  question, and the one remaining disagreement is exactly the cell gate.
+- `#223` is scoped to the `-1` sentinel only. Every other below-605 value still targets a BW the game
+  cannot accept as an Experience completion (`config.js:9163`), as do `NaN` and a phantom key — split
+  out as **#301** with four dispositions rather than absorbed into a mechanism commit.
+
+#### S9 Wave 5 — the tail: giga NaN, MaZ latch, decay, the Pandemonium cluster, map health · **moves NO traces**
+
+`#297` `#304` `#303` `#305` `#213`/`#299` `#298` `#286`. Seven issues, one of them refuted, and the same
+negative headline as Wave 3 — **all 21 fixtures are byte-identical to the pre-wave baseline, measured
+twice** (after `#297`/`#303`/`#305`, and again after `#213`/`#299`/`#298`):
+
+```text
+01-early-u1        8 / 10 / 12          06-deep-u1     747 / 864 / 724
+03-challenge-watch 16 / 15 / 16         07-map-cap-u1  747
+08-starved-u1      1742 / 1603          10-hypo-u2     152        12-warp-u1  1991
+02-mid-u1 · 04-u2-radon · 05-maps-u1 · 09-housing-u2 · 11-portal-u1 → 0
+```
+
+The `#298` analysis predicted `05`–`08` as candidates to move (the Scryer → `oneShotPower` →
+`calcSpecificEnemyHealth` route runs by default, and the level-6 map every run gets is inside the health
+`> 5` band). They did not: `maxOneShotPower()` returns 1 without the Overkill perk, so the loop never
+reaches the health call in those fixtures. **Predicted-red and measured-green is exactly why the number
+gets measured per fixture rather than inherited from the analysis.**
+
+What the wave actually turned on:
+
+- **`#297` had five routes to one symptom, and the guards for four of them were unprovable at first.**
+  The `+(Math.round(delta + "e+2") + "e-2")` round-trip converts every non-finite value to NaN, so
+  deleting any input guard leaves the return value *identical* — five delete-mutants survived until each
+  route asserted its own diagnostic. `toBeNaN()` was not a test of the guards; the log line is.
+- **The near-miss that shipped and was reverted.** `CustomTargetZone >= 60` → `>= 61` looked like the
+  matching half of the failsafe fix. A mutant reverting it survived the whole suite, because `autoGiga`
+  re-derives 60 to the same zone: nothing can observe it. Reverted with the reasoning left in place.
+  The tooltip correction stayed — whichever line discards 60, "values below 60 are discarded" was false.
+- **`#304` is REFUTED, and the refutation is now a net.** None of `c2runner`'s eleven targets carries
+  `allowU2`, but no live call can have `portalUniverse == 2`: every `doPortal` caller is dispatched only
+  inside mainLoop's `universe == 1` block. The suggested guard would have been dead code — the class this
+  campaign exists to delete. `u1-portal-dispatch.test.ts` derives the caller set from `portal.ts` so a
+  fourth one wired next to the U2 automations reddens instead.
+- **`#303` falsified `#221`'s own scope note.** That note kept the `done` latch out because gating on it
+  "would make AT abandon a map the instant native MaZ consumed the row". Written as an `expect`, it
+  fails: `shouldDoMaps` false leaves `selectedMap` at `"world"`, so `maps.ts:781`'s `currentMapId`
+  conjunct is false and the else at `:797` merely clears the repeat flag. Third false prose justification
+  this session.
+- **`#299`'s own census was short and one of its verdicts was wrong.** Ten sites, not five; twenty-two
+  divisors, not twelve; and the "Mayhem bossMult on non-boss cells" finding is not a defect — that
+  producer's contract is the world-boss cell, which is what makes the `/ boss` idiom exact. The divisors
+  were left byte-identical. Evidence that settled it: `(base·Me·Mb)/Mb` equals the game's map cell to the
+  last bit, the sibling `RdesoExtra` has no divisor because Desolation's multiplier applies to map cells
+  too, and the settings that read them are named *M: Attack **Boss*** (no divisor) and *M: Attack **Map***
+  (divisor).
+- **`#298` exposed a regression this campaign created.** `#198` (Wave 1) stopped `calcEnemyBaseHealth`
+  skipping `badGuys` above z60 — correct — which silently invalidated `calcSpire`'s compensating
+  multiply, whose justification was stated only in a comment. A spire is always z100+, so from that
+  commit until this one every U1 spire health estimate applied the imp stat **twice**. The attack half had
+  done the same since 2022 under a green test whose stub, `getEnemyAttack: () => 100`, ignored its
+  arguments and therefore could not see which flag AT passed.
+- **`#286`'s blocking premise is FALSE.** `Math.pow(1.25, nomStacks)` is an enemy *attack* multiplier
+  (main.js:12365; the challenge text says "25% more attack damage"), already modelled at calc.ts:627/696
+  — not the unmodelled healing the issue named. The real obstacle is that `calcHDratio()` is
+  `enemyHealth / ourDamage`, so **neither term moves with nomStacks** and the gate is blind to the
+  mechanic it reacts to. Widening `== 30` → `>= 30` therefore stays a design question, not an operator
+  swap.
+
+Filed from inside the wave: **#307** (the U2 MaZ `done` check is per-cell and `preMapsActive`-gated, and
+its consumer `RvanillaMAZ` parks *every* U2 automation), **#308** (`RequipExtra` has no boss→map
+normalizer, so it under-shoots during Mayhem and Pandemonium), **#309** (the U2 enemy-stat twins take map
+context from `game.global.mapsActive` while their callers pass explicit levels — wrong in both directions
+at once).
 
 ### Session 10 — Oracle re-pin, campaign review, merge · **XL** · 🪨 the load-bearing session
 

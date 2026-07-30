@@ -18,13 +18,15 @@
 // The last two are the sharp end of the class: a control that is categorised C2, documented C²-only,
 // and gated on a predicate that a C² makes false. It could never have fired once.
 //
-// WHY THIS NET PINS A NON-ZERO COUNT. Seven sites remain, all in query.ts, and they are deliberately
-// NOT fixed here — they are prediction math (six gather-rate terms plus one breed-potency term), and
-// the campaign plan makes prediction-math parity an explicit Session 9 decision. Fixing them in a
-// behaviour commit would pre-empt that. So this asserts the survivors EXACTLY, shrinking-only: a new
-// instance anywhere reddens, and closing #291 means editing the expectation DOWN, never up. That is
-// the #208/#238 lesson — a pinned shrinking census beats both "fix them all now" (scope creep) and
-// an allowlist (which rots into a waiver nobody re-derives).
+// THE CENSUS IS NOW ZERO (#291 closed, S9 Wave 4). It used to pin the seven surviving query.ts
+// prediction sites — six gather-rate terms in getPerSecBeforeManual plus one breed-potency term —
+// deliberately unfixed because prediction-math parity was an explicit Session 9 decision. S9 took
+// that decision and they all now call the helper, so the expectation was edited DOWN, which is the
+// only direction it may ever move. A pinned shrinking census beat both "fix them all now" (scope
+// creep in a behaviour commit) and an allowlist (which rots into a waiver nobody re-derives) — the
+// #208/#238 lesson. Note the seventh site was NOT in #291's own header list: the list said "all six
+// live in getPerSecBeforeManual and all feed gather rate", and the AST found a Toxicity compare in
+// the breed-potency helper too. The net's output is the census; a finding's prose about it is not.
 //
 // The child set is DERIVED from the clone's multiChallenge arrays, never retyped, so a future game
 // version that adds a Challenge² extends this net without anyone remembering to.
@@ -112,11 +114,26 @@ function scan(file: string, source: string, children: Set<string>): Site[] {
   return found
 }
 
+/**
+ * Every module under src/modules, RECURSIVELY.
+ *
+ * It used to be a flat `readdirSync`, while the test below is named "no module compares…" — so
+ * `src/modules/graphs/` (13 `challengeActive` references) and `src/modules/custom-ui/` were outside a
+ * census that claimed to cover everything. None of those 13 happens to name a C² child, so the pinned
+ * zero was accurate BY LUCK and blind to any future regression there. Found by review; the sibling net
+ * that landed in the same wave (`setting-array-compare.test.ts`) already walks recursively.
+ */
 function srcFiles(): string[] {
-  const dir = resolve(ROOT, 'src', 'modules')
-  return readdirSync(dir)
-    .filter((f) => f.endsWith('.ts'))
-    .map((f) => `src/modules/${f}`)
+  const out: string[] = []
+  const walk = (dir: string): void => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = resolve(dir, e.name)
+      if (e.isDirectory()) walk(p)
+      else if (e.name.endsWith('.ts') && !e.name.endsWith('.d.ts')) out.push(p.slice(ROOT.length + 1))
+    }
+  }
+  walk(resolve(ROOT, 'src', 'modules'))
+  return out
 }
 
 describe('challenge-squared compares (a C² stores the PARENT name)', () => {
@@ -159,26 +176,18 @@ describe('challenge-squared compares (a C² stores the PARENT name)', () => {
     }
   })
 
-  it('the surviving census is exactly the seven query.ts prediction sites (#291) — shrinking only', () => {
+  it('the class is CLOSED: no module compares challengeActive against a C² child (#216, #291)', () => {
     const children = c2Children()
     const all = srcFiles().flatMap((rel) => scan(rel, readFileSync(resolve(ROOT, rel), 'utf8'), children))
 
     // Keyed by file + challenge, NOT by line: line numbers churn on every edit above them, and a net
     // that reddens on unrelated edits gets weakened rather than heeded.
-    const census = all.map((s) => `${s.file} ${s.challenge}`).sort()
-    expect(census).toEqual([
-      'src/modules/query.ts Balance',
-      'src/modules/query.ts Lead',
-      'src/modules/query.ts Meditate',
-      'src/modules/query.ts Size',
-      'src/modules/query.ts Toxicity',
-      'src/modules/query.ts Toxicity',
-      'src/modules/query.ts Watch',
-    ])
-
-    // The count is the part that must only ever go DOWN. #291 closing means editing this to a smaller
-    // number; nothing legitimate makes it larger.
-    expect(all.length).toBeLessThanOrEqual(7)
+    const census = all.map((s) => `${s.file}:${s.line} ${s.challenge}`).sort()
+    expect(
+      census,
+      'a Challenge² CHILD compare reappeared. It is false for the whole of the matching C² while the ' +
+        'game applies the modifier anyway — call challengeActive(what) (main.js:1753) instead.',
+    ).toEqual([])
   })
 
   // THE HOLE THIS NET HAD, AND WHY IT IS A CENSUS RATHER THAN A BAN.

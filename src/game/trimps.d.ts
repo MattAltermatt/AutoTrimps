@@ -52,6 +52,10 @@ declare global {
   function abandonDaily(...args: any[]): void
   function abandonChallenge(...args: any[]): void
   function selectChallenge(...args: any[]): void
+  // main.js:1759 — re-renders the challenge list. In squared mode it SKIPS any challenge the game
+  // cannot offer (main.js:1774-1778), which is what makes selectChallenge's unconditional
+  // `getElementById("challenge" + what)` deref at :1885 a throw rather than a no-op.
+  function displayChallenges(...args: any[]): void
   function viewPortalUpgrades(...args: any[]): void
   function numTab(...args: any[]): void
   function buyPortalUpgrade(...args: any[]): void
@@ -74,6 +78,12 @@ declare global {
   function getDailyHeliumValue(...args: any[]): number // main.js
   var portalWindowOpen: any // main.js var (boolean)
   var portalUniverse: any   // main.js var (number)
+  // main.js:1663 var, reset by portalClicked() (:1671), toggled by the portal UI (:1749), read by
+  // displayChallenges/selectChallenge (:1774-1782, :1905) and — the one that matters for AT —
+  // activatePortal (:4013), which is what turns it into game.global.runningChallengeSquared.
+  // #206: portal.ts used to declare its OWN `var` of this name, so all 11 of C2 Runner's writes
+  // landed in a module-private binding and the game never saw them.
+  var challengeSquaredMode: any // main.js var (boolean)
 
   // Native game job/building buy helpers (main.js).
   function canAffordJob(...args: any[]): boolean

@@ -39,6 +39,9 @@ function neutralBreed(over: Record<string, any> = {}): void {
   G.challengeActive = () => false
   G.dailyModifiers = { dysfunctional: { getMult: () => 1 }, toxic: { getMult: () => 1 } }
   G.autoTrimpSettings = {}
+  // #250 — potencyMod now resolves Pheromones through getPerkLevel rather than reading `.level`.
+  // The accessor is seeded once in tests/setup.ts (deliberately not copied per-harness); the fixture
+  // below just has to carry both `level` and `radLevel` plus a `universe` for it to switch on.
   const base = {
     resources: {
       trimps: { employed: 100, potency: 0.0085, owned: 1000, realMax: () => 1e6, getCurrentSend: () => 0 },
@@ -47,9 +50,9 @@ function neutralBreed(over: Record<string, any> = {}): void {
     upgrades: { Potency: { done: 0 } },
     buildings: { Nursery: { owned: 0 } },
     unlocks: { impCount: { Venimp: 0 } },
-    portal: { Pheromones: { level: 0, modifier: 0.1 } },
+    portal: { Pheromones: { level: 0, radLevel: 0, modifier: 0.1 } },
     singleRunBonuses: { quickTrimps: { owned: false } },
-    global: { challengeActive: '', brokenPlanet: false, voidBuff: '' },
+    global: { challengeActive: '', brokenPlanet: false, voidBuff: '', universe: 1 },
     challenges: {
       Toxicity: { stacks: 0, stackMult: 1.05 },
       Archaeology: { getStatMult: () => 1 },

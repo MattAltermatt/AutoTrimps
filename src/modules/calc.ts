@@ -67,7 +67,11 @@ export function getTrimpAttack(): number {
     if (game.portal.Power_II.level > 0) {
         dmg *= (1 + (game.portal.Power_II.modifier * game.portal.Power_II.level));
     }
-    if (game.global.formation !== 0) {
+    // #294 — formation 5 (W) gets NO multiplier. setFormation's apply-switch (.trimps-game/main.js:16855)
+    // has cases 1-4 only, and every stat the game scales guards on `!== 0 && !== 5` (attack main.js:12002,
+    // health :11774/:11925, block :12209). This site MUST move together with calcOurDmg's neutralizer
+    // below — see the comment there.
+    if (game.global.formation !== 0 && game.global.formation !== 5) {
         dmg *= (game.global.formation === 2) ? 4 : 0.5;
     }
     return dmg;
@@ -111,7 +115,9 @@ export function calcOurHealth(stance?: boolean): number {
     if (geneticist.owned > 0) {
         health *= (Math.pow(1.01, game.global.lastLowGen));
     }
-    if (stance && game.global.formation > 0) {
+    // #294 — `> 0` caught formation 5 (W), which the game leaves alone (main.js:11774/:11925 both
+    // guard on `!== 0 && !== 5`), so AT halved health for every uber-Wind player.
+    if (stance && game.global.formation > 0 && game.global.formation !== 5) {
         let formStrength = 0.5;
         if (game.global.formation === 1) formStrength = 4;
         health *= formStrength;
@@ -160,31 +166,67 @@ export function highDamageShield(): void {
     }
 }
 
+/**
+ * The multiplier the game applies for a given crit TIER (.trimps-game/main.js:15849-15851).
+ *
+ *   T <= 0  ->  1                       — no crit fired. NOT getMegaCritDamageMult(0), which is
+ *                                          `base ^ -1` = 0.2 and was the whole of #199.
+ *   T >= 1  ->  critD * megaCrit(T)     — megaCrit(1) is 1, so this one form covers tier 1 too,
+ *                                          which is exactly why the game can guard on `critTier > 1`.
+ */
+function critTierMult(tier: number, critD: number): number {
+    return tier <= 0 ? 1 : critD * getMegaCritDamageMult(tier);
+}
+
+/**
+ * Expected crit multiplier over the game's own tier distribution (main.js:15833-15859).
+ *
+ * The game takes `critTier = floor(critChance)`, promotes it once with probability `critChance % 1`,
+ * and promotes it again with probability `getPlayerDoubleCritChance()` — two independent rolls. This
+ * enumerates all four outcomes rather than approximating the second roll as a flat `base` factor,
+ * which was wrong at tier 0 (where a promotion is worth critD, not base).
+ *
+ * #295 — a NEGATIVE critChance never enters the crit branch at all; main.js:15854 makes it an
+ * "unlucky" penalty that multiplies damage by 0.2 with probability |critChance|. Feeding it to the
+ * tier formula produced `base ^ -2` and understated damage by ~20% on a trimpCritChanceDown Daily.
+ */
+export function expectedCritMulti(critChance: number, critD: number, doubleCritChance: number): number {
+    if (critChance < 0) {
+        const p = Math.min(Math.abs(critChance), 1);
+        return p * 0.2 + (1 - p);
+    }
+    if (critChance === 0) return 1;
+
+    const baseTier = Math.floor(critChance);
+    const f = critChance - baseTier;                              // P(+1 tier, main roll)
+    const d = Math.min(Math.max(doubleCritChance, 0), 1);         // P(+1 tier, double-crit roll)
+
+    return (1 - f) * (1 - d) * critTierMult(baseTier, critD)
+         + f * (1 - d) * critTierMult(baseTier + 1, critD)
+         + (1 - f) * d * critTierMult(baseTier + 1, critD)
+         + f * d * critTierMult(baseTier + 2, critD);
+}
+
 export function getCritMulti(high?: boolean): number {
 
     let critChance = getPlayerCritChance();
     let CritD = getPlayerCritDamageMult();
 
+    // #212 — `high && A || B` parses as `(high && A) || B`, so the Daily arm fired even when the
+    // caller asked for the NON-high multiplier. Both tooltips describe the swap as high-damage-only.
     if (
-        high &&
-        (getPageSetting('AutoStance') == 3 && textSettingIsSet('highdmg') && game.global.challengeActive !== "Daily") ||
-        (getPageSetting('use3daily') == true && textSettingIsSet('dhighdmg') && game.global.challengeActive === "Daily")
+        high && (
+            (getPageSetting('AutoStance') == 3 && textSettingIsSet('highdmg') && game.global.challengeActive !== "Daily") ||
+            (getPageSetting('use3daily') == true && textSettingIsSet('dhighdmg') && game.global.challengeActive === "Daily")
+        )
     ) {
         highDamageShield();
         critChance = critCC;
         CritD = critDD;
     }
 
-    const lowTierMulti = getMegaCritDamageMult(Math.floor(critChance));
-    const highTierMulti = getMegaCritDamageMult(Math.ceil(critChance));
-    const highTierChance = critChance - Math.floor(critChance)
-
-    // Scruffy's doubleCrit ability + Shield doubleCrit mod (5.10.0): a second independent roll adds one
-    // more crit tier with prob doubleCritChance, multiplying the mult by the mega-crit base per tier.
-    const doubleCritChance = (typeof getPlayerDoubleCritChance === 'function') ? Math.min(getPlayerDoubleCritChance(), 1) : 0;
-    const doubleCritFactor = 1 + doubleCritChance * (getMegaCritDamageMult(2) - 1);
-
-    return ((1 - highTierChance) * lowTierMulti + highTierChance * highTierMulti) * doubleCritFactor * CritD
+    const doubleCritChance = (typeof getPlayerDoubleCritChance === 'function') ? getPlayerDoubleCritChance() : 0;
+    return expectedCritMulti(critChance, CritD, doubleCritChance);
 }
 
 export function calcOurBlock(stance?: boolean): number {
@@ -206,8 +248,12 @@ export function calcOurBlock(stance?: boolean): number {
         block *= (trainerStrength + 1);
     }
     block *= game.resources.trimps.maxSoldiers;
-    if (stance && game.global.formation === 3) {
-        block *= 4;
+    // #294 — this had the `*4` arm but not the `:0.5` catch-all, so AT overstated block 2x in H, D and
+    // S. The game halves block in every formation that is not Barrier (main.js:12209 getBaseBlock and
+    // :12013 the difs twin, both `if (formation !== 0 && formation !== 5) *= formation === 3 ? 4 : 0.5`).
+    // W was already right here by luck, which is why only a mechanical scan finds this one.
+    if (stance && game.global.formation !== 0 && game.global.formation !== 5) {
+        block *= (game.global.formation === 3) ? 4 : 0.5;
     }
     const heirloomBonus = calcHeirloomBonus("Shield", "trimpBlock", 0, true);
     if (heirloomBonus > 0) {
@@ -367,7 +413,14 @@ export function calcOurDmg(minMaxAvg?: string, incStance?: boolean, incFlucts?: 
     }
 
 
-    if (!incStance && game.global.formation !== 0) {
+    // #290/#294 — `number` opened as getTrimpAttack(), which has ALREADY applied the current formation's
+    // factor; this arm divides it back out so the answer is formation-neutral. In W the two used to be
+    // wrong in exactly compensating ways (getTrimpAttack halved, this un-halved), so the NEUTRAL answer
+    // was correct and only the `incStance` path was 2x low. #290 read this line alone and concluded the
+    // opposite — that the neutral answer was 2x HIGH — and its one-line patch here would have removed the
+    // compensating division while leaving the halving in place, regressing the neutral base that #182's
+    // oneShotPower is built on. The pair only stays consistent if BOTH sites exclude formation 5.
+    if (!incStance && game.global.formation !== 0 && game.global.formation !== 5) {
         number /= (game.global.formation === 2) ? 4 : 0.5;
     }
 
@@ -464,7 +517,6 @@ export function calcEnemyBaseAttack(type?: any, zone?: any, cell?: any, name?: a
     //Before Breaking the Planet
     else if (zone < 60) {
         attack = (0.375 * attack) + (0.7 * attack * (cell / 100));
-        attack *= 0.85;
     }
 
     //After Breaking the Planet
@@ -473,8 +525,16 @@ export function calcEnemyBaseAttack(type?: any, zone?: any, cell?: any, name?: a
         attack *= Math.pow(1.15, zone - 59);
     }
 
-    //Maps
-    if (zone > 5 && type !== "world") attack *= 1.1;
+    // #296 — the game applies this as a STATEMENT after the chain (.trimps-game/config.js:511), so it
+    // covers zones 1 and 2 too. Folded into the `zone < 60` arm it was unreachable for them, and AT
+    // over-estimated enemy attack there by 1/0.85 = ~18%. calcEnemyBaseHealth's 0.75 sibling is already
+    // outside its chain, which is how the two functions came to disagree about the same rule.
+    if (zone < 60) attack *= 0.85;
+
+    // #244 — the game's ATTACK threshold is `world > 6` (config.js:512); only the HEALTH sibling uses
+    // `> 5` (config.js:548). The asymmetry is deliberate and dates to 2015 (c7040ab added both as > 6,
+    // b741709 lowered only health the same day), so this was a cross-copied constant, not a game bug.
+    if (zone > 6 && type !== "world") attack *= 1.1;
 
     //Specific Imp
     if (name) attack *= game.badGuys[name].attack;
@@ -583,14 +643,24 @@ export function calcSpire(cell: number, name: string, what: string): number {
     if (game.global.challengeActive === "Daily" && disActiveSpireAT() && getPageSetting('dExitSpireCell') > 0 && getPageSetting('dExitSpireCell') <= 100)
         exitCell = (getPageSetting('dExitSpireCell') - 1);
     const enemy = cell === 99 ? (exitCell === 99 ? game.global.gridArray[99].name : "Snimp") : name;
-    let base = (what === "attack") ? game.global.getEnemyAttack(exitCell, enemy, false) : (calcEnemyBaseHealth(game.global.world, exitCell, enemy) * 2);
+    // #298 — both stats are fetched with the imp multiplier SUPPRESSED, then applied once below, which
+    // is what `getSpireStats` does (main.js:13715 passes ignoreImpStat TRUE to both, main.js:13726
+    // multiplies once). Before this, attack was doubled — `getEnemyAttack(..., false)` bakes it in and
+    // the line below applied it again, unnoticed since 2022 — and health became doubled the moment #198
+    // stopped skipping `badGuys` above z60 earlier in this same session. A spire is always z100+, so
+    // there was no zone where the old health path was right after that change.
+    //
+    // `'world'` because a spire cell is never a map cell: the game gates spire stats on
+    // `!game.global.mapsActive` (main.js:11439).
+    let base = (what === "attack") ? game.global.getEnemyAttack(exitCell, enemy, true) : (calcEnemyBaseHealth(game.global.world, exitCell, enemy, 'world', true) * 2);
     if (game.global.universe === 2) {
         // U2 Mega-Spire (Z300, 1000 cells / 10 floors): the game's getSpireStats scales enemies by
         // Math.pow(200, spireLevel + 1) per floor, NOT by the U1 per-cell mod^cell. game.global.world
         // stays pinned at 300 for the whole spire, so the world-based branch below never advanced.
-        // getEnemyAttack(...,false) already bakes in badGuys.attack once (as origAttack does), so only
-        // the health path — whose base skips badGuys at world>=60 — needs the explicit multiply.
-        if (what === "health") base *= game.badGuys[enemy][what];
+        // #298 — unconditional now. Both fetches above suppress the imp multiplier, so both paths need
+        // it applied once here; the old `what === "health"` guard existed only because the attack fetch
+        // baked it in, which it no longer does.
+        base *= game.badGuys[enemy][what];
         base *= Math.pow(200, game.global.spireLevel + 1);
         return base;
     }
@@ -663,7 +733,26 @@ export function calcBadGuyDmg(enemy?: any, attack?: number, daily?: boolean, max
         return number;
 }
 
-export function calcEnemyBaseHealth(zone: number, level: number, name: string): number {
+/**
+ * #298 — the map ×1.1 is now mirrored, and `type` is REQUIRED for it.
+ *
+ * The game applies it in `getEnemyHealth` (config.js:548) as `if (world > 5 && game.global.mapsActive)
+ * amt *= 1.1`, where `world` is the MAP's level when mapsActive (config.js:532). Note `> 5` — the attack
+ * sibling uses `> 6` (config.js:512), so a level-6 map takes the health bonus and not the attack one.
+ * That asymmetry is the game's, and #244 shipped the attack half of this pair; harmonising the two
+ * thresholds would be a "tidy" that breaks parity.
+ *
+ * The context is a PARAMETER rather than a `game.global.mapsActive` read, matching the shape #244
+ * established on the attack side: two of the three callers ask about a WORLD cell, and a global read
+ * would give them the map bonus whenever the player happens to be standing in a map. It is required,
+ * not defaulted, so `tsc` enumerates every call site — an optional `'world'` default would let a
+ * forgotten caller keep the bug with the gate still green.
+ *
+ * `ignoreImpStat` mirrors the game's own third parameter (config.js:549 `if (!ignoreImpStat)`), which
+ * exists so `getSpireStats` can apply `badGuys[name][what]` exactly once itself (main.js:13715/13726).
+ * Undefined means apply, as in the game.
+ */
+export function calcEnemyBaseHealth(zone: number, level: number, name: string, type: 'world' | 'map' | 'void', ignoreImpStat?: boolean): number {
     let health = 0;
     health += 130 * Math.sqrt(zone) * Math.pow(3.265, zone / 2);
     health -= 110;
@@ -676,16 +765,31 @@ export function calcEnemyBaseHealth(zone: number, level: number, name: string): 
         health = (health * 0.5) + ((health * 0.8) * (level / 100));
         health *= Math.pow(1.1, zone - 59);
     }
-    if (zone < 60) {
-        health *= 0.75;
-        health *= game.badGuys[name].health;
-    }
+    if (zone < 60) health *= 0.75;
+    if (zone > 5 && type !== "world") health *= 1.1;
+    // #198 — the imp multiplier was INSIDE the `zone < 60` block, so it was silently skipped from
+    // z60 up. The game gates it on a PARAMETER, never on world (.trimps-game/config.js:549,
+    // `if (!ignoreImpStat) amt *= game.badGuys[name].health;`), and the live path passes
+    // ignoreImpStat undefined (main.js:11408), so it applies at every zone. AT's own U2 twin
+    // RcalcEnemyBaseHealth already transcribes it correctly, which is what makes this a slip
+    // rather than a modelling choice: at z62 a Snimp (health 0.8) read 1.25x HIGH and an
+    // Improbability (health 6) read 6x LOW, with a 25% discontinuity at the z59->z60 step.
+    //
+    // ⚠️ #298 — and fixing that INVALIDATED calcSpire's compensating multiply, whose comment said in as
+    // many words "the health path — whose base skips badGuys at world>=60 — needs the explicit
+    // multiply". A spire is always z100+, so from #198 onward the imp stat was applied TWICE there
+    // (Snimp 0.64x instead of 0.8x, Improbability 36x instead of 6x). The game's answer is this
+    // parameter, so calcSpire now passes it and keeps its single explicit multiply, exactly like
+    // getSpireStats. A premise stated only in prose is how that went unnoticed for a whole session.
+    if (!ignoreImpStat) health *= game.badGuys[name].health;
     return health;
 }
 
 export function calcEnemyHealth(world?: any, map?: boolean): number {
     world = !world ? game.global.world : world;
-    let health = calcEnemyBaseHealth(world, 50, "Snimp");
+    // #298 — `map` is this function's own existing context flag, so the seam needs no new plumbing here.
+    // It arrives true only from calc.ts's map arm; every default caller omits it and gets a world query.
+    let health = calcEnemyBaseHealth(world, 50, "Snimp", map ? 'map' : 'world');
     let corrupt = mutations.Corruption.active();
     let healthy = mutations.Healthy.active();
     if (map) {
@@ -754,7 +858,9 @@ export function calcEnemyHealthCore(type?: any, zone?: any, cell?: any, name?: a
     if (!name) name = getCurrentEnemy() ? getCurrentEnemy().name : "Turtlimp";
 
     //Init
-    let health = calcEnemyBaseHealth(zone, cell, name);
+    // #298 — `type` is this function's own parameter, identical to the attack twin's, so it threads
+    // straight through: the same value that decides every other map-vs-world branch below decides this.
+    let health = calcEnemyBaseHealth(zone, cell, name, type);
 
     //Spire - Overrides the base health number
     if (type === "world" && game.global.spireActive) health = calcSpire(99, "Snimp", "health");
@@ -1064,19 +1170,11 @@ export function rCalcMutationHealth(): number | undefined {
 
 export function RgetCritMulti(): number {
 
-    const critChance = getPlayerCritChance();
-    const CritD = getPlayerCritDamageMult();
-
-    const lowTierMulti = getMegaCritDamageMult(Math.floor(critChance));
-    const highTierMulti = getMegaCritDamageMult(Math.ceil(critChance));
-    const highTierChance = critChance - Math.floor(critChance)
-
-    // Scruffy's doubleCrit ability + Shield doubleCrit mod (5.10.0): a second independent roll adds one
-    // more crit tier with prob doubleCritChance, multiplying the mult by the mega-crit base per tier.
-    const doubleCritChance = (typeof getPlayerDoubleCritChance === 'function') ? Math.min(getPlayerDoubleCritChance(), 1) : 0;
-    const doubleCritFactor = 1 + doubleCritChance * (getMegaCritDamageMult(2) - 1);
-
-    return ((1 - highTierChance) * lowTierMulti + highTierChance * highTierMulti) * doubleCritFactor * CritD
+    // #199 — shares getCritMulti's expectation helper rather than keeping a second hand-copy of the
+    // same formula. The U1 twin was corrected once before (#168's convertRate) and the fix landed on
+    // only one of the two copies; one source removes that class here.
+    const doubleCritChance = (typeof getPlayerDoubleCritChance === 'function') ? getPlayerDoubleCritChance() : 0;
+    return expectedCritMulti(getPlayerCritChance(), getPlayerCritDamageMult(), doubleCritChance);
 }
 
 // #99: the `min` / `max` branches and the two *DailyMod accumulators are DELETED, not fixed.
@@ -1501,7 +1599,19 @@ export function RcalcBadGuyDmg(enemy?: any, attack?: number, equality?: boolean)
         number *= game.challenges.Mayhem.getBossMult();
     }
     if (game.global.challengeActive === "Pandemonium") {
-        number *= game.challenges.Pandemonium.getEnemyMult();
+        // #213/#299 — `getEnemyMult()` is NOT applied here. Pandemonium's accessors already fold it in
+        // (config.js:5679 `getBossMult = (1 + pandemonium * 10) * getEnemyMult()`, :5686
+        // `getPandMult = (1 + pandemonium) * getEnemyMult()`), so multiplying by it as well SQUARED it —
+        // 25x at two completions, 625x once the consumer's own copy is counted too. Mayhem's
+        // `getBossMult` (config.js:5068) does not fold it in, which is exactly why the same two-line
+        // shape above is correct for Mayhem and wrong here.
+        //
+        // What remains is the WORLD-BOSS value, and that is this function's contract for both
+        // challenges — the health twin below already spelled it that way, and every non-map consumer
+        // (calcHDratio, Rmayhem, the gamma-burst gates, underStats) depends on it. Map-cell consumers
+        // convert with the `/ getBossMult() * getPandMult()` idiom in mapfunctions.ts; see the note
+        // there, and note the two halves are ONE change — landing either alone leaves the estimate
+        // wrong by getEnemyMult().
         number *= game.challenges.Pandemonium.getBossMult();
     }
     if (game.global.challengeActive === "Desolation") {

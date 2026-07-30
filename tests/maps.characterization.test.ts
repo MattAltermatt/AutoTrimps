@@ -496,7 +496,17 @@ describe('maps.RautoMap — L1b actuator spy-log', () => {
       },
       options: { menu: {
         repeatUntil: { enabled: 0 }, exitTo: { enabled: 0 }, repeatVoids: { enabled: 0 },
-        mapAtZone: { enabled: 1, getSetZone: () => [{ on: true, world: 100, through: 110, times: 0, cell: 2, until: 6, done: '', rx: 0 }] },
+        // #302 — `getMaxSettings` is part of the real option object (config.js:1427) and RautoMap now
+        // bounds its loop by it, as the game's own driver does. U2 returns 7, or 8 with the u2 MaZ
+        // mutation; transcribed rather than hardcoded to 7 so the fixture stays meaningful.
+        // `times: 1` (not 0): 0 is not a value the MaZ dialog can write (config.js:1557 normalizes to
+        // {-1,1,2,3,5,10,30,-2}), and the faithful repeat mirror treats it as exact-zone-only, which
+        // would make this fixture's world-100/row-100 match pass for the wrong reason.
+        mapAtZone: {
+          enabled: 1,
+          getMaxSettings: () => ((globalThis as any).u2Mutations?.tree?.MaZ?.purchased ? 8 : 7),
+          getSetZone: () => [{ on: true, world: 100, through: 110, times: 1, cell: 2, until: 6, done: '', rx: 0 }],
+        },
       } },
       stats: { heliumHour: { value: () => 0 } },
       resources: { radon: { owned: 100 }, metal: { owned: 0 } },

@@ -5,6 +5,9 @@
 // globals resolve via the ambient seam (at-legacy.d.ts / trimps.d.ts). Byte-identical to
 // gh-pages (type-only fixes). The peeled clean leaves time.ts / buystate.ts carry real types.
 import { timeStamp } from './time'
+// #297 — shared with settings-engine.ts's user-input guard; see settings-storable.ts for why the
+// predicate lives in a leaf module of its own rather than in either consumer.
+import { isStorableNumber } from './settings-storable'
 if (!String.prototype.includes) {
     String.prototype.includes = function(search, start) {
         'use strict';
@@ -154,6 +157,22 @@ export function getPageSettingAt(setting: string, index: number): any {
 export function setPageSetting(setting: string, value: any) {
     if (autoTrimpSettings.hasOwnProperty(setting) == false) {
         return false;
+    }
+    // #297 — the programmatic twin of settings-engine.ts's user-input guard. That path has validated
+    // typed input since #237; this one wrote whatever it was handed, so AT protected the user from
+    // typing NaN into the box and then wrote NaN into the same store itself (autoGiga's five
+    // non-finite routes → DeltaGigastation → `{"DeltaGigastation":null}` on disk → parseFloat(null) =
+    // NaN on every boot thereafter, because createSetting only defaults when nothing is STORED).
+    //
+    // Refusing leaves the previous stored value in place, which is the only non-arbitrary outcome: a
+    // caller with no computable answer has no business overwriting a value the user can still see and
+    // edit. Deliberately silent — this is a 10 Hz chokepoint, so a debug() here would be the very
+    // per-tick spam #297 was reported for; the diagnostic belongs at the call site, where the reason
+    // is known (upgrades.ts warns, latched by reason, before it ever reaches this line).
+    const type = autoTrimpSettings[setting].type;
+    if (type == 'value' || type == 'valueNegative' || type == 'multiValue') {
+        const storable = Array.isArray(value) ? value.every(isStorableNumber) : isStorableNumber(value);
+        if (!storable) return false;
     }
     if (autoTrimpSettings[setting].type == 'boolean') {
         autoTrimpSettings[setting].enabled = value;
@@ -312,4 +331,48 @@ window.onerror=function(b,c,d,e,f){var g=['Message: '+b,'URL: '+c,'Line: '+d,'Co
  */
 export function byId<T extends HTMLElement = HTMLInputElement>(id: string): T {
     return document.getElementById(id) as T
+}
+
+/**
+ * #162 — the "have we reached the configured cell?" gate for a `multiValue` cell list that is paired
+ * POSITION-BY-POSITION with a zone list (PR raiding, and the Insanity / Alchemy / Hypothermia farms).
+ *
+ * Five sites hand-copied this shape:
+ *
+ *     cell = (getPageSetting(ID) != 0) ? getPageSetting(ID)[index] : 1
+ *     … && ((cell <= 1) || (cell > 1 && (game.global.lastClearedCell + 1) >= cell)) && …
+ *
+ * and the guard is broken at all five. `getPageSetting` on a multiValue returns an ARRAY (utils.ts:64),
+ * so `!= 0` coerces through String: `[-1] != 0` is `-1 != 0` — TRUE. Every one of these settings
+ * defaults to `[-1]`, so the guard always passes and the `: 1` fallback is unreachable. A user who
+ * configures three zones and leaves the cell list at its one-element default then indexes past its end
+ * for zones 2 and 3, gets `undefined`, and `undefined` satisfies NEITHER arm of the gate — the feature
+ * is silently skipped for every zone but the first.
+ *
+ * `index` is an `indexOf()` result, so it is `-1` whenever the current zone is not in the list at all,
+ * and `undefined` failing both arms of the old gate was what handled that. This keeps it explicit
+ * rather than incidental.
+ *
+ * ⚠️ That rule is REDUNDANT, not load-bearing, and an earlier version of this comment claimed the
+ * opposite — that without it the three maps.ts farms would fire at every zone of the challenge. They
+ * would not. A wrong-zone `true` from this gate is absorbed downstream at least twice over: every
+ * CALLEE re-tests membership (`mapfunctions.ts:701` RPraid, `:898` Rinsanity, `:1228` Ralch, `:1341`
+ * Rhypo all gate on `<farm>zone.includes(game.global.world)`), and at a negative index every other
+ * positional read is `undefined` too, which each callee already refuses. Kept because a gate that
+ * silently relies on its callee to re-check is the shape that rots, not because removing it would
+ * change any outcome today.
+ *
+ * The OUTCOME is asserted rather than argued in tests/utils.pairedCellGate.test.ts. Note the narrower
+ * claim — "the callees' membership test is what absorbs it" — was written as a test name first and
+ * mutation-testing refuted THAT too: deleting Rinsanity's `includes()` reddens nothing, because the
+ * undefined-index reads get there first. No fixture can isolate one absorber from the others.
+ *
+ * `clearedCell` is passed in rather than read here so the rule is pure and testable on its own.
+ */
+export function pairedCellGateOpen(cellList: number[] | undefined, index: number, clearedCell: number): boolean {
+    if (index < 0) return false;
+    // A missing or unconfigured entry means "start at cell 1" — the documented meaning of -1, which
+    // `cell <= 1` already covers, now extended to the entries the user never filled in.
+    const cell = cellList?.[index] ?? 1;
+    return cell <= 1 || clearedCell + 1 >= cell;
 }

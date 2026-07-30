@@ -8,7 +8,7 @@
 // every top-level var is published to globalThis (shared-var seam; they were all globals in
 // the original concat). Plus 3 sloppy implicit-global writes (sepcial/levelzones/selectedMap)
 // initialised on globalThis below; functions with a local var selectedMap/levelzones keep it.
-import { getPageSetting, getPageSettingAt, debug, byId } from './utils'
+import { getPageSetting, getPageSettingAt, debug, byId, pairedCellGateOpen } from './utils'
 
 // Formerly-implicit-global state (see header) — published so strict-mode bare writes resolve.
 globalThis.sepcial = undefined; globalThis.levelzones = undefined; globalThis.selectedMap = undefined;
@@ -504,7 +504,19 @@ export function RsmithyFarm(amount: any) {
 
     if (smithyfarmzone.includes(game.global.world)) {
         if (game.global.lastClearedCell + 2 >= smithyfarmcell && smithyzones > smithys && smithyzones > 0) {
-            Rshouldsmithyfarm = true;
+            // #300 — the goal must still be UNAFFORDABLE. Smithy Farming exists to bank the resources
+            // for the remaining Smithies; once they are already affordable there is nothing to farm
+            // for, and RsmithyCalc's four result blocks are all guarded by `!afford` and return
+            // `undefined` in that state. Five call sites then consume that undefined differently,
+            // including RselectSmithy, where `mapsOwnedArray[map].bonus == undefined` matches ANY
+            // bonus-less map AT owns.
+            //
+            // This was not a one-tick race: buildBuilding increments `owned` only when the build
+            // QUEUE completes (.trimps-game/main.js:4951) while `purchased` increments at buy time
+            // (:4858), so `afford && owned < target` held for the entire build duration, every time.
+            const goal = smithyzones - smithys;
+            const afford = goal > 0 ? canAffordBuilding("Smithy", false, false, false, false, goal) : true;
+            if (!afford) Rshouldsmithyfarm = true;
         }
     }
 }
@@ -513,9 +525,18 @@ export function RmapLevelCalc() {
     var HD = (RcalcHDratio() / 1.5);
     var level = 0;
     
-    if (HD >= 10000) level = -3;
-    if (HD >= 5000) level = -2;
+    // #225 — these three were ordered largest-threshold-FIRST, and they are separate `if`s rather than
+    // an else-if chain, so the last assignment always won: any HD past 10000 also passes 5000 and 500,
+    // and `level` could only ever be -1 on this side. -2 and -3 were dead stores, costing two map
+    // levels of relief in exactly the state the ladder exists for (and making RselectSmithy hunt for
+    // an owned map at world-1 while RsmithyFarmMap built one at world-3).
+    //
+    // The positive ladder below is ordered the other way — loosest test first, strictest LAST — which
+    // is what makes the last-write-wins idiom correct there. Mirroring that order here is the minimal
+    // repair; no threshold or level value changed.
     if (HD >= 500) level = -1;
+    if (HD >= 5000) level = -2;
+    if (HD >= 10000) level = -3;
     if (HD <= 40) level = 0;
     if (HD <= 1) level = 1;
     if (HD <= 0.5) level = 2;
@@ -578,8 +599,17 @@ export function RsmithyFarmMap() {
         byId("mapLevelInput").value = (game.global.world + levelzones);
     }
 
-    biomeAdvMapsSelect.value = RsmithyCalc(false, true, false, false);
-    byId("advSpecialSelect").value = String(RsmithyCalc(false, false, true, false));
+    // #300 — never write `undefined` into these selects. The game reads them RAW: updateMapCost
+    // (.trimps-game/main.js:6542) does `if (biomeAdvMapsSelect.value != "Random") baseCost *= 2`, and
+    // an assigned `undefined` lands as `""`, so the map was priced at DOUBLE; getRandomMapName
+    // (:8114) took the same non-Random path and produced a map named "<prefix> undefined" whose
+    // location fell back to "All". The gate in RsmithyFarm should make this unreachable — leaving the
+    // selects untouched is the safe residue if it ever is not.
+    const smithyBiome = RsmithyCalc(false, true, false, false);
+    const smithySpecial = RsmithyCalc(false, false, true, false);
+    if (smithyBiome == null || smithySpecial == null) return;
+    biomeAdvMapsSelect.value = smithyBiome;
+    byId("advSpecialSelect").value = String(smithySpecial);
     updateMapCost();
     if (updateMapCost(true) > game.resources.fragments.owned) {
         RfragCalc(updateMapCost(true));
@@ -660,10 +690,15 @@ export function RPraid(daily: any) {
     var praidindex = praidzone.indexOf(game.global.world);
     var raidzones = raidzone[praidindex];
 
-    var cell;
-    cell = daily ? ((getPageSetting('RdAMPraidcell') != 0) ? getPageSetting('RdAMPraidcell')[praidindex] : 1) : ((getPageSetting('RAMPraidcell') != 0) ? getPageSetting('RAMPraidcell')[praidindex] : 1);
+    // #162 — the cell list is paired position-by-position with the zone list, so the fallback has to
+    // be per-INDEX. The old `!= 0` guard was always true ([-1] coerces to -1), which made the `: 1`
+    // arm unreachable and left the 2nd+ configured PR zone indexing past the default one-element
+    // list — `undefined` fails both arms of the gate below, so those zones never praided at all.
+    const cellGateOpen = pairedCellGateOpen(
+        daily ? getPageSetting('RdAMPraidcell') : getPageSetting('RAMPraidcell'),
+        praidindex, game.global.lastClearedCell);
 
-    if (praidzone.includes(game.global.world) && ((cell <= 1) || (cell > 1 && (game.global.lastClearedCell + 1) >= cell)) && Rgetequips(raidzones, false) > 0) {
+    if (praidzone.includes(game.global.world) && cellGateOpen && Rgetequips(raidzones, false) > 0) {
         if (daily) {
             Rdshoulddopraid = true;
         } else Rshoulddopraid = true;
@@ -766,7 +801,20 @@ export function RpandaExtra() {
         pandaextra = 1;
         var health = (RcalcOurHealth() * 2);
         var attack = RcalcOurDmg("avg", false, true);
-        var mult = (game.challenges.Pandemonium.getEnemyMult() * game.challenges.Pandemonium.getPandMult());
+        // #213/#299 — `mult` converts the producers' WORLD-BOSS estimate into a MAP-CELL one, paired
+        // with the `/ boss` below: `base * B / B * P` = `base * P`, which is exactly what the game
+        // builds for a Pandemonium map cell (main.js:12383's non-boss arm, main.js:11586). The
+        // `getEnemyMult()` factor is dropped because `getPandMult()` already contains it
+        // (config.js:5686) — including it squared the completion multiplier, and combined with the same
+        // slip in calc.ts's attack twin the survival arm ran 625x over-tight, so every +1..+6 rung
+        // failed and RpandaExtra always fell through to the unconditional +1.
+        //
+        // The DIVISOR is correct and unchanged. It is not compensating for a bug: RmayhemExtra's
+        // `/ Mb` turns `base * Me * Mb` into the game's map value `base * Me` to the last bit, the
+        // sibling RdesoExtra has no divisor because Desolation's multiplier applies to map cells too
+        // (main.js:11572-11575), and the settings vocabulary names the distinction outright —
+        // 'M: Attack Boss' is read without the divisor, 'M: Attack Map' with it.
+        var mult = game.challenges.Pandemonium.getPandMult();
         var boss = game.challenges.Pandemonium.getBossMult();
         var hitsmap = (getPageSetting('Rpandahits') > 0) ? getPageSetting('Rpandahits') : 10;
         var hitssurv = 1;
@@ -850,7 +898,21 @@ export function Rinsanity(should: any, level: any, reset: any) {
         insanitystackszones = maxinsanity;
     }
 
-    if (should && insanityfarmzone.includes(game.global.world) && insanitystackszones != insanitystacks) {
+    // #162 follow-up (found by review): the stack target is read POSITIONALLY, so a stack list
+    // shorter than the zone list makes it `undefined` — and `undefined != <any number>` is true at
+    // every stack count, so the target could never be met and this farm never terminated. NaN (a
+    // non-numeric entry survives `parseInt` as NaN) behaves the same way.
+    //
+    // Before the paired-cell fix this state was masked at the CALLER: the same short-list shape in
+    // the CELL setting closed the cell gate first, so Rinsanity(true, …) was never reached. Making
+    // the cell fallback per-index removed that accidental cover, which is why the guard belongs here
+    // rather than back in the gate. `Number.isFinite`, not `!isNaN` — the latter accepts ±Infinity
+    // (#202), and the clamp above cannot bound an Infinity target either.
+    //
+    // The two siblings do not need it, checked rather than assumed: Rhypo's undefined flows into
+    // `Math.pow(100, NaN)` so `wood.owned < NaN` is false and it fails CLOSED (mapfunctions.ts:1324),
+    // and Ralch's whole block is inside `if (alchstackszones != undefined)` (:1194).
+    if (should && insanityfarmzone.includes(game.global.world) && Number.isFinite(insanitystackszones) && insanitystackszones != insanitystacks) {
         Rshouldinsanityfarm = true;
     }
 
@@ -1124,6 +1186,17 @@ export function RshipMap() {
                 byId("mapLevelInput").value = game.global.world;
                 byId("advExtraLevelSelect").value = "0";
             } else if (shiplevelzones < 0) {
+                // #204 — this branch used to skip RminFragMap, the ONLY thing that writes
+                // biomeAdvMapsSelect and advSpecialSelect. createMap then assigns no `bonus` at all
+                // (.trimps-game/main.js:6018 sets it only when getSpecialModifierSetting() != "0"),
+                // while RselectShip requires `mapsOwnedArray[map].bonus == special` in all three of
+                // its match loops — and `undefined == "ssc"` is false. So no owned map ever matched,
+                // RselectShip returned "create" every tick, and AT bought a fresh map without running
+                // it, draining fragments until it could not afford one. Ship Farming worked only with
+                // a strictly positive SF: Map Level.
+                //
+                // RhypoMap is the correct template: all three of its branches call RminFragMap.
+                RminFragMap(selection, shiplevelzones, special);
                 byId("mapLevelInput").value = (game.global.world + shiplevelzones);
                 byId("advExtraLevelSelect").value = "0";
             }
@@ -1660,6 +1733,13 @@ export function RselectSmithy() {
     var selectedMap = "create";
     var levelzones: any = RsmithyCalc(true, false, false, false);
     var special = RsmithyCalc(false, false, true, false);
+
+    // #300 — a map created without a special has `bonus === undefined`, so `bonus == special` with an
+    // undefined `special` is `undefined == undefined` — TRUE. That matched any unrelated bonus-less
+    // map AT happened to own, which is the mirror of #204's never-matches. The gate in RsmithyFarm
+    // now stops `special` being undefined at all; this is the second lock, because the failure is
+    // silent and the comparison is repeated in all three loops below.
+    if (special == null) return "create";
 
     if (levelzones != 0) {
         for (var map in game.global.mapsOwnedArray) {

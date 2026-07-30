@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import {
   calcBaseDamageInX,
   autoStance,
@@ -177,11 +179,32 @@ describe('stance.windStance — stance-tier mapping', () => {
     })
   }
 
-  it('non-daily stance 5 → setFormation(5) + lowHeirloom', () => {
+  // #248 — this used to assert `stance 5 → setFormation(5) + lowHeirloom`, by stubbing
+  // calcCurrentStance to return a value the REAL calcCurrentStance cannot produce. Its returns are
+  // exactly {15, 2, 0, 1, 12, 10, 11} or undefined, so the arm it characterized was dead code and
+  // the test's own name was a claim about a state that never occurs. The arm is now deleted; what
+  // replaces the test is the property that made it dead.
+  it('#248: calcCurrentStance can never return 5, so W only ever pairs with the high heirloom', () => {
+    const returns = readFileSync(resolve(__dirname, '..', 'src/modules/calc.ts'), 'utf8')
+      .split(/^export function calcCurrentStance/m)[1]
+      .split(/^export function /m)[0]
+      .match(/return (\d+);/g)
+      ?.map((r: string) => Number(r.match(/\d+/)![0]))
+    expect(returns).toBeDefined()
+    expect(new Set(returns)).toEqual(new Set([15, 2, 0, 1, 12, 10, 11]))
+    expect(returns).not.toContain(5)
+    // And the surviving W arm is the high one.
+    setup(15)
+    windStance()
+    expect(heirloomCalls).toEqual(['highHeirloom'])
+  })
+
+  it('#248: a stubbed 5 no longer selects anything — the dead arm is gone', () => {
     setup(5)
     windStance()
-    expect(formationCalls).toEqual(['5'])
-    expect(heirloomCalls).toEqual(['lowHeirloom'])
+    // stancey stays at its default 2 and no heirloom swap fires.
+    expect(formationCalls).toEqual(['2'])
+    expect(heirloomCalls).toEqual([])
   })
 
   it('non-daily stance 15 → setFormation(5) + highHeirloom (the high-tier arm)', () => {
