@@ -308,6 +308,109 @@ describe('firstGiga leaves the stored pattern alone when there is none (#297 lay
 })
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
+// #312 — the SUCCESS line needs a latch too, for the same reason the WARNING line got one
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// #297 latched gigaTargetZone's failsafe warning because "this line is reached on every tick that
+// firstGiga runs — which is every tick until the first Gigastation is owned". The success line two
+// functions down is reached on exactly the same ticks and was left unlatched, so the identical symptom
+// came straight back on a healthy save (live on v6.0.0.156, Z67, Warpstation 3, Gigastation 0/7):
+//
+//   14:37:40 Auto Gigastation: Setting pattern to 3+1.01 x10
+//   14:37:41 Auto Gigastation: Setting pattern to 3+1.01 x10
+//
+// Byte-identical, forever. Every call is called through `buyUpgrades`' giga arm (upgrades.ts:284) while
+// `Gigastation.done === 0`, and on that save AT then bails at `!available` because the first Gigastation
+// costs 1e14 gems and the reporter has 2.95e13 — an ordinary, expected wait, not a second defect.
+// (`canAffordTwoLevel` is named for the two-LEVEL cost map, `cost.resources.gems`; it does not require
+// affording two Gigastations. The issue's own hypothesis said it did — checked against main.js:4678 and
+// refuted before anything was written.)
+//
+// These drive the UNFORCED call — the live shape — because the latch sits after the a&&b&&c&&d gate and
+// a `forced` fixture would prove the easy half while reading as proof of the hard one.
+describe('firstGiga logs the pattern only when it MOVES (#312)', () => {
+  beforeEach(() => { reportedSave(); reportedSettings() })
+
+  it('an unchanged pattern is not re-logged on every tick', () => {
+    const log = watchLog()
+    expect(upgrades.firstGiga()).toBe(true)
+    expect(log.innerHTML).toContain('Setting pattern to 2+')
+    const after = log.innerHTML
+
+    // Unlatched, message2 either appends ten more spans or collapses them into " x11" — both change
+    // innerHTML, which is why the assertion is on the whole log rather than on a line count.
+    for (let i = 0; i < 10; i++) expect(upgrades.firstGiga()).toBe(true)
+    expect(log.innerHTML).toBe(after)
+  })
+
+  it('a moved DELTA is logged even though the base has not moved', () => {
+    // The near-miss repair: a latch keyed on `base` alone. It looks right at the call site (the base is
+    // the value #107 re-pins) and stays silent through every pattern change a target-zone edit causes.
+    const log = watchLog()
+    upgrades.firstGiga()
+    const after = log.innerHTML
+    const firstDelta = g.autoTrimpSettings.DeltaGigastation.value
+
+    g.autoTrimpSettings.CustomTargetZone.value = 61 // moves the delta; base stays Warpstation.owned = 2
+    expect(upgrades.firstGiga()).toBe(true)
+    expect(g.autoTrimpSettings.FirstGigastation.value).toBe(2)
+    expect(g.autoTrimpSettings.DeltaGigastation.value).not.toBe(firstDelta)
+    expect(log.innerHTML).not.toBe(after)
+    expect(log.innerHTML).toContain('Setting pattern to 2+' + g.autoTrimpSettings.DeltaGigastation.value)
+  })
+
+  it('a moved BASE is logged even though the delta has not moved', () => {
+    // The mirror near-miss: a latch keyed on `delta` alone. autoGiga reads its own base from the STORE,
+    // which still holds 2 after the first call, so this second tick produces a byte-identical delta with
+    // a different base — the one state that tells the two wrong keys apart.
+    const log = watchLog()
+    upgrades.firstGiga()
+    const after = log.innerHTML
+    const firstDelta = g.autoTrimpSettings.DeltaGigastation.value
+
+    g.game.buildings.Warpstation.owned = 3
+    expect(upgrades.firstGiga()).toBe(true)
+    expect(g.autoTrimpSettings.DeltaGigastation.value).toBe(firstDelta)
+    expect(g.autoTrimpSettings.FirstGigastation.value).toBe(3)
+    expect(log.innerHTML).not.toBe(after)
+    expect(log.innerHTML).toContain('Setting pattern to 3+' + firstDelta)
+  })
+
+  it('still re-pins on every tick, and ANNOUNCES an override of a hand-edited box (#107)', () => {
+    // The pin is load-bearing: it is what makes `owned < floor(0 * delta) + first` false, so the first
+    // Gigastation can be bought at all. A "fix" that skipped the whole block when nothing had changed
+    // would read identically at the call site and would strand any store that drifted underneath it.
+    //
+    // This is also the ONE state that separates reading the store from remembering the last logged pair
+    // — the issue's own fix sketch. DeltaGigastation is not an input to autoGiga (FirstGigastation is),
+    // so a hand-edit to THIS box moves neither `base` nor `delta`: a remembered-pair latch computes an
+    // unchanged key, stays silent, and AT reverts the user's number with nothing in the log. Editing the
+    // other box cannot tell the two apart, because autoGiga reads its base out of it and the delta moves
+    // with it — which is why this drives the delta box specifically.
+    const log = watchLog()
+    upgrades.firstGiga()
+    const after = log.innerHTML
+    const pinned = g.autoTrimpSettings.DeltaGigastation.value
+
+    g.autoTrimpSettings.DeltaGigastation.value = 5 // the user edits the box
+    expect(upgrades.firstGiga()).toBe(true)
+    expect(g.autoTrimpSettings.DeltaGigastation.value).toBe(pinned) // AT re-pins over it…
+    expect(g.autoTrimpSettings.FirstGigastation.value).toBe(2)
+    expect(log.innerHTML).not.toBe(after) // …and says so, rather than overriding in silence.
+    expect(log.innerHTML).toContain('Setting pattern to 2+' + pinned)
+  })
+
+  it('the refusal path is still silent — a latch is not a licence to log', () => {
+    // #297's contract, re-asserted from this side: when autoGiga has no pattern, firstGiga writes
+    // nothing and says nothing here (autoGiga has already warned, latched by reason).
+    g.game.global.world = 530 // a zone no other test in this file uses — the warn latch is (reason, zone)
+    g.getPerSecBeforeManual = () => 0
+    const log = watchLog()
+    expect(upgrades.firstGiga()).toBe(false)
+    expect(log.innerHTML).not.toContain('Setting pattern to')
+  })
+})
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
 // Layer 3 — setPageSetting is the chokepoint the store can be trusted at
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 describe('setPageSetting refuses a value the store cannot carry (#297 layer 3)', () => {

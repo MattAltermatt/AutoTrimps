@@ -223,12 +223,26 @@ export function firstGiga(forced?: boolean) {
     // reason, so this bail is diagnosed rather than silent.
     if (!Number.isFinite(delta)) return false;
 
+    // #312 — the other half of #297's symptom. gigaTargetZone's warning got a latch because "this line
+    // is reached on every tick that firstGiga runs — which is every tick until the first Gigastation is
+    // owned"; the SUCCESS line below is reached on exactly those ticks and was left unlatched, so a
+    // healthy save produced the identical 10 Hz spam with a valid pattern in it. The pin itself stays
+    // UNCONDITIONAL — it is what makes `owned < floor(0 * delta) + first` false so the first Gigastation
+    // can be bought at all (#107) — so this reads the store rather than skipping the writes.
+    //
+    // Keyed on BOTH values, because both move independently: the base is the live Warpstation count and
+    // the delta is autoGiga's answer, and a latch on either one alone stays silent through every change
+    // to the other (both near-misses are driven in upgrades.gigaPattern.test.ts). Reading back beats
+    // remembering the last logged pair on one more count: when the user edits either box by hand, AT's
+    // override is announced instead of applied in silence.
+    const moved = getPageSetting('FirstGigastation') !== base || getPageSetting('DeltaGigastation') !== delta;
+
     //Save settings
     setPageSetting('FirstGigastation', base);
     setPageSetting('DeltaGigastation', delta);
 
     //Log
-    debug("Auto Gigastation: Setting pattern to " + base + "+" + delta, "general", "*rocket");
+    if (moved) debug("Auto Gigastation: Setting pattern to " + base + "+" + delta, "general", "*rocket");
 
     return true;
 }

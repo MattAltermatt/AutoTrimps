@@ -795,7 +795,7 @@ export function initializeAllSettings() {
     }), 'value', -1, null, 'Buildings');
 
     //Line 3
-    // #107 — both of these are written back by firstGiga() (upgrades.ts:132) whenever Auto Gigas is on,
+    // #107 — both of these are written back by upgrades.ts's firstGiga() whenever Auto Gigas is on,
     // which it is BY DEFAULT. The solver computes a base and delta and stores its answer here, so for most
     // users these boxes report what AT decided rather than accepting what they typed. Neither said so.
     const GIGA_OVERWRITE = 'While <b>Auto Gigas</b> is on (the default), AT computes this itself when it buys your first Gigastation of a run and writes its answer back here — overwriting what you typed. Turn <b>Auto Gigas</b> off to drive it by hand.';

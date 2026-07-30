@@ -6283,9 +6283,10 @@
     const deltaS = getPageSetting2("CustomDeltaFactor") >= 1 ? getPageSetting2("CustomDeltaFactor") : void 0;
     const delta = autoGiga(deltaZ, deltaM, deltaS);
     if (!Number.isFinite(delta)) return false;
+    const moved = getPageSetting2("FirstGigastation") !== base || getPageSetting2("DeltaGigastation") !== delta;
     setPageSetting2("FirstGigastation", base);
     setPageSetting2("DeltaGigastation", delta);
-    debug2("Auto Gigastation: Setting pattern to " + base + "+" + delta, "general", "*rocket");
+    if (moved) debug2("Auto Gigastation: Setting pattern to " + base + "+" + delta, "general", "*rocket");
     return true;
   }
   function buyUpgrades2() {
