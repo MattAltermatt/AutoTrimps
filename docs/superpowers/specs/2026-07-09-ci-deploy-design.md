@@ -2,7 +2,7 @@
 
 **Issue:** [#33](https://github.com/MattAltermatt/AutoTrimps/issues/33)
 **Date:** 2026-07-09
-**Status:** Design approved — ready for implementation plan
+**Status:** ✅ SHIPPED 2026-07-09 (`68d72abf`) — Actions-native Pages deploy is the live setup; there is no `gh-pages` branch.
 
 ## 🎯 Goal
 

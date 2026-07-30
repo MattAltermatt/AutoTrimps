@@ -1,6 +1,6 @@
 # Proof-Net Phase 1 · `jobs.ts` Beachhead — Implementation Plan
 
-**Status:** Draft 2026-07-09
+**Status:** ✅ SHIPPED 2026-07-09 — the beachhead landed and the per-module recipe it locked is now the project's standard. Note the L1b actuator suite shipped as `tests/jobs.actuators.test.ts`, not the `tests/jobs.buyJobs.test.ts` proposed below.
 **Spec:** [`2026-07-09-proof-net-modernization-design.md`](../specs/2026-07-09-proof-net-modernization-design.md) §11–§12, §15 (DoD)
 **Branch:** `feature/proof-net-phase-1-jobs`
 **Mode:** Lead-inline (spec §12 — needs the differential + locks the per-module recipe before fan-out)

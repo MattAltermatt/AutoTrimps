@@ -1,8 +1,8 @@
 # Post-Phase-1 Type-Quality Milestone — Design
 
 **Date:** 2026-07-09
-**Status:** Approved (brainstorm + 3-agent duel + naysayer synthesis)
-**Scope owner:** GitHub milestone (to be opened) — the first arc after Phase 1 true-TS.
+**Status:** ✅ COMPLETE — approved via brainstorm + 3-agent duel + naysayer synthesis, then shipped; the "Type Quality" milestone is closed 4/4.
+**Scope owner:** GitHub milestone "Type Quality" (closed) — the first arc after Phase 1 true-TS.
 
 ## Context
 

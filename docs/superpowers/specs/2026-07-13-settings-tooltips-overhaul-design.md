@@ -1,6 +1,6 @@
 # Settings tooltips: composed records, not prose blobs (#107)
 
-**Status:** design · 2026-07-13 · supersedes the "just rewrite the wrong ones" reading of #107
+**Status:** ✅ SHIPPED 2026-07-13 (#107–#120) · supersedes the "just rewrite the wrong ones" reading of #107
 
 ## The problem is drift, not wording
 

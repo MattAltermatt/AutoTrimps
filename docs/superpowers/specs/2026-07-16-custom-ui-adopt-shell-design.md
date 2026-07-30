@@ -2,7 +2,7 @@
 
 **Issue:** #41 (UI Streamline), scope-expanded to a full, opt-in UI replacement.
 **Date:** 2026-07-16
-**Status:** Approved (brainstorm + 4-agent dueling panel). Ready for plan.
+**Status:** ✅ SHIPPED 2026-07-16 (Phase 1, `dddb653b`) — the permanent `#atWrapper` shell, `ATCustomUI` default OFF. Phases 2–3 shipped after it; remaining polish is tracked on #41's open issues.
 
 ## 1. Goal
 

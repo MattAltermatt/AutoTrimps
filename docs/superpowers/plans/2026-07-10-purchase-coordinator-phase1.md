@@ -1,5 +1,11 @@
 # Purchase Coordinator — Phase 1 Implementation Plan
 
+**Status:** ⛔ **REVERTED — do not execute.** This plan shipped, then #57 was closed WONTFIX
+(2026-07-14) and `77a2f98b` deleted the whole implementation: `src/modules/coordinator.ts` and
+`tests/coordinator.test.ts` no longer exist. Every path below is historical. The reason is in the
+spec's postmortem — infinite metal buys zero extra progress, because the game's own `allowed` cap
+binds first.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Land the opt-in Purchase Coordinator *foundation seam* — a shared context, a resource-reservation guard at the U1 building chokepoint, a toggle, and a scorer that generically reproduces (and subsumes) the existing hand-coded Coordination reservation — so spending becomes priority-aware for the metal-contention core.

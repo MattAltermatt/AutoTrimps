@@ -2,9 +2,13 @@
 
 **Issue:** [#57](https://github.com/MattAltermatt/AutoTrimps/issues/57)
 **Date:** 2026-07-10 (Phase 2 feasibility postmortem added 2026-07-11)
-**Status:** Phase 1 shipped. **Phase 2 PAUSED** — both candidate directions falsified by a
-dueling-agent + live-Chrome investigation (see §"Phase 2 Feasibility Postmortem"). #57's real
-value landed in Phase 1; there is no compelling next slice today.
+**Status:** **REMOVED — #57 closed WONTFIX 2026-07-14.** Phase 2 was first paused when both
+candidate directions were falsified by a dueling-agent + live-Chrome investigation (see
+§"Phase 2 Feasibility Postmortem"); the Phase 1 implementation was then deleted outright in
+`77a2f98b` — `src/modules/coordinator.ts` and `tests/coordinator.test.ts` no longer exist. An
+upper-bound control settled it: infinite metal buys **zero** extra progress, because the game's
+own `allowed` cap binds first. This spec is kept as the postmortem of a falsified idea, not as a
+description of shipped code — every `coordinator.ts` path it cites is historical.
 
 ---
 

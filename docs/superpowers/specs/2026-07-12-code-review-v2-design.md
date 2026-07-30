@@ -1,7 +1,7 @@
 # Code Review v2 — Design
 
 **Date:** 2026-07-12
-**Status:** approved, executing
+**Status:** ✅ COMPLETE — milestone "Phase 5 — Code Review v2" is 37 closed / 1 open, and the survivor (#84, game-parity drift) is deliberately parked FILE-ONLY pending a tuning decision.
 **Supersedes (as method):** [`2026-07-08-code-review-findings.md`](2026-07-08-code-review-findings.md) — v1's
 per-module sweep. v1's *findings* stand; its *method* is demoted to a background layer here.
 

@@ -1,7 +1,8 @@
 # New findings from the `needs-net` cluster (#68–#74, #88)
 
-Found while fixing the cluster, **not fixed here**. Each needs its own issue. Filing is pending the
-maintainer's approval (GitHub writes are gated).
+Found while fixing the cluster, **not fixed here**. **Status: all five were filed and are now
+closed** (#93–#97, milestone "Phase 5 — Code Review v2"). This doc is the derivation behind those
+issues, not an open queue.
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Issue:** #41. Builds on Phase 1 (`dddb653b`, the adopt-and-skin shell).
 **Date:** 2026-07-16
-**Status:** Approved (mockup round — user picked layout **B**). Ready for plan.
+**Status:** ✅ SHIPPED 2026-07-16 (layout **B**, the user's mockup pick). Follow-on defects are open issues under #41.
 
 ## 1. Goal
 

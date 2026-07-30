@@ -1,6 +1,6 @@
 # AutoTrimps → True TypeScript: Modernization & Hardening Design
 
-**Status:** Approved (brainstorm 2026-07-08) — SME-driven, user delegated technical decisions.
+**Status:** ✅ COMPLETE — approved by brainstorm 2026-07-08 (SME-driven, user delegated technical decisions) and shipped; the "Phase 1 · True TS conversion" milestone is closed 6/6. Kept as the living reference for the conversion contract and the characterization-harness guardrails.
 **Extends:** [`2026-07-08-autotrimps-modernization-design.md`](2026-07-08-autotrimps-modernization-design.md) (the strangler migration).
 **Planning surface:** GitHub Milestone + Issues (this doc is the *architecture*; the executable plan lives on GitHub per project convention).
 

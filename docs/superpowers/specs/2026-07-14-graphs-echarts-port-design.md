@@ -1,6 +1,6 @@
 # Graphs.js → `src/` + Highcharts → ECharts — Design Spec
 
-**Date:** 2026-07-14 · **Tracks:** #131 (bigger text + data export) · **Status:** design, pre-plan
+**Date:** 2026-07-14 · **Tracks:** #131 (bigger text + data export) · **Status:** ✅ SHIPPED 2026-07-14 (#131/#135/#136) — `src/modules/graphs/` on ECharts 5.6; `legacy/Graphs.js` and `highcharts.js` are deleted
 **Effort:** L–XL · **Sequencing decision:** combined port + swap (no faithful-Highcharts intermediate)
 
 ## Context
