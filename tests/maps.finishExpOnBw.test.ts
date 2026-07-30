@@ -168,6 +168,16 @@ describe('#223 — finishExpOnBw = -1 disables the Experience BW finish', () => 
     expect(selected).toEqual(['bw575'])
   })
 
+  it('-1 ONLY: other negatives still clamp to 125, as the tooltip promises', () => {
+    // `pageSetting < 0` reads as the same fix and is a different feature: it would make every
+    // negative a disable, contradicting `cannot: anything lower is treated as 125`. -1 is the
+    // sentinel the code already tested for and the one the value dialog advertises; -5 is just an
+    // out-of-range number.
+    arm('-5')
+    expect(G.farmingWonder).toBe(true)
+    expect(selected).toEqual(['bw575'])
+  })
+
   it('the sibling maxExpZone = -1 sentinel still gates the same branch', () => {
     // Both conjuncts must independently be able to stop it; a fix that made finishOnBw live by
     // weakening the gate would show up here.
