@@ -4,7 +4,7 @@
 > That plan was the **discovery** campaign (Phases 0–3b). This is the **remediation** campaign:
 > how the findings it produced actually get fixed, verified, and merged.
 >
-> **Status: Sessions 1–6 SHIPPED.** Sessions 7–10 pending.
+> **Status: Sessions 1–9 SHIPPED.** Session 10 (the single oracle re-pin) pending.
 >
 > ```text
 > session  state        record
@@ -26,7 +26,9 @@
 >                       #246 · #214 SPLIT OUT to its own branch (needs a settings
 >                       migration) · filed #293 · baseline-zero 20/21, RED on
 >                       10-hypo-u2 with 152 divergences, ALL attributed (below)
-> 9        🔶 Track B   Waves 1-5 landed. Combat math (#169 #170 #199 #212 #290 #294 #295 #296
+> 9        ✅ SHIPPED   Fix S9 closed, 37 (one REFUTED: #304) · 6 open are all NEW or
+>                       deferred: #286 (user decision) #214 (own branch) #307 #308 #309
+>                       #310. Reviewer clean. Waves 1-5. Combat math (#169 #170 #199 #212 #290 #294 #295 #296
 >                       #198 #244) · stance/breed (#229 #230 #231 #233 #248 #249 #250) · maps
 >                       (#204 #222 #224 #225 #226 #234 #263 #300) · W3 (#221 #206 #185 #223) ·
 >                       W4 (#291 #162 #302 #306) · W5 (#297 #303 #305 #213/#299 #298; #304
