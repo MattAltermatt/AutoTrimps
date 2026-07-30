@@ -316,6 +316,27 @@ describe('#303 — a row the game already fired this zone does not re-enter maps
     // prefix is unchanged and a stamped row still stands down.
     expect(mapsAt(200, maz({ setZone: [{ world: 200, done: '1_200_1_5' }] }))).toBe(false)
   })
+
+  it('standing down does NOT abandon the map already running — it stops the REPEAT', () => {
+    // #221's scope note claimed gating on `done` "would make AT abandon a map the instant native MaZ
+    // consumed the row", and that is what kept the latch out of that fix. Written as an assertion, the
+    // claim is FALSE: with shouldDoMaps false, `selectedMap` stays "world", so maps.ts:781's
+    // `selectedMap == currentMapId` conjunct fails and control reaches the else at :797 — whose only
+    // action is `repeatClicked()` to clear the repeat flag. The in-flight map finishes; nothing exits it.
+    let repeatCalls = 0
+    let clicks = 0
+    arm(200, maz({ setZone: [{ world: 200, done: '1_200_1' }] }))
+    G.game.global.mapsActive = true
+    G.game.global.currentMapId = 'map1'
+    G.game.global.repeatMap = true
+    G.repeatClicked = () => { repeatCalls++; G.game.global.repeatMap = !G.game.global.repeatMap }
+    G.mapsClicked = () => { clicks++ }
+    maps.autoMap()
+    expect(G.shouldDoMaps, 'the stamped row must not re-assert').toBe(false)
+    expect(repeatCalls, 'repeat is switched off exactly once').toBe(1)
+    expect(G.game.global.repeatMap, 'and it really is off afterwards').toBe(false)
+    expect(clicks, 'no mapsClicked — the current map is not exited').toBe(0)
+  })
 })
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════

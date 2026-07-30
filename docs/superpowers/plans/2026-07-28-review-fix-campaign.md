@@ -700,9 +700,15 @@ Two scope notes worth carrying to S10:
 - `#221` mirrors the game's row filters (`on !== false`, `through`, `times`, `times == -2`/`tx`,
   `getMaxSettings`) but deliberately NOT its `done` / `cell` / `preMapsActive` gates: those decide
   *when within a zone* the game fires its own map run, while `shouldDoMaps` is AT's coarser per-zone
-  decision, and gating on `done` would make AT abandon a map the instant native MaZ consumed the row.
-  Verified live: AT and `checkMapAtZoneWorld` now agree on every zone-selection question, and the one
-  remaining disagreement is exactly the cell gate.
+  decision. ⚠️ **The reason given for leaving `done` out was wrong, and S9 Wave 5 fixed it (#303).**
+  The claim was that gating on `done` "would make AT abandon a map the instant native MaZ consumed the
+  row". Written as an assertion it FAILS: with `shouldDoMaps` false, `selectedMap` stays `"world"`, so
+  `maps.ts:781`'s `selectedMap == currentMapId` conjunct is false and control reaches the else at
+  `:797`, whose only action is `repeatClicked()`. The in-flight map finishes and AT does not re-enter —
+  which is the intended one-map-per-zone behaviour, not an abandonment. Third time this session that a
+  justification surviving only as prose turned out to be false (`utils.ts` F1, the Watch trickle
+  comment, this one). Verified live: AT and `checkMapAtZoneWorld` now agree on every zone-selection
+  question, and the one remaining disagreement is exactly the cell gate.
 - `#223` is scoped to the `-1` sentinel only. Every other below-605 value still targets a BW the game
   cannot accept as an Experience completion (`config.js:9163`), as do `NaN` and a phantom key — split
   out as **#301** with four dispositions rather than absorbed into a mechanism commit.
