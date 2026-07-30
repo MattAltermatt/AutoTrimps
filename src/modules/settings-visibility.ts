@@ -657,6 +657,7 @@ export function updateCustomButtons() {
     (!radonon && ATGAon) ? turnOn("dhATGA2timer") : turnOff("dhATGA2timer");
     (!radonon && ATGAon) ? turnOn("cATGA2timer") : turnOff("cATGA2timer");
     (!radonon && ATGAon) ? turnOn("chATGA2timer") : turnOff("chATGA2timer");
+    (!radonon && ATGAon) ? turnOn("nchATGA2timer") : turnOff("nchATGA2timer");
     (!radonon && ATGAon) ? turnOn("dATGA2Auto") : turnOff("dATGA2Auto");
 
 

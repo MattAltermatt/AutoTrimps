@@ -153,6 +153,14 @@ export function ATGA2() {
 		target = new Decimal(getPageSetting('cATGA2timer'));
 		if (game.global.runningChallengeSquared && getPageSetting('chATGA2timer') > 0 && (challengeActive("Electricity") || challengeActive("Toxicity") || challengeActive("Nom")))
 		target = new Decimal(getPageSetting('chATGA2timer'));
+		// The unsquared counterpart of the row above. Mapocalypse is in the set and absent from the C2 row
+		// because it exists ONLY unsquared (config.js:3685) and is Electricity's stack mechanic plus 300%
+		// map difficulty. Deliberately gated on the challenge being ACTIVE rather than on the zone: every
+		// one of these ends mid-run (Electricity/Mapocalypse on clearing The Prison, config.js:3616 sets
+		// challengeActive = ""), and from that tick on the run is an ordinary one, so the target must fall
+		// back through to the base timer / Before-Z / After-Z on its own.
+		if (!game.global.runningChallengeSquared && getPageSetting('nchATGA2timer') > 0 && (challengeActive("Electricity") || challengeActive("Mapocalypse") || challengeActive("Toxicity") || challengeActive("Nom")))
+		target = new Decimal(getPageSetting('nchATGA2timer'));
 
 		if (getPageSetting('dATGA2timer') > 0 && game.global.challengeActive == "Daily")
 		target = new Decimal(getPageSetting('dATGA2timer'));

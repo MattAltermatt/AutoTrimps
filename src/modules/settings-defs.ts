@@ -1862,9 +1862,14 @@ export function initializeAllSettings() {
         what: 'Breed timer ATGA uses in C2 (squared) challenges, overriding the base timer and Before/After Z.',
         ignoredWhen: 'Not running a squared challenge, the challenge is Electricity/Nom/Toxicity (those use the Hard C2 timer instead), or <b>ATGA: Timer</b> is not a positive number.',
     }), 'value', '-1', null, 'ATGA');
-    createSetting('chATGA2timer', 'ATGA: T: C: Hard',tip({
+    createSetting('chATGA2timer', 'ATGA: T: C2: Hard',tip({
         what: 'Breed timer ATGA uses in the harder C2 (squared) challenges &mdash; Electricity, Nom, Toxicity &mdash; overriding the base timer, Before/After Z, and the normal C2 timer.',
-        ignoredWhen: 'Not running one of those three squared challenges, or <b>ATGA: Timer</b> is not a positive number.',
+        ignoredWhen: 'Not running one of those three squared challenges, or <b>ATGA: Timer</b> is not a positive number. Running one of them <i>unsquared</i> uses <b>ATGA: T: C: Hard</b> instead.',
+    }), 'value', '-1', null, 'ATGA');
+    createSetting('nchATGA2timer', 'ATGA: T: C: Hard',tip({
+        what: 'Breed timer ATGA uses in the harder ordinary (non-squared) challenges &mdash; Electricity, Mapocalypse, Nom, Toxicity &mdash; overriding the base timer and Before/After Z.',
+        how: 'It applies only while the challenge is still <i>running</i>. The moment the challenge is completed &mdash; clearing The Prison (80) on Electricity or Mapocalypse, for instance &mdash; the game ends it, and ATGA falls straight back to the base timer (or Before/After Z) for the rest of the run.',
+        ignoredWhen: 'Running the <i>squared</i> version of any of them (<b>ATGA: T: C2: Hard</b> covers that), not running one of those four challenges, or <b>ATGA: Timer</b> is not a positive number. Can itself be overridden by <b>ATGA: T: Spire</b>.',
     }), 'value', '-1', null, 'ATGA');
 
 

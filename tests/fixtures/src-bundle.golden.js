@@ -2461,6 +2461,8 @@
         target = new Decimal(getPageSetting2("cATGA2timer"));
       if (game.global.runningChallengeSquared && getPageSetting2("chATGA2timer") > 0 && (challengeActive("Electricity") || challengeActive("Toxicity") || challengeActive("Nom")))
         target = new Decimal(getPageSetting2("chATGA2timer"));
+      if (!game.global.runningChallengeSquared && getPageSetting2("nchATGA2timer") > 0 && (challengeActive("Electricity") || challengeActive("Mapocalypse") || challengeActive("Toxicity") || challengeActive("Nom")))
+        target = new Decimal(getPageSetting2("nchATGA2timer"));
       if (getPageSetting2("dATGA2timer") > 0 && game.global.challengeActive == "Daily")
         target = new Decimal(getPageSetting2("dATGA2timer"));
       if (getPageSetting2("dhATGA2timer") > 0 && game.global.challengeActive == "Daily" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined"))
@@ -17306,6 +17308,7 @@
     !radonon && ATGAon ? turnOn("dhATGA2timer") : turnOff("dhATGA2timer");
     !radonon && ATGAon ? turnOn("cATGA2timer") : turnOff("cATGA2timer");
     !radonon && ATGAon ? turnOn("chATGA2timer") : turnOff("chATGA2timer");
+    !radonon && ATGAon ? turnOn("nchATGA2timer") : turnOff("nchATGA2timer");
     !radonon && ATGAon ? turnOn("dATGA2Auto") : turnOff("dATGA2Auto");
     !radonon ? turnOn("AutoStance") : turnOff("AutoStance");
     !radonon ? turnOn("DynamicGyms") : turnOff("DynamicGyms");
@@ -19338,9 +19341,14 @@
       what: "Breed timer ATGA uses in C2 (squared) challenges, overriding the base timer and Before/After Z.",
       ignoredWhen: "Not running a squared challenge, the challenge is Electricity/Nom/Toxicity (those use the Hard C2 timer instead), or <b>ATGA: Timer</b> is not a positive number."
     }), "value", "-1", null, "ATGA");
-    createSetting("chATGA2timer", "ATGA: T: C: Hard", tip({
+    createSetting("chATGA2timer", "ATGA: T: C2: Hard", tip({
       what: "Breed timer ATGA uses in the harder C2 (squared) challenges &mdash; Electricity, Nom, Toxicity &mdash; overriding the base timer, Before/After Z, and the normal C2 timer.",
-      ignoredWhen: "Not running one of those three squared challenges, or <b>ATGA: Timer</b> is not a positive number."
+      ignoredWhen: "Not running one of those three squared challenges, or <b>ATGA: Timer</b> is not a positive number. Running one of them <i>unsquared</i> uses <b>ATGA: T: C: Hard</b> instead."
+    }), "value", "-1", null, "ATGA");
+    createSetting("nchATGA2timer", "ATGA: T: C: Hard", tip({
+      what: "Breed timer ATGA uses in the harder ordinary (non-squared) challenges &mdash; Electricity, Mapocalypse, Nom, Toxicity &mdash; overriding the base timer and Before/After Z.",
+      how: "It applies only while the challenge is still <i>running</i>. The moment the challenge is completed &mdash; clearing The Prison (80) on Electricity or Mapocalypse, for instance &mdash; the game ends it, and ATGA falls straight back to the base timer (or Before/After Z) for the rest of the run.",
+      ignoredWhen: "Running the <i>squared</i> version of any of them (<b>ATGA: T: C2: Hard</b> covers that), not running one of those four challenges, or <b>ATGA: Timer</b> is not a positive number. Can itself be overridden by <b>ATGA: T: Spire</b>."
     }), "value", "-1", null, "ATGA");
     createSetting("Rchallengehide", "Hide Stuff", tip({
       what: `Reveals the eleven per-challenge "hide" toggles below (Quag, Arch, Mayhem, Storm, Insanity, Exterminate, Nurture, Pandemonium, Alchemy, Hypothermia, Desolation), so a challenge's settings can be tucked out of view once configured.`,
