@@ -233,11 +233,11 @@ describe('settings runtime type contract · fresh install (#96)', () => {
         ],
         [
           "value",
-          206,
+          205,
         ],
         [
           "valueNegative",
-          4,
+          5,
         ],
       ]
     `)
