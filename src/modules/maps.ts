@@ -542,8 +542,33 @@ export function autoMap() {
     //Maps
     vanillaMapatZone = (game.options.menu.mapAtZone.enabled && game.global.canMapAtZone && !isActiveSpireAT() && !disActiveSpireAT());
     if (vanillaMapatZone) {
-        for (let x = 0; x < game.options.menu.mapAtZone.setZone.length; x++) {
-            if (game.global.world == game.options.menu.mapAtZone.setZone[x].world)
+        // #221 — mirror the game's own MaZ driver (checkMapAtZoneWorld, main.js:13402-13413) instead
+        // of walking the raw `.setZone` array. That array is only the U1 preset-A list: getSetZone()
+        // (config.js:1435) resolves universe + A/B mode and storeSetting() writes ONLY the active
+        // one, so under `U1Mode == 'b'` the raw read sees stale rows (factory default [{world:200}])
+        // — AT parks in maps forever at a zone the user never configured and never reaches the one
+        // they did. The row filters below are the game's, operator for operator, including the
+        // `times`/`tx` repeat arms the old loop ignored entirely. `on !== false`, NOT `!on`: the
+        // factory row carries no `on` field at all and the game honours it. The U2 twin in RautoMap
+        // has always used the accessor; this back-ports it to U1.
+        //
+        // Deliberately NOT mirrored: the game's `done` / `cell` / `preMapsActive` gates. Those decide
+        // WHEN within a zone the game fires its own map run, whereas `shouldDoMaps` is AT's coarser
+        // per-zone "go do maps" decision — gating it on `done` would make AT abandon the map the
+        // moment the game's own MaZ consumed the row.
+        const mazSetZone = game.options.menu.mapAtZone.getSetZone();
+        const mazMaxSettings = game.options.menu.mapAtZone.getMaxSettings();
+        for (let x = 0; x < mazSetZone.length; x++) {
+            if (x >= mazMaxSettings) break;
+            if (mazSetZone[x].on === false) continue;
+            if (mazSetZone[x].through < game.global.world) continue;
+            let nextRepeat = false;
+            if (mazSetZone[x].times > -1) {
+                if (game.global.world > mazSetZone[x].world && (game.global.world - mazSetZone[x].world) % mazSetZone[x].times == 0) nextRepeat = true;
+            } else if (mazSetZone[x].times == -2 && game.global.world > mazSetZone[x].world) {
+                if ((game.global.world - mazSetZone[x].world) % mazSetZone[x].tx == 0) nextRepeat = true;
+            }
+            if (nextRepeat || game.global.world == mazSetZone[x].world)
                 shouldDoMaps = true;
         }
     }
