@@ -40,6 +40,19 @@ describe('event-diff: LCS over event keys', () => {
     expect(counts(before, after)).toEqual({ ins: 0, del: 1, keep: 39 })
   })
 
+  // THE MAIN LOOP EXITS AS SOON AS EITHER SIDE RUNS OUT, so everything left over is emitted by two tail
+  // loops afterwards. Every mid-sequence case above leaves BOTH sides exhausted together and therefore
+  // never enters them — an implementation that simply omitted the tails would pass all of the above. A
+  // trace that grows at the end is the common real case (AT keeps buying where the oracle stopped:
+  // 10-hypo-u2 went 15 -> 162 events), so these two are the ones that matter most in practice.
+  it('events appended at the very END are counted (tail loop, not the main loop)', () => {
+    expect(counts(['a', 'b'], ['a', 'b', 'c', 'd'])).toEqual({ ins: 2, del: 0, keep: 2 })
+  })
+
+  it('events truncated at the very END are counted (tail loop, not the main loop)', () => {
+    expect(counts(['a', 'b', 'c', 'd'], ['a', 'b'])).toEqual({ ins: 0, del: 2, keep: 2 })
+  })
+
   it('a substitution is one insertion plus one deletion, not one "change"', () => {
     expect(counts(['a', 'b', 'c'], ['a', 'X', 'c'])).toEqual({ ins: 1, del: 1, keep: 2 })
   })
