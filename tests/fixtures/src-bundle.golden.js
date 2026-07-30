@@ -9520,14 +9520,21 @@
       if (nextCell === -1) nextCell = 1;
       else nextCell += 2;
       const totalPortals = getTotalPortals();
-      let setZone = game.options.menu.mapAtZone.getSetZone();
+      const setZone = game.options.menu.mapAtZone.getSetZone();
+      const mazMaxSettings = game.options.menu.mapAtZone.getMaxSettings();
       for (let x = 0; x < setZone.length; x++) {
-        if (!setZone[x].on) continue;
-        if (game.global.world < setZone[x].world || game.global.world > setZone[x].through) continue;
+        if (x >= mazMaxSettings) break;
+        if (setZone[x].on === false) continue;
+        if (setZone[x].through < game.global.world) continue;
         if (game.global.preMapsActive && setZone[x].done == totalPortals + "_" + game.global.world + "_" + nextCell + (game.global.universe == 2 && game.global.spireActive ? "_" + game.global.spireLevel : "")) continue;
-        if (setZone[x].times === -1 && game.global.world !== setZone[x].world) continue;
-        if (setZone[x].times > 0 && (game.global.world - setZone[x].world) % setZone[x].times !== 0) continue;
-        if (setZone[x].cell === game.global.lastClearedCell + 2) {
+        let nextRepeat = false;
+        if (setZone[x].times > -1) {
+          if (game.global.world > setZone[x].world && (game.global.world - setZone[x].world) % setZone[x].times == 0) nextRepeat = true;
+        } else if (setZone[x].times == -2 && game.global.world > setZone[x].world) {
+          if ((game.global.world - setZone[x].world) % setZone[x].tx == 0) nextRepeat = true;
+        }
+        if (!nextRepeat && game.global.world != setZone[x].world) continue;
+        if (!setZone[x].cell && nextCell === 1 || nextCell === setZone[x].cell) {
           RvanillaMAZ = true;
           if (setZone[x].until === 6) game.global.mapCounterGoal = 25;
           if (setZone[x].until === 7) game.global.mapCounterGoal = 50;

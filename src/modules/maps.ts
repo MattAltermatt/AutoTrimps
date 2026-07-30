@@ -1252,14 +1252,44 @@ export function RautoMap() {
         if (nextCell === -1) nextCell = 1;
         else nextCell += 2;
         const totalPortals = getTotalPortals();
-        let setZone = game.options.menu.mapAtZone.getSetZone();
+        // #302 — mirror the game's driver (checkMapAtZoneWorld, main.js:13402-13413) row filter for
+        // filter, the way the U1 twin now does. This block already used `getSetZone()`, which is why
+        // #221's comment said the U2 side was fine; it was fine about the ACCESSOR only. FOUR
+        // divergences, all of which hit the un-edited factory row `setZoneU2: [{world: 10}]`
+        // (config.js:1423) hardest, because it carries no `on`, no `through`, no `times` and no `cell`:
+        //
+        //   1. `!setZone[x].on` skipped any row with no `on` field — the game tests `on !== false`, and
+        //      `save()` (config.js:1605) only stamps the field once the user opens the MaZ dialog.
+        //   2. No `times == -2` / `tx` arm, so an "Every X Zones" row matched at every zone in range.
+        //   3. No `getMaxSettings()` bound (7, or 8 with the u2 MaZ mutation — config.js:1429).
+        //   4. NOT in #302's list, found by re-deriving instead of trusting it: the cell test was
+        //      `cell === lastClearedCell + 2` alone, missing the game's `(!cell && nextCell == 1)` arm
+        //      — so a row with no `cell` could never fire at all, on top of (1).
+        //
+        // The repeat logic is transcribed as the game's `nextRepeat` shape rather than as two `continue`
+        // guards. That is not cosmetic: the old `times > 0` form left `times === 0` matching at ANY zone
+        // in range where the game requires an exact zone. `times` is normalized to
+        // {-1,1,2,3,5,10,30,-2} by the dialog (config.js:1557) so 0 is not reachable from the popup, but
+        // an imported settings string is not popup-written.
+        //
+        // DELIBERATELY LEFT: AT gates the `done` check on `preMapsActive` where the game's is
+        // unconditional. That is a stand-down-timing difference, not a factory-row bug, and changing it
+        // needs its own evidence — noted on #302.
+        const setZone = game.options.menu.mapAtZone.getSetZone();
+        const mazMaxSettings = game.options.menu.mapAtZone.getMaxSettings();
         for (let x = 0; x < setZone.length; x++) {
-            if (!setZone[x].on) continue;
-            if (game.global.world < setZone[x].world || game.global.world > setZone[x].through) continue;
+            if (x >= mazMaxSettings) break;
+            if (setZone[x].on === false) continue;
+            if (setZone[x].through < game.global.world) continue;
             if (game.global.preMapsActive && setZone[x].done == totalPortals + "_" + game.global.world + "_" + nextCell + (game.global.universe == 2 && game.global.spireActive ? "_" + game.global.spireLevel : "")) continue;
-            if (setZone[x].times === -1 && game.global.world !== setZone[x].world) continue;
-            if (setZone[x].times > 0 && (game.global.world - setZone[x].world) % setZone[x].times !== 0) continue;
-            if (setZone[x].cell === game.global.lastClearedCell + 2) {
+            let nextRepeat = false;
+            if (setZone[x].times > -1) {
+                if (game.global.world > setZone[x].world && (game.global.world - setZone[x].world) % setZone[x].times == 0) nextRepeat = true;
+            } else if (setZone[x].times == -2 && game.global.world > setZone[x].world) {
+                if ((game.global.world - setZone[x].world) % setZone[x].tx == 0) nextRepeat = true;
+            }
+            if (!nextRepeat && game.global.world != setZone[x].world) continue;
+            if ((!setZone[x].cell && nextCell === 1) || nextCell === setZone[x].cell) {
                 RvanillaMAZ = true;
                 if (setZone[x].until === 6) game.global.mapCounterGoal = 25;
                 if (setZone[x].until === 7) game.global.mapCounterGoal = 50;

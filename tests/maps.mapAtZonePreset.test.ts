@@ -252,3 +252,163 @@ describe('#221 — autoMap MaZ honours the ACTIVE preset (config.js:1435 getSetZ
     expect(mapsAt(306, maz({ setZone: rows }))).toBe(false)
   })
 })
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// #302 — the U2 twin, RautoMap.
+//
+// #221's fix comment said "the U2 twin in RautoMap has always used the accessor; this back-ports it to
+// U1", which read as "U2 is fine". It was fine about the ACCESSOR only. Re-deriving the whole predicate
+// against the game's driver found FOUR divergences, all of which hit the un-edited factory row
+// `setZoneU2: [{world: 10}]` (config.js:1423) hardest, because it carries no `on`, no `through`, no
+// `times` and no `cell`:
+//
+//   1. `!setZone[x].on` skipped a row with no `on` field (the game tests `on !== false`)
+//   2. no `times == -2` / `tx` arm
+//   3. no `getMaxSettings()` bound
+//   4. the cell test lacked the game's `(!cell && nextCell == 1)` arm — NOT in #302's list, which is
+//      why it is here: the finding's own census was one short.
+//
+// The observable is RvanillaMAZ, whose whole job is to make AT stand down and let the game's own MaZ
+// drive (RautoMap toggles repeatVoids and returns immediately when it is set).
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+
+/** A U2 MaZ option object — the same accessors, driving off the setZoneU2 arrays. */
+function mazU2(rows: Row[], mode: 'a' | 'b' = 'a', rowsB: Row[] = [{ world: 10 }]) {
+  return {
+    enabled: 1, U1Mode: 'a', U2Mode: mode,
+    setZone: [{ world: 200 }], setZoneB: [{ world: 200 }],
+    setZoneU2: rows, setZoneU2B: rowsB,
+    getMaxSettings(this: any) {
+      if (G.game.global.universe === 1) return 6
+      return (G.u2Mutations?.tree?.MaZ?.purchased) ? 8 : 7
+    },
+    getSetZone(this: any) {
+      if (G.game.global.universe === 2) return this.U2Mode === 'a' ? this.setZoneU2 : this.setZoneU2B
+      return this.U1Mode === 'a' ? this.setZone : this.setZoneB
+    },
+  }
+}
+
+/** true iff RautoMap stood down for the game's MaZ at `world` / `lastClearedCell`. */
+function vanillaMazAt(world: number, mazOption: ReturnType<typeof mazU2>, lastClearedCell = -1) {
+  G.autoTrimpSettings = {
+    RAutoMaps: { type: 'value', value: 1 },
+    RMapDamageCutoff: { type: 'value', value: 1 },
+    RMaxMapBonuslimit: { type: 'value', value: -1 },
+    RMaxMapBonusAfterZone: { type: 'valueNegative', value: -1 },
+    RMaxMapBonushealth: { type: 'value', value: -1 },
+    RDisableFarm: { type: 'value', value: -1 },
+    Rhitssurvived: { type: 'value', value: -1 },
+    RVoidMaps: { type: 'value', value: -1 },
+    Rvoidscell: { type: 'value', value: -1 },
+    RABsolve: { type: 'boolean', enabled: false },
+    Rquest: { type: 'boolean', enabled: false },
+  }
+  // RautoMap's free identifiers, DERIVED from the AST (every Identifier it reads that maps.ts does not
+  // publish at load), not discovered one crash at a time. Two that matter:
+  //   · `autoBattle` must be an OBJECT — seeded as `false`, the boxed `false.activeContract !== ''` is
+  //     TRUE and the contract arm runs for the wrong reason.
+  //   · the RAMPrepMap / RdAMPrepMap slots must be `undefined`, which is the "no prep map" state the
+  //     line-1344 guard tests for; any other value sends control into the prep-map path.
+  G.contractVoid = false
+  G.autoBattle = { activeContract: '' }
+  G.RneedPrestige = false
+  for (let i = 1; i <= 5; i++) { G['RAMPrepMap' + i] = undefined; G['RdAMPrepMap' + i] = undefined }
+  for (const f of ['RPraid', 'Ralch', 'Rbogs', 'Rdeso', 'Rhypo', 'Rinsanity', 'Rmayhem', 'Rship',
+    'Rstorm', 'RtimeFarm', 'RtributeFarm', 'RsmithyFarm', 'RmapRepeat', 'RselectMap', 'RlevelMap',
+    'RfragMap', 'RalchMap', 'RhypoMap', 'RinsanityMap', 'RshipMap', 'RquestMap', 'RtimeFarmMap',
+    'RtributeFarmMap', 'RsmithyFarmMap', 'estimateEquipsForZone', 'adjustMap', 'buyMap', 'selectMap',
+    'runMap', 'mapsClicked', 'recycleBelow', 'recycleMap', 'selectAdvMapsPreset', 'updateMapCost',
+    'getMapIndex', 'getCurrentMapObject']) G[f] = () => undefined
+  G.RAMP = undefined; G.dRAMP = undefined; G.RAMPreset = undefined; G.Rshould = undefined
+  G.questcheck = () => 0
+  G.toggleEqualityScale = () => {}
+  G.repeatClicked = () => {}
+  G.canAffordBuilding = () => false
+  G.getTime = () => 0
+  G.RcalcOurDmg = () => 1e9
+  G.RcalcOurHealth = () => 1e9
+  G.RcalcBadGuyDmg = () => 1
+  G.RgetEnemyMaxAttack = () => 1
+  G.RcalcHDratio = () => 1
+  G.RupdateAutoMapsStatus = () => undefined
+  G.getTotalPortals = () => 1
+  G.toggleSetting = () => {}
+  G.game = {
+    global: {
+      world, universe: 2, mapsUnlocked: true, canMapAtZone: true, challengeActive: '',
+      mapsActive: false, preMapsActive: false, lastClearedCell, mapBonus: 0, mapCounterGoal: 0,
+      spireActive: false, spireLevel: 0, totalVoidMaps: 0, runningChallengeSquared: false,
+      repeatMap: false, mapsOwnedArray: [],
+    },
+    options: { menu: {
+      mapLoot: { enabled: 1 }, repeatUntil: { enabled: 0 }, exitTo: { enabled: 0 },
+      repeatVoids: { enabled: 1 }, mapAtZone: mazOption,
+    } },
+    stats: { heliumHour: { value: () => 0 } },
+    resources: { radon: { owned: 100 }, metal: { owned: 0 } },
+    jobs: { Worshipper: { locked: 1 } },
+    global2: {},
+  }
+  G.RvanillaMAZ = false
+  // NOT wrapped in try/catch: a helper that swallows a throw turns a crash into a passing
+  // assertion, which is the false-green shape this repo keeps finding. If RautoMap errors, fail.
+  maps.RautoMap()
+  return !!G.RvanillaMAZ
+}
+
+describe('#302 — RautoMap mirrors the game MaZ row filter for filter', () => {
+  it('ANTI-FALSE-GREEN: an armed row really does make AT stand down', () => {
+    // cell 1 with lastClearedCell -1 → nextCell 1, the start-of-zone case.
+    expect(vanillaMazAt(10, mazU2([{ world: 10, on: true, through: 1000, times: -1, cell: 1 }]))).toBe(true)
+    // ...and a zone the row does not name does not.
+    expect(vanillaMazAt(11, mazU2([{ world: 10, on: true, through: 1000, times: -1, cell: 1 }]))).toBe(false)
+  })
+
+  it('#302.1 + #302.4: the untouched U2 FACTORY row fires — no `on`, no `cell`', () => {
+    // `setZoneU2: [{world: 10}]` exactly as config.js:1423 ships it. Two independent bugs used to
+    // refuse it: `!row.on` (no `on` field) and a cell test with no `!cell && nextCell == 1` arm.
+    expect(vanillaMazAt(10, mazU2([{ world: 10 }]))).toBe(true)
+    expect(vanillaMazAt(11, mazU2([{ world: 10 }])), 'and only at its own zone').toBe(false)
+  })
+
+  it('#302.1: on:false is still skipped, and on:true still honoured', () => {
+    expect(vanillaMazAt(10, mazU2([{ world: 10, on: false, cell: 1 }]))).toBe(false)
+    expect(vanillaMazAt(10, mazU2([{ world: 10, on: true, cell: 1 }]))).toBe(true)
+  })
+
+  it('#302.2: a `times === -2` row repeats on its own `tx`, not at every zone', () => {
+    const tx7 = () => mazU2([{ world: 10, times: -2, tx: 7, through: 1000, cell: 1 }])
+    expect(vanillaMazAt(17, tx7()), 'z17 = 10 + 7').toBe(true)
+    expect(vanillaMazAt(24, tx7()), 'z24 = 10 + 14').toBe(true)
+    expect(vanillaMazAt(18, tx7()), 'z18 is not on the interval').toBe(false)
+  })
+
+  it('#302.3: the row list is bounded by getMaxSettings() — 7 in U2', () => {
+    const rows: Row[] = []
+    for (let i = 0; i < 9; i++) rows.push({ world: 100 + i, cell: 1, through: 1000 })
+    expect(vanillaMazAt(106, mazU2(rows)), 'row index 6 is the last allowed').toBe(true)
+    expect(vanillaMazAt(107, mazU2(rows)), 'row index 7 is past the U2 cap').toBe(false)
+    // The cap is 8 with the u2 MaZ mutation, so the same row DOES fire then (config.js:1429-1432).
+    G.u2Mutations = { tree: { MaZ: { purchased: true } } }
+    expect(vanillaMazAt(107, mazU2(rows)), 'the mutation raises the cap to 8').toBe(true)
+    delete G.u2Mutations
+  })
+
+  it('the U2 A/B preset split is honoured too', () => {
+    const b = () => mazU2([{ world: 10, cell: 1 }], 'b', [{ world: 40, cell: 1 }])
+    expect(vanillaMazAt(10, b()), 'preset A row must be ignored under U2Mode b').toBe(false)
+    expect(vanillaMazAt(40, b())).toBe(true)
+  })
+
+  it('`through` bounds a U2 row the same way', () => {
+    expect(vanillaMazAt(30, mazU2([{ world: 30, through: 20, cell: 1 }]))).toBe(false)
+    expect(vanillaMazAt(30, mazU2([{ world: 30, through: 30, cell: 1 }])), 'through == world fires').toBe(true)
+  })
+
+  it('an explicit cell is honoured, not just the start of the zone', () => {
+    // lastClearedCell 8 → nextCell 10, so only the row asking for cell 10 fires.
+    expect(vanillaMazAt(10, mazU2([{ world: 10, cell: 10, through: 1000 }]), 8)).toBe(true)
+    expect(vanillaMazAt(10, mazU2([{ world: 10, cell: 20, through: 1000 }]), 8)).toBe(false)
+  })
+})
