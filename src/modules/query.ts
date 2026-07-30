@@ -23,13 +23,24 @@ export function getPerSecBeforeManual(a: string): number {
             b *= (1 + 0.01 * game.portal.Meditation.getBonusPercent()).toFixed(2) as any;
         if (game.jobs.Magmamancer.owned > 0 && c === 'metal')
             b *= game.jobs.Magmamancer.getBonusPercent();
-        if (game.global.challengeActive === 'Meditate') b *= 1.25;
-        else if (game.global.challengeActive === 'Size') b *= 1.5;
-        if (game.global.challengeActive === 'Toxicity') {
+        // #291 — `challengeActive(what)` (main.js:1753), not a string compare. During a Challenge²
+        // `game.global.challengeActive` holds the PARENT name and the children go into
+        // `game.global.multiChallenge` (updates.js:4673), so `=== 'Watch'` is false for the whole of
+        // Waze² while the game halves gathering anyway. The mirrored function is `simpleSeconds`
+        // (main.js:17104) — NOT `gather()`: the ordering, the Magmamancer-on-metal term and the
+        // Meditate/Size `else if` all line up with simpleSeconds, and it has no enclosing universe
+        // branch. `c` is `game.jobs[a].increase`, which is exactly simpleSeconds' `what`.
+        if (challengeActive('Meditate')) b *= 1.25;
+        // The `(what == food|wood|metal)` guard is the game's (main.js:17150) and AT never had it, so
+        // Size's 1.5 was also being applied to science/fragments/gems. It has to land in the same
+        // change: using the helper makes this arm fire during Waze² for the first time, and without
+        // the guard that would spread a wrong multiplier further rather than fix it.
+        else if (challengeActive('Size') && (c === 'food' || c === 'wood' || c === 'metal')) b *= 1.5;
+        if (challengeActive('Toxicity')) {
             const d = (game.challenges.Toxicity.lootMult * game.challenges.Toxicity.stacks) / 100;
             b *= 1 + d;
         }
-        if (game.global.challengeActive === 'Balance') b *= game.challenges.Balance.getGatherMult();
+        if (challengeActive('Balance')) b *= game.challenges.Balance.getGatherMult();
         if (game.global.challengeActive === 'Decay') {
             b *= 10;
             b *= Math.pow(0.995, game.challenges.Decay.stacks);
@@ -44,8 +55,8 @@ export function getPerSecBeforeManual(a: string): number {
             )
                 b *= dailyModifiers.famine.getMult(game.global.dailyChallenge.famine.strength);
         }
-        if (game.global.challengeActive === 'Watch') b /= 2;
-        if (game.global.challengeActive === 'Lead' && game.global.world % 2 === 1) b *= 2;
+        if (challengeActive('Watch')) b /= 2;
+        if (challengeActive('Lead') && game.global.world % 2 === 1) b *= 2;
         b = calcHeirloomBonus('Staff', a + 'Speed', b);
     }
     return b;
@@ -267,7 +278,11 @@ export function getPotencyMod(howManyMoreGenes?: number) {
             );
         }
     }
-    if (game.global.challengeActive === 'Toxicity' && game.challenges.Toxicity.stacks > 0) {
+    // #291 — the seventh site, and the one the issue's own header list missed: this is BREED potency,
+    // not a gather rate, so the class spans two prediction domains. The game's breed() builds
+    // `challenges.Toxicity = challengeActive('Toxicity')` (main.js:5584) and gates on it at :5628.
+    // A string compare here made Toxad² under-predict breed speed as well as gather rate.
+    if (challengeActive('Toxicity') && game.challenges.Toxicity.stacks > 0) {
         potencyMod *= Math.pow(game.challenges.Toxicity.stackMult, game.challenges.Toxicity.stacks);
     }
     // #250 — Archaeology / Quagmire, mirroring the game's breed() (main.js:5629-5630). AT's #22 parity

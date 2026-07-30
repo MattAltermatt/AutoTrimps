@@ -37,6 +37,26 @@ if (typeof document !== 'undefined' && document.body) {
   return (universe === 2 ? perk.radLevel : perk.level) ?? 0
 }
 
+// #291 — `challengeActive`, transcribed from .trimps-game/main.js:1753.
+//
+// A Challenge² stores the PARENT's name in `game.global.challengeActive` and puts the children in
+// `game.global.multiChallenge` (updates.js:4673), so this helper — not a string compare — is the only
+// correct way to ask "is challenge X in effect". query.ts's seven compares became helper calls, which
+// means every harness driving those branches now needs the accessor to exist.
+//
+// It is TRANSCRIBED, not simplified to `game.global.challengeActive === what`. That shortcut would make
+// every C²-path test pass while proving nothing about the case the fix is FOR — the multiChallenge
+// lookup IS the behaviour under test. Same reasoning as the getPerkLevel stub above: one faithful copy
+// here beats N hand-written ones that drift.
+//
+// A missing `multiChallenge` degrades to the plain compare, which is what an ordinary single-challenge
+// fixture wants, so existing harnesses keep their meaning without edits.
+;(globalThis as any).challengeActive = (what: string) => {
+  const g = (globalThis as any).game
+  if (g?.global?.multiChallenge?.[what]) return true
+  return g?.global?.challengeActive === what
+}
+
 // #231 — getUberEmpowerment / getOverkillerCount, transcribed from .trimps-game/main.js:8193 and
 // :12029. maxOneShotPower() now DELEGATES to getOverkillerCount() instead of hand-copying its body,
 // so harnesses that armed the underlying fixture fields (talents.overkill, empowerments.Ice,
