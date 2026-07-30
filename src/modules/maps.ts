@@ -555,23 +555,38 @@ export function autoMap() {
         // no `times == -2`/`tx` arm, and no `getMaxSettings()` bound. Filed separately; do NOT read
         // this back-port as evidence that the U2 side of the class is closed.
         //
-        // Deliberately NOT mirrored: the game's `cell` / `preMapsActive` / `done` gates. `cell` is the
+        // Deliberately NOT mirrored: the game's `cell` / `preMapsActive` gates. `cell` is the
         // WHEN-within-a-zone, and `shouldDoMaps` is AT's coarser per-zone "go do maps" decision.
         //
-        // ⚠️ `done` is NOT a "when" gate, and an earlier version of this comment said it was — it is
-        // the game's ONE-SHOT LATCH (`totalPortals_world_cell`, stamped at main.js:13415), the only
-        // thing making a MaZ row fire once per zone per portal. AT has no equivalent: nothing after
-        // this block clears `shouldDoMaps` except the spire-gated arm below, and `game.global.world`
-        // cannot advance while AT is in maps, so AT stays map-locked for the whole matched zone. That
-        // is pre-existing (it is the stall #221 describes, just at the right zone now) but honouring
-        // `times` widens it from one zone to a RANGE for anyone using an "Every Zone" row. AT's own
-        // AutoMaps tooltip already says not to run MaZ alongside it; a `done`-equivalent latch keyed by
-        // (getTotalPortals(), world) is what would make them coexist, and is filed rather than done
-        // here because it is a behaviour change, not a mirror correction.
+        // #303 — `done` IS mirrored now, and it is not a "when" gate: it is the game's ONE-SHOT LATCH
+        // (`totalPortals_world_nextCell`, stamped at main.js:13417 the moment a row fires), the only
+        // thing making a MaZ row fire once per zone per portal. AT had no equivalent, so nothing after
+        // this block cleared `shouldDoMaps` except the spire-gated arm below, and `game.global.world`
+        // cannot advance while AT is in maps — AT stayed map-locked for the whole matched zone, and
+        // #221's honouring of `times` widened that from one zone to a RANGE for anyone using an
+        // "Every Zone" row ({times: 1, through: 999} are both dialog defaults).
+        //
+        // DELEGATED, not re-implemented: AT reads the row's own `done` string rather than keeping a
+        // latch of its own. That is deliberate — a private latch is a second bookkeeper to key wrongly
+        // (#227's lesson), while this cannot drift from the game's answer, and #221's whole point was
+        // that AT and `checkMapAtZoneWorld` should agree about which rows are live.
+        //
+        // The comparison is a PREFIX, and that is the one place this departs from operator-for-operator.
+        // The game's key ends in `nextCell`, which advances through the zone, so an equality test
+        // against a freshly-computed key would only match during the single cell the row fired at and
+        // would let AT re-assert for the rest of the zone — the bug, intact. `<portals>_<world>_` asks
+        // the question AT actually needs: has this row already fired in THIS zone on THIS portal? (U2's
+        // spire suffix appends after the cell, so it is inside the prefix's reach either way.)
+        //
+        // Two things this does NOT fix, both pre-existing and both filed rather than folded in: a row
+        // with an explicit `cell` still lets AT enter at cell 1 and stay until the game fires at cell N,
+        // and a save loaded mid-zone past the row's cell never sees the stamp at all.
         const mazSetZone = game.options.menu.mapAtZone.getSetZone();
         const mazMaxSettings = game.options.menu.mapAtZone.getMaxSettings();
+        const mazDonePrefix = getTotalPortals() + "_" + game.global.world + "_";
         for (let x = 0; x < mazSetZone.length; x++) {
             if (x >= mazMaxSettings) break;
+            if (String(mazSetZone[x].done ?? '').startsWith(mazDonePrefix)) continue;
             if (mazSetZone[x].on === false) continue;
             if (mazSetZone[x].through < game.global.world) continue;
             let nextRepeat = false;

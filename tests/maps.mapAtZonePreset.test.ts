@@ -141,6 +141,9 @@ function arm(world: number, mazOption: ReturnType<typeof maz>) {
   G.getCurrentMapObject = () => ({ level: world, location: 'Plentiful' })
   G.getExtraMapLevels = () => 0
   G.getMapIndex = () => 0
+  // #303 — the game's own definition for U1 (main.js:1741-1744), which is what checkMapAtZoneWorld
+  // builds its `done` key from. Called with no argument there and here, so it reads game.global.universe.
+  G.getTotalPortals = () => (G.game.global.universe == 1 ? G.game.global.totalPortals : G.game.global.totalRadPortals)
   G.getMapPreset = () => ({ perfect: false, loot: 9, difficulty: 9, size: 9 })
   G.getPierceAmt = () => 0
   G.getTime = () => 0
@@ -250,6 +253,68 @@ describe('#221 — autoMap MaZ honours the ACTIVE preset (config.js:1435 getSetZ
     // U1 cap is 6, so rows 6 and 7 (z306 / z307) are past the end for the game too.
     expect(mapsAt(305, maz({ setZone: rows }))).toBe(true)
     expect(mapsAt(306, maz({ setZone: rows }))).toBe(false)
+  })
+})
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// #303 — the `done` latch, which is what stops the match being per-zone-PERMANENT.
+//
+// #221 fixed WHICH rows match. It did not change the fact that a match re-derives true on every tick:
+// `game.global.world` cannot advance while AT is in maps, nothing downstream clears shouldDoMaps except
+// the spire-gated arm, so AT was map-locked for the whole matched zone — and honouring `times` widened
+// that from one zone to a RANGE for anyone with an "Every Zone" row.
+//
+// The game's answer is the row's `done` field: `<totalPortals>_<world>_<nextCell>`, stamped at
+// main.js:13417 the instant a row fires. AT reads that field rather than keeping a latch of its own, so
+// the two agree by construction. The comparison is a PREFIX because the game's key ends in the cell,
+// which advances through the zone — an equality mirror would only stand down during the single cell the
+// row fired at, which is the bug with extra steps. Each test below fails under that equality spelling.
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+describe('#303 — a row the game already fired this zone does not re-enter maps', () => {
+  const FIRED = (portals: number, world: number, cell: number) => [{ world, done: `${portals}_${world}_${cell}` }]
+
+  it('CONTROL: the same row with no `done` field fires — the factory row has none', () => {
+    // Without this, every assertion below could be passing because the row never matched at all.
+    expect(mapsAt(200, maz({ setZone: [{ world: 200 }] }))).toBe(true)
+  })
+
+  it('a row stamped for THIS portal and THIS zone makes AT stand down', () => {
+    // The fixture clears cell 50, so nextCell is 52 while the stamp says the row fired at cell 1 —
+    // i.e. earlier in this same zone, which is exactly when the game fires a cell-less row.
+    expect(mapsAt(200, maz({ setZone: FIRED(1, 200, 1) }))).toBe(false)
+  })
+
+  it('NEAR-MISS: an EQUALITY mirror of the game\'s key would not catch that', () => {
+    // The game recomputes the key with the CURRENT nextCell, so `done == key` is false for every cell
+    // after the one the row fired at. Both spellings agree here (stamp cell == current nextCell); the
+    // test above is the one that separates them, and this pins that the prefix did not simply widen
+    // into "always stand down".
+    expect(mapsAt(200, maz({ setZone: FIRED(1, 200, 52) }))).toBe(false)
+  })
+
+  it('a stamp from a DIFFERENT zone does not suppress this zone', () => {
+    // {times: 1, through: 999} is the dialog's own default pair — the "Every Zone" row whose range is
+    // what #221 widened. Zone 201 must still fire even though 200 is stamped.
+    expect(mapsAt(201, maz({ setZone: [{ world: 200, times: 1, through: 999, done: '1_200_1' }] }))).toBe(true)
+    expect(mapsAt(200, maz({ setZone: [{ world: 200, times: 1, through: 999, done: '1_200_1' }] }))).toBe(false)
+  })
+
+  it('a stamp from a DIFFERENT portal does not suppress this run', () => {
+    // getTotalPortals() leads the key precisely so a new run re-arms every row. A prefix keyed on the
+    // zone alone would silently carry last run's stamps forward forever.
+    expect(mapsAt(200, maz({ setZone: FIRED(0, 200, 1) }))).toBe(true)
+  })
+
+  it('a zone whose number merely PREFIXES the stamped one is not suppressed', () => {
+    // The trailing underscore is load-bearing: without it, `1_20_` would prefix-match a stamp of
+    // `1_200_1`, and standing down at zone 20 because zone 200 fired is a new bug of the same shape.
+    expect(mapsAt(20, maz({ setZone: [{ world: 20, done: '1_200_1' }] }))).toBe(true)
+  })
+
+  it('the U2 spire suffix is still inside the prefix\'s reach', () => {
+    // In U2 spire the game appends `_<spireLevel>` AFTER the cell (main.js:13400), so the portal/zone
+    // prefix is unchanged and a stamped row still stands down.
+    expect(mapsAt(200, maz({ setZone: [{ world: 200, done: '1_200_1_5' }] }))).toBe(false)
   })
 })
 

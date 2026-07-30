@@ -8991,8 +8991,10 @@
     if (vanillaMapatZone) {
       const mazSetZone = game.options.menu.mapAtZone.getSetZone();
       const mazMaxSettings = game.options.menu.mapAtZone.getMaxSettings();
+      const mazDonePrefix = getTotalPortals() + "_" + game.global.world + "_";
       for (let x = 0; x < mazSetZone.length; x++) {
         if (x >= mazMaxSettings) break;
+        if (String(mazSetZone[x].done ?? "").startsWith(mazDonePrefix)) continue;
         if (mazSetZone[x].on === false) continue;
         if (mazSetZone[x].through < game.global.world) continue;
         let nextRepeat = false;
