@@ -109,24 +109,69 @@ describe('calcEnemyBaseHealth matches the clone across the whole grid (#198)', (
     expect(new Set(IMPS.map((n) => BAD_GUYS[n].health)).size).toBe(3) // three DISTINCT imp stats
   })
 
-  it('every zone x level x imp agrees exactly', () => {
+  it('every zone x level x imp agrees exactly, in world and in maps', () => {
+    // #298 — the map dimension was missing here while the attack grid already had it, so the whole
+    // health half of the pair was only ever compared in the world case: 204 comparisons that could not
+    // see a missing x1.1. Now 408, same shape as the sibling.
     const bad: string[] = []
     let compared = 0
     for (const z of ZONES)
       for (const l of LEVELS)
-        for (const n of IMPS) {
-          const got = calcEnemyBaseHealth(z, l, n)
-          const want = gameHealth(z, l, n)
-          compared++
-          if (Math.abs(got / want - 1) > 1e-12) bad.push(`z${z} l${l} ${n}: AT=${got} game=${want} ratio=${(got / want).toFixed(6)}`)
-        }
-    expect(compared).toBe(204)
+        for (const n of IMPS)
+          for (const isMap of [false, true]) {
+            const got = calcEnemyBaseHealth(z, l, n, isMap ? 'map' : 'world')
+            const want = gameHealth(z, l, n, isMap)
+            compared++
+            if (Math.abs(got / want - 1) > 1e-12) bad.push(`z${z} l${l} ${n} ${isMap ? 'map' : 'world'}: AT=${got} game=${want} ratio=${(got / want).toFixed(6)}`)
+          }
+    expect(compared).toBe(408)
     expect(bad).toEqual([])
+  })
+
+  it('#298: the health map x1.1 starts at level 6 — one earlier than attack', () => {
+    // The asymmetry pinned from BOTH sides, so a later "harmonise the thresholds" tidy cannot pass:
+    // health fires at > 5, attack at > 6, so a level-6 map takes one bonus and not the other.
+    const h = (z: number, t: 'world' | 'map') => calcEnemyBaseHealth(z, 50, 'Snimp', t)
+    expect(h(5, 'map')).toBe(h(5, 'world'))
+    expect(h(6, 'map') / h(6, 'world')).toBeCloseTo(1.1, 10)
+    expect(h(7, 'map') / h(7, 'world')).toBeCloseTo(1.1, 10)
+    // The sibling at the same level does NOT — the two are genuinely one apart.
+    expect(calcEnemyBaseAttack('map', 6, 50, 'Snimp')).toBe(calcEnemyBaseAttack('world', 6, 50, 'Snimp'))
+  })
+
+  it('#298: `void` counts as a map, as mapsActive does in the game', () => {
+    // The type is three-valued and only 'world' means "not in a map"; a `type === "map"` spelling would
+    // silently drop the bonus for void maps, which the game applies it to.
+    expect(calcEnemyBaseHealth(60, 50, 'Snimp', 'void')).toBe(calcEnemyBaseHealth(60, 50, 'Snimp', 'map'))
+  })
+
+  it('#298: the context is the ARGUMENT, never game.global.mapsActive', () => {
+    // The inverse hazard, and the reason the parameter exists: two of the three callers ask about a
+    // WORLD cell, and a global read would hand them the map bonus purely because the player happens to
+    // be standing in a map. Seeding the global true must change nothing.
+    ;(globalThis as any).game.global.mapsActive = true
+    expect(calcEnemyBaseHealth(60, 50, 'Snimp', 'world')).toBe(gameHealth(60, 50, 'Snimp', false))
+    expect(calcEnemyBaseHealth(60, 50, 'Snimp', 'map')).toBe(gameHealth(60, 50, 'Snimp', true))
+    ;(globalThis as any).game.global.mapsActive = false
+    expect(calcEnemyBaseHealth(60, 50, 'Snimp', 'map')).toBe(gameHealth(60, 50, 'Snimp', true))
+  })
+
+  it('#298: ignoreImpStat suppresses exactly the imp multiplier, nothing else', () => {
+    // The parameter exists so calcSpire can apply badGuys once itself, the way getSpireStats does
+    // (main.js:13715/13726). Ratio, not equality: the rest of the curve must be untouched.
+    for (const n of IMPS) {
+      const withImp = calcEnemyBaseHealth(100, 50, n, 'world')
+      const without = calcEnemyBaseHealth(100, 50, n, 'world', true)
+      expect(withImp / without).toBeCloseTo(BAD_GUYS[n].health, 10)
+    }
+    // And undefined means APPLY, as in the game's `if (!ignoreImpStat)`.
+    expect(calcEnemyBaseHealth(100, 50, 'Blimp', 'world', undefined))
+      .toBe(calcEnemyBaseHealth(100, 50, 'Blimp', 'world'))
   })
 
   it('#198 specifically: the imp multiplier survives past z60', () => {
     // The pre-fix code trapped it inside `zone < 60`, so these three collapsed to the same number.
-    const z62 = IMPS.map((n) => calcEnemyBaseHealth(62, 50, n))
+    const z62 = IMPS.map((n) => calcEnemyBaseHealth(62, 50, n, 'world'))
     expect(new Set(z62).size).toBe(3)
     // And the ratios are exactly the imp stats — which a `zone < 60`-trapped version cannot produce.
     expect(z62[1] / z62[0]).toBeCloseTo(BAD_GUYS.Blimp.health / BAD_GUYS.Snimp.health, 10)
@@ -135,7 +180,7 @@ describe('calcEnemyBaseHealth matches the clone across the whole grid (#198)', (
 
   it('#198: no 25% discontinuity at the z59 -> z60 break-the-planet step', () => {
     // Pre-fix, AT's step was 5.1676x where the game's is 4.1341x, purely from dropping Snimp's 0.8.
-    const step = calcEnemyBaseHealth(60, 50, 'Snimp') / calcEnemyBaseHealth(59, 50, 'Snimp')
+    const step = calcEnemyBaseHealth(60, 50, 'Snimp', 'world') / calcEnemyBaseHealth(59, 50, 'Snimp', 'world')
     const gameStep = gameHealth(60, 50, 'Snimp') / gameHealth(59, 50, 'Snimp')
     expect(step).toBeCloseTo(gameStep, 10)
   })

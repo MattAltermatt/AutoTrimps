@@ -166,11 +166,11 @@ describe('calc.calcEnemyBaseHealth / calcEnemyBaseAttack — Layer-1 golden mast
   })
 
   it('base health at zone 5 (pre-planet branch)', () => {
-    expect(calcEnemyBaseHealth(5, 50, 'Snimp')).toBeCloseTo(2395.3454337187586, 6)
+    expect(calcEnemyBaseHealth(5, 50, 'Snimp', 'world')).toBeCloseTo(2395.3454337187586, 6)
   })
 
   it('base health at zone 60 (post-planet exponential branch)', () => {
-    expect(calcEnemyBaseHealth(60, 50, 'Snimp')).toBeCloseTo(2.6010562269595694e18, -6)
+    expect(calcEnemyBaseHealth(60, 50, 'Snimp', 'world')).toBeCloseTo(2.6010562269595694e18, -6)
   })
 
   it('base attack at zone 5 (floored)', () => {
@@ -210,6 +210,8 @@ describe('calc.RcalcEnemyBaseHealth — Layer-1 golden master (U2 radon scaling)
       badGuys: { Snimp: { health: 1 } },
       global: { universe: 2, mapsActive: false },
     })
+    // The U2 twin keeps its 3-arg signature: it sources map context from game.global.mapsActive, which
+    // is its own pre-existing divergence (filed separately) rather than part of #298's seam.
     expect(RcalcEnemyBaseHealth(60, 50, 'Snimp')).toBeCloseTo(1.1718945345624699e33, -27)
   })
 })

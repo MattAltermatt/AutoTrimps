@@ -3412,9 +3412,9 @@
     if (game.global.challengeActive === "Daily" && disActiveSpireAT() && getPageSetting2("dExitSpireCell") > 0 && getPageSetting2("dExitSpireCell") <= 100)
       exitCell = getPageSetting2("dExitSpireCell") - 1;
     const enemy = cell === 99 ? exitCell === 99 ? game.global.gridArray[99].name : "Snimp" : name;
-    let base = what === "attack" ? game.global.getEnemyAttack(exitCell, enemy, false) : calcEnemyBaseHealth(game.global.world, exitCell, enemy) * 2;
+    let base = what === "attack" ? game.global.getEnemyAttack(exitCell, enemy, true) : calcEnemyBaseHealth(game.global.world, exitCell, enemy, "world", true) * 2;
     if (game.global.universe === 2) {
-      if (what === "health") base *= game.badGuys[enemy][what];
+      base *= game.badGuys[enemy][what];
       base *= Math.pow(200, game.global.spireLevel + 1);
       return base;
     }
@@ -3483,7 +3483,7 @@
     } else
       return number;
   }
-  function calcEnemyBaseHealth(zone, level, name) {
+  function calcEnemyBaseHealth(zone, level, name, type, ignoreImpStat) {
     let health = 0;
     health += 130 * Math.sqrt(zone) * Math.pow(3.265, zone / 2);
     health -= 110;
@@ -3497,12 +3497,13 @@
       health *= Math.pow(1.1, zone - 59);
     }
     if (zone < 60) health *= 0.75;
-    health *= game.badGuys[name].health;
+    if (zone > 5 && type !== "world") health *= 1.1;
+    if (!ignoreImpStat) health *= game.badGuys[name].health;
     return health;
   }
   function calcEnemyHealth2(world, map) {
     world = !world ? game.global.world : world;
-    let health = calcEnemyBaseHealth(world, 50, "Snimp");
+    let health = calcEnemyBaseHealth(world, 50, "Snimp", map ? "map" : "world");
     let corrupt = mutations.Corruption.active();
     let healthy = mutations.Healthy.active();
     if (map) {
@@ -3567,7 +3568,7 @@
     if (!zone) zone = type === "world" || !game.global.mapsActive ? game.global.world : getCurrentMapObject().level;
     if (!cell) cell = type === "world" || !game.global.mapsActive ? getCurrentWorldCell().level : getCurrentMapCell() ? getCurrentMapCell().level : 1;
     if (!name) name = getCurrentEnemy() ? getCurrentEnemy().name : "Turtlimp";
-    let health = calcEnemyBaseHealth(zone, cell, name);
+    let health = calcEnemyBaseHealth(zone, cell, name, type);
     if (type === "world" && game.global.spireActive) health = calcSpire2(99, "Snimp", "health");
     if (type !== "world") {
       const corruptionScale = calcCorruptionScale(game.global.world, 10);

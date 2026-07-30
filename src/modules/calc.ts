@@ -643,14 +643,24 @@ export function calcSpire(cell: number, name: string, what: string): number {
     if (game.global.challengeActive === "Daily" && disActiveSpireAT() && getPageSetting('dExitSpireCell') > 0 && getPageSetting('dExitSpireCell') <= 100)
         exitCell = (getPageSetting('dExitSpireCell') - 1);
     const enemy = cell === 99 ? (exitCell === 99 ? game.global.gridArray[99].name : "Snimp") : name;
-    let base = (what === "attack") ? game.global.getEnemyAttack(exitCell, enemy, false) : (calcEnemyBaseHealth(game.global.world, exitCell, enemy) * 2);
+    // #298 — both stats are fetched with the imp multiplier SUPPRESSED, then applied once below, which
+    // is what `getSpireStats` does (main.js:13715 passes ignoreImpStat TRUE to both, main.js:13726
+    // multiplies once). Before this, attack was doubled — `getEnemyAttack(..., false)` bakes it in and
+    // the line below applied it again, unnoticed since 2022 — and health became doubled the moment #198
+    // stopped skipping `badGuys` above z60 earlier in this same session. A spire is always z100+, so
+    // there was no zone where the old health path was right after that change.
+    //
+    // `'world'` because a spire cell is never a map cell: the game gates spire stats on
+    // `!game.global.mapsActive` (main.js:11439).
+    let base = (what === "attack") ? game.global.getEnemyAttack(exitCell, enemy, true) : (calcEnemyBaseHealth(game.global.world, exitCell, enemy, 'world', true) * 2);
     if (game.global.universe === 2) {
         // U2 Mega-Spire (Z300, 1000 cells / 10 floors): the game's getSpireStats scales enemies by
         // Math.pow(200, spireLevel + 1) per floor, NOT by the U1 per-cell mod^cell. game.global.world
         // stays pinned at 300 for the whole spire, so the world-based branch below never advanced.
-        // getEnemyAttack(...,false) already bakes in badGuys.attack once (as origAttack does), so only
-        // the health path — whose base skips badGuys at world>=60 — needs the explicit multiply.
-        if (what === "health") base *= game.badGuys[enemy][what];
+        // #298 — unconditional now. Both fetches above suppress the imp multiplier, so both paths need
+        // it applied once here; the old `what === "health"` guard existed only because the attack fetch
+        // baked it in, which it no longer does.
+        base *= game.badGuys[enemy][what];
         base *= Math.pow(200, game.global.spireLevel + 1);
         return base;
     }
@@ -723,7 +733,26 @@ export function calcBadGuyDmg(enemy?: any, attack?: number, daily?: boolean, max
         return number;
 }
 
-export function calcEnemyBaseHealth(zone: number, level: number, name: string): number {
+/**
+ * #298 — the map ×1.1 is now mirrored, and `type` is REQUIRED for it.
+ *
+ * The game applies it in `getEnemyHealth` (config.js:548) as `if (world > 5 && game.global.mapsActive)
+ * amt *= 1.1`, where `world` is the MAP's level when mapsActive (config.js:532). Note `> 5` — the attack
+ * sibling uses `> 6` (config.js:512), so a level-6 map takes the health bonus and not the attack one.
+ * That asymmetry is the game's, and #244 shipped the attack half of this pair; harmonising the two
+ * thresholds would be a "tidy" that breaks parity.
+ *
+ * The context is a PARAMETER rather than a `game.global.mapsActive` read, matching the shape #244
+ * established on the attack side: two of the three callers ask about a WORLD cell, and a global read
+ * would give them the map bonus whenever the player happens to be standing in a map. It is required,
+ * not defaulted, so `tsc` enumerates every call site — an optional `'world'` default would let a
+ * forgotten caller keep the bug with the gate still green.
+ *
+ * `ignoreImpStat` mirrors the game's own third parameter (config.js:549 `if (!ignoreImpStat)`), which
+ * exists so `getSpireStats` can apply `badGuys[name][what]` exactly once itself (main.js:13715/13726).
+ * Undefined means apply, as in the game.
+ */
+export function calcEnemyBaseHealth(zone: number, level: number, name: string, type: 'world' | 'map' | 'void', ignoreImpStat?: boolean): number {
     let health = 0;
     health += 130 * Math.sqrt(zone) * Math.pow(3.265, zone / 2);
     health -= 110;
@@ -737,6 +766,7 @@ export function calcEnemyBaseHealth(zone: number, level: number, name: string): 
         health *= Math.pow(1.1, zone - 59);
     }
     if (zone < 60) health *= 0.75;
+    if (zone > 5 && type !== "world") health *= 1.1;
     // #198 — the imp multiplier was INSIDE the `zone < 60` block, so it was silently skipped from
     // z60 up. The game gates it on a PARAMETER, never on world (.trimps-game/config.js:549,
     // `if (!ignoreImpStat) amt *= game.badGuys[name].health;`), and the live path passes
@@ -744,13 +774,22 @@ export function calcEnemyBaseHealth(zone: number, level: number, name: string): 
     // RcalcEnemyBaseHealth already transcribes it correctly, which is what makes this a slip
     // rather than a modelling choice: at z62 a Snimp (health 0.8) read 1.25x HIGH and an
     // Improbability (health 6) read 6x LOW, with a 25% discontinuity at the z59->z60 step.
-    health *= game.badGuys[name].health;
+    //
+    // ⚠️ #298 — and fixing that INVALIDATED calcSpire's compensating multiply, whose comment said in as
+    // many words "the health path — whose base skips badGuys at world>=60 — needs the explicit
+    // multiply". A spire is always z100+, so from #198 onward the imp stat was applied TWICE there
+    // (Snimp 0.64x instead of 0.8x, Improbability 36x instead of 6x). The game's answer is this
+    // parameter, so calcSpire now passes it and keeps its single explicit multiply, exactly like
+    // getSpireStats. A premise stated only in prose is how that went unnoticed for a whole session.
+    if (!ignoreImpStat) health *= game.badGuys[name].health;
     return health;
 }
 
 export function calcEnemyHealth(world?: any, map?: boolean): number {
     world = !world ? game.global.world : world;
-    let health = calcEnemyBaseHealth(world, 50, "Snimp");
+    // #298 — `map` is this function's own existing context flag, so the seam needs no new plumbing here.
+    // It arrives true only from calc.ts's map arm; every default caller omits it and gets a world query.
+    let health = calcEnemyBaseHealth(world, 50, "Snimp", map ? 'map' : 'world');
     let corrupt = mutations.Corruption.active();
     let healthy = mutations.Healthy.active();
     if (map) {
@@ -819,7 +858,9 @@ export function calcEnemyHealthCore(type?: any, zone?: any, cell?: any, name?: a
     if (!name) name = getCurrentEnemy() ? getCurrentEnemy().name : "Turtlimp";
 
     //Init
-    let health = calcEnemyBaseHealth(zone, cell, name);
+    // #298 — `type` is this function's own parameter, identical to the attack twin's, so it threads
+    // straight through: the same value that decides every other map-vs-world branch below decides this.
+    let health = calcEnemyBaseHealth(zone, cell, name, type);
 
     //Spire - Overrides the base health number
     if (type === "world" && game.global.spireActive) health = calcSpire(99, "Snimp", "health");
