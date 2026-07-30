@@ -188,7 +188,7 @@ describe('#291 — the breed-potency term fires during Toxad²', () => {
       challenges: {
         Toxicity: { stacks, stackMult: 1.05 },
         Archaeology: { getStatMult: () => 1 },
-        Quagmire: { getExtraBreedMult: () => 1 },
+        Quagmire: { getExhaustMult: () => 1 }  // query.ts:292 calls getExhaustMult (main.js:5601),
       },
       talents: { patience: { purchased: false }, hyperspeed: { purchased: false } },
       jobs: { Geneticist: { owned: 0 } },

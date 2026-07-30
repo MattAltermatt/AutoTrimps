@@ -330,12 +330,23 @@ export function byId<T extends HTMLElement = HTMLInputElement>(id: string): T {
  * for zones 2 and 3, gets `undefined`, and `undefined` satisfies NEITHER arm of the gate — the feature
  * is silently skipped for every zone but the first.
  *
- * ⚠️ The obvious repair — `cellList?.[index] ?? 1` — is a REGRESSION at three of the five sites, and
- * that is why this is a function rather than five edits. `index` is an `indexOf()` result, so it is
- * `-1` whenever the current zone is not in the list at all, and the three maps.ts farms have no
- * membership test anywhere else in their condition: `undefined` failing both arms was the only thing
- * stopping them from farming at every zone of the challenge. Defaulting a `-1` index to cell 1 opens
- * that gate. So a negative index closes the gate explicitly, which is what the old code did by luck.
+ * `index` is an `indexOf()` result, so it is `-1` whenever the current zone is not in the list at all,
+ * and `undefined` failing both arms of the old gate was what handled that. This keeps it explicit
+ * rather than incidental.
+ *
+ * ⚠️ That rule is REDUNDANT, not load-bearing, and an earlier version of this comment claimed the
+ * opposite — that without it the three maps.ts farms would fire at every zone of the challenge. They
+ * would not. A wrong-zone `true` from this gate is absorbed downstream at least twice over: every
+ * CALLEE re-tests membership (`mapfunctions.ts:701` RPraid, `:898` Rinsanity, `:1228` Ralch, `:1341`
+ * Rhypo all gate on `<farm>zone.includes(game.global.world)`), and at a negative index every other
+ * positional read is `undefined` too, which each callee already refuses. Kept because a gate that
+ * silently relies on its callee to re-check is the shape that rots, not because removing it would
+ * change any outcome today.
+ *
+ * The OUTCOME is asserted rather than argued in tests/utils.pairedCellGate.test.ts. Note the narrower
+ * claim — "the callees' membership test is what absorbs it" — was written as a test name first and
+ * mutation-testing refuted THAT too: deleting Rinsanity's `includes()` reddens nothing, because the
+ * undefined-index reads get there first. No fixture can isolate one absorber from the others.
  *
  * `clearedCell` is passed in rather than read here so the rule is pure and testable on its own.
  */

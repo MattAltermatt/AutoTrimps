@@ -27,9 +27,13 @@ export function getPerSecBeforeManual(a: string): number {
         // `game.global.challengeActive` holds the PARENT name and the children go into
         // `game.global.multiChallenge` (updates.js:4673), so `=== 'Watch'` is false for the whole of
         // Waze² while the game halves gathering anyway. The mirrored function is `simpleSeconds`
-        // (main.js:17104) — NOT `gather()`: the ordering, the Magmamancer-on-metal term and the
-        // Meditate/Size `else if` all line up with simpleSeconds, and it has no enclosing universe
-        // branch. `c` is `game.jobs[a].increase`, which is exactly simpleSeconds' `what`.
+        // (main.js:17104) — NOT `gather()`, which has no Size term at all and wraps its challenge
+        // block in `if (universe === 1)`. Three things identify simpleSeconds: the Magmamancer-on-metal
+        // term, the Meditate/Size `else if`, and the absence of a universe branch. (The first SIX terms
+        // are in the same order too, but only those — after Toxicity the two sequences diverge, and
+        // since every term is a multiplication that is irrelevant. Noted because ordering was offered
+        // as evidence and only half of it holds.) `c` is `game.jobs[a].increase`, which is exactly
+        // simpleSeconds' `what`.
         if (challengeActive('Meditate')) b *= 1.25;
         // The `(what == food|wood|metal)` guard is the game's (main.js:17150) and AT never had it, so
         // Size's 1.5 was also being applied to science/fragments/gems. It has to land in the same

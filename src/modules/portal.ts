@@ -181,17 +181,28 @@ export function c2runnerportal() {
  * `activatePortal()` — no portal, no pre-portal backup — and in the autoPortal path the throw is
  * raised inside a setTimeout callback, outside `atGuard`.
  *
- * #206 is what made that reachable: while the flag was module-private the renderer never entered
- * squared mode, so a filter-failing candidate was still emitted as the `firstFail` challenge and
+ * #206 is what made that reachable. While the flag was module-private the renderer never entered
+ * squared mode, so a filter-failing candidate could still be emitted as the `firstFail` challenge and
  * selectChallenge merely bailed with `selectedChallenge = ""` (the plain-challenge bug #206 fixed).
- * Repairing the write turns that soft failure into a throw. Two arms below have no unlock gate of
- * their own — Discipline (needs 30 total helium, config.js:3290) and Electricity (needs
- * `prisonClear > 0`, i.e. z80, config.js:3604) — so a U1 player at HZE 69-79 hits it. And since NONE
- * of the eleven targets carries `allowU2`, every candidate is skipped when portalling into U2.
+ * Note "could": `main.js:1778` renders only the FIRST filter-failing challenge, so even pre-#206 a
+ * candidate later in `game.challenges` order than some other locked one already threw. Two arms below
+ * have no unlock gate of their own — Discipline (needs 30 total helium, config.js:3290) and Electricity
+ * (needs `prisonClear > 0`, i.e. z80, config.js:3604) — and those are the reachable cases.
  *
- * The flag must be true BEFORE asking, because that is what puts the renderer into squared mode; a
- * negative answer restores it so a skipped candidate leaves no trace and the `else if` cascade below
- * simply tries the next one.
+ * ⚠️ Two things this used to claim that are NOT derivable, both caught by review. (1) "a U1 player at
+ * HZE 69-79 hits it" — the Electricity arm carries no HZE gate at all and Discipline's helium filter
+ * passes far earlier, so no such window is implied by the code. (2) The U2 skips at main.js:1773-1774
+ * are unreachable from here: `c2runner` has exactly ONE caller (`doPortal`, below), and main-loop.ts
+ * dispatches doPortal only inside its `game.global.universe == 1` block, while the U2 twins go through
+ * RdoPortal, which never calls this. `portalClicked()` sets `portalUniverse` from
+ * `game.global.universe` first, so `portalUniverse` is always 1 here. Those two skip conditions are a
+ * config fact, not a live motivation — delegation is still the better implementation because it cannot
+ * drift when a clone bump adds a sixth skip condition, and THAT is the reason, not U2.
+ *
+ * The flag must be true BEFORE asking, because that is what puts the renderer into squared mode. A
+ * negative answer restores it to `false`, which is provably the prior value rather than a guess:
+ * `portalClicked()` sets it false unconditionally (main.js:1671) and `doPortal` calls that before
+ * reaching this cascade, so there is no path into `c2runner` with the flag already true.
  */
 function c2Selectable(what: string): boolean {
     globalThis.challengeSquaredMode = true;

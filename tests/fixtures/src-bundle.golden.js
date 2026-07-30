@@ -10595,7 +10595,7 @@
     if (insanitystackszones > maxinsanity) {
       insanitystackszones = maxinsanity;
     }
-    if (should && insanityfarmzone.includes(game.global.world) && insanitystackszones != insanitystacks) {
+    if (should && insanityfarmzone.includes(game.global.world) && Number.isFinite(insanitystackszones) && insanitystackszones != insanitystacks) {
       Rshouldinsanityfarm = true;
     }
     if (reset && !Rshouldinsanityfarm) {

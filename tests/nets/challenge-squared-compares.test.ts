@@ -114,11 +114,26 @@ function scan(file: string, source: string, children: Set<string>): Site[] {
   return found
 }
 
+/**
+ * Every module under src/modules, RECURSIVELY.
+ *
+ * It used to be a flat `readdirSync`, while the test below is named "no module compares…" — so
+ * `src/modules/graphs/` (13 `challengeActive` references) and `src/modules/custom-ui/` were outside a
+ * census that claimed to cover everything. None of those 13 happens to name a C² child, so the pinned
+ * zero was accurate BY LUCK and blind to any future regression there. Found by review; the sibling net
+ * that landed in the same wave (`setting-array-compare.test.ts`) already walks recursively.
+ */
 function srcFiles(): string[] {
-  const dir = resolve(ROOT, 'src', 'modules')
-  return readdirSync(dir)
-    .filter((f) => f.endsWith('.ts'))
-    .map((f) => `src/modules/${f}`)
+  const out: string[] = []
+  const walk = (dir: string): void => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = resolve(dir, e.name)
+      if (e.isDirectory()) walk(p)
+      else if (e.name.endsWith('.ts') && !e.name.endsWith('.d.ts')) out.push(p.slice(ROOT.length + 1))
+    }
+  }
+  walk(resolve(ROOT, 'src', 'modules'))
+  return out
 }
 
 describe('challenge-squared compares (a C² stores the PARENT name)', () => {

@@ -885,7 +885,21 @@ export function Rinsanity(should: any, level: any, reset: any) {
         insanitystackszones = maxinsanity;
     }
 
-    if (should && insanityfarmzone.includes(game.global.world) && insanitystackszones != insanitystacks) {
+    // #162 follow-up (found by review): the stack target is read POSITIONALLY, so a stack list
+    // shorter than the zone list makes it `undefined` — and `undefined != <any number>` is true at
+    // every stack count, so the target could never be met and this farm never terminated. NaN (a
+    // non-numeric entry survives `parseInt` as NaN) behaves the same way.
+    //
+    // Before the paired-cell fix this state was masked at the CALLER: the same short-list shape in
+    // the CELL setting closed the cell gate first, so Rinsanity(true, …) was never reached. Making
+    // the cell fallback per-index removed that accidental cover, which is why the guard belongs here
+    // rather than back in the gate. `Number.isFinite`, not `!isNaN` — the latter accepts ±Infinity
+    // (#202), and the clamp above cannot bound an Infinity target either.
+    //
+    // The two siblings do not need it, checked rather than assumed: Rhypo's undefined flows into
+    // `Math.pow(100, NaN)` so `wood.owned < NaN` is false and it fails CLOSED (mapfunctions.ts:1324),
+    // and Ralch's whole block is inside `if (alchstackszones != undefined)` (:1194).
+    if (should && insanityfarmzone.includes(game.global.world) && Number.isFinite(insanitystackszones) && insanitystackszones != insanitystacks) {
         Rshouldinsanityfarm = true;
     }
 

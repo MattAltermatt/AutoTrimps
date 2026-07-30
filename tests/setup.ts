@@ -46,11 +46,20 @@ if (typeof document !== 'undefined' && document.body) {
 //
 // It is TRANSCRIBED, not simplified to `game.global.challengeActive === what`. That shortcut would make
 // every C²-path test pass while proving nothing about the case the fix is FOR — the multiChallenge
-// lookup IS the behaviour under test. Same reasoning as the getPerkLevel stub above: one faithful copy
-// here beats N hand-written ones that drift.
+// lookup IS the behaviour under test.
 //
 // A missing `multiChallenge` degrades to the plain compare, which is what an ordinary single-challenge
 // fixture wants, so existing harnesses keep their meaning without edits.
+//
+// ⚠️ Scope, corrected by review: this used to argue "one faithful copy beats N hand-written ones that
+// drift" as though it had achieved that. It has not — thirteen test files install their own simplified
+// `challengeActive` AFTER setup runs and therefore shadow this one. All thirteen are
+// `game.global.challengeActive === c`, which is right for a single-challenge fixture, so nothing is
+// broken. But two of them are the harnesses for the very functions #291 changed —
+// `query.potencyMod.test.ts` (getPotencyMod) and `maps.finishExpOnBw.test.ts` — and they are therefore
+// structurally blind to `multiChallenge`. A future C² case added there would silently test nothing.
+// The Challenge² behaviour is covered in `query.challengeSquaredPredictions.test.ts`, which does NOT
+// shadow this stub; that file is the one to extend rather than those.
 ;(globalThis as any).challengeActive = (what: string) => {
   const g = (globalThis as any).game
   if (g?.global?.multiChallenge?.[what]) return true

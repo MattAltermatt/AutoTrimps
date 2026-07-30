@@ -12,19 +12,26 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest'
 //     [-1] != -1  →  "-1" → -1  ⇒  FALSE    ← the CORRECT idiom, used at 3 other sites
 //     [0]  != 0   →  "0"  →  0  ⇒  FALSE
 //
-// mapfunctions.ts:655 (RPraid) uses the wrong form:
+// RPraid used the wrong form (now mapfunctions.ts:697-701):
 //
 //     cell = (getPageSetting('RAMPraidcell') != 0) ? getPageSetting('RAMPraidcell')[praidindex] : 1
 //
-// RAMPraidcell is 'multiValue' defaulting to [-1] (settings-defs.ts:1723), so the guard is always
-// true and the `: 1` fallback is UNREACHABLE. Indexing past the array's end then yields `undefined`,
-// which satisfies NEITHER arm of the cell test at :657 (`cell <= 1` is false for undefined, and so
-// is `cell > 1`) — so prestige raiding is skipped entirely.
+// RAMPraidcell is 'multiValue' defaulting to [-1], so the guard is always true and the `: 1` fallback
+// is UNREACHABLE. Indexing past the array's end then yields `undefined`, which satisfies NEITHER arm
+// of the cell test — so prestige raiding is skipped entirely.
 //
 // The setting's own tooltip says "Paired position-by-position with PR: Zone. Leaving an entry at -1
 // starts at cell 1." A literal -1 does work (`-1 <= 1`). What does not work is a cell list SHORTER
-// than the zone list, which is exactly what every user who configures zones and leaves the cell
-// setting alone has — because the default is a one-element [-1].
+// than the zone list.
+//
+// ⚠️ REACHABILITY, corrected by review: this header used to say a short list is "what every user who
+// configures zones and leaves the cell setting alone has". It is not. MAZ.ts's popup rewrites the
+// zone/cell/level/setting lists in LOCKSTEP for every surviving row (MAZ.ts:581-672) after an early
+// `if (error) return`, and clamps a blank cell to 81 and anything below 1 to 1 — so a length mismatch
+// cannot survive a popup save at all. The honest statement is "reachable from a store the popup did
+// not write": an imported settings string (a documented feature), a hand-edited store, or a legacy
+// one. That is a much better risk profile than the original claim, and worth stating accurately
+// rather than overstating in the fix's favour.
 
 let mapfunctions: typeof import('../src/modules/mapfunctions')
 
@@ -78,10 +85,11 @@ describe('RPraid — multiValue cell list shorter than the zone list (array-vs-s
   })
 
   it('a zone that is NOT in the list still does not praid', () => {
-    // The regression guard on the fix itself. `praidindex` is an indexOf result, so it is -1 for an
-    // unconfigured zone; the naive repair (`cellList?.[i] ?? 1`) turns that into cell 1 and opens the
-    // gate. Here RPraid's own `praidzone.includes(world)` also catches it, but the three sibling
-    // sites in maps.ts have NO membership test of their own — see utils.pairedCellGate.test.ts.
+    // `praidindex` is an indexOf result, so it is -1 for an unconfigured zone. TWO things refuse it
+    // independently: the gate (index < 0) and RPraid's own `praidzone.includes(world)` at
+    // mapfunctions.ts:701. The gate's half is redundant — see utils.pairedCellGate.test.ts, which
+    // asserts that equivalence instead of claiming it. This row pins the OUTCOME, which is what the
+    // user experiences either way.
     configureTwoZones([-1, -1])
     ;(globalThis as any).game.global.world = 55 // not 50, not 60
     mapfunctions.RPraid(false)

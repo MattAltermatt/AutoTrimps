@@ -132,6 +132,23 @@ describe('#206 — C2 Runner arms the GAME\'s challengeSquaredMode, not a module
     expect(window.challengeSquaredMode).toBe(true)
   })
 
+  it('DELEGATION, not a mirror: a candidate refused for a NON-filter reason is also skipped', () => {
+    // Found by review as a surviving near-miss. The obvious repair —
+    //   `if (!game.challenges[what].filter() || !game.challenges[what].allowSquared) continue`
+    // — passes every other assertion in this file, because Electricity's refusal IS a filter failure.
+    // What separates the two implementations is any OTHER reason displayChallenges skips a challenge
+    // (main.js:1773-1777: blockU1, missing allowU2, the U2 radon gate, !allowSquared). Asking the
+    // renderer covers all of them and cannot drift when a clone bump adds a fifth; a mirror has to be
+    // re-derived every time. `allowSquared` is the one such reason drivable on a booted U1 window.
+    const { window, game } = rig({ ...ALL_CAUGHT_UP, Toxicity: 10 })
+    expect(game.challenges.Toxicity.filter(true), 'Toxicity must be UNLOCKED here').toBe(true)
+    game.challenges.Toxicity.allowSquared = false // offerable as a plain challenge, not as a C²
+
+    expect(() => window.c2runner()).not.toThrow()
+    expect(game.global.selectedChallenge, 'a non-C²-able challenge must not be started').toBeFalsy()
+    expect(window.challengeSquaredMode).toBe(false)
+  })
+
   it('the shipped bundle declares no shadowing binding of its own', () => {
     // Mechanical guard on the actual shipped text, since that is where the defect lived: the src
     // IIFE must not declare this name. A future `var`/`let` reintroduction is exactly the

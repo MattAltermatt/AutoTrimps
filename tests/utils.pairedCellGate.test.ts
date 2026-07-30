@@ -13,14 +13,17 @@ import * as ts from 'typescript'
 // user with more configured zones than cell entries indexed past the end, got `undefined`, and
 // `undefined` satisfies NEITHER arm of the gate.
 //
-// The half worth a dedicated file is the REPAIR hazard. The issue proposed `cellList?.[index] ?? 1`.
-// At the three maps.ts sites that is a regression: `index` is an `indexOf()` result, and those three
-// conditions have no zone-membership test anywhere else (only `Rinsanityfarmzone[0] > 0`), so
-// `undefined` failing both arms was the ONLY thing keeping them from farming at every zone of the
-// challenge. A -1 index therefore has to close the gate explicitly.
+// `index` is an `indexOf()` result, so it is -1 when the current zone is not configured at all; the
+// helper closes the gate explicitly there rather than relying on `undefined` to fail both arms.
+//
+// ⚠️ That rule is REDUNDANT, and this file used to claim it was load-bearing — that without it the
+// three maps.ts farms would fire at every zone. Found false by review: every callee re-tests
+// membership (mapfunctions.ts:701/898/1228/1341), so a wrong-zone `true` is absorbed one call later.
+// The corrected claim is the last test below, as an assertion rather than a comment.
 
 const G = globalThis as any
 let utils: typeof import('../src/modules/utils')
+let mapfunctions: typeof import('../src/modules/mapfunctions')
 
 beforeAll(async () => {
   G.MODULES = { maps: {} }
@@ -30,6 +33,7 @@ beforeAll(async () => {
     `<div id="portalBtn" style="display:none"></div><input id="mapLevelInput">` +
     `<div id="autoMapStatus"></div><div id="hiderStatus"></div><div id="logBtnGroup"></div><div id="log"></div>`)
   utils = await import('../src/modules/utils')
+  mapfunctions = await import('../src/modules/mapfunctions')
 })
 
 describe('pairedCellGateOpen — the rule, on its own', () => {
@@ -146,6 +150,51 @@ describe('#162 — every call site is wired to its OWN paired setting and index'
       expect(zoneVar, `${zoneSetting} is no longer read into a local`).toBeTruthy()
       expect(text).toContain(`const ${indexVar} = ${zoneVar![1]}.indexOf(game.global.world)`)
     }
+  })
+
+  it('a wrongly-OPEN gate cannot make a farm fire at a non-member zone', () => {
+    // THE CORRECTED CLAIM, and the correction went two rounds — worth recording both.
+    //
+    // Round 1: the original justification for `index < 0 → false` said it was the ONLY thing stopping
+    // the three maps.ts farms from firing at every zone. Review found that false — each callee gates on
+    // `<farm>zone.includes(world)` (mapfunctions.ts:701/898/1228/1341).
+    //
+    // Round 2: I then wrote this test AS "the callees re-test membership", and mutation-testing killed
+    // that name too — deleting Rinsanity's `includes()` does NOT redden it. At a negative index EVERY
+    // positional read is `undefined`, so the stack-target guard absorbs it first. There is no fixture
+    // that isolates the membership test, because the same -1 index that would need it also makes every
+    // other read undefined.
+    //
+    // So the honest, assertable claim is the OUTCOME: a `should = true` arriving at a non-member zone
+    // produces no farm, for several independent reasons, of which the gate's rule is merely the
+    // outermost. That is what a user experiences and it is what must not regress.
+    const setMV = (id: string, value: unknown) => { G.autoTrimpSettings[id] = { type: 'multiValue', value } }
+    const armNonMember = () => {
+      G.autoTrimpSettings = {}
+      G.Rshouldinsanityfarm = false; G.Rshouldalchfarm = false; G.Rshouldhypofarm = false
+      for (const f of ['Rinsanityfarm', 'Ralchfarm', 'Rhypofarm']) {
+        setMV(f + 'zone', [50, 60])   // configured zones...
+        setMV(f + 'cell', [-1, -1])
+        setMV(f + 'level', [1, 1])
+        setMV(f + 'stack', [10, 10])
+      }
+      G.game = {
+        global: { world: 55, lastClearedCell: 98, challengeActive: '' }, // ...and we are at NEITHER
+        challenges: { Insanity: { insanity: 0, maxInsanity: 20 }, Hypothermia: {} },
+        resources: { wood: { owned: 0 } },
+        buildings: { Bonfire: { owned: 0, purchased: 0 } },
+        // Rhypo's wood-cap arithmetic reads these before it ever reaches the membership test.
+        portal: { Packrat: { radLevel: 0, modifier: 0.2 } },
+        upgrades: { Bonfire: { done: 0 } },
+      }
+      G.calcHeirloomBonus = (_t: string, _s: string, v: number) => v
+    }
+    armNonMember()
+    // `should` is TRUE — i.e. exactly what a wrongly-open gate would have passed in.
+    mapfunctions.Rinsanity(true, false, false)
+    expect(G.Rshouldinsanityfarm, 'Rinsanity re-tests membership itself').toBe(false)
+    mapfunctions.Rhypo(true, false, false)
+    expect(G.Rshouldhypofarm, 'Rhypo re-tests membership itself').toBe(false)
   })
 
   it("RPraid pairs the daily and non-daily cell lists on the run's own flag", () => {
