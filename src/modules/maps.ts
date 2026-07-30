@@ -916,10 +916,17 @@ export function autoMap() {
         const wondersAmount = getPageSetting('wondersAmount');
         const wondersFloorZ = wondersFromZ - ((getPageSetting('wondersAmount') - 1) * 5);
         const finishOnBw = (() => {
-            let pageSetting = getPageSetting('finishExpOnBw');
-            pageSetting = pageSetting < 125 ? 125 : pageSetting;
-            pageSetting = pageSetting != -1 ? (Math.floor((pageSetting - 125) / 15) * 15) + 125 : -1;
-            return pageSetting;
+            const pageSetting = getPageSetting('finishExpOnBw');
+            // #223 — the -1 disable test has to run BEFORE the 125 clamp. It ran after, so -1 became
+            // 125 and BOTH the `: -1` arm here and the `finishOnBw != -1` gate at :970 were dead for
+            // every reachable input. A user who typed -1 to switch the BW finish off instead got AT
+            // committing to BW 125 — which config.js:9163 can never accept as an Experience
+            // completion, since that needs `mapLevel >= 605 && world > 600`. The sibling
+            // `wondersFromZ != -1` in the same conjunction is the author's own encoding of
+            // "disabled", added a day later (c8b0ca08) for exactly this hazard on maxExpZone.
+            if (pageSetting == -1) return -1;
+            const clamped = pageSetting < 125 ? 125 : pageSetting;
+            return (Math.floor((clamped - 125) / 15) * 15) + 125;
         })();
         const bionics = game.global.mapsOwnedArray
             .filter((map: any) => map.location == "Bionic")

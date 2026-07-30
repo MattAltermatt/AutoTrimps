@@ -1347,8 +1347,8 @@ export function initializeAllSettings() {
     }), 'value', '600', null, 'Maps');
     createSetting('finishExpOnBw', 'Finish XP on BW',tip({
         what: 'The Bionic Wonderland zone AutoTrimps runs to finish the Experience challenge.',
-        how: 'This level of BW should already be in your inventory &mdash; use the BW Raiding module first if you want to raid to a specific level before 601. Snapped to a valid BW zone (125, then every 15 zones after) if you enter one that doesn\'t exist &mdash; e.g. 606 runs 605.',
-        cannot: 'Cannot go below zone 125 &mdash; anything lower is treated as 125.',
+        how: 'This level of BW should already be in your inventory &mdash; use the BW Raiding module first if you want to raid to a specific level before 601. Snapped to a valid BW zone (125, then every 15 zones after) if you enter one that doesn\'t exist &mdash; e.g. 606 runs 605. Set it to -1 to switch the BW finish off entirely and keep wonder-farming.',
+        cannot: 'Cannot go below zone 125 &mdash; anything lower is treated as 125. Note the game only accepts a BW of 605 or higher as an Experience completion, so a lower target runs a BW that cannot end the challenge.',
     }), 'value', '605', null, 'Maps');
 
     //Shrine - U1
