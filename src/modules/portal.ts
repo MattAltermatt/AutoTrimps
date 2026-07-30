@@ -2,14 +2,17 @@
 // Was: relocated verbatim from legacy/modules/portal.js.
 // Auto-portal / helium-per-hour logic. Registers MODULES["portal"]. getPageSetting/debug from
 // converted utils (portal.js line 4 reads getPageSetting at load — now imported, resolves).
-// zonePostpone -> globalThis (read by AutoTrimps2); challengeSquaredMode declared module-level
-// (was a sloppy implicit global, portal-internal). The dead module-level portalzone/Rportalzone/
+// zonePostpone -> globalThis (read by AutoTrimps2). challengeSquaredMode is the GAME's var
+// (main.js:1663) — #206: this header used to claim it was "portal-internal", and the module declared
+// its own `var` of that name on the strength of that claim, which swallowed all 11 of C2 Runner's
+// writes so activatePortal() (main.js:4013) never saw them and every C2 Runner portal started a
+// PLAIN challenge. It is written through globalThis and declared ambient instead.
+// The dead module-level portalzone/Rportalzone/
 // module vars (internal). AutoPerks.clickAllocate() etc. resolve via the bridge at runtime,
 // typed ambient. Behaviour-preserving: any body edits are TYPE-ONLY.
 import { getPageSetting, debug } from './utils'
 
 MODULES["portal"] = {};
-var challengeSquaredMode: any;
 MODULES["portal"].timeout = 5000;
 MODULES["portal"].bufferExceedFactor = 5;
 globalThis.zonePostpone = 0;
@@ -172,57 +175,57 @@ export function c2runner() {
 if (!game.global.portalActive) return;
     if (getPageSetting('c2runnerstart') == true && getPageSetting('c2runnerportal') > 0 && getPageSetting('c2runnerpercent') > 0) {
             if (game.global.highestLevelCleared > 34 && (100*(game.c2.Size/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
-                challengeSquaredMode = true;
+                globalThis.challengeSquaredMode = true;
                 selectChallenge("Size");
                 debug("C2 Runner: Running C2 Challenge Size");
             }
             else if (game.global.highestLevelCleared > 129 && (100*(game.c2.Slow/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
-                challengeSquaredMode = true;
+                globalThis.challengeSquaredMode = true;
                 selectChallenge("Slow");
                 debug("C2 Runner: Running C2 Challenge Slow");
             }
             else if (game.global.highestLevelCleared > 179 && (100*(game.c2.Watch/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
-                challengeSquaredMode = true;
+                globalThis.challengeSquaredMode = true;
                 selectChallenge("Watch");
                 debug("C2 Runner: Running C2 Challenge Watch");
             }
             else if ((100*(game.c2.Discipline/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
-                challengeSquaredMode = true;
+                globalThis.challengeSquaredMode = true;
                 selectChallenge("Discipline");
                 debug("C2 Runner: Running C2 Challenge Discipline");
             }
             else if (game.global.highestLevelCleared > 39 && (100*(game.c2.Balance/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
-                challengeSquaredMode = true;
+                globalThis.challengeSquaredMode = true;
                 selectChallenge("Balance");
                 debug("C2 Runner: Running C2 Challenge Balance");
             }
             else if (game.global.highestLevelCleared > 44 && (100*(game.c2.Meditate/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
-                challengeSquaredMode = true;
+                globalThis.challengeSquaredMode = true;
                 selectChallenge("Meditate");
                 debug("C2 Runner: Running C2 Challenge Meditate");
             }
             else if (game.global.highestLevelCleared > 24 && (100*(game.c2.Metal/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
-                challengeSquaredMode = true;
+                globalThis.challengeSquaredMode = true;
                 selectChallenge("Metal");
                 debug("C2 Runner: Running C2 Challenge Metal");
             }
             else if (game.global.highestLevelCleared > 179 && (100*(game.c2.Lead/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
-                challengeSquaredMode = true;
+                globalThis.challengeSquaredMode = true;
                 selectChallenge("Lead");
                 debug("C2 Runner: Running C2 Challenge Lead");
             }
             else if (game.global.highestLevelCleared > 144 && (100*(game.c2.Nom/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
-                challengeSquaredMode = true;
+                globalThis.challengeSquaredMode = true;
                 selectChallenge("Nom");
                 debug("C2 Runner: Running C2 Challenge Nom");
             }
             else if ((100*(game.c2.Electricity/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
-                challengeSquaredMode = true;
+                globalThis.challengeSquaredMode = true;
                 selectChallenge("Electricity");
                 debug("C2 Runner: Running C2 Challenge Electricity");
             }
             else if (game.global.highestLevelCleared > 164 && (100*(game.c2.Toxicity/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
-                challengeSquaredMode = true;
+                globalThis.challengeSquaredMode = true;
                 selectChallenge("Toxicity");
                 debug("C2 Runner: Running C2 Challenge Toxicity");
             }
@@ -274,7 +277,7 @@ export function doPortal(challenge?: any) {
     }
     if (portalWindowOpen && getPageSetting('c2runnerstart')==true && getPageSetting('c2runnerportal') > 0 && getPageSetting('c2runnerpercent') > 0) {
         c2runner();
-        if (challengeSquaredMode == true) {
+        if (globalThis.challengeSquaredMode == true) {
             c2done = false;
         }
         else debug("C2 Runner: All C2s above Threshold!");

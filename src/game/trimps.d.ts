@@ -74,6 +74,12 @@ declare global {
   function getDailyHeliumValue(...args: any[]): number // main.js
   var portalWindowOpen: any // main.js var (boolean)
   var portalUniverse: any   // main.js var (number)
+  // main.js:1663 var, reset by portalClicked() (:1671), toggled by the portal UI (:1749), read by
+  // displayChallenges/selectChallenge (:1774-1782, :1905) and — the one that matters for AT —
+  // activatePortal (:4013), which is what turns it into game.global.runningChallengeSquared.
+  // #206: portal.ts used to declare its OWN `var` of this name, so all 11 of C2 Runner's writes
+  // landed in a module-private binding and the game never saw them.
+  var challengeSquaredMode: any // main.js var (boolean)
 
   // Native game job/building buy helpers (main.js).
   function canAffordJob(...args: any[]): boolean
