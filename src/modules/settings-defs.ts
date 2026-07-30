@@ -816,7 +816,7 @@ export function initializeAllSettings() {
     }), 'boolean', true, null, 'Buildings');
     createSetting('CustomTargetZone', 'Custom Target Zone',tip({
         what: 'The target zone Auto Gigas uses when calculating its Warpstation delta, instead of letting AT guess one from your portal/void settings.',
-        cannot: 'Values below 60 are silently discarded \u2014 AT falls back to computing its own target zone.',
+        cannot: 'Values below 61 are silently discarded \u2014 AT falls back to computing its own target zone. 61 is the floor because zone 60 has no Gigastation pattern in it at all.',
         ignoredWhen: 'Only matters for your FIRST Gigastation of a run \u2014 Auto Gigas computes a pattern once, when <b>Gigastation</b> is still at 0.',
     }), 'value', '-1', null, "Buildings");
     createSetting('CustomDeltaFactor', 'Custom Delta Factor',tip({

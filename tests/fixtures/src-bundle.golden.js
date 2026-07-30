@@ -812,6 +812,9 @@
     return text;
   }
 
+  // src/modules/settings-storable.ts
+  var isStorableNumber = (v) => Number.isFinite(typeof v === "number" ? v : parseFloat(v));
+
   // src/modules/utils.ts
   if (!String.prototype.includes) {
     String.prototype.includes = function(search, start) {
@@ -896,6 +899,11 @@
   function setPageSetting2(setting, value) {
     if (autoTrimpSettings.hasOwnProperty(setting) == false) {
       return false;
+    }
+    const type = autoTrimpSettings[setting].type;
+    if (type == "value" || type == "valueNegative" || type == "multiValue") {
+      const storable = Array.isArray(value) ? value.every(isStorableNumber) : isStorableNumber(value);
+      if (!storable) return false;
     }
     if (autoTrimpSettings[setting].type == "boolean") {
       autoTrimpSettings[setting].enabled = value;
@@ -1377,7 +1385,6 @@
     var fallback = parseInt(defaultValue);
     autoTrimpSettings[id].value = Number.isInteger(fallback) && fallback >= 0 && fallback < name.length ? fallback : 0;
   }
-  var isStorableNumber = (v) => Number.isFinite(typeof v === "number" ? v : parseFloat(v));
   function clampValue(id, defaultValue, multi) {
     const rec = autoTrimpSettings[id];
     if (multi) {
@@ -6212,36 +6219,53 @@
     if (daily && getPageSetting2("AutoGenDC") != 0) targetZone = Math.min(targetZone, 230);
     if (runningC2 && getPageSetting2("AutoGenC2") != 0) targetZone = Math.min(targetZone, 230);
     if (MODULES.upgrades.targetFuelZone && (getPageSetting2("fuellater") >= 1 || getPageSetting2("beforegen") != 0)) targetZone = Math.min(targetZone, Math.max(230, getPageSetting2("fuellater")));
-    if (targetZone < 60) {
+    if (!(targetZone >= 61)) {
+      const badZone = targetZone;
       targetZone = Math.max(65, game.global.highestLevelCleared);
-      debug2("Auto Gigastation: Warning! Unable to find a proper targetZone. Using your HZE instead", "general", "*rocket");
+      warnGigaOnce("targetZone=" + badZone, "Unable to find a proper targetZone (" + badZone + "). Using your HZE instead");
     }
     return targetZone;
   }
+  var gigaWarnedZone = {};
+  function warnGigaOnce(reason, message3) {
+    if (gigaWarnedZone[reason] === game.global.world) return;
+    gigaWarnedZone[reason] = game.global.world;
+    debug2("Auto Gigastation: Warning! " + message3, "general", "*rocket");
+  }
+  function warnNoGigaPattern(reason, why) {
+    warnGigaOnce(reason, "Leaving the giga pattern unchanged \u2014 " + why);
+    return NaN;
+  }
   function autoGiga(targetZone, metalRatio = 0.5, slowDown = 10, customBase) {
-    if (!targetZone || targetZone < 60) targetZone = gigaTargetZone();
+    const zone = Number.isFinite(targetZone) && targetZone >= 61 ? targetZone : gigaTargetZone();
     const base = customBase ? customBase : getPageSetting2("FirstGigastation");
     const baseZone = game.global.world;
     const rawPop = game.resources.trimps.max - game.unlocks.impCount.TauntimpAdded;
     const gemsPS = getPerSecBeforeManual("Dragimp");
     const metalPS = getPerSecBeforeManual("Miner");
     const megabook = game.global.frugalDone ? 1.6 : 1.5;
-    const nGigas = Math.min(Math.floor(targetZone - 60), Math.floor(targetZone / 2 - 25), Math.floor(targetZone / 3 - 12), Math.floor(targetZone / 5), Math.floor(targetZone / 10 + 17), 39);
+    const nGigas = Math.min(Math.floor(zone - 60), Math.floor(zone / 2 - 25), Math.floor(zone / 3 - 12), Math.floor(zone / 5), Math.floor(zone / 10 + 17), 39);
     const metalDiff = Math.max(0.1 * metalRatio * metalPS / gemsPS, 1);
+    if (!Number.isFinite(metalDiff)) return warnNoGigaPattern("metalDiff=" + metalDiff, "cannot weigh metal against gems (metal/sec " + metalPS + ", gems/sec " + gemsPS + ")");
+    if (!(rawPop > 0)) return warnNoGigaPattern("rawPop=" + rawPop, "population is " + rawPop);
+    if (!(slowDown > 0)) return warnNoGigaPattern("slowDown=" + slowDown, "the delta factor is " + slowDown + " \u2014 set Custom Delta Factor to 1 or more, or below 1 to use the default");
+    if (!Number.isFinite(base)) return warnNoGigaPattern("base=" + base, "the first-Gigastation count is " + base);
     let delta = 3;
     for (let i = 0; i < 10; i++) {
       let pop = 6 * Math.pow(1.2, nGigas) * 1e4;
       pop *= base * (1 - Math.pow(5 / 6, nGigas + 1)) + delta * (nGigas + 1 - 5 * (1 - Math.pow(5 / 6, nGigas + 1)));
       pop += rawPop - base * 1e4;
       pop /= rawPop;
-      delta = Math.pow(megabook, targetZone - baseZone);
+      delta = Math.pow(megabook, zone - baseZone);
       delta *= metalDiff * slowDown * pop;
       delta /= Math.pow(1.75, nGigas);
       delta = Math.log(delta);
       delta /= Math.log(1.4);
       delta /= nGigas;
     }
-    return +(Math.round(delta + "e+2") + "e-2");
+    const pattern = +(Math.round(delta + "e+2") + "e-2");
+    if (!Number.isFinite(pattern)) return warnNoGigaPattern("pattern=" + pattern, "the pattern arithmetic overflowed for target zone " + zone);
+    return pattern;
   }
   function firstGiga(forced) {
     const maxHealthMaps = getPageSetting2("MaxMapBonushealth");
@@ -6256,6 +6280,7 @@
     const deltaM = MODULES["upgrades"].customMetalRatio > 0 ? MODULES["upgrades"].customMetalRatio : void 0;
     const deltaS = getPageSetting2("CustomDeltaFactor") >= 1 ? getPageSetting2("CustomDeltaFactor") : void 0;
     const delta = autoGiga(deltaZ, deltaM, deltaS);
+    if (!Number.isFinite(delta)) return false;
     setPageSetting2("FirstGigastation", base);
     setPageSetting2("DeltaGigastation", delta);
     debug2("Auto Gigastation: Setting pattern to " + base + "+" + delta, "general", "*rocket");
@@ -18397,7 +18422,7 @@
     }), "boolean", true, null, "Buildings");
     createSetting("CustomTargetZone", "Custom Target Zone", tip({
       what: "The target zone Auto Gigas uses when calculating its Warpstation delta, instead of letting AT guess one from your portal/void settings.",
-      cannot: "Values below 60 are silently discarded \u2014 AT falls back to computing its own target zone.",
+      cannot: "Values below 61 are silently discarded \u2014 AT falls back to computing its own target zone. 61 is the floor because zone 60 has no Gigastation pattern in it at all.",
       ignoredWhen: "Only matters for your FIRST Gigastation of a run \u2014 Auto Gigas computes a pattern once, when <b>Gigastation</b> is still at 0."
     }), "value", "-1", null, "Buildings");
     createSetting("CustomDeltaFactor", "Custom Delta Factor", tip({

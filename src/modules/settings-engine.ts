@@ -16,6 +16,11 @@
 // inline HTML handler). No cycle: custom-ui/* never imports settings-engine.
 import { applyCustomUI } from './custom-ui/boot';
 import { migrateLegacyId } from './settings-migrations';
+// #297 — the storability predicate moved to its own leaf module so setPageSetting's programmatic write
+// path can share this exact definition. Typed import rather than the bridge's bare name: this one runs
+// at boot, inside createSetting, and a load-order accident there would silently un-guard every stored
+// value. NOT imported from utils.ts, which builds a DOM node at module scope — see settings-storable.ts.
+import { isStorableNumber } from './settings-storable';
 
 let ranstring = '';
 
@@ -91,12 +96,8 @@ function clampMultitoggle(id: any, name: any, defaultValue: any) {
         Number.isInteger(fallback) && fallback >= 0 && fallback < name.length ? fallback : 0;
 }
 // #237 — "can this value survive a round trip through the store and come back as a number?"
-//
-// It has to tolerate strings, because 18 of the declared `value` defaults ARE strings ('-1', '0',
-// '1e33', …) and getPageSetting reads them with parseFloat, not parseInt — so `'-1'` is a perfectly
-// good stored value and must not be treated as damage. What it must reject is anything JSON cannot
-// carry: NaN and ±Infinity both serialize to `null`, and `null` is what comes back on the next boot.
-const isStorableNumber = (v: any) => Number.isFinite(typeof v === 'number' ? v : parseFloat(v));
+// Moved to utils.ts by #297, which needed the same predicate on setPageSetting's programmatic write
+// path. One definition: the two paths guard the same store, and a second copy would only drift.
 
 // #237 — the load-side half of the NaN hole, and the reason the title says "can never fall back to
 // the default". An unparseable entry used to write NaN straight into the record; serializeSettings

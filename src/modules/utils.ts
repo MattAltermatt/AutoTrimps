@@ -5,6 +5,9 @@
 // globals resolve via the ambient seam (at-legacy.d.ts / trimps.d.ts). Byte-identical to
 // gh-pages (type-only fixes). The peeled clean leaves time.ts / buystate.ts carry real types.
 import { timeStamp } from './time'
+// #297 — shared with settings-engine.ts's user-input guard; see settings-storable.ts for why the
+// predicate lives in a leaf module of its own rather than in either consumer.
+import { isStorableNumber } from './settings-storable'
 if (!String.prototype.includes) {
     String.prototype.includes = function(search, start) {
         'use strict';
@@ -154,6 +157,22 @@ export function getPageSettingAt(setting: string, index: number): any {
 export function setPageSetting(setting: string, value: any) {
     if (autoTrimpSettings.hasOwnProperty(setting) == false) {
         return false;
+    }
+    // #297 — the programmatic twin of settings-engine.ts's user-input guard. That path has validated
+    // typed input since #237; this one wrote whatever it was handed, so AT protected the user from
+    // typing NaN into the box and then wrote NaN into the same store itself (autoGiga's five
+    // non-finite routes → DeltaGigastation → `{"DeltaGigastation":null}` on disk → parseFloat(null) =
+    // NaN on every boot thereafter, because createSetting only defaults when nothing is STORED).
+    //
+    // Refusing leaves the previous stored value in place, which is the only non-arbitrary outcome: a
+    // caller with no computable answer has no business overwriting a value the user can still see and
+    // edit. Deliberately silent — this is a 10 Hz chokepoint, so a debug() here would be the very
+    // per-tick spam #297 was reported for; the diagnostic belongs at the call site, where the reason
+    // is known (upgrades.ts warns, latched by reason, before it ever reaches this line).
+    const type = autoTrimpSettings[setting].type;
+    if (type == 'value' || type == 'valueNegative' || type == 'multiValue') {
+        const storable = Array.isArray(value) ? value.every(isStorableNumber) : isStorableNumber(value);
+        if (!storable) return false;
     }
     if (autoTrimpSettings[setting].type == 'boolean') {
         autoTrimpSettings[setting].enabled = value;
