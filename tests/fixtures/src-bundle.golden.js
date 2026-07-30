@@ -9280,6 +9280,7 @@
           const maplvlpicked = game.global.world;
           debug2("Buying a Map, level: #" + maplvlpicked, "maps", "th-large");
           mapsClicked(true);
+          byId("mapLevelInput").value = maplvlpicked;
           let result = buyMap();
           if (result == -2) {
             debug2("Too many maps, recycling now: ", "maps", "th-large");

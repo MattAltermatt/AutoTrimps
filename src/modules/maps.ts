@@ -917,6 +917,14 @@ export function autoMap() {
                 const maplvlpicked = game.global.world
                 debug("Buying a Map, level: #" + maplvlpicked, "maps", 'th-large');
                 mapsClicked(true)
+                // #224 — buyMap() reads mapLevelInput (.trimps-game/main.js:6591) and NOTHING here was
+                // writing it, so the map actually created was at whatever the box last held — normally
+                // `siphlvl` (world - Siphonology) from autoMap's ordinary create path above. The game
+                // only rolls a Wonder when `mapLevel >= game.global.world` (config.js:4053), so a
+                // sub-world map is Wonder-ineligible; the next tick's `map.level == game.global.world`
+                // filter then fails to match it too, so the branch re-entered and bought again. The
+                // level was already computed and LOGGED one line up — it just never reached the input.
+                byId("mapLevelInput").value = maplvlpicked;
                 let result = buyMap();
                 if (result == -2) {
                     debug("Too many maps, recycling now: ", "maps", 'th-large');
