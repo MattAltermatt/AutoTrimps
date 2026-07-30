@@ -437,10 +437,21 @@ export function autoMap() {
     //
     // What this deliberately does NOT do is widen the Nom carve-out. FarmWhenNomStacks7's description
     // promises farming "at 30 stacks, exiting once the ratio drops back under 10x", but the trigger
-    // below is `== 30`, so it holds for exactly one stack value. Widening it to `>= 30` is a strategy
-    // change that first needs calcEnemyHealth to model Nom's 1.25^stacks healing — without that,
-    // calcHDratio() sits UNDER the cutoff in precisely the scenario the setting exists for. Filed
-    // separately; this change is the ownership fix only.
+    // below is `== 30`, so it holds for exactly one stack value of a counter that only ever rises.
+    //
+    // ⚠️ The reason this comment used to give for not widening it was WRONG, and so is #286's, which
+    // inherited it: "calcEnemyHealth does not model Nom's 1.25^stacks healing". `Math.pow(1.25,
+    // cell.nomStacks)` is not healing and not health — it is an enemy ATTACK multiplier, applied in the
+    // game's situational damage block (main.js:12365) and described by the challenge itself as "gaining
+    // 25% (compounding) more attack damage" (config.js:3776). AT already models it, at calc.ts:627 and
+    // :696. What is unmodelled is the separate 5%-of-max-health heal, which is a current-HP effect, not
+    // a multiplier `calcEnemyHealth` could carry.
+    //
+    // The real obstacle is worse than the imagined one: `calcHDratio()` with no argument is
+    // `calcEnemyHealth() / ourBaseDamage` (calc.ts:982), so NEITHER term moves with nomStacks. The
+    // cutoff below is blind to the mechanic it exists to react to, and widening `== 30` to `>= 30`
+    // would hold the carve-out across stacks 30-99 on a test that cannot see Nom at all. That is a
+    // design question about what the gate should read, not an operator swap — see #286.
     if (getPageSetting('DisableFarm') > 0) {
         shouldFarm = (calcHDratio() >= getPageSetting('DisableFarm'));
         if (game.options.menu.repeatUntil.enabled == 1 && shouldFarm)
