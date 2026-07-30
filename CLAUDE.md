@@ -23,7 +23,16 @@ npm run test:ci      # vitest + the zero-skip census — what CI runs
 npm run typecheck    # BOTH configs: tsc --noEmit (src+tests) && tsc -p tsconfig.scripts.json (the .mjs harness)
 npm run lint         # oxlint src tests scripts --deny-warnings (a real gate; it can fail)
 npm run game:fetch   # re-materialize .trimps-game/ if it goes missing
+npm run sim:coverage # what the L0 corpus reaches (read with the blind-spot census, not alone)
+npm run sim:record   # ⚠️ RE-PINS THE ORACLE — see the re-record rule below before running it
 ```
+
+**The current oracle tag is `oracle/v5-post-review-campaign`** (S10, 2026-07-29; it succeeded
+`v4-post-fix-sweep`, and `phase1-faithful`/`v2-post-bugfix`/`v3-u2-autobuildings` are historical).
+`sim:record` replays the **frozen** bundle at that tag, so it is never a local operation: moving one
+trace re-pins across every `src` commit since the tag. Ledger the reason in
+`tests/fixtures/traces/manifest.json` → `oracle.repinRationale`, and count the change **by event**
+(`scripts/sim/event-diff.mjs`), never by positional index.
 
 **Two game clones, and the distinction matters.** The **proof net** boots `.trimps-game/` — a
 SHA-pinned dependency `npm ci` materializes (`scripts/fetch-game-clone.mjs`), gitignored, pristine,
@@ -42,8 +51,11 @@ Local verify: `npm run build && npm run serve` → open `http://localhost:8080/`
   vendored `FastPriorityQueue.js` that turned out to be a hand-edited fork with a browser-freezing
   bug; it is now the `fastpriorityqueue` npm package, pinned exact and bundled by esbuild. The
   oracle is the recorded L0 traces + the last pre-conversion commits on `main`.
-- `src/modules/` — the ~40 converted TypeScript modules (+ the `graphs/` directory module),
-  including `main-loop.ts` (the ported mainLoop/loader, #133).
+- `src/modules/` — 46 converted TypeScript modules plus **two directory modules**, `graphs/`
+  (ECharts dashboard, #131/#135/#136) and `custom-ui/` (the opt-in adopt-and-skin UI shell, #41 —
+  `adopt/boot/index/regions/shell/state` + `tiles/`). Includes `main-loop.ts` (the ported
+  mainLoop/loader, #133). ⚠️ `custom-ui/` **adopts** the game's own DOM and never reimplements it;
+  it is default-OFF behind `ATCustomUI`, and it carries the largest cluster of open issues.
 - `src/game/*.d.ts` — ambient types for the game's global API (the seam).
 - `scripts/build-userscript.mjs` — the userscript assembler; `scripts/serve-game.mjs` — dev server.
 - `scripts/fetch-game-clone.mjs` — materializes the SHA-pinned `.trimps-game/` (runs on `npm install`).
