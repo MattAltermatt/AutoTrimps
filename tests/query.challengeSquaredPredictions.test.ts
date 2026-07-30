@@ -47,6 +47,25 @@ function c2Pairs(): Record<string, string[]> {
   return out
 }
 
+/**
+ * #305 — the `decayValue` the clone declares for a challenge, read out of config.js rather than
+ * retyped. Decay's is 0.995 and Melt's is 0.99, and the whole defect was AT hard-coding the first and
+ * having no arm for the second, so a fixture that hard-codes either would be re-committing the bug in
+ * the one place that is supposed to catch it.
+ */
+function decayValueOf(challenge: string): number {
+  const CLONE = process.env.TRIMPS_GAME_DIR ?? resolve(__dirname, '..', '.trimps-game')
+  const lines = readFileSync(resolve(CLONE, 'config.js'), 'utf8').split('\n')
+  const start = lines.findIndex((l) => new RegExp(`^\\t\\t${challenge}:\\s*\\{`).test(l))
+  expect(start, `${challenge} must be a real challenge in the clone`).toBeGreaterThan(-1)
+  for (let i = start; i < start + 60 && i < lines.length; i++) {
+    const m = lines[i].match(/decayValue:\s*([0-9.]+)/)
+    if (m) return Number(m[1])
+    if (i > start && /^\t\t[A-Za-z]+:\s*\{/.test(lines[i])) break // ran into the next challenge
+  }
+  throw new Error(`${challenge} declares no decayValue in the clone`)
+}
+
 /** `game.global` for a live Challenge²: the PARENT name plus the multiChallenge children. */
 function inC2(parent: string, over: Record<string, unknown> = {}) {
   const kids = c2Pairs()[parent]
@@ -83,7 +102,11 @@ function gatherGame(global: Record<string, unknown>, job = 'Farmer') {
     challenges: {
       Toxicity: { lootMult: 2, stacks: 50, stackMult: 1.05 },
       Balance: { getGatherMult: () => 0.7 },
-      Decay: { stacks: 10 },
+      // #305 — decayValue comes from the CLONE, not from a literal here. The whole point of the fix is
+      // that the constant belongs to whichever challenge is live; a hand-typed fixture value would let
+      // this file agree with a wrong implementation, and would go stale on a clone bump in silence.
+      Decay: { stacks: 10, decayValue: decayValueOf('Decay') },
+      Melt: { stacks: 10, decayValue: decayValueOf('Melt') },
     },
   })
   return job
@@ -170,6 +193,60 @@ describe("#291 — Size's 1.5 is food/wood/metal only, as the game restricts it"
     // independent `if`s would multiply both and is invisible unless both are active at once.
     const both = { challengeActive: 'Meditate', multiChallenge: { Size: true }, world: 2 }
     expect(perSec(both)).toBeCloseTo(25, 6) // 1.25 only — NOT 1.25 · 1.5 = 37.5
+  })
+})
+
+describe('#305 — the decay arm covers Melt too, and reads the LIVE challenge\'s decayValue', () => {
+  // main.js:17172-17176 — `if (challengeActive == "Decay" || challengeActive == "Melt") { var challenge
+  // = game.challenges[challengeActive]; amt *= 10; amt *= Math.pow(challenge.decayValue,
+  // challenge.stacks); }`. AT covered Decay only, with 0.995 retyped as a literal.
+  //
+  // Melt is `blockU1`/`allowU2`, and getPerSecBeforeManual is reached from the U2 gather path
+  // (gather.ts:374's RManualGather2 arm), so the missing arm was live code, not a hypothetical.
+  const base = 20 // Farmer: owned 10 · modifier 2
+  const expected = (challenge: string) => base * 10 * Math.pow(decayValueOf(challenge), 10)
+
+  it('the clone still declares both values, and they still DIFFER', () => {
+    // If a bump ever made them equal, every assertion below would keep passing while losing all power
+    // to tell "reads the live challenge's value" from "hard-codes one of them".
+    expect(decayValueOf('Decay')).toBeCloseTo(0.995, 6)
+    expect(decayValueOf('Melt')).toBeCloseTo(0.99, 6)
+    expect(decayValueOf('Decay')).not.toBeCloseTo(decayValueOf('Melt'), 6)
+  })
+
+  it('Decay applies 10x and its own decay factor (the case that already worked)', () => {
+    expect(perSec(plain('Decay', { world: 2 }))).toBeCloseTo(expected('Decay'), 6)
+  })
+
+  it('MELT applies them too — it used to be entirely inert', () => {
+    // Before the fix this returned the bare 20: no 10x, no decay factor. The gap is a factor of
+    // 10 · 0.99^stacks, which is where the "order of magnitude" in the report comes from.
+    expect(perSec(plain('Melt', { world: 2 }))).toBeCloseTo(expected('Melt'), 6)
+    expect(perSec(plain('Melt', { world: 2 }))).not.toBeCloseTo(base, 6)
+  })
+
+  it('NEAR-MISS: Melt does not borrow Decay\'s 0.995', () => {
+    // The obvious repair — add `|| 'Melt'` to the gate and leave the literal — passes every assertion
+    // above except this one. At 10 stacks the two differ by ~5%, so the difference is real but small
+    // enough to miss by eye.
+    expect(perSec(plain('Melt', { world: 2 }))).not.toBeCloseTo(expected('Decay'), 6)
+  })
+
+  it('a challenge with no decay arm is untouched', () => {
+    expect(perSec(plain('Frigid', { world: 2 }))).toBeCloseTo(base, 6)
+  })
+
+  it('resolves the challenge by the MATCHED name, so no lookup can go undefined', () => {
+    // Not reachable from the clone today — neither Decay nor Melt appears in any multiChallenge array,
+    // which is why #291 correctly left this compare alone. It is asserted because the fix uses AT's
+    // `challengeActive()` helper, and pairing that with a `game.global.challengeActive` lookup (the way
+    // the game can afford to, since its gate is a direct string compare) would read
+    // `game.challenges['<parent>'].decayValue` → undefined → Math.pow(undefined, n) → NaN, which
+    // setPageSetting-style consumers then persist. This is the justifying claim as an assertion.
+    const paired = { challengeActive: 'SomeFutureC2', multiChallenge: { Melt: true }, world: 2 }
+    const out = perSec(paired)
+    expect(Number.isFinite(out), 'a paired Melt must not produce NaN').toBe(true)
+    expect(out).toBeCloseTo(expected('Melt'), 6)
   })
 })
 

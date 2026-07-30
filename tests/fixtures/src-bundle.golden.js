@@ -14151,9 +14151,11 @@
         b *= 1 + d;
       }
       if (challengeActive("Balance")) b *= game.challenges.Balance.getGatherMult();
-      if (game.global.challengeActive === "Decay") {
+      const decaying = challengeActive("Decay") ? "Decay" : challengeActive("Melt") ? "Melt" : "";
+      if (decaying) {
+        const challenge = game.challenges[decaying];
         b *= 10;
-        b *= Math.pow(0.995, game.challenges.Decay.stacks);
+        b *= Math.pow(challenge.decayValue, challenge.stacks);
       }
       if (game.global.challengeActive === "Daily") {
         if (typeof game.global.dailyChallenge.dedication !== "undefined")

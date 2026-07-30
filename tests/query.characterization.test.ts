@@ -213,7 +213,10 @@ describe('query getPerSecBeforeManual (per-branch multiplier arming)', () => {
       challenges: {
         Toxicity: { lootMult: 2, stacks: 50 },
         Balance: { getGatherMult: () => 0.7 },
-        Decay: { stacks: 10 },
+        // #305 — the game carries `decayValue` on the challenge itself and reads it there
+        // (main.js:17174); AT retyped 0.995 until this fix, so the fixture now has to model the field
+        // that actually exists. Decay's value in the pinned clone (config.js:3512).
+        Decay: { stacks: 10, decayValue: 0.995 },
       },
     }
     // shallow-ish merge for the fields tests override

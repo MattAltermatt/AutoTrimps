@@ -45,9 +45,25 @@ export function getPerSecBeforeManual(a: string): number {
             b *= 1 + d;
         }
         if (challengeActive('Balance')) b *= game.challenges.Balance.getGatherMult();
-        if (game.global.challengeActive === 'Decay') {
+        // #305 — the game's arm is `challengeActive == "Decay" || challengeActive == "Melt"`, and it
+        // reads `game.challenges[challengeActive].decayValue` rather than a literal (main.js:17172-17176).
+        // AT covered Decay only and retyped its 0.995, so during MELT the prediction dropped both the
+        // 10x and the decay factor: wrong by `10 * 0.99^stacks`, an order of magnitude within a minute
+        // of stacking. Melt is `blockU1`/`allowU2` (config.js), and getPerSecBeforeManual is reached from
+        // the U2 gather path (gather.ts:374, the RManualGather2 arm), so the arm is live, not decorative.
+        //
+        // The challenge object is resolved from the name that MATCHED, not from
+        // `game.global.challengeActive`. The game can afford the latter because its gate is a direct
+        // string compare; using AT's `challengeActive()` helper (which resolves a Challenge²'s parent
+        // name to its children, main.js:1753) with a `game.global.challengeActive` lookup would read
+        // `game.challenges["<parent>"].decayValue` — undefined, and `Math.pow(undefined, n)` is NaN.
+        // Neither Decay nor Melt appears in any `multiChallenge` array today, so the two spellings agree;
+        // this way they still agree if one is ever paired, instead of silently dropping the decay.
+        const decaying = challengeActive('Decay') ? 'Decay' : challengeActive('Melt') ? 'Melt' : '';
+        if (decaying) {
+            const challenge = game.challenges[decaying];
             b *= 10;
-            b *= Math.pow(0.995, game.challenges.Decay.stacks);
+            b *= Math.pow(challenge.decayValue, challenge.stacks);
         }
         if (game.global.challengeActive === 'Daily') {
             if (typeof game.global.dailyChallenge.dedication !== 'undefined')
