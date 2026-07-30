@@ -101,6 +101,37 @@ describe('#206 — C2 Runner arms the GAME\'s challengeSquaredMode, not a module
     expect(window.challengeSquaredMode).toBe(false)
   })
 
+  it('a LOCKED lagging C2 does not throw — it falls through to the next candidate', () => {
+    // Found by review, and it is a hazard this fix CREATED. With the flag reaching the game,
+    // displayChallenges() skips any challenge whose filter fails while in squared mode
+    // (main.js:1778), and selectChallenge then derefs `getElementById("challenge" + what)`
+    // unconditionally (main.js:1885) — a TypeError inside doPortal, upstream of
+    // writePrePortalBackup() and activatePortal(). Before the fix the renderer never entered squared
+    // mode, so the same candidate was still emitted as `firstFail` and selectChallenge merely bailed.
+    //
+    // Electricity's filter is `prisonClear > 0` (config.js:3604), i.e. z80, and c2runner's Electricity
+    // arm has NO unlock gate of its own — so a U1 player who has not cleared z80 reaches it.
+    const { window, game } = rig({ ...ALL_CAUGHT_UP, Electricity: 0 })
+    game.global.prisonClear = 0 // Electricity locked
+    expect(game.challenges.Electricity.filter(true), 'the fixture must really lock it').toBe(false)
+
+    expect(() => window.c2runner()).not.toThrow()
+    // Nothing was started, and the flag is back to what portalClicked left it — so doPortal's
+    // `c2done` stays true and the AutoStartDaily path is not collaterally disabled.
+    expect(game.global.selectedChallenge).toBeFalsy()
+    expect(window.challengeSquaredMode).toBe(false)
+  })
+
+  it('a locked candidate does not block a later UNLOCKED one', () => {
+    // The cascade must keep going. Toxicity sits after Electricity, so with Electricity locked and
+    // lagging, and Toxicity lagging too, Toxicity is what should start.
+    const { window, game } = rig({ ...ALL_CAUGHT_UP, Electricity: 0, Toxicity: 10 })
+    game.global.prisonClear = 0
+    window.c2runner()
+    expect(game.global.selectedChallenge).toBe('Toxicity')
+    expect(window.challengeSquaredMode).toBe(true)
+  })
+
   it('the shipped bundle declares no shadowing binding of its own', () => {
     // Mechanical guard on the actual shipped text, since that is where the defect lived: the src
     // IIFE must not declare this name. A future `var`/`let` reintroduction is exactly the

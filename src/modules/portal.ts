@@ -170,61 +170,93 @@ export function c2runnerportal() {
             }
 }
 
+/**
+ * Can the game actually OFFER `what` as a Challenge² on this portal?
+ *
+ * This DELEGATES rather than mirroring. In squared mode `displayChallenges()` skips a challenge
+ * outright under five conditions (main.js:1774-1778 — blockU1, missing `allowU2`, the U2
+ * highestRadonLevelCleared<49 gate, `!allowSquared`, and a FAILING `filter()`), and `selectChallenge`
+ * then derefs `getElementById("challenge" + what)` **unconditionally** (main.js:1885). So handing it a
+ * skipped challenge throws a TypeError, which aborts `doPortal` before `writePrePortalBackup()` and
+ * `activatePortal()` — no portal, no pre-portal backup — and in the autoPortal path the throw is
+ * raised inside a setTimeout callback, outside `atGuard`.
+ *
+ * #206 is what made that reachable: while the flag was module-private the renderer never entered
+ * squared mode, so a filter-failing candidate was still emitted as the `firstFail` challenge and
+ * selectChallenge merely bailed with `selectedChallenge = ""` (the plain-challenge bug #206 fixed).
+ * Repairing the write turns that soft failure into a throw. Two arms below have no unlock gate of
+ * their own — Discipline (needs 30 total helium, config.js:3290) and Electricity (needs
+ * `prisonClear > 0`, i.e. z80, config.js:3604) — so a U1 player at HZE 69-79 hits it. And since NONE
+ * of the eleven targets carries `allowU2`, every candidate is skipped when portalling into U2.
+ *
+ * The flag must be true BEFORE asking, because that is what puts the renderer into squared mode; a
+ * negative answer restores it so a skipped candidate leaves no trace and the `else if` cascade below
+ * simply tries the next one.
+ */
+function c2Selectable(what: string): boolean {
+    globalThis.challengeSquaredMode = true;
+    displayChallenges();
+    if (document.getElementById('challenge' + what)) return true;
+    globalThis.challengeSquaredMode = false;
+    debug('C2 Runner: ' + what + ' cannot be started as a Challenge² right now (locked, or unavailable in this universe) - trying the next one.');
+    return false;
+}
+
 export function c2runner() {
-   
+
 if (!game.global.portalActive) return;
     if (getPageSetting('c2runnerstart') == true && getPageSetting('c2runnerportal') > 0 && getPageSetting('c2runnerpercent') > 0) {
-            if (game.global.highestLevelCleared > 34 && (100*(game.c2.Size/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
+            if (game.global.highestLevelCleared > 34 && (100*(game.c2.Size/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent') && c2Selectable('Size')) {
                 globalThis.challengeSquaredMode = true;
                 selectChallenge("Size");
                 debug("C2 Runner: Running C2 Challenge Size");
             }
-            else if (game.global.highestLevelCleared > 129 && (100*(game.c2.Slow/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
+            else if (game.global.highestLevelCleared > 129 && (100*(game.c2.Slow/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent') && c2Selectable('Slow')) {
                 globalThis.challengeSquaredMode = true;
                 selectChallenge("Slow");
                 debug("C2 Runner: Running C2 Challenge Slow");
             }
-            else if (game.global.highestLevelCleared > 179 && (100*(game.c2.Watch/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
+            else if (game.global.highestLevelCleared > 179 && (100*(game.c2.Watch/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent') && c2Selectable('Watch')) {
                 globalThis.challengeSquaredMode = true;
                 selectChallenge("Watch");
                 debug("C2 Runner: Running C2 Challenge Watch");
             }
-            else if ((100*(game.c2.Discipline/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
+            else if ((100*(game.c2.Discipline/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent') && c2Selectable('Discipline')) {
                 globalThis.challengeSquaredMode = true;
                 selectChallenge("Discipline");
                 debug("C2 Runner: Running C2 Challenge Discipline");
             }
-            else if (game.global.highestLevelCleared > 39 && (100*(game.c2.Balance/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
+            else if (game.global.highestLevelCleared > 39 && (100*(game.c2.Balance/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent') && c2Selectable('Balance')) {
                 globalThis.challengeSquaredMode = true;
                 selectChallenge("Balance");
                 debug("C2 Runner: Running C2 Challenge Balance");
             }
-            else if (game.global.highestLevelCleared > 44 && (100*(game.c2.Meditate/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
+            else if (game.global.highestLevelCleared > 44 && (100*(game.c2.Meditate/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent') && c2Selectable('Meditate')) {
                 globalThis.challengeSquaredMode = true;
                 selectChallenge("Meditate");
                 debug("C2 Runner: Running C2 Challenge Meditate");
             }
-            else if (game.global.highestLevelCleared > 24 && (100*(game.c2.Metal/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
+            else if (game.global.highestLevelCleared > 24 && (100*(game.c2.Metal/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent') && c2Selectable('Metal')) {
                 globalThis.challengeSquaredMode = true;
                 selectChallenge("Metal");
                 debug("C2 Runner: Running C2 Challenge Metal");
             }
-            else if (game.global.highestLevelCleared > 179 && (100*(game.c2.Lead/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
+            else if (game.global.highestLevelCleared > 179 && (100*(game.c2.Lead/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent') && c2Selectable('Lead')) {
                 globalThis.challengeSquaredMode = true;
                 selectChallenge("Lead");
                 debug("C2 Runner: Running C2 Challenge Lead");
             }
-            else if (game.global.highestLevelCleared > 144 && (100*(game.c2.Nom/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
+            else if (game.global.highestLevelCleared > 144 && (100*(game.c2.Nom/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent') && c2Selectable('Nom')) {
                 globalThis.challengeSquaredMode = true;
                 selectChallenge("Nom");
                 debug("C2 Runner: Running C2 Challenge Nom");
             }
-            else if ((100*(game.c2.Electricity/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
+            else if ((100*(game.c2.Electricity/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent') && c2Selectable('Electricity')) {
                 globalThis.challengeSquaredMode = true;
                 selectChallenge("Electricity");
                 debug("C2 Runner: Running C2 Challenge Electricity");
             }
-            else if (game.global.highestLevelCleared > 164 && (100*(game.c2.Toxicity/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent')) {
+            else if (game.global.highestLevelCleared > 164 && (100*(game.c2.Toxicity/(game.global.highestLevelCleared+1))) < getPageSetting('c2runnerpercent') && c2Selectable('Toxicity')) {
                 globalThis.challengeSquaredMode = true;
                 selectChallenge("Toxicity");
                 debug("C2 Runner: Running C2 Challenge Toxicity");

@@ -52,6 +52,10 @@ declare global {
   function abandonDaily(...args: any[]): void
   function abandonChallenge(...args: any[]): void
   function selectChallenge(...args: any[]): void
+  // main.js:1759 — re-renders the challenge list. In squared mode it SKIPS any challenge the game
+  // cannot offer (main.js:1774-1778), which is what makes selectChallenge's unconditional
+  // `getElementById("challenge" + what)` deref at :1885 a throw rather than a no-op.
+  function displayChallenges(...args: any[]): void
   function viewPortalUpgrades(...args: any[]): void
   function numTab(...args: any[]): void
   function buyPortalUpgrade(...args: any[]): void
