@@ -7,6 +7,34 @@ closed [GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/issues).
 
 ## Shipped decisions, newest first
 
+- **🔒 ONE ORACLE RE-PIN FOR 115 FIXES — v4 → `oracle/v5-post-review-campaign`** (2026-07-29, Session 10
+  of the review-fix campaign) — the campaign's whole landing model in one number: **14 of 21 fixtures
+  moved, 7 reproduced byte-identically, and all 14 are attributed to four root causes measured on their
+  own commits.** #203/#220 (AutoEquip ranked and bought LOCKED slots — the v4 oracle records
+  `buyEquipment("Arbalest")` on a save that has it locked, then stalls at tick 2 and buys nothing for the
+  rest of the run), #199/#212/#295 (a non-crit priced at `getMegaCritDamageMult(0)` = 1/critD, so AT
+  understated its own damage by **2.5×** on every zero-crit save — the whole shallow corpus),
+  #169/#170 (`gammaBurstPct`'s off sentinel was 1), #290/#294 (formation 5 treated as halving).
+  🧮 **COUNT BY EVENT, NOT BY INDEX** — `scripts/sim/event-diff.mjs` is committed for this, so the
+  ledger's numbers are re-derivable instead of retyped (the #69 entry had to hand-count it). The
+  positional count that `baseline-zero` prints inflates: `12-warp-u1` reads **1991 divergences** and is
+  **697 event edits**; `08-starved-u1.1` reads 1742 and is 704.
+  🎯 **FOUR NEGATIVE CONTROLS, ALL NUMERIC.** (1) The frozen v5 bundle is **byte-identical to the working
+  build** (`cmp` exits 0), so every move is oracle-vs-oracle with zero harness/bundler/runtime drift.
+  (2) The 7 fixtures `baseline-zero` already agreed with re-record byte-for-byte — where the campaign
+  should be inert, it is. (3) `12-warp-u1` is inert across the formation commit, **predicted before it was
+  measured** (formation 5 is uber-Wind, which that fixture never reaches). (4) **Everything after
+  `2cfef274` moves nothing** — all 21 byte-identical at that boundary vs the final recording, so the rest
+  of S9 Wave 1, Wave 2 and Waves 3–5 (24 more issues) contribute zero movement, reproducing in one
+  measurement what S9 had recorded per wave.
+  ⚠️ **The census was meaningless for 14 fixtures between S8 and this re-pin** — it inverts against a
+  stale oracle (#105), so `blind-spot-census.md` was regenerated AFTER the re-pin, never before.
+  📄 The honest campaign report is
+  [`2026-07-28-exhaustive-logic-review-findings.md`](superpowers/specs/2026-07-28-exhaustive-logic-review-findings.md):
+  **127 issues filed, 115 closed, 12 open** — and the ratio worth remembering is that remediation found
+  **one new issue for every four it fixed** (25 filed from inside it, including 🔴 #310, which #297's own
+  failsafe created).
+
 - **🏚️ GEM-HOUSING AFFORDABILITY FALL-THROUGH — AT SAT ON AN UNPAYABLE GATEWAY AND BOUGHT NOTHING**
   (2026-07-27) — `buyGemEfficientHousing` ranked candidates on `gemsCost / increase.by` alone and then
   `break`'d on the winner **whether or not it could be bought**. Gateway is the only U1 gem housing
