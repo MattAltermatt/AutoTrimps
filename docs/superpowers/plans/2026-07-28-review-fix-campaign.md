@@ -26,7 +26,11 @@
 >                       #246 · #214 SPLIT OUT to its own branch (needs a settings
 >                       migration) · filed #293 · baseline-zero 20/21, RED on
 >                       10-hypo-u2 with 152 divergences, ALL attributed (below)
-> 9        ⬜ Track B   25 issues, trace-moving, collect the red
+> 9        🔶 Track B   Waves 1-3 landed: combat math (#169 #170 #199 #212 #290 #294 #295 #296
+>                       #198 #244) · stance/breed (#229 #230 #231 #233 #248 #249 #250) · maps
+>                       (#204 #222 #224 #225 #226 #234 #263 #300) · Wave 3 (#221 #206 #185 #223,
+>                       NO traces moved — measured) · filed #291 #292 #293 #294 #295 #296 #297
+>                       #300 #301 · remaining: #162 #286 #291 #298 #213/#299, #214 own branch
 > 10       ⬜ re-pin     one oracle re-pin, ledgered
 > ```
 >
@@ -664,6 +668,44 @@ pricing corrected, both crit terms are exactly 1 on a zero-crit save, the branch
 predicts nothing, and the old assertion could no longer see it. It now drives a player who actually
 crits. This is the `#178` shape again (a net whose health depended on a defect persisting), found this
 time not by the net breaking on its own but by a fix in a *different* file making it unprovable.
+
+#### S9 Wave 3 — maps preset, portal scope, gather cap, XP sentinel · **moves NO traces**
+
+`#221` `#206` `#185` `#223`. Four fixes, four nets, and the honest headline is the *negative* result:
+**Wave 3 moves zero oracle traces, and that was measured rather than inherited from the track label.**
+Per-fixture divergence counts were taken with the same script in a detached worktree at the
+pre-Wave-3 tip (`95c27e3c`) and in the post-Wave-3 tree, and all 21 are byte-identical — including
+`10-hypo-u2` (152), the U2 fixture where `#185`'s gather change was the plausible mover:
+
+```text
+                          pre-W3 = post-W3 (all 21 fixtures identical)
+01-early-u1        8 / 10 / 12          06-deep-u1     747 / 864 / 724
+03-challenge-watch 16 / 15 / 16         07-map-cap-u1  747
+08-starved-u1      1742 / 1603          10-hypo-u2     152        12-warp-u1  1991
+02-mid-u1 · 04-u2-radon · 05-maps-u1 · 09-housing-u2 · 11-portal-u1 → 0
+```
+
+So Wave 3 adds nothing to the S10 re-pin ledger. The only gates it moved are the two snapshots it
+owns — the src byte golden (regenerated with a stated reason; the reviewed diff is 55 lines and
+contains all four fixes plus one tooltip and nothing else) and the tooltip census (one entry).
+
+⚠️ **A measurement rig can manufacture its own red.** The pre-Wave-3 worktree reported
+`src-bundle-parity` RED, which would have been read as "the golden was already stale". It was not:
+symlinking `node_modules` into the worktree makes esbuild emit an absolute path in the
+`FastPriorityQueue` chunk comment, a 4-line diff entirely inside my rig. The trace counts were
+unaffected (both trees produced identical numbers), but the lesson generalises — **when a comparison
+tree disagrees with the main tree, suspect the tree before the code.**
+
+Two scope notes worth carrying to S10:
+- `#221` mirrors the game's row filters (`on !== false`, `through`, `times`, `times == -2`/`tx`,
+  `getMaxSettings`) but deliberately NOT its `done` / `cell` / `preMapsActive` gates: those decide
+  *when within a zone* the game fires its own map run, while `shouldDoMaps` is AT's coarser per-zone
+  decision, and gating on `done` would make AT abandon a map the instant native MaZ consumed the row.
+  Verified live: AT and `checkMapAtZoneWorld` now agree on every zone-selection question, and the one
+  remaining disagreement is exactly the cell gate.
+- `#223` is scoped to the `-1` sentinel only. Every other below-605 value still targets a BW the game
+  cannot accept as an Experience completion (`config.js:9163`), as do `NaN` and a phantom key — split
+  out as **#301** with four dispositions rather than absorbed into a mechanism commit.
 
 ### Session 10 — Oracle re-pin, campaign review, merge · **XL** · 🪨 the load-bearing session
 
