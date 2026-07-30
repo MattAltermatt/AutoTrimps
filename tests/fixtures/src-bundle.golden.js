@@ -10808,6 +10808,7 @@
           byId2("mapLevelInput").value = game.global.world;
           byId2("advExtraLevelSelect").value = "0";
         } else if (shiplevelzones < 0) {
+          RminFragMap(selection, shiplevelzones, special);
           byId2("mapLevelInput").value = game.global.world + shiplevelzones;
           byId2("advExtraLevelSelect").value = "0";
         }

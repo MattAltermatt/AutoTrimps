@@ -1154,6 +1154,17 @@ export function RshipMap() {
                 byId("mapLevelInput").value = game.global.world;
                 byId("advExtraLevelSelect").value = "0";
             } else if (shiplevelzones < 0) {
+                // #204 — this branch used to skip RminFragMap, the ONLY thing that writes
+                // biomeAdvMapsSelect and advSpecialSelect. createMap then assigns no `bonus` at all
+                // (.trimps-game/main.js:6018 sets it only when getSpecialModifierSetting() != "0"),
+                // while RselectShip requires `mapsOwnedArray[map].bonus == special` in all three of
+                // its match loops — and `undefined == "ssc"` is false. So no owned map ever matched,
+                // RselectShip returned "create" every tick, and AT bought a fresh map without running
+                // it, draining fragments until it could not afford one. Ship Farming worked only with
+                // a strictly positive SF: Map Level.
+                //
+                // RhypoMap is the correct template: all three of its branches call RminFragMap.
+                RminFragMap(selection, shiplevelzones, special);
                 byId("mapLevelInput").value = (game.global.world + shiplevelzones);
                 byId("advExtraLevelSelect").value = "0";
             }
