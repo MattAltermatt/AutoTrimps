@@ -302,7 +302,6 @@ function vanillaMazAt(world: number, mazOption: ReturnType<typeof mazU2>, lastCl
     RVoidMaps: { type: 'value', value: -1 },
     Rvoidscell: { type: 'value', value: -1 },
     RABsolve: { type: 'boolean', enabled: false },
-    Rquest: { type: 'boolean', enabled: false },
   }
   // RautoMap's free identifiers, DERIVED from the AST (every Identifier it reads that maps.ts does not
   // publish at load), not discovered one crash at a time. Two that matter:
