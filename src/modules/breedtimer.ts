@@ -217,11 +217,33 @@ export function ATGA2() {
 	// Trappapalooza that early return is upstream of everything this servo models: potencyMod is never
 	// applied, `lastBreedTime` never accumulates (so zero Anticipation stacks, main.js:11683), and
 	// `updateStoredGenInfo()` never runs — leaving `lowestGen` at its -1 reset, which is precisely what
-	// startFight gates the health bonus on (`if (game.global.lowestGen >= 0)`, main.js:11745). So every
-	// Geneticist hired there is pure cost: no health, no stacks, no breed effect. Spelled with the game's
-	// own challengeActive() rather than a direct compare — a superset of it (main.js:1753 checks
-	// multiChallenge first), so it cannot be less correct, and it survives a future challenge being
-	// re-parented under a Challenge².
+	// startFight gates the health bonus on (`if (game.global.lowestGen >= 0)`, main.js:11745). So a
+	// Geneticist hired there would be pure cost: no health, no stacks, no breed effect.
+	//
+	// ⚠️ CORRECTED 2026-07-31 (#316 review): the Trappapalooza arm is DEFENCE-IN-DEPTH, not a live fix.
+	// #315 verified the premise and never verified the reachability. Trappapalooza is `blockU1: true`
+	// (config.js:4442) and this function's only dispatch is main-loop.ts:262, inside the
+	// `if (game.global.universe == 1)` block — so whenever ATGA2 runs, `universe == 1`, and
+	// Trappapalooza requires `universe != 1`. That is the whole argument, and it is pinned as
+	// assertions rather than prose in tests/breedtimer.atga-dispatch.test.ts, so moving the dispatch
+	// (or an upstream bump dropping blockU1) reddens instead of leaving this comment quietly wrong.
+	//
+	// A SECOND, independent unreachability argument was drafted here and DELETED — recorded because
+	// the deletion is the point. It ran: the `Geneticist.locked == false` conjunct below needs the
+	// world-70 unlock, which carries `brokenPlanet: 1` (config.js:11180) and is skipped while
+	// `!game.global.brokenPlanet` (main.js:10284), whose only writer planetBreaker() has three
+	// non-U2-reachable call sites. Every one of those facts is true. The argument is still incomplete:
+	// `bwRewards.Geneticistassist.fire()` (config.js:13417) calls `unlockJob("Geneticist")` DIRECTLY
+	// and never touches brokenPlanet, so the census of planetBreaker's callers was answering the wrong
+	// question — the question is how `Geneticist.locked` clears, and that has two independent paths.
+	// Caught by review, after I had already tightened the planetBreaker count and felt thorough about
+	// it. Leg 1 needs none of this, so the belt-and-suspenders leg is gone rather than patched: an
+	// unverified sub-claim propping up a verified one adds risk and no evidence.
+	//
+	// KEPT anyway, and deliberately: it is a harmless superset, and it is spelled with the game's own
+	// challengeActive() rather than a direct compare (main.js:1753 checks multiChallenge first), so it
+	// survives a future challenge being re-parented under a Challenge². Deleting a correct-but-inert
+	// mirror is the niceCheckbox hazard in reverse — the Trapper arm beside it IS live.
 	if (game.jobs.Geneticist.locked == false && getPageSetting('ATGA2') == true && getPageSetting('ATGA2timer') > 0 && !challengeActive("Trapper") && !challengeActive("Trappapalooza")){
 		var trimps = game.resources.trimps;
 		var trimpsMax = trimps.realMax();

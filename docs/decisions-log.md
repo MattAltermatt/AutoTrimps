@@ -49,8 +49,19 @@ closed [GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/issues).
   which is why nothing looked broken. **#315** `ATGA2()` guarded on Trapper only while `breed()` stops
   for **both** Trapper and Trappapalooza (main.js:5575) — and under Trappapalooza that early return is
   upstream of everything the servo models, so `lowestGen` stays at its −1 reset and `startFight` never
-  applies the `1.01^N` health (main.js:11745). Every Geneticist hired there was pure cost. Verified
+  applies the `1.01^N` health (main.js:11745). A Geneticist hired there would be pure cost. Verified
   live: 5 `ATGA2()` ticks hire 5 with no challenge active and 0 under each of the two.
+  ⚠️ **CORRECTED 2026-07-31 (#316):** the Trappapalooza arm is **defence-in-depth, not a live fix** —
+  the premise was verified and the *reachability* never was. `ATGA2()` is dispatched only at
+  main-loop.ts:262, inside the `universe == 1` block, and Trappapalooza is `blockU1: true`
+  (config.js:4442) — so whenever ATGA2 runs `universe == 1`, and Trappapalooza requires it not to be.
+  The guard stays (a harmless superset that survives a future Challenge² re-parenting); the claim moved
+  into executable assertions at `tests/breedtimer.atga-dispatch.test.ts`. Only the **Trapper** arm was
+  ever live. 🔎 A *second* unreachability argument via `Geneticist.locked`/`brokenPlanet` was drafted
+  and **deleted** — see the breedtimer.ts docblock: every fact in it was true and the census still
+  answered the wrong question, because `bwRewards.Geneticistassist` (config.js:13417) unlocks the job
+  without touching `brokenPlanet`. Caught by review, on a branch whose whole subject is unverified
+  sub-claims. Leg 1 needs no support, so the prop was removed rather than repaired.
   🔒 **The typo class is now mechanized, not patched.** `tests/nets/challenge-name-literals.test.ts`
   derives the legal roster from `Object.keys(game.challenges)` on a booted clone and the call sites
   from the **TypeScript AST** — not a hand-written list, and not a regex, so a comment quoting the bug

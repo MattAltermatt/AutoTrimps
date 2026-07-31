@@ -3,6 +3,20 @@ import { describe, it, expect, beforeAll, vi } from 'vitest'
 
 // #315 — ATGA MUST NOT HIRE WHILE THE GAME HAS STOPPED BREEDING.
 //
+// ⚠️ CORRECTED 2026-07-31 (#316 review). READ THIS BEFORE THE PARAGRAPH BELOW. Only the **Trapper**
+// case here describes reachable play. ATGA2's sole dispatch is main-loop.ts:262, inside the
+// `if (game.global.universe == 1)` block, and Trappapalooza is `blockU1: true` — so the Trappapalooza
+// case exercises a state the game cannot produce, and this fixture pairs it with a THIRD impossible
+// value: `jobs.Geneticist.locked: false`, which in U2 requires `brokenPlanet`, set only by
+// planetBreaker() under `universe == 1`. The guard is correct and stays (see breedtimer.ts:215), but
+// it is defence-in-depth, not a live repair, and the reachability is pinned as executable assertions
+// in tests/breedtimer.atga-dispatch.test.ts rather than claimed in prose here.
+//
+// The lesson is the file's real value: #315 verified its PREMISE (breed() does stop for both) and
+// never verified its REACHABILITY, and a test name is a claim. Kept parameterised over both names
+// because the guard genuinely does stand down for both — that assertion is true, it is just not
+// evidence about U1 play.
+//
 // `breed()` early-returns for BOTH Trapper and Trappapalooza (main.js:5575) and ATGA's guard named only
 // Trapper. Under Trappapalooza that return is upstream of every quantity the servo models:
 //
