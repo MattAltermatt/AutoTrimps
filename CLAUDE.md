@@ -279,6 +279,14 @@ that has already cost a session at least once.
   value `"Void 60"` → `"Void"` instead of the declared default (#208); restoring a hidden element with
   `turnOn`, which writes `inline-block` over a container authored `block` (#238). Aim mutants at the
   **predicate**, the **fallback target**, and the **written value** — not at the presence of the call.
+  **And mutate the REVIEWER'S suggested fix, not only your own.** A review found that
+  `releaseAnticipation` cleared its capture latch even when the restore was skipped; the reviewer also
+  proposed the repair — *clear only when the write fires* — and it **survived the whole net**, because
+  it is not a worse fix but one with the OPPOSITE failure mode (a restore skipped because the *player*
+  moved the value must drop the latch, or the stale capture steals their next deliberate choice). Two
+  candidate fixes, two different bugs, a net pinned to neither. If yours and theirs both pass, the net
+  does not encode the property that separates them and you have no evidence yours is right; the
+  discriminating question is usually *why* a guard did not fire, not *whether* it fired (#313).
   **And mutate the NET'S OWN CLASSIFIER, not only the source.** A net that sorts code into good/bad
   shapes has a boundary, and the near-miss repair sits just inside it: `buymap-return-checked.test.ts`
   asked only "does the value go nowhere", which passes `bought = buyMap()` — and every refusal code is
@@ -481,5 +489,21 @@ that has already cost a session at least once.
   arriving from the direction nobody watches — not a weaker net, a stronger bot — so **after any fix to
   the bot's own self-estimate, re-run the census and read the row that fix feeds.** A 1e6× probe measures
   nothing once the predicate is saturated; prefer a threshold-relative injection.
+- **📏 A LIMIT MEASURED ON ONE ACTUATOR IS A FACT ABOUT THAT ACTUATOR, NOT ABOUT THE TARGET.** #313's
+  design said its goal — the Anticipation cap — was unreachable where Geneticists unlock: ~389 needed
+  against a food cap of 72. Measured on a real world-71 save, *re-derived* after a first attempt got it
+  wrong, and the conclusion drawn from it was still wrong. It covered ONE way to reach the cap (slow
+  breeding until it takes 30 s) and was written up as a property of the cap. `geneSend = 3` pads the
+  Anticipation clock directly (`breed()`, main.js:5759) and never consults `Geneticist.owned` — worth
+  **+4 zones** where the assumed actuator was worth **zero**. The failure mode is nastier than a wrong
+  number: a correct measurement makes a false conclusion look thoroughly evidenced, and the unstated
+  quantifier is invisible. So before accepting *"X is unreachable"*, ask **unreachable HOW** and
+  enumerate the writers of the variable X is expressed in — here the cap is `floor(lastBreedTime/1000)`
+  and `lastBreedTime` has two writers, one of which nobody had read. ⚠️ The spec had already *filed* the
+  right answer, as "Fallback: `geneSend = 3` … strictly worse than hiring to the cap" — reasoned from
+  the option's own tooltip rather than from its code, then never re-derived because it was written down.
+  A game's description of its option is not evidence about that option's code: `geneSend`'s says "as
+  long as you have one Geneticist" twice, and that gate is real for the *wait* it names and absent from
+  the *clock pad*.
 - **🎚️ Game balance numbers are sacrosanct.** Mirror game constants exactly; mechanism fixes ship
   freely, numeric tuning is always a user decision.
