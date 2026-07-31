@@ -7,6 +7,71 @@ closed [GitHub Issues](https://github.com/MattAltermatt/AutoTrimps/issues).
 
 ## Shipped decisions, newest first
 
+- **📏 A LIMIT MEASURED ON ONE ACTUATOR IS A FACT ABOUT THAT ACTUATOR — #313 Part 1 shipped, but not
+  the way it was designed** (2026-07-30, `8f0a36f0`, v6.0.0.159) — the design spec said Part 1's target
+  (the Anticipation cap) was unreachable where Geneticists unlock: reaching it needs ~389 Geneticists
+  against a food cap of 72. That number is right, was re-derived after a first attempt got it wrong, and
+  led to a **wrong conclusion** — it measured ONE actuator and was written up as a property of the
+  TARGET. `geneSend = 3` pads the Anticipation clock directly (`breed()`, main.js:5759) and never
+  consults `Geneticist.owned`; with none owned, `gensUp` is false so the army is never held back, and
+  `battleCoordinator` only calls `battle()` when not already fighting (main.js:11082), so the pad
+  accrues out of time the fight was spending anyway. Measured over 8000 ticks with AT driving:
+  **`15-geneticist-u1` control z76/anti 0.0 · ATGA only z76/anti 0.2 · +geneSend z80/anti 28.1**, and
+  `16-amalg-u1` z78/0.9 · z78/1.0 · z81/28.0. Today's ATGA is a **no-op on zone progress** at the depth
+  Geneticists unlock while spending the food economy on 125–180 of them. Shipped as `ATGAanticipation`,
+  default OFF and independent of the `ATGA2` master switch, so no corpus trace moved and no re-pin was
+  needed. ⚠️ The spec had *filed the right answer already*, as "Fallback: `geneSend = 3` … strictly worse
+  than hiring to the cap" — reasoned from the option's tooltip rather than its code, and never
+  re-derived once written down. **Before accepting "X is unreachable," ask *unreachable how* and
+  enumerate the writers of the variable X is expressed in.**
+  🔍 **Review caught a cross-module #113:** `releaseAnticipation()` cleared its capture latch even when
+  the guarded restore was skipped, so turning the feature off while `ATspirebreed()` owned
+  `GeneticistassistSetting` lost the player's timer permanently (the Spire's own capture is by then
+  AT's cap, so it can only hand the cap back). Fixed by holding the latch while `spirebreeding`.
+  **The reviewer's *suggested* fix — clear the latch only when the write fires — SURVIVED the net**,
+  because it fails in the opposite direction: a restore skipped because the *player* moved the value
+  must drop the latch or the stale capture steals their next deliberate choice. Two candidate fixes,
+  two different bugs, one net pinned to neither. **Mutate the reviewer's fix too**; the discriminating
+  question was *why* the write was skipped, not *whether* it fired.
+- **🕳️ THE ATGA SUBSYSTEM WAS STRUCTURALLY INVISIBLE TO L0 — two world-71 fixtures** (2026-07-30,
+  `c078a229`, #313's rig) — `ATGA2()` opens on `game.jobs.Geneticist.locked == false` and Geneticist
+  unlocks at world 70, while the corpus's deepest save (`12-warp-u1`) is world 62. The guard was false
+  on **15/15** fixtures, so `baseline-zero` was never evidence about any of it. Added
+  `15-geneticist-u1` and `16-amalg-u1` (the latter owning an Amalgamator, which *switches* the
+  Anticipation stack source at main.js:11683), plus `addGeneticist`/`removeGeneticist` to `MUTATORS`.
+  ⚠️ **Reach caught early, sensitivity nearly missed:** the first recording produced ZERO Geneticist
+  events on 15 and 594 no-op `removeGeneticist` calls on 16 — the corpus would have *reached* the servo
+  while never observing it change the count (#90/#98 exactly). Fixture `ATGA2gen` went 1 → 100 to make
+  the hire path execute. Purely additive; no re-pin.
+- **🐛 TWO DEAD PREDICATES: a typo and a half-named guard** (2026-07-30, `4a384ee8`, v6.0.0.160) —
+  **#314** `cfightforever` called `challengeActive("Electricty")`, missing the second `i`, so its C²
+  arm was dead for every player, always; the two siblings in the same disjunction are spelled right,
+  which is why nothing looked broken. **#315** `ATGA2()` guarded on Trapper only while `breed()` stops
+  for **both** Trapper and Trappapalooza (main.js:5575) — and under Trappapalooza that early return is
+  upstream of everything the servo models, so `lowestGen` stays at its −1 reset and `startFight` never
+  applies the `1.01^N` health (main.js:11745). Every Geneticist hired there was pure cost. Verified
+  live: 5 `ATGA2()` ticks hire 5 with no challenge active and 0 under each of the two.
+  🔒 **The typo class is now mechanized, not patched.** `tests/nets/challenge-name-literals.test.ts`
+  derives the legal roster from `Object.keys(game.challenges)` on a booted clone and the call sites
+  from the **TypeScript AST** — not a hand-written list, and not a regex, so a comment quoting the bug
+  can never be a finding (the `native-conflicts-completeness` false-positive shape). Census: 86
+  `challengeActive("X")` sites (18 distinct), 326 direct compares (39 distinct), 3 array-membership
+  names; the only non-roster string is the game's own `""` sentinel. ⚠️ **The array-membership form was
+  missing until review found it, and the obvious extension would not have helped** — the live site
+  (`native-conflicts.ts:267`) reaches its array through a **named const**, so a scanner extended to
+  inline array literals alone would have passed its own capability test while staying blind to the only
+  instance in the repo. Both paths are resolved and pinned separately. Sibling site in `gather.ts:49`
+  filed as **#316** rather than fixed: there the candidate remedy is *act more*, not *stand down*, so
+  it needs the game's Trappapalooza trap policy read first.
+- **🧬 ATGA gained an unsquared hard-challenge breed timer; the C² one is now labelled C²**
+  (2026-07-30, `09b9e18e`, v6.0.0.156) — `nchATGA2timer` ("ATGA: T: C: Hard") covers Electricity /
+  Mapocalypse / Nom / Toxicity run **unsquared**, and is gated on the challenge being *active* rather
+  than on a zone: every one of those ends mid-run (config.js:3616 blanks `challengeActive` on clearing
+  The Prison), so the target must fall back through to the base timer on its own. Mapocalypse is in the
+  unsquared set and absent from the C² one because it exists **only** unsquared (config.js:3685).
+- **🔇 AUTO GIGASTATION LOGGED ITS PATTERN 10×/SEC** (2026-07-30, `c78e0049`, #312, v6.0.0.157) — the
+  `FirstGigastation` log fired on every tick while `Gigastation.done === 0` instead of only when the
+  computed pattern *moves*. Conditioned on change; golden files regenerated and mutation-tested.
 - **🔒 ONE ORACLE RE-PIN FOR 115 FIXES — v4 → `oracle/v5-post-review-campaign`** (2026-07-29, Session 10
   of the review-fix campaign) — the campaign's whole landing model in one number: **14 of 21 fixtures
   moved, 7 reproduced byte-identically, and all 14 are attributed to four root causes measured on their

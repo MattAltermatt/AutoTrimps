@@ -1,7 +1,14 @@
 # ATGA: Auto — a derived breed timer instead of eleven tuned numbers
 
-**Issue:** [#313](https://github.com/MattAltermatt/AutoTrimps/issues/313) · **Status:** design approved
-2026-07-30, not yet planned · **Module:** `src/modules/breedtimer.ts`
+**Issue:** [#313](https://github.com/MattAltermatt/AutoTrimps/issues/313) · **Module:**
+`src/modules/breedtimer.ts`
+
+**Status:** **Part 1 SHIPPED 2026-07-30** (`8f0a36f0`, v6.0.0.159) as the `ATGAanticipation` setting,
+default OFF — but *not* with the actuator this design assumed; see
+[The actuator](#the-actuator-genesend--3-not-geneticists) and the resolution of model-limit #6. The
+proof-net rig it depends on shipped first (`c078a229`). **Parts 2–4 are designed and unbuilt**: the
+turn-based lifetime measurement, the Spire override, and once-per-window actuation. The eleven timer
+settings are all still present and still default `-1`, so nothing has been migrated or retired yet.
 
 Design reached by a four-agent panel (ground-truth, advocate, alternative-designer, adversary). Every
 mechanical claim below was re-verified by hand against the clone at `../trimps-game` before being
