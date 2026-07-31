@@ -350,7 +350,11 @@ export function mainLoop() {
             if (!game.global.fighting) {
                 if (getPageSetting('fightforever') == 0) fightalways();
                 else if (getPageSetting('fightforever') > 0 && calcHDratio() <= getPageSetting('fightforever')) fightalways();
-                else if (getPageSetting('cfightforever') == true && (challengeActive("Electricty") || challengeActive("Toxicity") || challengeActive("Nom"))) fightalways();
+                // #314 — was "Electricty", missing its second `i`. challengeActive() compares against
+                // game.global.multiChallenge / challengeActive (main.js:1753) and the challenge is spelled
+                // Electricity everywhere in the game, so the disjunct was dead for everyone, always. The
+                // two siblings in the same expression are spelled right, which is why it never looked broken.
+                else if (getPageSetting('cfightforever') == true && (challengeActive("Electricity") || challengeActive("Toxicity") || challengeActive("Nom"))) fightalways();
                 else if (getPageSetting('dfightforever') == 1 && game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.empower == 'undefined' && typeof game.global.dailyChallenge.bloodthirst == 'undefined' && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) fightalways();
                 else if (getPageSetting('dfightforever') == 2 && game.global.challengeActive == "Daily" && (typeof game.global.dailyChallenge.bogged !== 'undefined' || typeof game.global.dailyChallenge.plague !== 'undefined' || typeof game.global.dailyChallenge.pressure !== 'undefined')) fightalways();
             }

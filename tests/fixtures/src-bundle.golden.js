@@ -2003,7 +2003,7 @@
         if (!game.global.fighting) {
           if (getPageSetting("fightforever") == 0) fightalways();
           else if (getPageSetting("fightforever") > 0 && calcHDratio() <= getPageSetting("fightforever")) fightalways();
-          else if (getPageSetting("cfightforever") == true && (challengeActive("Electricty") || challengeActive("Toxicity") || challengeActive("Nom"))) fightalways();
+          else if (getPageSetting("cfightforever") == true && (challengeActive("Electricity") || challengeActive("Toxicity") || challengeActive("Nom"))) fightalways();
           else if (getPageSetting("dfightforever") == 1 && game.global.challengeActive == "Daily" && typeof game.global.dailyChallenge.empower == "undefined" && typeof game.global.dailyChallenge.bloodthirst == "undefined" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined")) fightalways();
           else if (getPageSetting("dfightforever") == 2 && game.global.challengeActive == "Daily" && (typeof game.global.dailyChallenge.bogged !== "undefined" || typeof game.global.dailyChallenge.plague !== "undefined" || typeof game.global.dailyChallenge.pressure !== "undefined")) fightalways();
         }
@@ -2459,7 +2459,7 @@
     }
   }
   function ATGA22() {
-    if (game.jobs.Geneticist.locked == false && getPageSetting2("ATGA2") == true && getPageSetting2("ATGA2timer") > 0 && game.global.challengeActive != "Trapper") {
+    if (game.jobs.Geneticist.locked == false && getPageSetting2("ATGA2") == true && getPageSetting2("ATGA2timer") > 0 && !challengeActive("Trapper") && !challengeActive("Trappapalooza")) {
       var trimps = game.resources.trimps;
       var trimpsMax = trimps.realMax();
       var maxBreedable = new DecimalBreed(trimpsMax).minus(trimpsEffectivelyEmployed2());

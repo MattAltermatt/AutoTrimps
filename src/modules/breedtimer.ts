@@ -213,7 +213,16 @@ function releaseAnticipation() {
 }
 
 export function ATGA2() {
-	if (game.jobs.Geneticist.locked == false && getPageSetting('ATGA2') == true && getPageSetting('ATGA2timer') > 0 && game.global.challengeActive != "Trapper"){
+	// #315 — the guard used to name Trapper only, and breed() stops for BOTH (main.js:5575). Under
+	// Trappapalooza that early return is upstream of everything this servo models: potencyMod is never
+	// applied, `lastBreedTime` never accumulates (so zero Anticipation stacks, main.js:11683), and
+	// `updateStoredGenInfo()` never runs — leaving `lowestGen` at its -1 reset, which is precisely what
+	// startFight gates the health bonus on (`if (game.global.lowestGen >= 0)`, main.js:11745). So every
+	// Geneticist hired there is pure cost: no health, no stacks, no breed effect. Spelled with the game's
+	// own challengeActive() rather than a direct compare — a superset of it (main.js:1753 checks
+	// multiChallenge first), so it cannot be less correct, and it survives a future challenge being
+	// re-parented under a Challenge².
+	if (game.jobs.Geneticist.locked == false && getPageSetting('ATGA2') == true && getPageSetting('ATGA2timer') > 0 && !challengeActive("Trapper") && !challengeActive("Trappapalooza")){
 		var trimps = game.resources.trimps;
 		var trimpsMax = trimps.realMax();
 		var maxBreedable = new DecimalBreed(trimpsMax).minus(trimpsEffectivelyEmployed());
