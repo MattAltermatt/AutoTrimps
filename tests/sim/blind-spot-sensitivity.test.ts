@@ -118,6 +118,8 @@ const WAIVER_IMMUNE_FIXTURES = [
   '12-warp-u1', //    this file — #128's deep-game witness
   '08-starved-u1', // damage-sensitivity.test.ts — #90/#98's combat witness (NOT single-seed: [1,2],
   //                  its negative control covers seed 1 only)
+  '15-geneticist-u1', // this file — #313's ATGA-servo witness. Its negative control asserts an exact
+  //                     trace with no manifest waiver, so a waiver could never rescue it either.
 ] as const
 
 // Files that gate a REAL recorded trace: they diff against a committed oracle using a freshly built
@@ -188,7 +190,8 @@ describe('#160 — waiver-immune fixtures, and the claim that we know all of the
         .split('\n')
         .filter((line) => /expect\(\s*diffTraces\(/.test(line) && /toEqual\(\[\]\)/.test(line)).length
 
-    // 2 here — the 09/10 loop and 12-warp — plus 1 in damage-sensitivity for 08-starved.
+    // 3 here — the 09/10 loop, 12-warp, and #313's 15-geneticist — plus 1 in damage-sensitivity for
+    // 08-starved.
     // portal.test.ts diffs a trace but asserts a NON-empty divergence, so it has no control of this
     // shape and is correctly 0.
     expect(
@@ -196,7 +199,7 @@ describe('#160 — waiver-immune fixtures, and the claim that we know all of the
       'the set of manifest-free exact-trace assertions changed. Each one makes its fixture ' +
         'waiver-immune (#160) — update WAIVER_IMMUNE_FIXTURES and both #160 notes, then re-pin this.',
     ).toEqual({
-      'tests/sim/blind-spot-sensitivity.test.ts': 2,
+      'tests/sim/blind-spot-sensitivity.test.ts': 3,
       'tests/sim/damage-sensitivity.test.ts': 1,
       'tests/sim/portal.test.ts': 0,
     })
@@ -327,6 +330,81 @@ describe('blind-spot sensitivity — the net can SEE the deep game (#128 positiv
       'Inverting the gem-efficiency ranking produced ZERO divergences. The net is blind to housing ' +
         'SELECTION at depth again — the usual cause is 12-warp-u1 no longer unlocking the deep housing ' +
         'tiers (Collector/Warpstation) whose gem efficiency differs. Fix the corpus, not the test.',
+    ).toBeGreaterThan(5)
+  }, 180_000)
+})
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// #313 — the ATGA (Geneticist / breed-timer) servo
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// Before these two fixtures, `ATGA2()` had NEVER executed in a sim run: its outer guard
+// (breedtimer.ts:106) needs Geneticists unlocked, which happens at world 70, and the deepest fixture was
+// world 62. Worse, its ONLY outputs — addGeneticist / removeGeneticist — were not in MUTATORS and do not
+// route through buyJob, so even a deep save would have recorded nothing. Both halves are fixed; these are
+// the controls that keep them fixed.
+//
+// ⚠️ THE TARGET PIN IS HERE BECAUSE ITS CENSUS ROW RETURNED BLIND THREE TIMES, EACH TIME FOR A REASON
+// THAT WAS ABOUT THE PROBE AND NOT THE NET. The first anchor replaced `var target;`, which the next line
+// of the cascade clobbered — a patch that landed without changing behaviour. Then the value was picked
+// from a base breed time measured somewhere else entirely. Both mistakes produced a confident, false "the
+// net is blind here", and neither was visible from the census output alone. A prose record of that in a
+// plan document cannot fail; this can.
+describe('blind-spot sensitivity — the net can SEE the ATGA servo (#313 positive controls)', () => {
+  const gen = entry('15-geneticist-u1')
+
+  it('NEGATIVE control: the clean build reproduces the ATGA trace exactly (diff = ∅)', () => {
+    const clean = runTrace({
+      atBundlePath: TEST_BUNDLE,
+      saveString: readFileSync(resolve(SAVES, `${gen.name}.txt`), 'utf8'),
+      seed: 1,
+      ticks: gen.ticks,
+      atSettings: gen.settings,
+    })
+    expect(diffTraces(oracleTrace(gen.name), clean), `${gen.name} diverges on a CLEAN build`).toEqual([])
+  }, 180_000)
+
+  it('POSITIVE control: suppressing the servo entirely makes the net go RED — it was BLIND corpus-wide', () => {
+    const mutant = traceWith(
+      // ATGA2 does nothing at all. The crude control: it proves the fixture reaches the function AND that
+      // the recorder is watching its outputs. Cannot be clobbered by anything downstream.
+      (s) => replaceOnceAfter(s, 'function ATGA22(', ') {', ') { return;'),
+      gen.name,
+      gen.ticks,
+      gen.settings,
+    )
+    const divergences = diffTraces(oracleTrace(gen.name), mutant)
+    expect(
+      divergences.length,
+      'Suppressing ATGA2 produced ZERO divergences. Either 15-geneticist-u1 no longer reaches world 70 ' +
+        'with Geneticists unlocked, or addGeneticist/removeGeneticist fell out of MUTATORS. Fix the ' +
+        'corpus or the recorder, not the test.',
+    ).toBeGreaterThan(5)
+  }, 180_000)
+
+  it('POSITIVE control: pinning the TARGET makes the net go RED — the number the cascade exists to choose', () => {
+    const mutant = traceWith(
+      // Injected AFTER the eleven-way cascade, immediately before `var thresh`, so nothing can overwrite
+      // it — the first version anchored on `var target;` and was clobbered by the very next line.
+      // 0.03 s is BELOW the reachable ceiling on this fixture (measured: 0.0138 s at zero Geneticists,
+      // 0.0574 s at the 72 ATGA food-caps at), so the servo converges somewhere new (72 -> 37) instead of
+      // saturating against the +/-10-per-tick clamp the way a 30 s or 1 s pin does.
+      (s) =>
+        replaceOnce(
+          s,
+          'var thresh = new DecimalBreed(totalTime.mul(0.02));',
+          'target = new Decimal(0.03);\n      var thresh = new DecimalBreed(totalTime.mul(0.02));',
+        ),
+      gen.name,
+      gen.ticks,
+      gen.settings,
+    )
+    const divergences = diffTraces(oracleTrace(gen.name), mutant)
+    expect(
+      divergences.length,
+      'Pinning the ATGA target produced ZERO divergences, which is what a CLOBBERED or SATURATED probe ' +
+        'looks like — not evidence about the net. Check (a) that the injection still lands after the ' +
+        'target cascade rather than before it, and (b) that 0.03 s is still below the breed time the ' +
+        'fixture can actually reach. Verify the mutant CHANGES BEHAVIOUR before touching this test.',
     ).toBeGreaterThan(5)
   }, 180_000)
 })

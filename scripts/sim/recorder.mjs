@@ -16,10 +16,18 @@
 // #196 — `setGather` unblinds gather.ts (384 lines), which had NO mutator terminus and therefore no
 // visibility at all. It needed no new fixture: AT already calls it on 100% of the corpus. What it
 // needed was the right RECORDING SEMANTICS — see DEDUPE_ON_CHANGE below.
+// #313 — `addGeneticist` / `removeGeneticist` are ATGA2()'s ONLY outputs (breedtimer.ts:202/210), and
+// neither routes through `buyJob`: both mutate `game.jobs.Geneticist.owned` directly (main.js:5282/5287).
+// So until they were wrapped, every hire and fire the Geneticist servo made was invisible here, and any
+// census row aimed at the breed timer would have returned BLIND with nothing listening — the #90 shape
+// verbatim ("of course they recorded zero events"). AT calls them as free identifiers, which resolve
+// through globalThis, so wrapping `window` does intercept them; that is NOT true of a converted module's
+// internal calls (#127), and the distinction is why this works.
 export const MUTATORS = [
   'buyJob', 'buyBuilding', 'buyUpgrade', 'buyEquipment',
   'buyMap', 'selectMap', 'runMap', 'recycleMap', 'recycleBelow', 'setFormation',
   'setGather',
+  'addGeneticist', 'removeGeneticist',
 ]
 
 // Mutators recorded only when their arguments CHANGE from the previous recorded call.

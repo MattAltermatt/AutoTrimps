@@ -7,6 +7,21 @@ corpus. A cell is that run's divergence count. **0 = the net saw NOTHING.**
 > `baseline-zero` for that region is worth nothing. This is the opposite of the usual reading of a
 > green test, which is exactly why the blindness kept going unnoticed (#66, #98).
 
+> ⚠️ **STALE AS OF 2026-07-30 (#313): the table below predates two fixtures and two rows.** Regenerating
+> it costs a full census (14 mutations x 23 fixtures), so it has not been re-run. What is missing, measured
+> individually with `--mutation`:
+>
+> ```text
+> mutation           VERDICT  total   15-geneticist-u1.1  16-amalg-u1.1  all 21 others
+> ----------------   -------  -----   ------------------  -------------  -------------
+> atga-noop          SEEN      6084          2862              3222            0
+> atga-target-pin    SEEN      4020          2952              1068            0
+> ```
+>
+> Both rows are also pinned as executable positive controls in `tests/sim/blind-spot-sensitivity.test.ts`,
+> which runs in CI — so this document is the human-readable record, not the gate. If the two disagree,
+> trust the test.
+
 ```text
 mutation               VERDICT  total   01-early-u1.101-early-u1.201-early-u1.3  02-mid-u1.1  02-mid-u1.2  02-mid-u1.303-challenge-watch.103-challenge-watch.203-challenge-watch.304-u2-radon.1 05-maps-u1.1 06-deep-u1.1 06-deep-u1.2 06-deep-u1.307-map-cap-u1.108-starved-u1.108-starved-u1.209-housing-u2.1 10-hypo-u2.111-portal-u1.1 12-warp-u1.1
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

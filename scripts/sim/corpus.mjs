@@ -83,4 +83,31 @@ export const CORPUS = [
   // 1500 ticks captures ~7 Warpstation + ~65 Nursery buys with live combat; sized for sensitivity, not
   // volume — a full run to z73 banks 388 Nurseries and drowns the trace (#105).
   { name: '12-warp-u1', seeds: [1], ticks: 1500 },
+  // #313 — the first two saves on which ATGA2() can execute at all. Every earlier fixture carries
+  // `Geneticist.locked = 1` (the deepest, 12-warp-u1, is world 62) against a world-70 unlock
+  // (config.js:11178), so the outer guard at breedtimer.ts:106 was false on all of them and the entire
+  // Geneticist / breed-timer subsystem was structurally invisible to baseline-zero.
+  //
+  // ⚠️ ALL THREE SETTINGS ARE LOAD-BEARING, exactly as they are for 10-hypo-u2. `ATGA2` defaults to false
+  // and `ATGA2timer` to -1, and main-loop.ts:262 gates the call on the former — so an unseeded fixture
+  // would reach the subsystem and prove nothing. `ATGA2timer: 30` arms today's eleven-setting cascade.
+  //
+  // `ATGA2gen: 100` is the REACH-≠-SENSITIVITY one, and it was measured, not guessed. Its default is 1,
+  // meaning "only hire if the next Geneticist costs under 1% of current food" (breedtimer.ts:198). These
+  // saves hold 3.06e15 food against a 1e15 first-Geneticist cost (config.js:11932) — affordable outright,
+  // but 1% of it is 3.06e13, so the gate refuses and ATGA2 returns having done nothing. The first
+  // recording proved it: 15-geneticist-u1 produced ZERO Geneticist events and 16-amalg-u1 produced 594
+  // removeGeneticist calls that were all no-ops (owned was 0, so main.js:5286 returns immediately). The
+  // corpus would have REACHED the servo while never once observing it change the Geneticist count — the
+  // #90/#98 trap exactly. 100 lets the hire path actually execute.
+  //
+  // These are FIXTURE constants (player configuration), not src defaults and not balance numbers.
+  //
+  // Single seed each: the subject is a hire/fire servo over a deterministic breed-time computation, not
+  // an RNG-timed combat decision — matching 04/05/09/10/12.
+  { name: '15-geneticist-u1', seeds: [1], ticks: 2000, settings: { ATGA2: true, ATGA2timer: 30, ATGA2gen: 100 } },
+  // 16 additionally owns an Amalgamator, which SWITCHES the Anticipation stack source (main.js:11683)
+  // from the refill clock to the whole cycle. Same settings on purpose: the fork is the only difference,
+  // so a divergence between the two traces is attributable to it.
+  { name: '16-amalg-u1', seeds: [1], ticks: 2000, settings: { ATGA2: true, ATGA2timer: 30, ATGA2gen: 100 } },
 ]

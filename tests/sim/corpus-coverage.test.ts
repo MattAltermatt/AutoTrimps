@@ -108,6 +108,15 @@ describe('corpus mutator coverage (loud, pinned)', () => {
       // self-test in tests/sim/blind-spot-sensitivity.test.ts. The rich combat mutator list is incidental
       // to that; do not judge this fixture by reach. Warpstation buys land under buyBuilding.
       '12-warp-u1': ['buyBuilding', 'buyEquipment', 'buyJob', 'buyMap', 'buyUpgrade', 'runMap', 'selectMap', 'setFormation', 'setGather'],
+      // #313 — a coverage GAIN, which this test is designed to fail on so the pin gets updated
+      // deliberately rather than drifting. These two are the first saves that reach addGeneticist /
+      // removeGeneticist at all: ATGA2()'s outer guard (breedtimer.ts:106) needs Geneticist unlocked, which
+      // happens at world 70, and every earlier fixture tops out at world 62.
+      '15-geneticist-u1': ['addGeneticist', 'buyBuilding', 'buyEquipment', 'buyJob', 'buyMap', 'buyUpgrade', 'runMap', 'selectMap', 'setFormation', 'setGather'],
+      // 16 reaches removeGeneticist as well: the Amalgamator makes getCurrentSend() ~1000x larger, which
+      // lengthens the computed breed time past the 30s target, so the servo's FIRE arm arms too. That is
+      // why the pair covers both directions of the servo and neither save alone does.
+      '16-amalg-u1': ['addGeneticist', 'buyBuilding', 'buyEquipment', 'buyJob', 'buyMap', 'buyUpgrade', 'removeGeneticist', 'runMap', 'selectMap', 'setFormation', 'setGather'],
     })
   })
 
@@ -121,5 +130,13 @@ describe('corpus mutator coverage (loud, pinned)', () => {
     expect(counts['07-map-cap-u1'].recycleBelow).toBeGreaterThanOrEqual(1)
     expect(counts['07-map-cap-u1'].recycleMap).toBeGreaterThanOrEqual(1)
     expect(counts['08-starved-u1'].setFormation).toBeGreaterThan(1000)
+    // #313 — the volume floor that makes these two fixtures mean something. The FIRST recording of them
+    // produced 594 removeGeneticist calls that were every one a no-op (`owned` was 0, so main.js:5286
+    // returns immediately) and ZERO addGeneticist, because ATGA2gen defaults to 1 — "only hire if the next
+    // Geneticist costs under 1% of food" (breedtimer.ts:198) — against 3.06e15 food and a 1e15 first-
+    // Geneticist cost. The corpus REACHED the servo and never once saw it act. Pinning addGeneticist
+    // volume is what makes that state fail instead of passing as coverage (#90/#98).
+    expect(counts['15-geneticist-u1'].addGeneticist).toBeGreaterThan(20)
+    expect(counts['16-amalg-u1'].addGeneticist).toBeGreaterThan(20)
   })
 })

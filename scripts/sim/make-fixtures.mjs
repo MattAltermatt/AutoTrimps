@@ -430,5 +430,50 @@ writeSave('12-warp-u1', () => playForward(readSave('06-deep-u1'), {
   },
 }))
 
+// 15 · geneticist-U1 — the first save in the corpus where ATGA can run AT ALL. #313 measured the hole:
+// every prior save carries `Geneticist.locked = 1` (the deepest, 12-warp-u1, is world 62) against a
+// world-70 unlock (config.js:11178), so `ATGA2()`'s outer guard (breedtimer.ts:106) is false on all of
+// them and the whole Geneticist/breed-timer subsystem is structurally invisible to baseline-zero. That
+// is the #67 shape one level up: not a gate that cannot fail, a gate watching a program it never runs.
+//
+// untilWorld is 71, NOT 70. The unlock is a TRIGGER at `world: 70, level: 49`, fired by checkTriggers —
+// so stopping at the first tick of world 70 can land before cell 49 and leave it locked. 71 guarantees
+// it fired. Played from 06-deep with 12-warp's own post-portal perk spread, which this file already
+// measures as carrying to z73; z71 is therefore reachable, not aspirational.
+writeSave('15-geneticist-u1', () => playForward(readSave('06-deep-u1'), {
+  ticks: 400000, seed: 1, untilWorld: 71,
+  mutate: (_w, g) => {
+    // The SAME realistic post-portal spread 12-warp-u1 uses — player state, no balance constant.
+    // Duplicated rather than hoisted so each fixture reads on its own; hoist if a third consumer appears.
+    const perks = {
+      Looting: 60, Toughness: 60, Power: 60, Motivation: 60, Pheromones: 30, Artisanistry: 40,
+      Carpentry: 40, Resilience: 40, Coordinated: 20, Anticipation: 10, Siphonology: 3, Range: 10,
+      Agility: 20, Bait: 10, Trumps: 20, Packrat: 20, Resourceful: 30, Overkill: 15,
+    }
+    for (const [perk, level] of Object.entries(perks)) if (g.portal[perk]) g.portal[perk].level = level
+    g.global.totalPortals = 5
+  },
+}))
+
+// 16 · amalg-U1 — the OTHER arm of the Anticipation stack source. main.js:11683 reads
+// `Amalgamator.owned > 0 ? floor((gameTime - lastSoldierSentAt)/1000) : floor(lastBreedTime/1000)`, i.e.
+// the whole CYCLE versus the refill clock alone. Every save in the corpus takes the second branch, so
+// the first had never executed — and the two are the fork every breed-timer policy turns on (#313).
+//
+// The Amalgamator count is FIELD-POKED, following the 03/04 doctrine exactly: the differential feeds the
+// SAME save to both builds, so a poked state need only ARM the branch and not throw. Earning one honestly
+// needs realMax()/getCurrentSend() to cross getFireThresh() (main.js:11158-11206), a population-ratio race
+// that would make the fixture's depth depend on RNG rather than on the branch it exists to arm.
+// Amalgamator count is player state; no balance constant is touched.
+//
+// ⚠️ Short play-forward on purpose. checkAmalgamate() FIRES ONE BACK OUT when the ratio falls below
+// 1e3:1 (main.js:11172), so a long run from a poked state can silently undo the poke — the save would
+// commit green and the branch would still be unarmed. tests/sim/atga-reach.test.ts asserts owned > 0 on
+// the COMMITTED save for exactly that reason.
+writeSave('16-amalg-u1', () => playForward(readSave('15-geneticist-u1'), {
+  ticks: 200, seed: 1,
+  mutate: (_w, g) => { g.jobs.Amalgamator.owned = 1 },
+}))
+
 console.log('[make-fixtures] corpus written (12 saves: 3×U1 shallow + U2-radon + maps + deep + map-cap + starved + housing + hypo + portal + warp).')
 console.log('[make-fixtures] reach is ASSERTED, not assumed — tests/sim/corpus-coverage.test.ts pins it. Re-record with `node scripts/sim/record-oracle.mjs`.')

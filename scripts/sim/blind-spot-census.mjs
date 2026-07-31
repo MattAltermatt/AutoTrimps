@@ -220,6 +220,60 @@ export const MUTATIONS = [
     // having one.
     apply: (s) => spliceIntoFn(s, 'manualLabor2', " setGather('metal'); return;", 'gather'),
   },
+  {
+    name: 'atga-noop',
+    area: 'breedtimer (ATGA2 Geneticist servo)',
+    why:
+      '#313: ATGA2() had NEVER executed in a sim run. Its outer guard (breedtimer.ts:106) needs Geneticist ' +
+      'unlocked, which happens at world 70 (config.js:11178), and every fixture topped out at world 62 — so ' +
+      'the guard was false on all 15 saves and the whole breed-timer subsystem was invisible to ' +
+      'baseline-zero. Worse, its only outputs (addGeneticist/removeGeneticist) were not in MUTATORS and do ' +
+      'not route through buyJob, so nothing was listening either. 15-geneticist-u1 arms it and the recorder ' +
+      'now watches it; this is the crude control that proves both halves landed.',
+    apply: (s) => spliceIntoFn(s, 'ATGA2', ' return;', 'atga'),
+  },
+  {
+    name: 'atga-target-pin',
+    area: 'breedtimer (ATGA2 target selection)',
+    why:
+      '#313: the no-op above only proves the servo runs. This pins the TARGET — the one quantity the ' +
+      'eleven-setting cascade exists to choose, and the one any auto mode would replace. A #93-shaped ' +
+      'ranking break rather than a switch-off: ATGA still runs every tick and still hires, it just aims at ' +
+      'the wrong number. If this row is BLIND the corpus cannot measure a breed-timer policy at all, and no ' +
+      'claim about one is believable.',
+    // ⚠️ THE INJECTED VALUE IS THE WHOLE PROBE, AND SO IS WHERE IT IS INJECTED.
+    //
+    // Two separate mistakes produced three BLIND readings before this row worked, and both are worth
+    // keeping written down because each looked like a finding about the NET rather than about the probe:
+    //
+    //   1. The anchor was `var target;`. It spliced cleanly, and the very next line —
+    //      `if (getPageSetting('ATGA2timer') > 0) target = new Decimal(...)` — unconditionally clobbered
+    //      the injected value. The patch landed, the bundle changed, the behaviour did not. That is this
+    //      file's own documented false-BLIND with one extra step, so the anchor now sits AFTER the entire
+    //      eleven-way cascade, immediately before `var thresh`.
+    //   2. The value was chosen from a base breed time of 0.15 s carried over from an unrelated z190
+    //      analysis. MEASURED on 15-geneticist-u1 it is 0.0138 s with zero Geneticists, and 0.0574 s at
+    //      the 72 Geneticists ATGA food-caps at (gen #73 costs 1e15 * 1.03^72 = 8.4e15 against 3.06e15
+    //      held). Both arms of the servo clamp to +/-10 per tick (breedtimer.ts:201/209), so any target
+    //      above that 0.0574 s ceiling saturates: baseline 30 s wants N=389 and a 1 s pin wants N=217,
+    //      both unreachable, so mutant and baseline hire identically and diverge by nothing.
+    //
+    // 0.03 s sits BELOW the reachable ceiling (it wants N~37), so the servo actually converges somewhere
+    // new: measured 72 -> 37 Geneticists, breed time 0.0591 -> 0.0294 s. THE LESSON, which is the #98 one
+    // aimed at a census probe rather than at source: verify a mutant CHANGES BEHAVIOUR before interpreting
+    // its row — one boot and one state read, against the twenty minutes a census costs. The claim is now
+    // an executable assertion in tests/sim/blind-spot-sensitivity.test.ts, not this comment.
+    //
+    // `replaceOnce`'s ambiguity check covers the anchor's uniqueness. Deliberately not anchored on the
+    // function name: esbuild emits `function ATGA22()`, not `ATGA2` (the #133 rename), so a hand-rolled
+    // indexOf('function ATGA2(') would throw. `Decimal` is a free global inside the function body.
+    apply: (s) => replaceOnce(
+      s,
+      'var thresh = new DecimalBreed(totalTime.mul(0.02));',
+      'target = new Decimal(0.03);\n      var thresh = new DecimalBreed(totalTime.mul(0.02));',
+      'atga-pin',
+    ),
+  },
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
