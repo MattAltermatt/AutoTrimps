@@ -507,6 +507,8 @@ declare global {
   var compareModuleVars: typeof import('../modules/import-export').compareModuleVars
   var addToolTipToArmyCount: typeof import('../modules/breedtimer').addToolTipToArmyCount
   var ATGA2: typeof import('../modules/breedtimer').ATGA2
+  var ATGAanticipation: typeof import('../modules/breedtimer').ATGAanticipation
+  var antiStackCap: typeof import('../modules/breedtimer').antiStackCap
   var autoBoneChargeWhenMax: typeof import('../modules/other').autoBoneChargeWhenMax
   var setScienceNeeded: typeof import('../modules/query').setScienceNeeded
   var RsetScienceNeeded: typeof import('../modules/query').RsetScienceNeeded

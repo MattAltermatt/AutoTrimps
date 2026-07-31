@@ -119,7 +119,7 @@ mechanism rather than the arithmetic.
 
 ## 🏗️ The design
 
-### Part 1 — default target is the Anticipation cap
+### Part 1 — default target is the Anticipation cap ✅ SHIPPED 2026-07-30 (`ATGAanticipation`)
 
 ```ts
 const cap = game.talents.patience.purchased ? 45 : 30   // main.js:11684
@@ -127,6 +127,14 @@ const cap = game.talents.patience.purchased ? 45 : 30   // main.js:11684
 
 A derived game constant, not a tuning number. This is the optimum whenever `β = 1`, which is ordinary
 play.
+
+> **⚠️ The target survived; the ACTUATOR did not.** This section originally assumed the only way to
+> reach the cap was to hire Geneticists until breeding genuinely *takes* `cap` seconds. Measured at the
+> depth Geneticists unlock, that costs ~389 of them against a food cap of 72 — see
+> [Known model limits](#known-model-limits) #6. The game carries a second lever that writes the
+> Anticipation clock directly, and it is the one that ships. See
+> [The actuator](#the-actuator-genesend--3-not-geneticists) below, which replaces what used to be the
+> "Fallback" section.
 
 **Corollary worth stating because it is checkable:** with Anticipation at level 0, Geneticists have zero
 throughput value — `rate ∝ √B / max(B, k√B)` is flat below `T` and declining above it. That is not a
@@ -215,12 +223,68 @@ window, which makes `calcOurHealth` (`calc.ts:114-117`) and `survive()` (`stance
 `survive()` carries a `1.01^(owned − lastLowGen)` correction term that exists precisely because today's
 per-tick drift makes them disagree.
 
-### Fallback: `geneSend = 3`
+### The actuator: `geneSend = 3`, not Geneticists
 
-The game's "Wait For Gene Send" (`config.js:1731`, `main.js:5759-5761` + `11147`) reaches the Anticipation
-cap by idling at full population, with **zero** Geneticists — so it forfeits the `1.01^N` health entirely.
-Strictly worse than hiring to the cap when food allows; the right fallback when the `ATGA2gen` food cap
-binds. In scope as a fallback, not as the mechanism.
+⚠️ **This section previously read "Fallback: `geneSend = 3`" and called the option "strictly worse than
+hiring to the cap when food allows." That was wrong in both directions and is corrected here.** The
+measurement is below; the original claim was reasoned from the option's own description rather than from
+its code.
+
+Three lines decide it, and the third is the one nobody reads:
+
+```text
+main.js:5759   at FULL POPULATION, breed() runs
+                 if (geneSend.enabled === 3 && lastBreedTime/1000 < GeneticistassistSetting)
+                     lastBreedTime += 100
+               ← no test of Geneticist.owned anywhere in this branch
+main.js:11683  antiStacks = floor(lastBreedTime / 1000)      (no-Amalgamator arm)
+main.js:11137  gensUp = (GeneticistassistSetting > 0 && Geneticist.owned > 0)
+main.js:11147  the send is blocked only when enabled === 3 && gensUp
+```
+
+So the **clock pad** and the **send block** have different preconditions. Geneticists stretch breed
+time; `geneSend = 3` writes the Anticipation clock itself. The cap is therefore reachable at *every*
+depth, for no food — and the `1.01^N` health is not forfeited at all, because ATGA can still hire on top
+up to its own food cap.
+
+**Measured**, 8000 ticks, AT driving, both world-71 fixtures, `anti` = mean `antiStacks`
+(control = neither lever; ATGA = `ATGA2timer 30`, `ATGA2gen 100`):
+
+```text
+15-geneticist-u1 (no Amalgamator)      world  anti   gens   food
+-------------------------------------  -----  -----  -----  --------
+control                                   76    0.0      0   4.76e16
+ATGA only (the assumed actuator)          76    0.2    125   2.69e16
+geneSend=3 only                           80   28.1      0   2.42e17
+ATGA + geneSend=3                         80   27.0    174   3.37e16
+
+16-amalg-u1 (Amalgamator)              world  anti   gens   food
+-------------------------------------  -----  -----  -----  --------
+control                                   78    0.9      0   6.37e16
+ATGA only (the assumed actuator)          78    1.0    180   1.60e17
+geneSend=3 only                           81   28.0      0   2.84e17
+ATGA + geneSend=3                         82   27.3    225   1.84e17
+```
+
+Two readings, both reproducing across the independent fixtures. **Today's ATGA is a no-op on zone
+progress at this depth** — 76 == 76 and 78 == 78 against the control — while spending the food economy
+on 125–180 Geneticists. And the actuator that was filed as a fallback is worth **+4 / +3 zones**.
+
+Sanity: the sim's breed clock tracks `game.global.time` at ratio **1.000** (`speed = 10`; the driver
+advances 100 ms per tick and `breed()` adds 100 ms per `gameLoop`), so these stack counts are
+browser-equivalent rather than a harness artifact. Single seed per fixture — the ±1-zone differences
+between the two geneSend rows are inside noise; the 4-zone gap over the control is not.
+
+**One honest caveat, and it is the user's call rather than the implementer's.** The zero-Geneticist path
+looks like an upstream quirk: the option is named *Wait For Gene Send*, its description says "as long as
+you have one Geneticist" twice, and that gate is real for the *wait* — but not for the *pad*. Getting
+stacks with no Geneticists and no idle is not behaviour the option documents.
+
+**Shipped as** `ATGAanticipation` ("ATGA: Anticipation"), boolean, **default OFF**, independent of the
+`ATGA2` master switch and of the `ATGA2timer > 0` gate. It captures and restores both game-owned values
+(`geneSend.enabled`, `GeneticistassistSetting`) on the `#113` pattern — module-scope latch, `null` means
+nothing captured, and it refuses to restore over a value the player changed themselves. It stands down
+from the timer while `spirebreeding` is true so it and `ATspirebreed()` never fight over one global.
 
 ## 🚧 Scope
 
@@ -297,3 +361,17 @@ Recorded because a design that hides its assumptions cannot be falsified.
    from the panel's z190 scenario and never measured at this depth. The corrected figure makes the gate
    *worse*, not better. Either the controller states the depth gate as designed behaviour, or Part 1
    needs a floor that degrades gracefully when the cap cannot be paid for.
+
+   ✅ **RESOLVED 2026-07-30 — it was neither.** Both of those dispositions accepted the premise that
+   Geneticists are the only way to reach the cap, and that premise was never checked; it was inherited
+   from the panel's scenarios along with the arithmetic. `geneSend = 3` writes the Anticipation clock
+   directly and never consults `Geneticist.owned` (`main.js:5759`), so the target is reachable at every
+   depth and the gate does not exist. See [The actuator](#the-actuator-genesend--3-not-geneticists).
+
+   **The transferable lesson is about the shape of the error, not the mechanic.** A measurement can be
+   entirely correct and still answer the wrong question, and it is at its most convincing exactly then —
+   389-against-72 is a real number, re-derived after a first attempt got it wrong, and it made a false
+   conclusion look thoroughly evidenced. What made it wrong was the unstated quantifier: it measured
+   *one* actuator and was written up as a property of the *target*. Before accepting "X is unreachable,"
+   enumerate the ways to reach X from the game's source; a limit measured on a single lever is a fact
+   about that lever.

@@ -1801,6 +1801,12 @@ export function initializeAllSettings() {
         what: 'The base breed timer, in seconds, ATGA tries to hit by hiring or firing Geneticists.',
         cannot: '<b>This value gates the entire ATGA tab.</b> Every override below (Before/After Z, Spire, C2, Daily) only takes effect while this is a positive number &mdash; leave it at 0 or -1 and nothing in ATGA runs, however the overrides are configured.',
     }), 'value', '-1', null, 'ATGA');
+    createSetting('ATGAanticipation', 'ATGA: Anticipation',tip({
+        what: 'Drives the Anticipation stack cap (30, or 45 with the <b>Patience</b> talent) using the game\'s own <b>Wait For Gene Send</b> option instead of Geneticists, by setting it and the game\'s Geneticistassist timer for you.',
+        how: 'Hiring Geneticists reaches the cap only by making breeding actually take that many seconds, which costs about <b>389</b> Geneticists where Geneticists first unlock &mdash; food caps you near 72. This lever writes the stack clock directly, so it reaches the cap at any depth for no food. Independent of <b>ATGA: Timer</b>: leave the rest of ATGA off and this still works, or run both and let ATGA hire for the compounding health on top.',
+        cannot: 'Changes two of the game\'s own settings (<b>Wait For Gene Send</b> and your Geneticistassist timer). Both are put back when you turn this off, unless you changed them yourself in the meantime. While an <b>ATGA: T: Spire</b> override is driving the Geneticistassist timer, this leaves that timer alone and waits on the Spire value instead.',
+        ignoredWhen: 'Geneticist is still locked, or you are in Universe 2 (Geneticists do not exist there).',
+    }), 'boolean', false, null, 'ATGA');
 
     //Zone Timers
     (document.getElementById('ATGA2timer') as any).parentNode.insertAdjacentHTML('afterend', '<br>');

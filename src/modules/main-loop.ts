@@ -261,6 +261,12 @@ export function mainLoop() {
         atGuard('ATGA2', function () {
             if (getPageSetting('ATGA2') == true) ATGA2();
         });
+        // #313 — dispatched UNCONDITIONALLY, not behind its own setting, because the function's OFF path
+        // is the restore: it has to keep running for one more tick after the user turns it off, or the
+        // game's geneSend option and Geneticistassist timer stay where AT left them forever.
+        atGuard('ATGAanticipation', function () {
+            ATGAanticipation();
+        });
         atGuard('autoRoboTrimp', function () {
             if (aWholeNewWorld && getPageSetting('AutoRoboTrimp')) autoRoboTrimp();
         });

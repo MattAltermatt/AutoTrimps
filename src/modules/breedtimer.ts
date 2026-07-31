@@ -102,6 +102,116 @@ export function breedTimeRemaining() {
 // not a module-scoped var (which legacy can't see). Assigned to globalThis at load.
 globalThis.DecimalBreed = Decimal.clone({precision: 30, rounding: 4});
 var missingTrimps = new DecimalBreed(0);
+
+/** The Anticipation stack cap, transcribed from main.js:11684. DERIVED, not retyped: abandonVoidMap()
+ *  below had its own hand-written copy of this ternary, and a second copy of a game-owned fact is how
+ *  the `BuyJobsNew` tier table ended up wrong in all seven of its rows. One expression, two callers. */
+export function antiStackCap() {
+	return game.talents.patience.purchased ? 45 : 30;
+}
+
+// #313 — REACHING THE ANTICIPATION CAP DOES NOT REQUIRE STRETCHING BREED TIME.
+//
+// The design panel's target (the cap) was derived at z190 and is right. The ACTUATOR it assumed is
+// not. Geneticists reach the cap only by slowing breeding until it TAKES `cap` seconds, and at the
+// depth Geneticists unlock that costs ~389 of them against a food cap of 72 — measured on
+// 15-geneticist-u1 (world 71, base breed time 0.0138 s, food 3.06e15). Two orders of magnitude out
+// of reach, so a controller aiming there hires to the food cap and sits.
+//
+// The game carries a second lever, and it writes the Anticipation clock DIRECTLY. At full population
+// breed() pads `lastBreedTime` toward `GeneticistassistSetting` whenever `geneSend.enabled === 3`
+// (main.js:5759), and main.js:11683 reads exactly that to set `antiStacks`. So the cap is reachable at
+// every depth, for no food at all.
+//
+// ⚠️ WHY IT WORKS WITH ZERO GENETICISTS — the necessary condition is not the sufficient one, and the
+// difference was flagged by review. That the pad branch never tests `Geneticist.owned` is only half of
+// it: `gensUp` (main.js:11137) is false without Geneticists, so the send block at main.js:11147 never
+// engages and the army is NOT held back. What actually accrues the clock is battleCoordinator's own
+// gate — `if (!game.global.fighting) { battle(null); return; }` (main.js:11082) — so while the previous
+// army is still out, and an army spans many cells (main.js:11123), battle() is not called, population
+// sits full, and the pad runs every tick. The stacks come out of time the fight was spending anyway.
+// This also says where the lever STOPS paying: stacks are min(fight duration, timer, cap), so an army
+// that dies faster than the cap earns proportionally less.
+//
+// Measured, 8000 ticks, AT driving, both world-71 fixtures (`anti` = mean antiStacks):
+//     15-geneticist-u1   control z76 anti 0.0 | ATGA only z76 anti 0.2 | +geneSend z80 anti 28.1
+//     16-amalg-u1        control z78 anti 0.9 | ATGA only z78 anti 1.0 | +geneSend z81 anti 28.0
+// Today's ATGA is a NO-OP on zone progress at this depth (z76 == z76, z78 == z78) while spending the
+// food economy on 125-180 Geneticists. This function supplies the missing actuator; ATGA2() keeps
+// hiring, which is now purely the 1.01^N health term rather than a doomed run at the cap.
+//
+// U1 only: Geneticist is blockU2 (config.js:11920).
+
+// #113's lesson applied to two more game-owned globals. Module scope, because this runs fresh from
+// the mainLoop every tick and a function-scoped `var` would re-initialise to undefined each call —
+// which is exactly how ATspirebreed() spent its life blanking the player's timer. `null` means
+// NOTHING WAS CAPTURED, and the restore below must refuse to write back a value it never took.
+let preAntiGeneSend: number | null = null;
+let preAntiGaTimer: number | null = null;
+
+export function ATGAanticipation() {
+	const menu = game.options && game.options.menu && game.options.menu.geneSend;
+	if (!menu) return;
+
+	if (!(getPageSetting('ATGAanticipation') == true) || game.jobs.Geneticist.locked != false || game.global.universe == 2) {
+		releaseAnticipation();
+		return;
+	}
+
+	if (menu.enabled !== 3) {
+		if (preAntiGeneSend === null) preAntiGeneSend = menu.enabled;
+		menu.enabled = 3;
+		// The game has no set-to-value form — toggleSetting only CYCLES (updates.js:6543). Passing
+		// updateOnly=true skips the mutation and `onToggle` and just repaints the button from the value
+		// written above, so the option's own UI cannot drift out of step with its state. geneSend has no
+		// onToggle, so nothing behavioural is skipped. The button lives in the Geneticistassist tooltip
+		// (updates.js:744) and is usually absent from the DOM; toggleSetting handles a null elem.
+		toggleSetting('geneSend', null, false, true);
+	}
+
+	// ATspirebreed() (other.ts:195) OWNS GeneticistassistSetting while the Spire override is armed, and
+	// two writers on one global fight every tick. Stand down and let mode 3 wait on the Spire's timer
+	// instead — geneSend is orthogonal to the value, so the lever keeps working either way.
+	if (spirebreeding) return;
+
+	const cap = antiStackCap();
+	if (game.global.GeneticistassistSetting !== cap) {
+		if (preAntiGaTimer === null) preAntiGaTimer = game.global.GeneticistassistSetting;
+		game.global.GeneticistassistSetting = cap;
+	}
+}
+
+/** Put both game-owned values back exactly once, and only where OUR value is still the one sitting
+ *  there — a player who changed the option themselves outranks us, and restoring over them would be
+ *  the #113 bug with a different global. */
+function releaseAnticipation() {
+	if (preAntiGeneSend !== null) {
+		const menu = game.options.menu.geneSend;
+		if (menu.enabled === 3) {
+			menu.enabled = preAntiGeneSend;
+			toggleSetting('geneSend', null, false, true);
+		}
+		preAntiGeneSend = null;
+	}
+	// The GA timer needs one more distinction than geneSend does, because it has a SECOND writer. A
+	// skipped restore means one of two opposite things, and clearing the latch is right for only one:
+	//
+	//   the player changed it themselves  → theirs wins, drop our bookkeeping (handled below)
+	//   ATspirebreed() currently owns it  → WAIT; dropping it now loses the value permanently
+	//
+	// The second case is not hypothetical and it is silent. ATspirebreed (other.ts:195) captures
+	// whatever is sitting in the global when the Spire arms — which by then is OUR cap — so the only
+	// value it can ever hand back is the cap. The player's real setting exists nowhere but this latch.
+	// Turn the feature off mid-Spire with an unconditional clear and their timer is stuck at AT's cap
+	// for good: #113's exact class, one module boundary over. `spirebreeding` is the ownership signal,
+	// and since main-loop.ts dispatches this every tick regardless of the setting, holding costs a tick
+	// and resolves as soon as the Spire hands back.
+	if (preAntiGaTimer !== null && !spirebreeding) {
+		if (game.global.GeneticistassistSetting === antiStackCap()) game.global.GeneticistassistSetting = preAntiGaTimer;
+		preAntiGaTimer = null;
+	}
+}
+
 export function ATGA2() {
 	if (game.jobs.Geneticist.locked == false && getPageSetting('ATGA2') == true && getPageSetting('ATGA2timer') > 0 && game.global.challengeActive != "Trapper"){
 		var trimps = game.resources.trimps;
@@ -248,9 +358,8 @@ export function abandonVoidMap() {
     if (!getPageSetting('ForceAbandon')) return;
     if (game.global.mapsActive && getCurrentMapObject().location == "Void") {
             if (game.portal.Anticipation.level) {
-                var antistacklimitv = 45;
-	    if (!game.talents.patience.purchased)
-	            antistacklimitv = 30;
+                // #313 — was a second hand-written copy of main.js:11684's ternary. Same value, one owner.
+                var antistacklimitv = antiStackCap();
 	        if (((game.jobs.Amalgamator.owned > 0) ? Math.floor((new Date().getTime() - game.global.lastSoldierSentAt) / 1000) : Math.floor(game.global.lastBreedTime / 1000)) >= antistacklimitv && game.global.antiStacks < antistacklimitv) {
                     mapsClicked(true);
               	}

@@ -1938,6 +1938,9 @@
       atGuard("ATGA2", function() {
         if (getPageSetting("ATGA2") == true) ATGA2();
       });
+      atGuard("ATGAanticipation", function() {
+        ATGAanticipation();
+      });
       atGuard("autoRoboTrimp", function() {
         if (aWholeNewWorld && getPageSetting("AutoRoboTrimp")) autoRoboTrimp();
       });
@@ -2356,9 +2359,11 @@
   var breedtimer_exports = {};
   __export(breedtimer_exports, {
     ATGA2: () => ATGA22,
+    ATGAanticipation: () => ATGAanticipation2,
     abandonVoidMap: () => abandonVoidMap2,
     addBreedingBoxTimers: () => addBreedingBoxTimers,
     addToolTipToArmyCount: () => addToolTipToArmyCount2,
+    antiStackCap: () => antiStackCap,
     breedTimeRemaining: () => breedTimeRemaining2,
     breedingPS: () => breedingPS2,
     forceAbandonTrimps: () => forceAbandonTrimps2,
@@ -2415,6 +2420,44 @@
   }
   globalThis.DecimalBreed = Decimal.clone({ precision: 30, rounding: 4 });
   var missingTrimps = new DecimalBreed(0);
+  function antiStackCap() {
+    return game.talents.patience.purchased ? 45 : 30;
+  }
+  var preAntiGeneSend = null;
+  var preAntiGaTimer = null;
+  function ATGAanticipation2() {
+    const menu = game.options && game.options.menu && game.options.menu.geneSend;
+    if (!menu) return;
+    if (!(getPageSetting2("ATGAanticipation") == true) || game.jobs.Geneticist.locked != false || game.global.universe == 2) {
+      releaseAnticipation();
+      return;
+    }
+    if (menu.enabled !== 3) {
+      if (preAntiGeneSend === null) preAntiGeneSend = menu.enabled;
+      menu.enabled = 3;
+      toggleSetting("geneSend", null, false, true);
+    }
+    if (spirebreeding) return;
+    const cap = antiStackCap();
+    if (game.global.GeneticistassistSetting !== cap) {
+      if (preAntiGaTimer === null) preAntiGaTimer = game.global.GeneticistassistSetting;
+      game.global.GeneticistassistSetting = cap;
+    }
+  }
+  function releaseAnticipation() {
+    if (preAntiGeneSend !== null) {
+      const menu = game.options.menu.geneSend;
+      if (menu.enabled === 3) {
+        menu.enabled = preAntiGeneSend;
+        toggleSetting("geneSend", null, false, true);
+      }
+      preAntiGeneSend = null;
+    }
+    if (preAntiGaTimer !== null && !spirebreeding) {
+      if (game.global.GeneticistassistSetting === antiStackCap()) game.global.GeneticistassistSetting = preAntiGaTimer;
+      preAntiGaTimer = null;
+    }
+  }
   function ATGA22() {
     if (game.jobs.Geneticist.locked == false && getPageSetting2("ATGA2") == true && getPageSetting2("ATGA2timer") > 0 && game.global.challengeActive != "Trapper") {
       var trimps = game.resources.trimps;
@@ -2537,9 +2580,7 @@
     if (!getPageSetting2("ForceAbandon")) return;
     if (game.global.mapsActive && getCurrentMapObject().location == "Void") {
       if (game.portal.Anticipation.level) {
-        var antistacklimitv = 45;
-        if (!game.talents.patience.purchased)
-          antistacklimitv = 30;
+        var antistacklimitv = antiStackCap();
         if ((game.jobs.Amalgamator.owned > 0 ? Math.floor(((/* @__PURE__ */ new Date()).getTime() - game.global.lastSoldierSentAt) / 1e3) : Math.floor(game.global.lastBreedTime / 1e3)) >= antistacklimitv && game.global.antiStacks < antistacklimitv) {
           mapsClicked(true);
         } else if (game.global.antiStacks == antistacklimitv)
@@ -17295,6 +17336,7 @@
     !radonon ? turnOn("ATGA2") : turnOff("ATGA2");
     !radonon && getPageSetting("ATGA2") == true ? turnOn("ATGA2timer") : turnOff("ATGA2timer");
     !radonon && getPageSetting("ATGA2") == true ? turnOn("ATGA2gen") : turnOff("ATGA2gen");
+    !radonon ? turnOn("ATGAanticipation") : turnOff("ATGAanticipation");
     var ATGAon = getPageSetting("ATGA2") == true && getPageSetting("ATGA2timer") > 0;
     const atgaIdle = getPageSetting("ATGA2") == true && !(getPageSetting("ATGA2timer") > 0);
     const atgaTimerEl = document.getElementById("ATGA2timer");
@@ -19289,6 +19331,12 @@
       what: "The base breed timer, in seconds, ATGA tries to hit by hiring or firing Geneticists.",
       cannot: "<b>This value gates the entire ATGA tab.</b> Every override below (Before/After Z, Spire, C2, Daily) only takes effect while this is a positive number &mdash; leave it at 0 or -1 and nothing in ATGA runs, however the overrides are configured."
     }), "value", "-1", null, "ATGA");
+    createSetting("ATGAanticipation", "ATGA: Anticipation", tip({
+      what: "Drives the Anticipation stack cap (30, or 45 with the <b>Patience</b> talent) using the game's own <b>Wait For Gene Send</b> option instead of Geneticists, by setting it and the game's Geneticistassist timer for you.",
+      how: "Hiring Geneticists reaches the cap only by making breeding actually take that many seconds, which costs about <b>389</b> Geneticists where Geneticists first unlock &mdash; food caps you near 72. This lever writes the stack clock directly, so it reaches the cap at any depth for no food. Independent of <b>ATGA: Timer</b>: leave the rest of ATGA off and this still works, or run both and let ATGA hire for the compounding health on top.",
+      cannot: "Changes two of the game's own settings (<b>Wait For Gene Send</b> and your Geneticistassist timer). Both are put back when you turn this off, unless you changed them yourself in the meantime. While an <b>ATGA: T: Spire</b> override is driving the Geneticistassist timer, this leaves that timer alone and waits on the Spire value instead.",
+      ignoredWhen: "Geneticist is still locked, or you are in Universe 2 (Geneticists do not exist there)."
+    }), "boolean", false, null, "ATGA");
     document.getElementById("ATGA2timer").parentNode.insertAdjacentHTML("afterend", "<br>");
     createSetting("zATGA2timer", "ATGA: T: Before Z", tip({
       what: "Zone below which ATGA switches from the base timer to <b>ATGA: T: BZT</b>.",

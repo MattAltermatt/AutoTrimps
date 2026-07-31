@@ -632,6 +632,11 @@ export function updateCustomButtons() {
     !radonon ? turnOn("ATGA2") : turnOff("ATGA2");
     !radonon && getPageSetting('ATGA2') == true ? turnOn("ATGA2timer") : turnOff("ATGA2timer");
     !radonon && getPageSetting('ATGA2') == true ? turnOn("ATGA2gen") : turnOff("ATGA2gen");
+    // #313 — deliberately NOT behind ATGAon, nor behind the ATGA2 master switch. It drives the
+    // Anticipation clock through the game's geneSend option rather than through Geneticists, so it is
+    // independent of both the master switch and the ATGA2timer > 0 gate that holds the rest of the tab
+    // shut. Measured, it is the only ATGA lever that moves zone progress at the depth Geneticists unlock.
+    !radonon ? turnOn("ATGAanticipation") : turnOff("ATGAanticipation");
     var ATGAon = (getPageSetting('ATGA2') == true && getPageSetting('ATGA2timer') > 0);
 
     // #115 — the ONE genuinely under-signalled state in this tab.
