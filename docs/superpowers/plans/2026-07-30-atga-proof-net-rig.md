@@ -2,6 +2,10 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Status: SHIPPED 2026-07-30** (`c078a229`, v6.0.0.158) — purely additive, so no oracle re-pin. The
+> rig paid for itself immediately: it measured that #313's designed actuator could not reach its target
+> at world 71, which is what surfaced the `geneSend` lever that shipped instead (`8f0a36f0`).
+
 **Goal:** Make the ATGA (Geneticist / breed-timer) subsystem visible to the L0 proof net, so that any
 claim about a breed-timer policy can be measured instead of argued.
 
