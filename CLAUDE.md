@@ -505,5 +505,31 @@ that has already cost a session at least once.
   A game's description of its option is not evidence about that option's code: `geneSend`'s says "as
   long as you have one Geneticist" twice, and that gate is real for the *wait* it names and absent from
   the *clock pad*.
+- **🚪 A FINDING MAKES TWO CLAIMS — "THIS CODE IS WRONG" AND "THIS CODE RUNS." VERIFYING THE FIRST ONE
+  THOROUGHLY IS WHAT MAKES SKIPPING THE SECOND INVISIBLE.** `main-loop.ts` dispatches inside two
+  mutually exclusive blocks — `if (game.global.universe == 1)` at **:226** and `== 2` at **:475** — and
+  almost every automation has an `R*` twin on the other side (`manualLabor2`/`RmanualLabor2`,
+  `buyJobs`/`RbuyJobs`). A challenge is symmetrically confined: `blockU1`/`allowU2` on `game.challenges`,
+  enforced at main.js:1772. So a fix aimed at the wrong twin is not merely useless, it is *invisibly*
+  useless — it reviews well, tests green, and changes nothing. Four instances in ONE session (#316):
+  **#315** proved `breed()` early-returns for both Trapper and Trappapalooza (main.js:5575), traced every
+  downstream consequence correctly, and shipped a guard into `ATGA2()` — which dispatches at
+  main-loop.ts:262, inside the U1 block, against a `blockU1` challenge. **#316** made the identical
+  error one file over and was filed as a bug with a full derivation. **A "third instance" found while
+  mechanizing #316's own census** (`jobs.ts:245`) died to the same fact ten minutes later. And the
+  session's *own* correction then miscounted: it enumerated `planetBreaker()`'s three call sites
+  scrupulously while the real question was how `Geneticist.locked` clears — which has **two** paths, the
+  second being `bwRewards.Geneticistassist` calling `unlockJob` directly (config.js:13417). Right
+  rigour, wrong question, caught by review. **So: find the dispatch and name the execution conditions
+  BEFORE designing the fix** — ask *which twin am I reading?* first, not last. Two corollaries. **Write
+  the reachability as an executable assertion**, never prose (`tests/breedtimer.atga-dispatch.test.ts`):
+  a comment saying "this arm is unreachable" rots silently the moment someone moves the dispatch. And
+  **drop an incomplete supporting argument rather than patching it** — when leg 1 is sufficient and
+  pinned, a half-verified leg 2 adds risk and no evidence. ⚠️ The cheap proof that a change moved no
+  behaviour: build both sides and hash `dist/autotrimps.user.js` — byte-identical is proof, not
+  assertion. And note what this class does to nets: a *general* universe-reachability net was designed,
+  measured and REJECTED (#321) because it detects the opposite direction (names that cannot fire, not
+  names that are missing), yields 5 sites of which 0 are behavioural, and needs five location-keyed
+  waivers inside `ATGA2()` to go green.
 - **🎚️ Game balance numbers are sacrosanct.** Mirror game constants exactly; mechanism fixes ship
   freely, numeric tuning is always a user decision.
